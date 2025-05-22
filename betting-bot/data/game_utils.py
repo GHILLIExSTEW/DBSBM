@@ -301,7 +301,22 @@ async def get_normalized_games_for_dropdown(
     # Get league_id from LEAGUE_ID_MAP
     league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
     
-    rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+    # For MLB, we need to check both current year and next year during offseason
+    if sport.lower() == "baseball" and league_key == "MLB":
+        current_year = datetime.now().year
+        next_year = current_year + 1
+        
+        # First try current year
+        rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+        
+        # If no games found and we're near the end of the year or in offseason, try next year
+        if not rows and (datetime.now().month >= 10 or datetime.now().month <= 2):
+            logger.info(f"No MLB games found for {current_year}, checking {next_year}")
+            # Try fetching games for next year
+            await db_manager.sync_games_from_api(force_season=next_year)
+            rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+    else:
+        rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
     
     if not rows:
         logger.warning(f"No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")

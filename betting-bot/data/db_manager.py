@@ -8,6 +8,7 @@ import asyncio
 import json
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from data.game_utils import get_league_abbreviation, normalize_mlb_team_name, sanitize_team_name
+from datetime import datetime
 
 try:
     from ..config.database_mysql import (
@@ -795,41 +796,46 @@ class DatabaseManager:
         )
         await self.execute(query, *params)
 
-    async def sync_games_from_api(self):
-        """Sync games from api_games to games table."""
+    async def sync_games_from_api(self, force_season: int = None):
+        """Sync games from API to database."""
         try:
-            query = """
-                INSERT INTO games (
-                    id, sport, league_id, league_name, home_team_id, away_team_id,
-                    home_team_name, away_team_name, start_time, status, score,
-                    venue, referee, created_at, updated_at
-                )
-                SELECT 
-                    id, sport, league_id, league_name, home_team_id, away_team_id,
-                    home_team_name, away_team_name, start_time, status, score,
-                    venue, referee, created_at, updated_at
-                FROM api_games
-                ON DUPLICATE KEY UPDATE
-                    sport = VALUES(sport),
-                    league_id = VALUES(league_id),
-                    league_name = VALUES(league_name),
-                    home_team_id = VALUES(home_team_id),
-                    away_team_id = VALUES(away_team_id),
-                    home_team_name = VALUES(home_team_name),
-                    away_team_name = VALUES(away_team_name),
-                    start_time = VALUES(start_time),
-                    status = VALUES(status),
-                    score = VALUES(score),
-                    venue = VALUES(venue),
-                    referee = VALUES(referee),
-                    updated_at = CURRENT_TIMESTAMP
-            """
-            await self.execute(query)
-            logger.info("Successfully synced games from api_games to games table")
-            return True
+            # Get current date in YYYY-MM-DD format
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # Create API client
+            api = SportsAPI(self)
+            
+            # Fetch games for each league
+            for league_name, league_info in LEAGUE_IDS.items():
+                sport = league_info.get('sport')
+                if not sport:
+                    continue
+                    
+                try:
+                    # If force_season is provided, use it for MLB
+                    season = None
+                    if force_season and sport.lower() == 'baseball' and league_name == 'MLB':
+                        season = force_season
+                    
+                    # Fetch games from API
+                    games = await api.fetch_games(
+                        sport=sport,
+                        league=league_name,
+                        date=current_date,
+                        season=season
+                    )
+                    
+                    # Save games to database
+                    for game in games:
+                        await self.save_game(game)
+                        
+                except Exception as e:
+                    logger.error(f"Error syncing games for {league_name}: {e}")
+                    continue
+                    
         except Exception as e:
-            logger.error(f"Error syncing games from api_games to games table: {e}")
-            return False
+            logger.error(f"Error in sync_games_from_api: {e}")
+            raise
 
     async def get_normalized_games_for_dropdown(self, league_id: str, season: int = None) -> List[Dict[str, Any]]:
         """

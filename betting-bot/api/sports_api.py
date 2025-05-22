@@ -345,7 +345,7 @@ class SportsAPI:
             logger.error(f"Live updates task failed: {str(e)}")
             self.live_updates_enabled = False
 
-    async def fetch_games(self, sport: str, league: str, date: str = None, next_games: int = None, end_date: str = None) -> List[Dict]:
+    async def fetch_games(self, sport: str, league: str, date: str = None, season: int = None, next_games: int = None, end_date: str = None) -> List[Dict]:
         """Fetch games for a specific sport and league."""
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
@@ -354,50 +354,44 @@ class SportsAPI:
         if not league_config:
             raise ValueError(f"Unsupported sport/league combination: {sport}/{league}")
 
-        # Get season dates from LEAGUE_SEASON_STARTS if available
-        season = None
-        if league in LEAGUE_SEASON_STARTS:
-            season_info = LEAGUE_SEASON_STARTS[league]
-            # For MLB, the season year is the calendar year the season is played in
-            if sport.lower() == 'baseball' and league == 'MLB':
-                target_date = datetime.strptime(date, "%Y-%m-%d")
-                season = target_date.year
-            else:
-                season_start = datetime.strptime(season_info["start"], "%Y-%m-%d")
-                season_end = datetime.strptime(season_info["end"], "%Y-%m-%d")
-                target_date = datetime.strptime(date, "%Y-%m-%d")
-                
-                # If the target date is within the season dates, use the season start year
-                if season_start <= target_date <= season_end:
-                    season = season_start.year
-                # If target date is before season start, use previous season
-                elif target_date < season_start:
-                    season = season_start.year - 1
-                # If target date is after season end, use that season's year
+        # If season is provided, use it directly
+        if season is None:
+            # Get season dates from LEAGUE_SEASON_STARTS if available
+            if league in LEAGUE_SEASON_STARTS:
+                season_info = LEAGUE_SEASON_STARTS[league]
+                # For MLB, the season year is the calendar year the season is played in
+                if sport.lower() == 'baseball' and league == 'MLB':
+                    target_date = datetime.strptime(date, "%Y-%m-%d")
+                    season = target_date.year
                 else:
-                    season = season_start.year
+                    season_start = datetime.strptime(season_info["start"], "%Y-%m-%d")
+                    season_end = datetime.strptime(season_info["end"], "%Y-%m-%d")
+                    target_date = datetime.strptime(date, "%Y-%m-%d")
+                    
+                    # If the target date is within the season dates, use the season start year
+                    if season_start <= target_date <= season_end:
+                        season = season_start.year
+                    # If target date is before season start, use previous season
+                    elif target_date < season_start:
+                        season = season_start.year - 1
+                    # If target date is after season end, use that season's year
+                    else:
+                        season = season_start.year
 
-        # If no season was determined from dates, use current year
-        if not season:
-            season = datetime.now().year
+            # If no season was determined from dates, use current year
+            if not season:
+                season = datetime.now().year
 
         params = {
             'league': league_config['id'],
             'season': season,
             'date': date
         }
-
+        
+        if next_games:
+            params['next'] = next_games
         if end_date:
             params['to'] = end_date
-
-        if next_games and sport == 'football':
-            params['next'] = next_games
-
-        # Ensure 'season' is always present and is an integer
-        if 'season' not in params or params['season'] is None:
-            logger.error(f"'season' parameter missing in API request params: {params}")
-            raise ValueError("'season' parameter is required for all API-Sports requests.")
-        assert isinstance(params['season'], int), f"'season' must be an integer, got {params['season']} ({type(params['season'])})"
 
         # Debug logging for all sports requests
         logger.info(f"{sport.title()} request parameters: {params}")
