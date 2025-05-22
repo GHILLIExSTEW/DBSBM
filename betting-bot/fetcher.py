@@ -417,8 +417,8 @@ async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
                         fetched_at=VALUES(fetched_at)
                     """,
                     (
-                        str(game_data["id"]),  # Use id as api_game_id
-                        game_data["id"],
+                        game_data.get("api_game_id", str(game_data["id"])),  # Use api_game_id if available, fallback to id
+                        None,  # Let MySQL auto-increment handle the internal id
                         game_data["sport"],
                         game_data["league_id"],
                         game_data["league_name"],

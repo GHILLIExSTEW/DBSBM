@@ -319,7 +319,7 @@ async def get_normalized_games_for_dropdown(
                 
             dropdown_games.append({
                 'id': row['id'],
-                'api_game_id': str(row['id']),  # Use the id from api_games as the api_game_id
+                'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
                 'home_team': home_team,
                 'away_team': away_team,
                 'start_time': row['start_time'],
