@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Live Scores</h1>
+
+    {% for league in leagues %}
+    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+        <!-- League Header -->
+        <div class="p-4 bg-gray-50 border-b flex items-center">
+            {% if league.logo %}
+            <img src="{{ league.logo }}" alt="{{ league.name }}" class="w-8 h-8 mr-3">
+            {% endif %}
+            <h2 class="text-xl font-bold text-gray-900">{{ league.name }}</h2>
+        </div>
+
+        <!-- Games -->
+        <div class="divide-y">
+            {% for game in league.games %}
+            <div class="p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <!-- Home Team -->
+                    <div class="flex items-center flex-1">
+                        {% if game.home_logo %}
+                        <img src="{{ game.home_logo }}" alt="{{ game.home_team_name }}" class="w-8 h-8 mr-3">
+                        {% endif %}
+                        <span class="font-semibold">{{ game.home_team_name }}</span>
+                    </div>
+
+                    <!-- Score -->
+                    <div class="flex items-center px-4">
+                        {% if game.score %}
+                        <span class="text-xl font-bold mx-2">{{ game.score.get('home', 0) }}</span>
+                        <span class="text-gray-500 mx-2">-</span>
+                        <span class="text-xl font-bold mx-2">{{ game.score.get('away', 0) }}</span>
+                        {% else %}
+                        <span class="text-gray-500">{{ game.start_time.strftime('%I:%M %p') }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Away Team -->
+                    <div class="flex items-center flex-1 justify-end">
+                        <span class="font-semibold">{{ game.away_team_name }}</span>
+                        {% if game.away_logo %}
+                        <img src="{{ game.away_logo }}" alt="{{ game.away_team_name }}" class="w-8 h-8 ml-3">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Game Status -->
+                <div class="mt-2 text-sm text-gray-500">
+                    {% if game.status == 'live' %}
+                    <span class="text-red-600">● LIVE</span>
+                    {% elif game.status == 'halftime' %}
+                    <span class="text-yellow-600">● HALFTIME</span>
+                    {% else %}
+                    <span class="text-blue-600">● {{ game.status|title }}</span>
+                    {% endif %}
+                    
+                    {% if game.odds %}
+                    <span class="ml-4">
+                        {% if game.odds.get('home_ml') %}
+                        <span class="mr-2">Home: {{ game.odds.home_ml }}</span>
+                        {% endif %}
+                        {% if game.odds.get('away_ml') %}
+                        <span>Away: {{ game.odds.away_ml }}</span>
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not leagues %}
+    <div class="text-center py-12">
+        <p class="text-gray-500 text-lg">No live games at the moment</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

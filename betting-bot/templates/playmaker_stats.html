@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Playmaker Stats - {{ guild.name }}</h1>
+
+    {% for capper in cappers %}
+    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+        <!-- Capper Header -->
+        <div class="p-6" style="background-color: {{ capper.banner_color|default('#0096FF') }}">
+            <div class="flex items-center">
+                {% if capper.avatar_url %}
+                <img src="{{ capper.avatar_url }}" alt="{{ capper.display_name }}" class="w-16 h-16 rounded-full border-4 border-white">
+                {% endif %}
+                <div class="ml-4">
+                    <h2 class="text-2xl font-bold text-white">{{ capper.display_name }}</h2>
+                    <p class="text-white opacity-80">@{{ capper.username }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-gray-50">
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-600">W/L Ratio</h3>
+                <p class="text-2xl font-bold text-gray-900">
+                    {% set total = capper.bet_won + capper.bet_loss %}
+                    {% if total > 0 %}
+                        {{ "%.2f"|format(capper.bet_won / total * 100) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p class="text-sm text-gray-500">{{ capper.bet_won }}W - {{ capper.bet_loss }}L</p>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-600">Current Units</h3>
+                <p class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(capper.units_balance) }}</p>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-600">Lifetime Units</h3>
+                <p class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(capper.lifetime_units) }}</p>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-600">Most Active League</h3>
+                {% if capper.top_league %}
+                <p class="text-xl font-bold text-gray-900">{{ capper.top_league.league }}</p>
+                <p class="text-sm text-gray-500">
+                    {{ capper.top_league.wins }}W - {{ capper.top_league.losses }}L
+                </p>
+                {% else %}
+                <p class="text-gray-500">No bets yet</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Best Bets -->
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Best Bets</h3>
+            {% if capper.best_bets %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-2 text-left">Date</th>
+                            <th class="px-4 py-2 text-left">League</th>
+                            <th class="px-4 py-2 text-left">Type</th>
+                            <th class="px-4 py-2 text-right">Units</th>
+                            <th class="px-4 py-2 text-right">Odds</th>
+                            <th class="px-4 py-2 text-right">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bet in capper.best_bets %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-2">{{ bet.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td class="px-4 py-2">{{ bet.league }}</td>
+                            <td class="px-4 py-2">{{ bet.bet_type }}</td>
+                            <td class="px-4 py-2 text-right">{{ "%.1f"|format(bet.units) }}</td>
+                            <td class="px-4 py-2 text-right">{{ "%.2f"|format(bet.odds) }}</td>
+                            <td class="px-4 py-2 text-right text-green-600">
+                                {{ "%.1f"|format(bet.units * (bet.odds - 1)) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500">No winning bets yet</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 
