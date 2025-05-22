@@ -350,36 +350,19 @@ class SportsAPI:
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
 
-        league_config = LEAGUE_CONFIG.get(sport, {}).get(league)
+        league_config = LEAGUE_CONFIG.get(sport.lower(), {}).get(league)
         if not league_config:
             raise ValueError(f"Unsupported sport/league combination: {sport}/{league}")
 
         # If season is provided, use it directly
         if season is None:
-            # Get season dates from LEAGUE_SEASON_STARTS if available
-            if league in LEAGUE_SEASON_STARTS:
-                season_info = LEAGUE_SEASON_STARTS[league]
-                # For MLB, the season year is the calendar year the season is played in
-                if sport.lower() == 'baseball' and league == 'MLB':
-                    target_date = datetime.strptime(date, "%Y-%m-%d")
-                    season = target_date.year
-                else:
-                    season_start = datetime.strptime(season_info["start"], "%Y-%m-%d")
-                    season_end = datetime.strptime(season_info["end"], "%Y-%m-%d")
-                    target_date = datetime.strptime(date, "%Y-%m-%d")
-                    
-                    # If the target date is within the season dates, use the season start year
-                    if season_start <= target_date <= season_end:
-                        season = season_start.year
-                    # If target date is before season start, use previous season
-                    elif target_date < season_start:
-                        season = season_start.year - 1
-                    # If target date is after season end, use that season's year
-                    else:
-                        season = season_start.year
-
-            # If no season was determined from dates, use current year
-            if not season:
+            # For MLB, use the current year as the season
+            if sport.lower() == 'baseball' and league == 'MLB':
+                season = datetime.now().year
+                # If we're in the offseason (October to February), use next year
+                if datetime.now().month >= 10 or datetime.now().month <= 2:
+                    season += 1
+            else:
                 season = datetime.now().year
 
         params = {
@@ -395,17 +378,22 @@ class SportsAPI:
 
         # Debug logging for all sports requests
         logger.info(f"{sport.title()} request parameters: {params}")
-        logger.info(f"Request URL: {BASE_URLS[sport]}/{'fixtures' if sport == 'football' else 'games'}")
+        logger.info(f"Request URL: {BASE_URLS[sport.lower()]}/{'fixtures' if sport.lower() == 'football' else 'games'}")
         logger.info(f"League config: {league_config}")
 
         try:
-            endpoint = 'fixtures' if sport == 'football' else 'games'
-            data = await self.fetcher.fetch_data(sport, endpoint, params)
+            endpoint = 'fixtures' if sport.lower() == 'football' else 'games'
+            
+            # Create fetcher if not exists
+            if not self.fetcher:
+                self.fetcher = await APISportsFetcher().__aenter__()
+            
+            data = await self.fetcher.fetch_data(sport.lower(), endpoint, params)
             
             if not data or 'response' not in data:
                 logger.warning(f"No response data for {sport}/{league}")
                 return []
-                
+            
             # Check for API errors
             if 'errors' in data and data['errors']:
                 error_msg = ', '.join(f"{k}: {v}" for k, v in data['errors'].items())
@@ -414,16 +402,17 @@ class SportsAPI:
 
             mapped_games = []
             for game in data['response']:
-                mapped_game = self.fetcher.map_game_data(game, sport, league)
+                mapped_game = self.fetcher.map_game_data(game, sport.lower(), league)
                 if mapped_game:
                     mapped_games.append(mapped_game)
                     # If we have a database manager, save the game
                     if self.db_manager:
                         try:
-                            await self.db_manager.save_game(mapped_game)
+                            await self.db_manager.upsert_api_game(game)
                         except Exception as e:
                             logger.error(f"Error saving game to database: {str(e)}")
 
+            logger.info(f"Successfully fetched {len(mapped_games)} games for {sport}/{league}")
             return mapped_games
 
         except Exception as e:

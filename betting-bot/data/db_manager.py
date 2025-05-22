@@ -799,23 +799,31 @@ class DatabaseManager:
     async def sync_games_from_api(self, force_season: int = None):
         """Sync games from API to database."""
         try:
+            # Create API client
+            from api.sports_api import SportsAPI
+            api = SportsAPI(self)
+            
             # Get current date in YYYY-MM-DD format
             current_date = datetime.now().strftime("%Y-%m-%d")
             
-            # Create API client
-            api = SportsAPI(self)
-            
             # Fetch games for each league
             for league_name, league_info in LEAGUE_IDS.items():
-                sport = league_info.get('sport')
+                sport = league_info.get('sport', '').lower()
                 if not sport:
                     continue
                     
                 try:
                     # If force_season is provided, use it for MLB
                     season = None
-                    if force_season and sport.lower() == 'baseball' and league_name == 'MLB':
+                    if force_season and sport == 'baseball' and league_name == 'MLB':
                         season = force_season
+                        logger.info(f"Using forced season {season} for MLB")
+                    elif sport == 'baseball' and league_name == 'MLB':
+                        season = datetime.now().year
+                        # If we're in the offseason (October to February), use next year
+                        if datetime.now().month >= 10 or datetime.now().month <= 2:
+                            season += 1
+                        logger.info(f"Using calculated season {season} for MLB")
                     
                     # Fetch games from API
                     games = await api.fetch_games(
@@ -825,9 +833,16 @@ class DatabaseManager:
                         season=season
                     )
                     
+                    logger.info(f"Fetched {len(games)} games for {sport}/{league_name}")
+                    
                     # Save games to database
                     for game in games:
-                        await self.save_game(game)
+                        try:
+                            await self.upsert_api_game(game)
+                            logger.info(f"Saved game {game.get('id')} to database")
+                        except Exception as e:
+                            logger.error(f"Error saving game {game.get('id')}: {e}")
+                            continue
                         
                 except Exception as e:
                     logger.error(f"Error syncing games for {league_name}: {e}")
