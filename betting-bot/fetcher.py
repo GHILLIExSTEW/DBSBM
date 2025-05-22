@@ -387,10 +387,10 @@ async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
                 await cur.execute(
                     """
                     INSERT INTO api_games 
-                    (id, sport, league_id, league_name, home_team_id, away_team_id, 
+                    (api_game_id, id, sport, league_id, league_name, home_team_id, away_team_id, 
                      home_team_name, away_team_name, start_time, status, score, 
                      venue, referee, raw_json, fetched_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                         sport=VALUES(sport),
                         league_name=VALUES(league_name),
@@ -407,6 +407,7 @@ async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
                         fetched_at=VALUES(fetched_at)
                     """,
                     (
+                        str(game_data["id"]),  # Use id as api_game_id
                         game_data["id"],
                         game_data["sport"],
                         game_data["league_id"],
