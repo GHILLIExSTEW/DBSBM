@@ -150,59 +150,39 @@ class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         self.parent_view = parent_view
         options = []
-        if not games:
-            options.append(
-                SelectOption(
-                    label="No games available",
-                    value="NoGames",
-                    description="Try another league or manual entry",
-                )
-            )
-        else:
-            for game in games[:24]:
-                home = game.get("home_team") or game.get("home_team_name") or "Unknown Home"
-                away = game.get("away_team") or game.get("away_team_name") or "Unknown Away"
-                logger.debug(f"Raw team names - Home: '{home}' ({len(home)} chars), Away: '{away}' ({len(away)} chars)")
-                start_dt_obj = game.get("start_time")
-                time_str = "Time N/A"
-                if isinstance(start_dt_obj, str):
-                    try:
-                        start_dt_obj = datetime.fromisoformat(start_dt_obj.replace("Z", "+00:00"))
-                    except ValueError:
-                        logger.warning(f"Could not parse game start_time: {start_dt_obj}")
-                        start_dt_obj = None
-                if isinstance(start_dt_obj, datetime):
-                    time_str = start_dt_obj.strftime("%m/%d %H:%M %Z")
-                time_part_length = len(f" ({time_str})")
-                max_team_length = (100 - time_part_length - 3) // 2
-                home = home[:max_team_length] + "..." if len(home) > max_team_length else home
-                away = away[:max_team_length] + "..." if len(away) > max_team_length else away
-                label = f"{away} @ {home} ({time_str})"
-                logger.debug(f"Final label: '{label}' ({len(label)} chars)")
-                game_api_id = game.get("api_game_id")
-                if game_api_id is None:
-                    logger.warning(f"Game missing 'api_game_id': {game}")
-                    continue
-                options.append(SelectOption(label=label, value=str(game_api_id)))
+        
+        # Add game options if available
+        for game in games:
+            game_api_id = game.get("api_game_id")
+            home_team = game.get("home_team_name", "Unknown")
+            away_team = game.get("away_team_name", "Unknown")
+            start_time = game.get("start_time", "")
+            if isinstance(start_time, str) and len(start_time) > 16:
+                start_time = start_time[:16]
+            label = f"{home_team} vs {away_team}"
+            if start_time:
+                label += f" ({start_time})"
+                
+            if game_api_id is None:
+                logger.warning(f"Game missing 'api_game_id': {game}")
+                continue
+            options.append(SelectOption(label=label, value=str(game_api_id)))
+        
+        # Always add Manual Entry option
         options.append(SelectOption(label="Manual Entry", value="Other"))
+        
         super().__init__(
             placeholder="Select Game (or Manual Entry)...",
             options=options,
             min_values=1,
             max_values=1,
-            disabled=len(options) == 1 and options[0].value == "NoGames",
+            disabled=False  # Never disable since Manual Entry is always available
         )
 
     async def callback(self, interaction: Interaction):
         selected_api_game_id = self.values[0]
-        if selected_api_game_id == "NoGames":
-            await interaction.response.send_message(
-                "No games available for this league. Please try another league or use Manual Entry.",
-                ephemeral=True,
-            )
-            self.parent_view.stop()
-            return
         self.parent_view.bet_details["api_game_id"] = selected_api_game_id
+        
         if selected_api_game_id != "Other":
             game = next(
                 (g for g in self.parent_view.games if str(g.get("api_game_id")) == selected_api_game_id),
@@ -211,6 +191,7 @@ class GameSelect(Select):
             if game:
                 self.parent_view.bet_details["home_team_name"] = game.get("home_team_name", "Unknown")
                 self.parent_view.bet_details["away_team_name"] = game.get("away_team_name", "Unknown")
+        
         logger.debug(f"Game selected: {selected_api_game_id} by user {interaction.user.id}")
         self.disabled = False
         await interaction.response.defer()
@@ -617,21 +598,16 @@ class FinalConfirmButton(Button):
 
 
 class StraightBetWorkflowView(View):
-    def __init__(
-        self,
-        interaction: Interaction,
-        bot: commands.Bot,
-        message_to_control: Optional[discord.InteractionMessage] = None,
-    ):
-        super().__init__(timeout=600)
-        self.original_interaction = interaction
+    def __init__(self, original_interaction: Interaction, bot: commands.Bot, message_to_control: Optional[Message] = None):
+        super().__init__(timeout=1800)
+        self.original_interaction = original_interaction
         self.bot = bot
-        self.current_step = 0
-        self.bet_details: Dict[str, Any] = {"bet_type": "straight"}
-        self.games: List[Dict] = []
         self.message = message_to_control
+        self.current_step = 0
+        self.bet_details: Dict[str, Any] = {}
+        self.games: List[Dict] = []
         self.is_processing = False
-        self.latest_interaction = interaction
+        self.latest_interaction = original_interaction
         self.bet_slip_generator: Optional[BetSlipGenerator] = None
         self.preview_image_bytes: Optional[io.BytesIO] = None
         self.home_team: Optional[str] = None
@@ -764,28 +740,9 @@ class StraightBetWorkflowView(View):
             new_view_items = []
             if self.current_step == 1:
                 allowed_leagues = [
-                    "NFL",
-                    "EPL",
-                    "NBA",
-                    "MLB",
-                    "NHL",
-                    "La Liga",
-                    "NCAA",
-                    "Bundesliga",
-                    "Serie A",
-                    "Ligue 1",
-                    "MLS",
-                    "Formula 1",
-                    "Tennis",
-                    "UFC/MMA",
-                    "WNBA",
-                    "CFL",
-                    "AFL",
-                    "Darts",
-                    "EuroLeague",
-                    "NPB",
-                    "KBO",
-                    "KHL",
+                    "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga",
+                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "UFC/MMA",
+                    "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"
                 ]
                 new_view_items.append(LeagueSelect(self, allowed_leagues))
             elif self.current_step == 2:
@@ -799,15 +756,14 @@ class StraightBetWorkflowView(View):
                 logger.debug(f"Fetching games for league: {league}")
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
                 logger.debug(f"Retrieved {len(self.games)} games for league: {league}")
-                if not self.games:
-                    await self.edit_message(
-                        content=f"No games available for {league} at this time. Try another league or use Manual Entry.",
-                        view=None
-                    )
-                    self.stop()
-                    return
+                
+                # Add GameSelect regardless of whether there are games
                 new_view_items.append(GameSelect(self, self.games))
                 new_view_items.append(ConfirmButton(self))
+                
+                # If no games available, show a message encouraging Manual Entry
+                if not self.games:
+                    content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
             elif self.current_step == 4:
                 self.is_processing = False
                 return
@@ -844,49 +800,27 @@ class StraightBetWorkflowView(View):
                         guild_settings.get("embed_channel_1"),
                         guild_settings.get("embed_channel_2")
                     ]
-                    logger.info(f"[DEBUG] Guild ID: {self.original_interaction.guild_id} | Raw DB channel_ids: {channel_ids}")
                     for channel_id in channel_ids:
                         if channel_id:
                             try:
                                 channel_id_int = int(channel_id)
-                                logger.debug(f"Attempting to fetch channel {channel_id_int}")
                                 channel = self.bot.get_channel(channel_id_int)
                                 if not channel:
-                                    logger.info(f"Channel {channel_id_int} not in cache, attempting to fetch from Discord API")
                                     channel = await self.bot.fetch_channel(channel_id_int)
                                 if channel and isinstance(channel, discord.TextChannel):
                                     permissions = channel.permissions_for(interaction.guild.me)
                                     if permissions.send_messages and permissions.view_channel:
                                         if channel not in allowed_channels:
                                             allowed_channels.append(channel)
-                                            logger.info(f"Added channel {channel.name} (ID: {channel_id_int}) to allowed channels")
-                                    else:
-                                        logger.warning(
-                                            f"Bot lacks permissions to send messages or view channel {channel_id_int}: "
-                                            f"Send Messages={permissions.send_messages}, View Channel={permissions.view_channel}"
-                                        )
-                                else:
-                                    logger.warning(f"Channel {channel_id_int} is not a text channel or could not be fetched")
-                            except ValueError:
-                                logger.warning(f"Invalid channel ID in guild_settings: {channel_id}")
-                            except discord.NotFound:
-                                logger.warning(f"Channel not found: {channel_id}")
-                            except discord.Forbidden:
-                                logger.warning(f"Bot does not have permission to access channel: {channel_id}")
                             except Exception as e:
-                                logger.error(f"Unexpected error while fetching channel {channel_id}: {e}")
-                    logger.info(f"[DEBUG] allowed_channels (objects): {[f'{ch.name} (ID: {ch.id})' for ch in allowed_channels]}")
-                else:
-                    logger.error(f"No guild_settings found for guild {self.original_interaction.guild_id} or embed channels not set")
+                                logger.error(f"Error processing channel {channel_id}: {e}")
                 if not allowed_channels:
-                    logger.error("No valid channels found for embed_channel_1 or embed_channel_2")
                     await self.edit_message(
-                        content="❌ No valid embed channels configured for posting bets. Please contact an admin to set up embed_channel_1 and embed_channel_2 in guild settings.",
+                        content="❌ No valid embed channels configured. Please contact an admin.",
                         view=None
                     )
                     self.stop()
                     return
-                logger.info(f"Populating ChannelSelect with {len(allowed_channels)} channels: {[channel.name for channel in allowed_channels]}")
                 new_view_items.append(ChannelSelect(self, allowed_channels))
             elif self.current_step == 7:
                 preview_info = "(Final Preview below)" if self.preview_image_bytes else "(Image generation failed)"
