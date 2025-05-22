@@ -697,68 +697,67 @@ class DatabaseManager:
     async def upsert_api_game(self, game: dict):
         """Upsert a full API game record, storing all fields in their respective columns."""
         import json
+        
+        # Ensure we have a season value
+        season = game.get('season')
+        if not season:
+            # Default to current year if no season provided
+            season = datetime.now().year
+            if game.get('sport', '').lower() == 'baseball':
+                # For baseball, check if we're in offseason
+                current_month = datetime.now().month
+                if current_month >= 10 or current_month <= 2:
+                    season = season + 1  # Use next year during offseason
+        
         query = '''
             INSERT INTO api_games (
-                id, api_game_id, sport, league_id, league_name, home_team_id, away_team_id, start_time, end_time, status, score, venue, referee, created_at, updated_at, raw_json,
-                date, time, timestamp, timezone, week, status_long, status_short, country_id, country_name, country_code, country_flag, league_type, league_logo, league_season,
-                home_team_name, home_team_logo, away_team_name, away_team_logo, home_hits, home_errors, home_total, away_hits, away_errors, away_total, home_innings, away_innings
+                api_game_id, sport, league_id, league_name, home_team_id, away_team_id, 
+                home_team_name, away_team_name, start_time, end_time, status, score, 
+                venue, referee, season, raw_json, fetched_at, created_at, updated_at
             ) VALUES (
-                %(id)s, %(api_game_id)s, %(sport)s, %(league_id)s, %(league_name)s, %(home_team_id)s, %(away_team_id)s, %(start_time)s, %(end_time)s, %(status)s, %(score)s, %(venue)s, %(referee)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(raw_json)s,
-                %(date)s, %(time)s, %(timestamp)s, %(timezone)s, %(week)s, %(status_long)s, %(status_short)s, %(country_id)s, %(country_name)s, %(country_code)s, %(country_flag)s, %(league_type)s, %(league_logo)s, %(league_season)s,
-                %(home_team_name)s, %(home_team_logo)s, %(away_team_name)s, %(away_team_logo)s, %(home_hits)s, %(home_errors)s, %(home_total)s, %(away_hits)s, %(away_errors)s, %(away_total)s, %(home_innings)s, %(away_innings)s
+                %(api_game_id)s, %(sport)s, %(league_id)s, %(league_name)s, %(home_team_id)s, %(away_team_id)s,
+                %(home_team_name)s, %(away_team_name)s, %(start_time)s, %(end_time)s, %(status)s, %(score)s,
+                %(venue)s, %(referee)s, %(season)s, %(raw_json)s, %(fetched_at)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
             ON DUPLICATE KEY UPDATE
-                sport=VALUES(sport), league_id=VALUES(league_id), league_name=VALUES(league_name), home_team_id=VALUES(home_team_id), away_team_id=VALUES(away_team_id),
-                start_time=VALUES(start_time), end_time=VALUES(end_time), status=VALUES(status), score=VALUES(score), venue=VALUES(venue), referee=VALUES(referee), updated_at=CURRENT_TIMESTAMP, raw_json=VALUES(raw_json),
-                date=VALUES(date), time=VALUES(time), timestamp=VALUES(timestamp), timezone=VALUES(timezone), week=VALUES(week), status_long=VALUES(status_long), status_short=VALUES(status_short),
-                country_id=VALUES(country_id), country_name=VALUES(country_name), country_code=VALUES(country_code), country_flag=VALUES(country_flag), league_type=VALUES(league_type), league_logo=VALUES(league_logo), league_season=VALUES(league_season),
-                home_team_name=VALUES(home_team_name), home_team_logo=VALUES(home_team_logo), away_team_name=VALUES(away_team_name), away_team_logo=VALUES(away_team_logo),
-                home_hits=VALUES(home_hits), home_errors=VALUES(home_errors), home_total=VALUES(home_total), away_hits=VALUES(away_hits), away_errors=VALUES(away_errors), away_total=VALUES(away_total),
-                home_innings=VALUES(home_innings), away_innings=VALUES(away_innings)
+                sport=VALUES(sport),
+                league_name=VALUES(league_name),
+                home_team_id=VALUES(home_team_id),
+                away_team_id=VALUES(away_team_id),
+                home_team_name=VALUES(home_team_name),
+                away_team_name=VALUES(away_team_name),
+                start_time=VALUES(start_time),
+                end_time=VALUES(end_time),
+                status=VALUES(status),
+                score=VALUES(score),
+                venue=VALUES(venue),
+                referee=VALUES(referee),
+                season=VALUES(season),
+                raw_json=VALUES(raw_json),
+                fetched_at=VALUES(fetched_at),
+                updated_at=CURRENT_TIMESTAMP
         '''
         
         params = {
-            'id': str(game.get('id')),
-            'api_game_id': str(game.get('id')),  # Use id as api_game_id
+            'api_game_id': str(game.get('id')),
             'sport': game.get('sport', ''),
             'league_id': str(game.get('league', {}).get('id', '')),
             'league_name': game.get('league', {}).get('name', ''),
             'home_team_id': str(game.get('teams', {}).get('home', {}).get('id', '')),
             'away_team_id': str(game.get('teams', {}).get('away', {}).get('id', '')),
+            'home_team_name': (game.get('teams', {}) or {}).get('home', {}).get('name'),
+            'away_team_name': (game.get('teams', {}) or {}).get('away', {}).get('name'),
             'start_time': game.get('date'),
             'end_time': None,
             'status': game.get('status', {}).get('short', ''),
             'score': json.dumps(game.get('scores', {})),
             'venue': game.get('venue', None),
             'referee': None,
+            'season': season,
             'raw_json': json.dumps(game),
-            'date': game.get('date'),
-            'time': game.get('time'),
-            'timestamp': game.get('timestamp'),
-            'timezone': game.get('timezone'),
-            'week': game.get('week'),
-            'status_long': game.get('status', {}).get('long', ''),
-            'status_short': game.get('status', {}).get('short', ''),
-            'country_id': (game.get('country', {}) or {}).get('id'),
-            'country_name': (game.get('country', {}) or {}).get('name'),
-            'country_code': (game.get('country', {}) or {}).get('code'),
-            'country_flag': (game.get('country', {}) or {}).get('flag'),
-            'league_type': game.get('league', {}).get('type'),
-            'league_logo': game.get('league', {}).get('logo'),
-            'league_season': game.get('league', {}).get('season'),
-            'home_team_name': (game.get('teams', {}) or {}).get('home', {}).get('name'),
-            'home_team_logo': (game.get('teams', {}) or {}).get('home', {}).get('logo'),
-            'away_team_name': (game.get('teams', {}) or {}).get('away', {}).get('name'),
-            'away_team_logo': (game.get('teams', {}) or {}).get('away', {}).get('logo'),
-            'home_hits': (game.get('scores', {}) or {}).get('home', {}).get('hits'),
-            'home_errors': (game.get('scores', {}) or {}).get('home', {}).get('errors'),
-            'home_total': (game.get('scores', {}) or {}).get('home', {}).get('total'),
-            'away_hits': (game.get('scores', {}) or {}).get('away', {}).get('hits'),
-            'away_errors': (game.get('scores', {}) or {}).get('away', {}).get('errors'),
-            'away_total': (game.get('scores', {}) or {}).get('away', {}).get('total'),
-            'home_innings': json.dumps((game.get('scores', {}) or {}).get('home', {}).get('innings')),
-            'away_innings': json.dumps((game.get('scores', {}) or {}).get('away', {}).get('innings')),
+            'fetched_at': datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         }
+        
         await self.execute(query, params)
 
     async def save_team(self, team: dict):
@@ -820,11 +819,23 @@ class DatabaseManager:
                         season = force_season
                         logger.info(f"Using forced season {season} for MLB")
                     elif sport == 'baseball' and league_name == 'MLB':
+                        # For MLB, we need to be smarter about season selection
+                        current_year = datetime.now().year
+                        current_month = datetime.now().month
+                        
+                        # MLB regular season typically runs from late March/early April to early October
+                        if current_month >= 10 or current_month <= 2:
+                            # During offseason (Oct-Feb), look at next year
+                            season = current_year + 1
+                            logger.info(f"MLB: In offseason, using next season {season}")
+                        else:
+                            # During season (Mar-Sep), look at current year
+                            season = current_year
+                            logger.info(f"MLB: In season, using current season {season}")
+                    else:
+                        # For non-MLB sports, use current year
                         season = datetime.now().year
-                        # If we're in the offseason (October to February), use next year
-                        if datetime.now().month >= 10 or datetime.now().month <= 2:
-                            season += 1
-                        logger.info(f"Using calculated season {season} for MLB")
+                        logger.info(f"Using current year {season} for {sport}/{league_name}")
                     
                     # Fetch games from API
                     games = await api.fetch_games(
@@ -839,6 +850,8 @@ class DatabaseManager:
                     # Save games to database
                     for game in games:
                         try:
+                            # Add season to game data
+                            game['season'] = season
                             await self.upsert_api_game(game)
                             logger.info(f"Saved game {game.get('id')} to database")
                         except Exception as e:
@@ -853,18 +866,27 @@ class DatabaseManager:
             logger.error(f"Error in sync_games_from_api: {e}")
             raise
 
-    async def get_normalized_games_for_dropdown(self, league_id: str, season: int = None) -> List[Dict[str, Any]]:
-        """
-        Fetch and normalize games for a league from the api_games table for use in a bet dropdown.
-        """
-        logger.info(f"Fetching games for league_id={league_id}")
+    async def get_normalized_games_for_dropdown(self, league_name: str, season: int = None) -> List[Dict[str, Any]]:
+        """Fetch and normalize games for a league from the api_games table for use in a bet dropdown."""
+        logger.info(f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}")
+        
+        # Initialize dropdown_games with manual entry option
+        dropdown_games = [{
+            'id': 'manual',
+            'api_game_id': 'manual',
+            'home_team': 'Manual Entry',
+            'away_team': 'Manual Entry',
+            'start_time': datetime.now(timezone.utc),
+            'status': 'Manual',
+            'home_team_name': 'Manual Entry',
+            'away_team_name': 'Manual Entry',
+        }]
         
         # Get sport and league name from LEAGUE_IDS
         sport = None
-        league_name = None
         league_key = None
         for key, league_info in LEAGUE_IDS.items():
-            if str(league_info.get('id')) == str(league_id):
+            if key == league_name:
                 sport = league_info.get('sport', '').capitalize()
                 league_key = key
                 # Use the full league name from LEAGUE_CONFIG
@@ -872,54 +894,104 @@ class DatabaseManager:
                 # Convert MLB to full name
                 if league_name == "MLB":
                     league_name = "Major League Baseball"
+                logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name}")
                 break
         
         if not sport or not league_name:
-            logger.warning(f"Could not find sport and league name for league_id={league_id}")
-            return []
+            logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
+            return dropdown_games  # Return just manual entry option
         
         league_abbr = get_league_abbreviation(league_name)
-        logger.info(f"Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
+        logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
         
         # First sync games from api_games to games table
-        await self.sync_games_from_api()
+        logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
+        await self.sync_games_from_api(force_season=season)
+        logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
         
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")
+        
+        # Define finished statuses based on sport
+        if sport.lower() == "baseball":
+            finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
+        else:
+            finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
+        logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
+
         # Query by league_id, sport, and league_name with case-insensitive matching
         query = """
-            SELECT id, home_team_name, away_team_name, start_time, status, score
+            SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
             FROM api_games
-            WHERE league_id = %s AND UPPER(sport) = UPPER(%s) AND UPPER(league_name) = UPPER(%s)
-            ORDER BY start_time DESC LIMIT 100
+            WHERE sport = %s 
+            AND league_id = %s 
+            AND UPPER(league_name) = UPPER(%s)
+            AND start_time >= %s
+            AND status NOT IN (%s, %s, %s, %s, %s)
+            AND season = %s
+            ORDER BY start_time ASC LIMIT 100
         """
-        rows = await self.fetch_all(query, (league_id, sport, league_name))
+        
+        # Get league_id from LEAGUE_ID_MAP
+        league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
+        logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
+        
+        # For MLB, we need to check both current year and next year during offseason
+        if sport.lower() == "baseball" and league_key == "MLB":
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            
+            # Determine which season to use
+            if season is not None:
+                # If season is explicitly provided, use it
+                logger.info(f"[get_normalized_games_for_dropdown] MLB: Using provided season {season}")
+                rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (season,))
+            elif current_month >= 10 or current_month <= 2:
+                # During offseason (Oct-Feb), look at next year
+                next_year = current_year + 1
+                logger.info(f"[get_normalized_games_for_dropdown] MLB: In offseason, checking {next_year}")
+                rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (next_year,))
+            else:
+                # During season (Mar-Sep), look at current year
+                logger.info(f"[get_normalized_games_for_dropdown] MLB: In season, checking {current_year}")
+                rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (current_year,))
+        else:
+            # For non-MLB sports, use current year if season not provided
+            season = season if season is not None else datetime.now().year
+            logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Using season {season}")
+            rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (season,))
+        
         if not rows:
-            logger.warning(f"No games found in api_games table for league_id={league_id}, sport={sport}, league_name={league_name}")
-            return []
+            logger.warning(f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")
+            return dropdown_games  # Return just manual entry option
 
-        dropdown_games = []
         for row in rows:
             try:
                 # For MLB games, normalize team names
                 if sport.lower() == "baseball" and league_key == "MLB":
                     home_team = normalize_mlb_team_name(row['home_team_name'])
                     away_team = normalize_mlb_team_name(row['away_team_name'])
+                    logger.info(f"[get_normalized_games_for_dropdown] MLB: Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
                 else:
                     home_team = sanitize_team_name(row['home_team_name'])
                     away_team = sanitize_team_name(row['away_team_name'])
+                    logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
                     
-                dropdown_games.append({
+                game_data = {
                     'id': row['id'],
-                    'api_game_id': str(row['id']),  # Use the id from api_games as the api_game_id
+                    'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
                     'home_team': home_team,
                     'away_team': away_team,
                     'start_time': row['start_time'],
                     'status': row['status'],
                     'home_team_name': home_team,
                     'away_team_name': away_team,
-                })
+                }
+                dropdown_games.append(game_data)
+                logger.info(f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}")
             except Exception as e:
-                logger.error(f"Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
+                logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
                 continue
         
-        logger.info(f"Returning {len(dropdown_games)} normalized games for dropdown")
+        logger.info(f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
         return dropdown_games

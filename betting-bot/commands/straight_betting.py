@@ -158,6 +158,9 @@ class GameSelect(Select):
         
         # Add game options if available
         for game in games:
+            if game.get("api_game_id") == "manual":
+                continue  # Skip manual entry from games list as we'll add it separately
+                
             game_api_id = game.get("api_game_id")
             home_team = game.get("home_team_name", "Unknown")
             away_team = game.get("away_team_name", "Unknown")
@@ -173,8 +176,8 @@ class GameSelect(Select):
                 continue
             options.append(SelectOption(label=label, value=str(game_api_id)))
         
-        # Always add Manual Entry option
-        options.append(SelectOption(label="Manual Entry", value="Other"))
+        # Always add Manual Entry option at the end
+        options.append(SelectOption(label="Manual Entry", value="manual"))
         
         super().__init__(
             placeholder="Select Game (or Manual Entry)...",
@@ -188,7 +191,13 @@ class GameSelect(Select):
         selected_api_game_id = self.values[0]
         self.parent_view.bet_details["api_game_id"] = selected_api_game_id
         
-        if selected_api_game_id != "Other":
+        if selected_api_game_id == "manual":
+            # Handle manual entry
+            self.parent_view.bet_details["home_team_name"] = "Manual Entry"
+            self.parent_view.bet_details["away_team_name"] = "Manual Entry"
+            self.parent_view.bet_details["is_manual"] = True
+        else:
+            # Handle game selection
             game = next(
                 (g for g in self.parent_view.games if str(g.get("api_game_id")) == selected_api_game_id),
                 None,
@@ -196,6 +205,7 @@ class GameSelect(Select):
             if game:
                 self.parent_view.bet_details["home_team_name"] = game.get("home_team_name", "Unknown")
                 self.parent_view.bet_details["away_team_name"] = game.get("away_team_name", "Unknown")
+                self.parent_view.bet_details["is_manual"] = False
         
         logger.debug(f"Game selected: {selected_api_game_id} by user {interaction.user.id}")
         self.disabled = False
