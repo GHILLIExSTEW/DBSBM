@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from datetime import datetime, timezone
 import json
 import logging
+from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
 
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 
@@ -175,6 +176,29 @@ def sanitize_team_name(name: str, max_length: int = 30) -> str:
     return name
 
 
+def normalize_mlb_team_name(team_name: str) -> str:
+    """
+    Convert any MLB team name format (abbreviation, nickname, or full name) to the standardized full name.
+    Example: 'NYY' or 'Yankees' -> 'New York Yankees'
+    """
+    if not team_name:
+        return team_name
+        
+    # Convert to lowercase for case-insensitive matching
+    search_name = team_name.lower().strip()
+    
+    # Check if it's already in the normalized format
+    for full_name in MLB_TEAM_NAMES.values():
+        if search_name == full_name.lower():
+            return full_name
+            
+    # Try to find a match in our mappings
+    if search_name in MLB_TEAM_NAMES:
+        return MLB_TEAM_NAMES[search_name]
+        
+    return team_name
+
+
 async def insert_games(
     db_manager, league_id: str, games: List[Dict[str, Any]], sport: str, league_name: str
 ) -> None:
@@ -274,8 +298,14 @@ async def get_normalized_games_for_dropdown(
                 continue
 
             try:
-                home_team = sanitize_team_name(row["home_team_name"])
-                away_team = sanitize_team_name(row["away_team_name"])
+                # For MLB games, normalize team names
+                if sport.lower() == "baseball" and league_name in ["MLB", "Major League Baseball"]:
+                    home_team = normalize_mlb_team_name(row["home_team_name"])
+                    away_team = normalize_mlb_team_name(row["away_team_name"])
+                else:
+                    home_team = sanitize_team_name(row["home_team_name"])
+                    away_team = sanitize_team_name(row["away_team_name"])
+                    
                 all_games.append(
                     {
                         "id": row["id"],

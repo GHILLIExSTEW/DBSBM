@@ -6,6 +6,8 @@ from typing import Optional, List, Dict, Any, Union, Tuple # Added Tuple
 import os
 import asyncio
 import json
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from data.game_utils import get_league_abbreviation, normalize_mlb_team_name, sanitize_team_name
 
 try:
     from ..config.database_mysql import (
@@ -875,8 +877,14 @@ class DatabaseManager:
         dropdown_games = []
         for row in rows:
             try:
-                home_team = sanitize_team_name(row['home_team_name'])
-                away_team = sanitize_team_name(row['away_team_name'])
+                # For MLB games, normalize team names
+                if sport.lower() == "baseball" and league_key == "MLB":
+                    home_team = normalize_mlb_team_name(row['home_team_name'])
+                    away_team = normalize_mlb_team_name(row['away_team_name'])
+                else:
+                    home_team = sanitize_team_name(row['home_team_name'])
+                    away_team = sanitize_team_name(row['away_team_name'])
+                    
                 dropdown_games.append({
                     'id': row['id'],
                     'api_game_id': str(row['id']),  # Use the id from api_games as the api_game_id

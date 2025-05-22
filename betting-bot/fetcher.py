@@ -192,6 +192,16 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
             teams = safe_get(game, "teams", default={})
             home_team = safe_get(teams, "home", default={})
             away_team = safe_get(teams, "away", default={})
+            
+            # Get team names and normalize them for MLB
+            home_team_name = safe_get(home_team, "name", default="Unknown")
+            away_team_name = safe_get(away_team, "name", default="Unknown")
+            
+            if league.upper() == "MLB":
+                from data.game_utils import normalize_mlb_team_name
+                home_team_name = normalize_mlb_team_name(home_team_name)
+                away_team_name = normalize_mlb_team_name(away_team_name)
+            
             game_data = {
                 "id": str(safe_get(game, "id", default="")),
                 "sport": "Baseball",
@@ -199,8 +209,8 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
                 "league_name": LEAGUE_CONFIG["baseball"].get(league, {}).get("name", league),
                 "home_team_id": str(safe_get(home_team, "id")),
                 "away_team_id": str(safe_get(away_team, "id")),
-                "home_team_name": safe_get(home_team, "name", default="Unknown"),
-                "away_team_name": safe_get(away_team, "name", default="Unknown"),
+                "home_team_name": home_team_name,
+                "away_team_name": away_team_name,
                 "start_time": iso_to_mysql_datetime(safe_get(game, "date")),
                 "status": safe_get(game, "status", "long", default="Scheduled"),
                 "score": json.dumps(

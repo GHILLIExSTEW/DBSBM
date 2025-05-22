@@ -286,7 +286,7 @@ LEAGUE_CONFIG = {
 # League season start dates
 LEAGUE_SEASON_STARTS = {
     # Baseball
-    "MLB": {"start": "2024-03-28", "end": "2024-09-29"},
+    "MLB": {"start": "2025-03-27", "end": "2025-09-28"},
     "NPB": {"start": "2024-03-29", "end": "2024-10-10"},
     "KBO": {"start": "2024-03-23", "end": "2024-10-20"},
     
