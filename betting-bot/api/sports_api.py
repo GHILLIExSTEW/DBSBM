@@ -354,19 +354,32 @@ class SportsAPI:
         if not league_config:
             raise ValueError(f"Unsupported sport/league combination: {sport}/{league}")
 
-        # Determine season based on league start date
-        current_year = datetime.now().year
-        current_month = datetime.now().month
+        # Get season dates from LEAGUE_SEASON_STARTS if available
+        season = None
+        if league in LEAGUE_SEASON_STARTS:
+            season_info = LEAGUE_SEASON_STARTS[league]
+            # For MLB, the season year is the calendar year the season is played in
+            if sport.lower() == 'baseball' and league == 'MLB':
+                target_date = datetime.strptime(date, "%Y-%m-%d")
+                season = target_date.year
+            else:
+                season_start = datetime.strptime(season_info["start"], "%Y-%m-%d")
+                season_end = datetime.strptime(season_info["end"], "%Y-%m-%d")
+                target_date = datetime.strptime(date, "%Y-%m-%d")
+                
+                # If the target date is within the season dates, use the season start year
+                if season_start <= target_date <= season_end:
+                    season = season_start.year
+                # If target date is before season start, use previous season
+                elif target_date < season_start:
+                    season = season_start.year - 1
+                # If target date is after season end, use that season's year
+                else:
+                    season = season_start.year
 
-        # For leagues that started in 2024 (before July 2024)
-        if current_year == 2024 and current_month < 7:
-            season = 2024
-        # For leagues that started in 2025 (after July 2024)
-        elif current_year == 2024 and current_month >= 7:
-            season = 2025
-        # For future years, use the year the league started
-        else:
-            season = current_year
+        # If no season was determined from dates, use current year
+        if not season:
+            season = datetime.now().year
 
         params = {
             'league': league_config['id'],
