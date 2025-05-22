@@ -695,11 +695,11 @@ class DatabaseManager:
         import json
         query = '''
             INSERT INTO api_games (
-                id, sport, league_id, league_name, home_team_id, away_team_id, start_time, end_time, status, score, venue, referee, created_at, updated_at, raw_json,
+                id, api_game_id, sport, league_id, league_name, home_team_id, away_team_id, start_time, end_time, status, score, venue, referee, created_at, updated_at, raw_json,
                 date, time, timestamp, timezone, week, status_long, status_short, country_id, country_name, country_code, country_flag, league_type, league_logo, league_season,
                 home_team_name, home_team_logo, away_team_name, away_team_logo, home_hits, home_errors, home_total, away_hits, away_errors, away_total, home_innings, away_innings
             ) VALUES (
-                %(id)s, %(sport)s, %(league_id)s, %(league_name)s, %(home_team_id)s, %(away_team_id)s, %(start_time)s, %(end_time)s, %(status)s, %(score)s, %(venue)s, %(referee)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(raw_json)s,
+                %(id)s, %(api_game_id)s, %(sport)s, %(league_id)s, %(league_name)s, %(home_team_id)s, %(away_team_id)s, %(start_time)s, %(end_time)s, %(status)s, %(score)s, %(venue)s, %(referee)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %(raw_json)s,
                 %(date)s, %(time)s, %(timestamp)s, %(timezone)s, %(week)s, %(status_long)s, %(status_short)s, %(country_id)s, %(country_name)s, %(country_code)s, %(country_flag)s, %(league_type)s, %(league_logo)s, %(league_season)s,
                 %(home_team_name)s, %(home_team_logo)s, %(away_team_name)s, %(away_team_logo)s, %(home_hits)s, %(home_errors)s, %(home_total)s, %(away_hits)s, %(away_errors)s, %(away_total)s, %(home_innings)s, %(away_innings)s
             )
@@ -712,8 +712,10 @@ class DatabaseManager:
                 home_hits=VALUES(home_hits), home_errors=VALUES(home_errors), home_total=VALUES(home_total), away_hits=VALUES(away_hits), away_errors=VALUES(away_errors), away_total=VALUES(away_total),
                 home_innings=VALUES(home_innings), away_innings=VALUES(away_innings)
         '''
+        
         params = {
             'id': str(game.get('id')),
+            'api_game_id': str(game.get('id')),  # Use id as api_game_id
             'sport': game.get('sport', ''),
             'league_id': str(game.get('league', {}).get('id', '')),
             'league_name': game.get('league', {}).get('name', ''),
