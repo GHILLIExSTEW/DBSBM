@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced logging for API requests and game data processing
 # api/sports_api.py
 # Service for fetching sports data from TheSportsDB API
 
@@ -345,82 +346,98 @@ class SportsAPI:
             logger.error(f"Live updates task failed: {str(e)}")
             self.live_updates_enabled = False
 
-    async def fetch_games(self, sport: str, league: str, date: str = None, next_games: int = None, end_date: str = None) -> List[Dict]:
+    async def fetch_games(self, sport: str, league: str, date: str = None, season: int = None, next_games: int = None, end_date: str = None) -> List[Dict]:
         """Fetch games for a specific sport and league."""
+        logger.info(f"[fetch_games] Starting fetch for sport={sport}, league={league}, date={date}, season={season}")
+        
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
+            logger.info(f"[fetch_games] No date provided, using current date: {date}")
 
-        league_config = LEAGUE_CONFIG.get(sport, {}).get(league)
+        league_config = LEAGUE_CONFIG.get(sport.lower(), {}).get(league)
         if not league_config:
+            logger.error(f"[fetch_games] Unsupported sport/league combination: {sport}/{league}")
             raise ValueError(f"Unsupported sport/league combination: {sport}/{league}")
 
-        # Determine season based on league start date
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-
-        # For leagues that started in 2024 (before July 2024)
-        if current_year == 2024 and current_month < 7:
-            season = 2024
-        # For leagues that started in 2025 (after July 2024)
-        elif current_year == 2024 and current_month >= 7:
-            season = 2025
-        # For future years, use the year the league started
-        else:
-            season = current_year
+        # If season is provided, use it directly
+        if season is None:
+            # For MLB, use the current year as the season
+            if sport.lower() == 'baseball' and league == 'MLB':
+                season = datetime.now().year
+                # If we're in the offseason (October to February), use next year
+                if datetime.now().month >= 10 or datetime.now().month <= 2:
+                    season += 1
+                logger.info(f"[fetch_games] MLB: Using season {season} (calculated based on current date)")
+            else:
+                season = datetime.now().year
+                logger.info(f"[fetch_games] Non-MLB: Using current year as season: {season}")
 
         params = {
             'league': league_config['id'],
             'season': season,
             'date': date
         }
-
+        
+        if next_games:
+            params['next'] = next_games
         if end_date:
             params['to'] = end_date
 
-        if next_games and sport == 'football':
-            params['next'] = next_games
-
-        # Ensure 'season' is always present and is an integer
-        if 'season' not in params or params['season'] is None:
-            logger.error(f"'season' parameter missing in API request params: {params}")
-            raise ValueError("'season' parameter is required for all API-Sports requests.")
-        assert isinstance(params['season'], int), f"'season' must be an integer, got {params['season']} ({type(params['season'])})"
-
         # Debug logging for all sports requests
-        logger.info(f"{sport.title()} request parameters: {params}")
-        logger.info(f"Request URL: {BASE_URLS[sport]}/{'fixtures' if sport == 'football' else 'games'}")
-        logger.info(f"League config: {league_config}")
+        logger.info(f"[fetch_games] {sport.title()} request parameters: {params}")
+        logger.info(f"[fetch_games] Request URL: {BASE_URLS[sport.lower()]}/{'fixtures' if sport.lower() == 'football' else 'games'}")
+        logger.info(f"[fetch_games] League config: {league_config}")
 
         try:
-            endpoint = 'fixtures' if sport == 'football' else 'games'
-            data = await self.fetcher.fetch_data(sport, endpoint, params)
+            endpoint = 'fixtures' if sport.lower() == 'football' else 'games'
             
-            if not data or 'response' not in data:
-                logger.warning(f"No response data for {sport}/{league}")
+            # Create fetcher if not exists
+            if not self.fetcher:
+                logger.info("[fetch_games] Creating new APISportsFetcher")
+                self.fetcher = await APISportsFetcher().__aenter__()
+            
+            logger.info(f"[fetch_games] Making API request to endpoint: {endpoint}")
+            data = await self.fetcher.fetch_data(sport.lower(), endpoint, params)
+            
+            if not data:
+                logger.warning(f"[fetch_games] No data returned from API for {sport}/{league}")
                 return []
-                
+            
+            if 'response' not in data:
+                logger.warning(f"[fetch_games] No 'response' field in API data for {sport}/{league}")
+                return []
+            
             # Check for API errors
             if 'errors' in data and data['errors']:
                 error_msg = ', '.join(f"{k}: {v}" for k, v in data['errors'].items())
-                logger.error(f"API returned errors for {sport}/{league}: {error_msg}")
+                logger.error(f"[fetch_games] API returned errors for {sport}/{league}: {error_msg}")
                 return []
 
+            logger.info(f"[fetch_games] Successfully received {len(data['response'])} games from API")
+            
             mapped_games = []
             for game in data['response']:
-                mapped_game = self.fetcher.map_game_data(game, sport, league)
+                logger.info(f"[fetch_games] Processing game: {game.get('id', 'unknown id')}")
+                mapped_game = self.fetcher.map_game_data(game, sport.lower(), league)
                 if mapped_game:
                     mapped_games.append(mapped_game)
+                    logger.info(f"[fetch_games] Successfully mapped game: {mapped_game.get('id')}")
                     # If we have a database manager, save the game
                     if self.db_manager:
                         try:
-                            await self.db_manager.save_game(mapped_game)
+                            logger.info(f"[fetch_games] Saving game {mapped_game.get('id')} to database")
+                            await self.db_manager.upsert_api_game(game)
+                            logger.info(f"[fetch_games] Successfully saved game {mapped_game.get('id')} to database")
                         except Exception as e:
-                            logger.error(f"Error saving game to database: {str(e)}")
+                            logger.error(f"[fetch_games] Error saving game {mapped_game.get('id')} to database: {str(e)}")
+                else:
+                    logger.warning(f"[fetch_games] Failed to map game data: {game.get('id', 'unknown id')}")
 
+            logger.info(f"[fetch_games] Successfully processed {len(mapped_games)} games for {sport}/{league}")
             return mapped_games
 
         except Exception as e:
-            logger.error(f"Error fetching games for {sport}/{league}: {str(e)}")
+            logger.error(f"[fetch_games] Error fetching games for {sport}/{league}: {str(e)}", exc_info=True)
             return []
 
     async def fetch_and_save_daily_games(self):
