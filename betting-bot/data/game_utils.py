@@ -240,7 +240,7 @@ async def get_normalized_games_for_dropdown(
     db_manager, league_name: str, season: int = None
 ) -> List[Dict[str, Any]]:
     """Fetch and normalize games for a league from the api_games table for use in a bet dropdown."""
-    logger.info(f"Fetching games for league_name={league_name}")
+    logger.info(f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}")
     
     # Initialize dropdown_games with manual entry option
     dropdown_games = [{
@@ -266,25 +266,30 @@ async def get_normalized_games_for_dropdown(
             # Convert MLB to full name
             if league_name == "MLB":
                 league_name = "Major League Baseball"
+            logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name}")
             break
     
     if not sport or not league_name:
-        logger.warning(f"Could not find sport and league name for league_name={league_name}")
+        logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
         return dropdown_games  # Return just manual entry option
     
     league_abbr = get_league_abbreviation(league_name)
-    logger.info(f"Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
+    logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
     
     # First sync games from api_games to games table
+    logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
     await db_manager.sync_games_from_api()
+    logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
     
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")
     
     # Define finished statuses based on sport
     if sport.lower() == "baseball":
         finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
     else:
         finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
+    logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
 
     # Query by league_id, sport, and league_name with case-insensitive matching
     query = """
@@ -300,26 +305,33 @@ async def get_normalized_games_for_dropdown(
     
     # Get league_id from LEAGUE_ID_MAP
     league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
+    logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     
     # For MLB, we need to check both current year and next year during offseason
     if sport.lower() == "baseball" and league_key == "MLB":
         current_year = datetime.now().year
         next_year = current_year + 1
+        logger.info(f"[get_normalized_games_for_dropdown] MLB: Checking current_year={current_year} and next_year={next_year}")
         
         # First try current year
+        logger.info(f"[get_normalized_games_for_dropdown] MLB: Trying current year {current_year}")
         rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+        logger.info(f"[get_normalized_games_for_dropdown] MLB: Found {len(rows) if rows else 0} games for current year")
         
         # If no games found and we're near the end of the year or in offseason, try next year
         if not rows and (datetime.now().month >= 10 or datetime.now().month <= 2):
-            logger.info(f"No MLB games found for {current_year}, checking {next_year}")
+            logger.info(f"[get_normalized_games_for_dropdown] MLB: No games found for {current_year}, checking {next_year}")
             # Try fetching games for next year
             await db_manager.sync_games_from_api(force_season=next_year)
             rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+            logger.info(f"[get_normalized_games_for_dropdown] MLB: Found {len(rows) if rows else 0} games for next year")
     else:
+        logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Fetching games for {sport}/{league_name}")
         rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
+        logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Found {len(rows) if rows else 0} games")
     
     if not rows:
-        logger.warning(f"No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")
+        logger.warning(f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")
         return dropdown_games  # Return just manual entry option
 
     for row in rows:
@@ -328,11 +340,13 @@ async def get_normalized_games_for_dropdown(
             if sport.lower() == "baseball" and league_key == "MLB":
                 home_team = normalize_mlb_team_name(row['home_team_name'])
                 away_team = normalize_mlb_team_name(row['away_team_name'])
+                logger.info(f"[get_normalized_games_for_dropdown] MLB: Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
             else:
                 home_team = sanitize_team_name(row['home_team_name'])
                 away_team = sanitize_team_name(row['away_team_name'])
+                logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
                 
-            dropdown_games.append({
+            game_data = {
                 'id': row['id'],
                 'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
                 'home_team': home_team,
@@ -341,10 +355,12 @@ async def get_normalized_games_for_dropdown(
                 'status': row['status'],
                 'home_team_name': home_team,
                 'away_team_name': away_team,
-            })
+            }
+            dropdown_games.append(game_data)
+            logger.info(f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}")
         except Exception as e:
-            logger.error(f"Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
+            logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
             continue
     
-    logger.info(f"Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
+    logger.info(f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
     return dropdown_games
