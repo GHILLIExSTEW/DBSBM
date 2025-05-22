@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced logging for API requests and game data processing
 # api/sports_api.py
 # Service for fetching sports data from TheSportsDB API
 

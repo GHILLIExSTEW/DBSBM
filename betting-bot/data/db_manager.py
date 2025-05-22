@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced database operations and game syncing
 # betting-bot/data/db_manager.py
 
 import aiomysql
