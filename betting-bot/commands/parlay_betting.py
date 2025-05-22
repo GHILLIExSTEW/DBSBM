@@ -17,6 +17,9 @@ from utils.errors import BetServiceError, ValidationError, GameNotFoundError
 from utils.image_generator import BetSlipGenerator
 from config.asset_paths import get_sport_category_for_path
 from data.game_utils import get_normalized_games_for_dropdown
+from utils.validators import validate_units
+from utils.formatters import format_parlay_bet_details_embed
+from utils.bet_utils import calculate_parlay_payout
 
 logger = logging.getLogger(__name__)
 
@@ -100,54 +103,73 @@ class LineTypeSelect(Select):
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
-class GameSelect(Select):
-    def __init__(self, parent_view: 'ParlayBetWorkflowView', games: List[Dict]):
+class ParlayGameSelect(Select):
+    def __init__(self, parent_view: View, games: List[Dict], selected_games: List[str] = None):
         self.parent_view = parent_view
         options = []
-        for game in games[:24]:
-            # Use home_team/away_team as primary, fallback to home_team_name/away_team_name
-            home = game.get("home_team") or game.get("home_team_name") or "Unknown Home"
-            away = game.get("away_team") or game.get("away_team_name") or "Unknown Away"
-            start_dt_obj = game.get("start_time")
-            time_str = "Time N/A"
-            if isinstance(start_dt_obj, str):
-                try:
-                    start_dt_obj = datetime.fromisoformat(start_dt_obj.replace("Z", "+00:00"))
-                except ValueError:
-                    start_dt_obj = None
-            if isinstance(start_dt_obj, datetime):
-                time_str = start_dt_obj.strftime("%m/%d %H:%M %Z")
-            label = f"{away} @ {home} ({time_str})"
-            game_api_id = game.get("id")
-            if game_api_id is None:
-                logger.warning(f"Game missing 'id': {game}")
+        selected_games = selected_games or []
+        
+        logger.info(f"[ParlayGameSelect] Initializing with {len(games)} games, {len(selected_games)} already selected")
+        
+        # Always add Manual Entry option first
+        options.append(SelectOption(
+            label="Manual Entry",
+            value="manual",
+            description="Manually enter game details"
+        ))
+        logger.info("[ParlayGameSelect] Added Manual Entry option")
+        
+        # Add game options if available
+        for game in games:
+            try:
+                game_api_id = game.get("api_game_id")
+                home_team = game.get("home_team_name", "Unknown")
+                away_team = game.get("away_team_name", "Unknown")
+                start_time = game.get("start_time", "")
+                
+                if isinstance(start_time, str) and len(start_time) > 16:
+                    start_time = start_time[:16]
+                    
+                label = f"{home_team} vs {away_team}"
+                if start_time:
+                    label += f" ({start_time})"
+                    
+                if game_api_id is None:
+                    logger.warning(f"[ParlayGameSelect] Game missing api_game_id: {label}")
+                    continue
+                    
+                # Skip already selected games
+                if str(game_api_id) in selected_games:
+                    logger.info(f"[ParlayGameSelect] Skipping already selected game: {label}")
+                    continue
+                    
+                option = SelectOption(
+                    label=label[:100],  # Discord has a 100 char limit
+                    value=str(game_api_id),
+                    description=f"Start: {start_time}" if start_time else None
+                )
+                options.append(option)
+                logger.info(f"[ParlayGameSelect] Added game option: {label} (ID: {game_api_id})")
+            except Exception as e:
+                logger.error(f"[ParlayGameSelect] Error processing game for dropdown: {e}", exc_info=True)
                 continue
-            options.append(SelectOption(label=label[:100], value=str(game_api_id)))
-        
-        # Always add manual entry option at the bottom
-        options.append(SelectOption(label="Manual Entry", value="Other"))
-        
+
         super().__init__(
-            placeholder="Select Game for this Leg (or Manual Entry)...",
-            options=options,
+            placeholder="Select a Game for Parlay",
             min_values=1,
             max_values=1,
-            custom_id=f"parlay_game_select_{uuid.uuid4()}"
+            options=options
         )
+        logger.info(f"[ParlayGameSelect] Initialized with {len(options)} total options")
 
     async def callback(self, interaction: Interaction):
-        selected_game_id = self.values[0]
-        self.parent_view.current_leg_construction_details['game_id'] = selected_game_id
-        if selected_game_id != "Other":
-            game = next((g for g in self.parent_view.games if str(g.get('id')) == selected_game_id), None)
-            if game:
-                self.parent_view.current_leg_construction_details['home_team_name'] = game.get('home_team_name', 'Unknown')
-                self.parent_view.current_leg_construction_details['away_team_name'] = game.get('away_team_name', 'Unknown')
-            else: logger.warning(f"Could not find full details for selected game ID {selected_game_id}")
-        logger.debug(f"Parlay Leg - Game selected: {selected_game_id} by user {interaction.user.id}")
-        self.disabled = True
-        await interaction.response.defer()
-        await self.parent_view.go_next(interaction)
+        """Handle game selection."""
+        try:
+            logger.info(f"[ParlayGameSelect] Game selected: {self.values[0]}")
+            await self.parent_view.handle_game_selection(interaction, self.values[0])
+        except Exception as e:
+            logger.error(f"[ParlayGameSelect] Error in callback: {e}", exc_info=True)
+            await interaction.response.send_message("Error processing game selection. Please try again.", ephemeral=True)
 
 class ManualEntryButton(Button):
     def __init__(self, parent_view: 'ParlayBetWorkflowView'):
@@ -449,19 +471,22 @@ class LegDecisionView(View):
 
 # --- Main Workflow View ---
 class ParlayBetWorkflowView(View):
-    def __init__(self, interaction: Interaction, bot: commands.Bot):
+    def __init__(self, original_interaction: Interaction, bot: commands.Bot, message_to_control: Optional[Message] = None):
         super().__init__(timeout=1800)
-        self.original_interaction = interaction
+        self.original_interaction = original_interaction
         self.bot = bot
+        self.message = message_to_control
         self.current_step = 0
-        self.bet_details: Dict[str, Any] = {'legs': [], 'bet_type': 'parlay'}
-        self.current_leg_construction_details: Dict[str, Any] = {}
+        self.bet_details: Dict[str, Any] = {
+            'legs': [],
+            'total_odds': 1.0
+        }
         self.games: List[Dict] = []
-        self.message: Optional[Union[discord.WebhookMessage, discord.InteractionMessage]] = None
         self.is_processing = False
-        self.latest_interaction = interaction
+        self.latest_interaction = original_interaction
         self.bet_slip_generator: Optional[BetSlipGenerator] = None
         self.preview_image_bytes: Optional[io.BytesIO] = None
+        logger.info(f"[ParlayBetWorkflowView] Initialized for user {original_interaction.user.id}")
 
     async def get_bet_slip_generator(self) -> BetSlipGenerator:
         if self.bet_slip_generator is None:
@@ -620,7 +645,7 @@ class ParlayBetWorkflowView(View):
                         self.games = await get_normalized_games_for_dropdown(self.bot.db, league_id)
                     except Exception as e:
                         logger.exception(f"Parlay: Error fetching games for {league}: {e}")
-                if self.games: self.add_item(GameSelect(self, self.games))
+                if self.games: self.add_item(ParlayGameSelect(self, self.games))
                 self.add_item(ManualEntryButton(self))
                 content += f"Select Game for {league} Leg (or Enter Manually)"
             elif self.current_step == 4:

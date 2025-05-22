@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced betting modals with improved validation and error handling
 # betting-bot/utils/modals.py
 import discord
 from discord.ui import Modal, TextInput

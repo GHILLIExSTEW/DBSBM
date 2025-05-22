@@ -1,3 +1,8 @@
+# REV 1.0.0 - Enhanced straight betting workflow with improved game selection and bet slip generation
+# betting-bot/commands/straight_betting.py
+
+"""Straight betting workflow for placing single bets."""
+
 import discord
 from discord import (
     ButtonStyle,

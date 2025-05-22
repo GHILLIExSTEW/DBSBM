@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced bet service with improved bet creation and management
 """Service for managing bets and handling bet-related reactions."""
 
 import json

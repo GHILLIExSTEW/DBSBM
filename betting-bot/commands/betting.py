@@ -1,3 +1,4 @@
+# REV 1.0.0 - Enhanced betting command with improved workflow selection and error handling
 # betting-bot/commands/betting.py
 
 """Main betting command for placing straight or parlay bets."""
