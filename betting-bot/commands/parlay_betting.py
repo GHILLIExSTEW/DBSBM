@@ -3,7 +3,7 @@
 """Parlay betting workflow for placing multi-leg bets."""
 
 import discord
-from discord import app_commands, ButtonStyle, Interaction, SelectOption, TextChannel, File, Embed, Webhook
+from discord import app_commands, ButtonStyle, Interaction, SelectOption, TextChannel, File, Embed, Webhook, Message
 from discord.ui import View, Select, Modal, TextInput, Button
 import logging
 from typing import Optional, List, Dict, Union, Any 

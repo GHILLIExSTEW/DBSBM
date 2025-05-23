@@ -12,6 +12,7 @@ from discord import (
     File,
     Embed,
     Webhook,
+    Message,
 )
 from discord.ui import View, Select, Modal, TextInput, Button
 import logging
