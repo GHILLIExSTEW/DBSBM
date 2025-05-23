@@ -8,7 +8,7 @@ from discord import app_commands, ButtonStyle, Interaction, SelectOption
 from discord.ext import commands
 from discord.ui import View, Select, Button
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 # Import from same directory
 from .straight_betting import StraightBetWorkflowView

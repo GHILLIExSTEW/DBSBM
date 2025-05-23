@@ -156,12 +156,17 @@ class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         self.parent_view = parent_view
         options = []
-        
-        # Add game options if available
+        # Only include games whose status does NOT contain 'finished' (case-insensitive)
+        active_games = []
         for game in games:
             if game.get("api_game_id") == "manual":
                 continue  # Skip manual entry from games list as we'll add it separately
-                
+            status = str(game.get("status", "")).lower()
+            if "finished" in status:
+                continue
+            active_games.append(game)
+        # Limit to 24 active games (so Manual Entry is always present and total is 25)
+        for game in active_games[:24]:
             game_api_id = game.get("api_game_id")
             home_team = game.get("home_team_name", "Unknown")
             away_team = game.get("away_team_name", "Unknown")
@@ -171,15 +176,12 @@ class GameSelect(Select):
             label = f"{home_team} vs {away_team}"
             if start_time:
                 label += f" ({start_time})"
-                
             if game_api_id is None:
                 logger.warning(f"Game missing 'api_game_id': {game}")
                 continue
             options.append(SelectOption(label=label, value=str(game_api_id)))
-        
         # Always add Manual Entry option at the end
         options.append(SelectOption(label="Manual Entry", value="manual"))
-        
         super().__init__(
             placeholder="Select Game (or Manual Entry)...",
             options=options,
@@ -191,7 +193,7 @@ class GameSelect(Select):
     async def callback(self, interaction: Interaction):
         selected_api_game_id = self.values[0]
         self.parent_view.bet_details["api_game_id"] = selected_api_game_id
-        
+
         if selected_api_game_id == "manual":
             # Handle manual entry
             self.parent_view.bet_details["home_team_name"] = "Manual Entry"
@@ -207,7 +209,7 @@ class GameSelect(Select):
                 self.parent_view.bet_details["home_team_name"] = game.get("home_team_name", "Unknown")
                 self.parent_view.bet_details["away_team_name"] = game.get("away_team_name", "Unknown")
                 self.parent_view.bet_details["is_manual"] = False
-        
+
         logger.debug(f"Game selected: {selected_api_game_id} by user {interaction.user.id}")
         self.disabled = False
         await interaction.response.defer()
@@ -772,11 +774,11 @@ class StraightBetWorkflowView(View):
                 logger.debug(f"Fetching games for league: {league}")
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
                 logger.debug(f"Retrieved {len(self.games)} games for league: {league}")
-                
+
                 # Add GameSelect regardless of whether there are games
                 new_view_items.append(GameSelect(self, self.games))
                 new_view_items.append(ConfirmButton(self))
-                
+
                 # If no games available, show a message encouraging Manual Entry
                 if not self.games:
                     content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
@@ -1009,7 +1011,9 @@ class StraightBetWorkflowView(View):
             return "Please fill in the bet details in the popup form."
         if step_num == 5:
             preview_info = "(Preview below)" if self.preview_image_bytes else "(Generating preview...)"
-            return f"**Step {step_num}**: Bet details captured {preview_info}. Select Units for your bet and confirm."
+            units = self.bet_details.get("units_str", "N/A")
+            # Add lock emoji left and right of units for step 5 as well
+            return f"**Step {step_num}**: Bet details captured {preview_info}. 🔒 Units: `{units}` 🔒 Select Units for your bet and confirm."
         if step_num == 6:
             units = self.bet_details.get("units_str", "N/A")
             preview_info = (
@@ -1017,7 +1021,8 @@ class StraightBetWorkflowView(View):
                 if self.preview_image_bytes
                 else "(Preview image failed)"
             )
-            return f"**Step {step_num}**: Units: `{units}` {preview_info}. Select Channel to post your bet."
+            # Add lock emoji left and right of units
+            return f"**Step {step_num}**: 🔒 Units: `{units}` 🔒 {preview_info}. Select Channel to post your bet."
         if step_num == 7:
             preview_info = (
                 "(Final Preview below)" if self.preview_image_bytes else "(Image generation failed)"

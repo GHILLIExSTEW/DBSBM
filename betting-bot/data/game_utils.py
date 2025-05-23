@@ -277,10 +277,10 @@ async def get_normalized_games_for_dropdown(
     league_abbr = get_league_abbreviation(league_name)
     logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
     
-    # First sync games from api_games to games table
-    logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
-    await db_manager.sync_games_from_api()
-    logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
+    # --- DO NOT SYNC FROM API HERE ---
+    # logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
+    # await db_manager.sync_games_from_api()
+    # logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
     
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")

@@ -238,29 +238,24 @@ class BetSlipGenerator:
         color: str,
         draw_it: bool = True
     ) -> tuple[int, int, bool]:
-        lock_icon_size_for_draw = size
-        if self._lock_icon_cache:
-            if draw_it:
-                try:
-                    lock_img_resized = self._lock_icon_cache.resize(lock_icon_size_for_draw, Image.Resampling.LANCZOS)
+        # Always try to load the lock icon PNG fresh (like team logos)
+        lock_icon_path = os.path.join(BASE_DIR, "static", "lock_icon.png")
+        try:
+            if os.path.exists(lock_icon_path):
+                lock_img = Image.open(lock_icon_path).convert("RGBA")
+                lock_img_resized = lock_img.resize(size, Image.Resampling.LANCZOS)
+                if draw_it:
                     img.paste(lock_img_resized, (int(x), int(y)), lock_img_resized)
-                    return lock_icon_size_for_draw[0], lock_icon_size_for_draw[1], True
-                except Exception as e:
-                    logger.warning("Failed to draw cached lock image: %s. Falling back to emoji if possible.", e)
-            else:
-                return lock_icon_size_for_draw[0], lock_icon_size_for_draw[1], True
-
-        if self.fonts['emoji_font_24'] != ImageFont.load_default():
-            lock_char = "🔒"
-            emoji_w, emoji_h = self._get_text_dimensions(lock_char, emoji_font)
-            if draw_it:
-                emoji_draw_y = y + (lock_icon_size_for_draw[1] - emoji_h) // 2
-                draw.text((x, emoji_draw_y), lock_char, font=emoji_font, fill=color, anchor="lt")
-            return emoji_w, emoji_h, True
-
+                return size[0], size[1], True
+        except Exception as e:
+            logger.error("Failed to draw lock icon PNG: %s", e, exc_info=True)
+        # Fallback: draw lock emoji
+        lock_char = "🔒"
+        emoji_w, emoji_h = self._get_text_dimensions(lock_char, emoji_font)
         if draw_it:
-            logger.warning("Lock icon image and emoji font both unavailable. No lock element drawn.")
-        return 0, 0, False
+            emoji_draw_y = y + (size[1] - emoji_h) // 2
+            draw.text((x, emoji_draw_y), lock_char, font=emoji_font, fill=color, anchor="lt")
+        return emoji_w, emoji_h, True
 
     def _draw_straight_details(
         self,
@@ -301,53 +296,29 @@ class BetSlipGenerator:
         draw.text((center_x, y), odds_text, font=odds_font, fill=text_color, anchor="mt")
         y += odds_h + 12
 
-        units_str_display = "Unit" if units == 1.0 else "Units"
-        units_display_text = f" To Win {units:.2f} {units_str_display} "
-        units_text_part_w, units_text_part_h = self._get_text_dimensions(units_display_text, units_font)
+        # --- Stake / To Win / To Risk logic ---
+        payout_text = f"To Risk {units:.2f} Units"
 
-        lock_element_size = (units_text_part_h, units_text_part_h)
-
+        # Lock icon PNG on both sides
+        payout_text_w, payout_text_h = self._get_text_dimensions(payout_text, units_font)
+        lock_element_size = (payout_text_h, payout_text_h)
         dim_lock_w, dim_lock_h, can_draw_lock = self._draw_lock_element(
             img, draw, 0, 0, lock_element_size, emoji_font, gold_color, draw_it=False
         )
-
-        if can_draw_lock:
-            total_units_section_w = dim_lock_w + units_text_part_w + dim_lock_w
-        else:
-            total_units_section_w = units_text_part_w
-
-        current_x = center_x - total_units_section_w / 2
+        total_section_w = dim_lock_w + payout_text_w + dim_lock_w if can_draw_lock else payout_text_w
+        current_x = center_x - total_section_w / 2
         lock_drawn_y = y
-
-        # Draw first lock icon
-        actual_lock1_w, actual_lock1_h, lock1_drawn = self._draw_lock_element(
-            img, draw, current_x, lock_drawn_y, lock_element_size, emoji_font, gold_color, draw_it=True
-        )
-        if lock1_drawn:
-            current_x += actual_lock1_w
-
-        # Draw units text
-        text_draw_y = (
-            lock_drawn_y + (actual_lock1_h - units_text_part_h) / 2
-            if lock1_drawn and actual_lock1_h > 0
-            else lock_drawn_y
-        )
-        draw.text(
-            (current_x, text_draw_y),
-            units_display_text,
-            font=units_font,
-            fill=gold_color,
-            anchor="lt"
-        )
-        current_x += units_text_part_w
-
-        # Draw second lock icon
+        # Left lock
         if can_draw_lock:
-            self._draw_lock_element(
-                img, draw, current_x, lock_drawn_y, lock_element_size, emoji_font, gold_color, draw_it=True
-            )
-
-        y += units_text_part_h + 60  # Add extra space after units before footer
+            self._draw_lock_element(img, draw, current_x, lock_drawn_y, lock_element_size, emoji_font, gold_color, draw_it=True)
+            current_x += dim_lock_w
+        # Payout text
+        draw.text((current_x, lock_drawn_y), payout_text, font=units_font, fill=gold_color, anchor="lt")
+        current_x += payout_text_w
+        # Right lock
+        if can_draw_lock:
+            self._draw_lock_element(img, draw, current_x, lock_drawn_y, lock_element_size, emoji_font, gold_color, draw_it=True)
+        y += payout_text_h + 60
         return y
 
     def _draw_parlay_details(
