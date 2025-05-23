@@ -61,22 +61,9 @@ from services.bet_service import BetService
 from services.user_service import UserService
 from services.voice_service import VoiceService
 from services.data_sync_service import DataSyncService
+from services.game_service import GameService
 from utils.image_generator import BetSlipGenerator
 from commands.sync_cog import setup_sync_cog
-
-# Try to import GameService, handle thesportsdb import error
-try:
-    from services.game_service import GameService
-except ModuleNotFoundError as e:
-    if "thesportsdb" in str(e):
-        logger.warning(
-            "Failed to import GameService due to missing 'thesportsdb' module. "
-            "Betting commands and game data fetching will be disabled. "
-            "Please install thesportsdb==0.2.1 to enable full functionality."
-        )
-        GameService = None
-    else:
-        raise
 
 # --- Environment Variable Access ---
 BOT_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -215,9 +202,6 @@ class BettingBot(commands.Bot):
             file_path = os.path.join(commands_dir, filename)
             if os.path.exists(file_path):
                 extension = f'commands.{filename[:-3]}'
-                if filename == 'betting.py' and self.game_service is None:
-                    logger.warning("Skipping betting.py extension due to missing GameService")
-                    continue
                 try:
                     await self.load_extension(extension)
                     loaded_commands.append(extension)
@@ -360,11 +344,9 @@ class BettingBot(commands.Bot):
             self.bet_service.start(),
             self.user_service.start(),
             self.voice_service.start(),
+            self.game_service.start(),
+            self.data_sync_service.start()
         ]
-        if self.game_service:
-            service_starts.append(self.game_service.start())
-        if self.data_sync_service:
-            service_starts.append(self.data_sync_service.start())
         
         results = await asyncio.gather(*service_starts, return_exceptions=True)
         for i, result in enumerate(results):
@@ -445,11 +427,9 @@ class BettingBot(commands.Bot):
                 self.bet_service.stop(),
                 self.user_service.stop(),
                 self.voice_service.stop(),
+                self.game_service.stop(),
+                self.data_sync_service.stop()
             ]
-            if self.game_service:
-                stop_tasks.append(self.game_service.stop())
-            if self.data_sync_service:
-                stop_tasks.append(self.data_sync_service.stop())
             
             # Wait for all services to stop with a timeout
             try:
