@@ -16,7 +16,6 @@ pytest-cov>=3.0.0
 matplotlib>=3.5.0
 numpy>=1.21.0
 aiomysql>=0.2.0 
-thesportsdb
 rapidfuzz==3.13.0
 Flask
 
