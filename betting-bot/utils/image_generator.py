@@ -463,11 +463,32 @@ class BetSlipGenerator:
         player_section_center_x = image_width - self.padding - section_width // 2
 
         # Draw team vs opponent or just team (above images)
-        vs_w, vs_h = self._get_text_dimensions(display_vs, team_name_font)
-        vs_x = center_x - vs_w // 2
-        vs_y = y_base
-        draw.text((vs_x, vs_y), display_vs, font=team_name_font, fill=text_color, anchor="lt")
-        y_base += vs_h + 20
+        # Split display_vs into left (team) and right (opponent) names
+        if ' vs ' in display_vs.lower():
+            parts = display_vs.split(' vs ')
+            left_name = parts[0].strip()
+            right_name = parts[1].strip()
+        elif ' VS ' in display_vs:
+            parts = display_vs.split(' VS ')
+            left_name = parts[0].strip()
+            right_name = parts[1].strip()
+        else:
+            left_name = display_vs.strip()
+            right_name = ''
+
+        # Draw left (team) name above logo
+        left_name_w, left_name_h = self._get_text_dimensions(left_name, team_name_font)
+        left_name_x = home_section_center_x - left_name_w // 2
+        left_name_y = y_base
+        draw.text((left_name_x, left_name_y), left_name, font=team_name_font, fill=text_color, anchor="lt")
+        # Draw right (opponent) name above player image
+        if right_name:
+            right_name_w, right_name_h = self._get_text_dimensions(right_name, team_name_font)
+            right_name_x = player_section_center_x - right_name_w // 2
+            right_name_y = y_base
+            draw.text((right_name_x, right_name_y), right_name, font=team_name_font, fill=text_color, anchor="lt")
+        # Move y_base down for images
+        y_base += max(left_name_h, right_name_h if right_name else 0) + 8
 
         # Draw team logo on the left
         if home_logo:
