@@ -63,7 +63,7 @@ class LiveGameChannelService:
                    g.home_team_name, g.away_team_name, g.start_time, g.status,
                    g.score, g.id as game_id
             FROM bets b
-            LEFT JOIN bet_legs l ON b.bet_type = 'parlay' AND l.bet_id = b.id
+            LEFT JOIN bet_legs l ON b.bet_type = 'parlay' AND l.bet_id = b.bet_serial
             JOIN api_games g ON COALESCE(b.api_game_id, l.api_game_id) = g.api_game_id
             WHERE b.guild_id = %s AND b.confirmed = 1
             AND (b.bet_type = 'game_line' OR l.bet_type = 'game_line')
