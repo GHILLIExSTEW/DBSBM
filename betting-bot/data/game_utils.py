@@ -181,22 +181,45 @@ def normalize_mlb_team_name(team_name: str) -> str:
     """
     Convert any MLB team name format (abbreviation, nickname, or full name) to the standardized full name.
     Example: 'NYY' or 'Yankees' -> 'New York Yankees'
+    For any team that starts with 'St.' or 'St ' (case-insensitive, with or without period), always normalize to 'St. ' + the rest (title case, period enforced).
     """
     if not team_name:
         return team_name
-        
+
+    # Normalize any team that starts with 'St.' or 'St ' (case-insensitive, with or without period)
+    search_name = team_name.strip()
+    if search_name.lower().startswith("st. ") or search_name.lower().startswith("st "):
+        # Remove all periods and extra spaces after 'St'
+        rest = search_name[search_name.lower().find('st')+2:].lstrip(". ")
+        # Title case the rest, and always use 'St. ' as prefix
+        return f"St. {rest.title()}"
+
     # Convert to lowercase for case-insensitive matching
     search_name = team_name.lower().strip()
-    
+
     # Check if it's already in the normalized format
     for full_name in MLB_TEAM_NAMES.values():
         if search_name == full_name.lower():
             return full_name
-            
+
     # Try to find a match in our mappings
     if search_name in MLB_TEAM_NAMES:
         return MLB_TEAM_NAMES[search_name]
-        
+
+    return team_name
+
+
+def normalize_team_name_any_league(team_name: str) -> str:
+    """
+    Normalize any team name that starts with 'St.' or 'St ' (case-insensitive, with or without period) to 'St. <Rest>' in title case.
+    Otherwise, return the team name unchanged.
+    """
+    if not team_name:
+        return team_name
+    search_name = team_name.strip()
+    if search_name.lower().startswith("st. ") or search_name.lower().startswith("st "):
+        rest = search_name[search_name.lower().find('st')+2:].lstrip(". ")
+        return f"St. {rest.title()}"
     return team_name
 
 
