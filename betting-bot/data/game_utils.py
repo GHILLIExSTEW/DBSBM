@@ -211,14 +211,17 @@ def normalize_mlb_team_name(team_name: str) -> str:
 
 def normalize_team_name_any_league(team_name: str) -> str:
     """
-    Normalize any team name that starts with 'St.' or 'St ' (case-insensitive, with or without period) to 'St. <Rest>' in title case.
+    Normalize any team name that starts with 'St', 'St.', 'St ', or 'St.' (case-insensitive, with or without period/space) to 'St. <Rest>' in title case.
     Otherwise, return the team name unchanged.
     """
     if not team_name:
         return team_name
-    search_name = team_name.strip()
-    if search_name.lower().startswith("st. ") or search_name.lower().startswith("st "):
-        rest = search_name[search_name.lower().find('st')+2:].lstrip(". ")
+    import re
+    # Match 'St', 'St.', 'St ', 'St.' (with or without space/period), case-insensitive, at the start
+    match = re.match(r"^st[\.]?\s*([a-zA-Z].*)", team_name.strip(), re.IGNORECASE)
+    if match:
+        rest = match.group(1).replace(".", " ").replace("  ", " ").strip()
+        # Title case the rest, and always use 'St. ' as prefix
         return f"St. {rest.title()}"
     return team_name
 
