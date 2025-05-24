@@ -129,7 +129,8 @@ class BetSlipGenerator:
         units: float,
         selected_team: Optional[str] = None,
         market: Optional[str] = None,
-        include_lock: bool = True
+        include_lock: bool = True,
+        line: Optional[str] = None
     ) -> Optional[bytes]:
         """Generate a bet slip image."""
         try:
@@ -193,9 +194,11 @@ class BetSlipGenerator:
             if include_lock:
                 units_text = f"🔒 {units_text}"
 
-            # Format odds with market
+            # Format odds with market and line
             odds_display = odds
-            if market:
+            if line:
+                odds_display = f"{odds} ({line})"
+            elif market:
                 odds_display = f"{odds} {market}"
 
             # Center and draw bet details
