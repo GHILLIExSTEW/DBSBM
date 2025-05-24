@@ -1,15 +1,12 @@
-# REV 1.0.0 - Enhanced database operations and game syncing
-# betting-bot/data/db_manager.py
-
 import aiomysql
 import logging
-from typing import Optional, List, Dict, Any, Union, Tuple # Added Tuple
+from typing import Optional, List, Dict, Any, Union, Tuple
 import os
 import asyncio
 import json
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from data.game_utils import get_league_abbreviation, normalize_mlb_team_name, sanitize_team_name
-from datetime import datetime
+from datetime import datetime, timezone
 
 try:
     from ..config.database_mysql import (
@@ -54,28 +51,30 @@ class DatabaseManager:
             logger.info("Attempting to create MySQL connection pool...")
             try:
                 self._pool = await aiomysql.create_pool(
-                    host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-                    password=MYSQL_PASSWORD, db=self.db_name,
-                    minsize=MYSQL_POOL_MIN_SIZE, maxsize=MYSQL_POOL_MAX_SIZE,
-                    autocommit=True, # Ensure autocommit is True for simplicity unless transactions needed
+                    host=MYSQL_HOST,
+                    port=MYSQL_PORT,
+                    user=MYSQL_USER,
+                    password=MYSQL_PASSWORD,
+                    db=self.db_name,
+                    minsize=MYSQL_POOL_MIN_SIZE,
+                    maxsize=MYSQL_POOL_MAX_SIZE,
+                    autocommit=True,
                     connect_timeout=10,
                     charset='utf8mb4',
-                    # cursorclass=aiomysql.cursors.DictCursor # Setting default cursor class if desired
                 )
-                # Test connection
                 async with self._pool.acquire() as conn:
                     async with conn.cursor() as cursor:
                         await cursor.execute("SELECT 1")
                 logger.info(
                     "MySQL connection pool created and tested successfully."
                 )
-                await self.initialize_db() # Ensure schema is initialized
+                await self.initialize_db()
             except aiomysql.OperationalError as op_err:
-                logger.critical(f"FATAL: OpError connecting to MySQL: {op_err}", exc_info=True)
+                logger.critical("FATAL: OpError connecting to MySQL: %s", op_err, exc_info=True)
                 self._pool = None
                 raise ConnectionError(f"Failed to connect (OperationalError): {op_err}") from op_err
             except Exception as e:
-                logger.critical(f"FATAL: Failed to connect to MySQL: {e}", exc_info=True)
+                logger.critical("FATAL: Failed to connect to MySQL: %s", e, exc_info=True)
                 self._pool = None
                 raise ConnectionError(f"Failed to connect: {e}") from e
         return self._pool
@@ -85,14 +84,7 @@ class DatabaseManager:
         if self._pool is not None:
             logger.info("Closing MySQL connection pool...")
             try:
-                # First, close all active connections in the pool
-                async with self._pool.acquire() as conn:
-                    await conn.close()
-                
-                # Then close the pool itself
                 self._pool.close()
-                
-                # Wait for pool to close with timeout
                 try:
                     await asyncio.wait_for(self._pool.wait_closed(), timeout=5.0)
                 except asyncio.TimeoutError:
@@ -103,29 +95,22 @@ class DatabaseManager:
                     else:
                         raise
                 finally:
-                    # Ensure pool is set to None even if wait_closed fails
                     self._pool = None
                     logger.info("MySQL connection pool closed.")
             except Exception as e:
-                logger.error(f"Error closing MySQL pool: {e}")
-                # Ensure pool is set to None even if there's an error
+                logger.error("Error closing MySQL pool: %s", e)
                 self._pool = None
 
     async def execute(self, query: str, *args) -> Tuple[Optional[int], Optional[int]]:
-        """
-        Execute INSERT, UPDATE, DELETE.
-        Returns a tuple: (rowcount, lastrowid).
-        lastrowid will be None for UPDATE/DELETE or if INSERT failed/affected 0 rows.
-        """
-        pool = await self.connect() # Ensure pool exists
+        """Execute INSERT, UPDATE, DELETE. Returns (rowcount, lastrowid)."""
+        pool = await self.connect()
         if not pool:
             logger.error("Cannot execute: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
-        # Flatten nested tuple/list if only one argument is a tuple/list
         flat_args = tuple(args[0]) if len(args) == 1 and isinstance(args[0], (tuple, list)) else args
 
-        logger.debug(f"Executing DB Query: {query} Args: {flat_args}")
+        logger.debug("Executing DB Query: %s Args: %s", query, flat_args)
         last_id = None
         rowcount = None
         try:
@@ -133,14 +118,12 @@ class DatabaseManager:
                 async with conn.cursor() as cursor:
                     rowcount = await cursor.execute(query, flat_args)
                     if rowcount is not None and rowcount > 0 and query.strip().upper().startswith("INSERT"):
-                         last_id = cursor.lastrowid
-                    # Explicitly commit after any write operation
+                        last_id = cursor.lastrowid
                     if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
                         await conn.commit()
             return rowcount, last_id
         except Exception as e:
-            logger.error(f"Error executing query: {query} Args: {flat_args}. Error: {e}", exc_info=True)
-            # Return None for both in case of error
+            logger.error("Error executing query: %s Args: %s. Error: %s", query, flat_args, e, exc_info=True)
             return None, None
 
     async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
@@ -153,14 +136,14 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        logger.debug(f"Fetching One DB Query: {query} Args: {args}")
+        logger.debug("Fetching One DB Query: %s Args: %s", query, args)
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.DictCursor) as cursor:
                     await cursor.execute(query, args)
                     return await cursor.fetchone()
         except Exception as e:
-            logger.error(f"Error fetching one row: {query} Args: {args}. Error: {e}", exc_info=True)
+            logger.error("Error fetching one row: %s Args: %s. Error: %s", query, args, e, exc_info=True)
             return None
 
     async def fetch_all(self, query: str, *args) -> List[Dict[str, Any]]:
@@ -173,14 +156,14 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        logger.debug(f"Fetching All DB Query: {query} Args: {args}")
+        logger.debug("Fetching All DB Query: %s Args: %s", query, args)
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.DictCursor) as cursor:
                     await cursor.execute(query, args)
                     return await cursor.fetchall()
         except Exception as e:
-            logger.error(f"Error fetching all rows: {query} Args: {args}. Error: {e}", exc_info=True)
+            logger.error("Error fetching all rows: %s Args: %s. Error: %s", query, args, e, exc_info=True)
             return []
 
     async def fetchval(self, query: str, *args) -> Optional[Any]:
@@ -193,15 +176,15 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        logger.debug(f"Fetching Value DB Query: {query} Args: {args}")
+        logger.debug("Fetching Value DB Query: %s Args: %s", query, args)
         try:
             async with pool.acquire() as conn:
-                async with conn.cursor(aiomysql.Cursor) as cursor: # Use standard cursor for single value
+                async with conn.cursor(aiomysql.Cursor) as cursor:
                     await cursor.execute(query, args)
                     row = await cursor.fetchone()
                     return row[0] if row else None
         except Exception as e:
-            logger.error(f"Error fetching value: {query} Args: {args}. Error: {e}", exc_info=True)
+            logger.error("Error fetching value: %s Args: %s. Error: %s", query, args, e, exc_info=True)
             return None
 
     async def table_exists(self, conn, table_name: str) -> bool:
@@ -216,22 +199,28 @@ class DatabaseManager:
                 result = await cursor.fetchone()
                 return result[0] > 0 if result else False
             except Exception as e:
-                logger.error(f"Error checking if table '{table_name}' exists: {e}", exc_info=True)
+                logger.error("Error checking if table '%s' exists: %s", table_name, e, exc_info=True)
                 raise
 
-    async def _check_and_add_column(self, cursor, table_name, column_name, column_definition):
-        """Checks if a column exists and adds it if not."""
+    async def _check_and_add_column(self, cursor, table_name, column_name, column_definition, after: Optional[str] = None):
+        """Checks if a column exists and adds it if not, optionally after a specified column."""
         async with cursor.connection.cursor(aiomysql.DictCursor) as dict_cursor:
             await dict_cursor.execute(f"SHOW COLUMNS FROM `{table_name}` LIKE %s", (column_name,))
             exists = await dict_cursor.fetchone()
 
         if not exists:
-            logger.info(f"Adding column '{column_name}' to table '{table_name}'...")
+            logger.info("Adding column '%s' to table '%s'...", column_name, table_name)
             alter_statement = f"ALTER TABLE `{table_name}` ADD COLUMN `{column_name}` {column_definition}"
-            await cursor.execute(alter_statement)
-            logger.info(f"Successfully added column '{column_name}'.")
+            if after:
+                alter_statement += f" AFTER `{after}`"
+            try:
+                await cursor.execute(alter_statement)
+                logger.info("Successfully added column '%s'.", column_name)
+            except aiomysql.Error as e:
+                logger.error("Failed to add column '%s' to table '%s': %s", column_name, table_name, e, exc_info=True)
+                raise
         else:
-            logger.debug(f"Column '{column_name}' already exists in '{table_name}'.")
+            logger.debug("Column '%s' already exists in '%s'.", column_name, table_name)
 
     async def initialize_db(self):
         """Initializes the database schema."""
@@ -259,7 +248,6 @@ class DatabaseManager:
                         logger.info("Table 'users' created.")
                     else:
                         logger.info("Table 'users' already exists.")
-                        # Add checks for specific columns if needed later
 
                     # --- Games Table ---
                     if not await self.table_exists(conn, 'games'):
@@ -293,7 +281,6 @@ class DatabaseManager:
                         await self._check_and_add_column(cursor, 'games', 'home_team_logo', "VARCHAR(255) NULL AFTER away_team_name")
                         await self._check_and_add_column(cursor, 'games', 'away_team_logo', "VARCHAR(255) NULL AFTER home_team_logo")
                         await self._check_and_add_column(cursor, 'games', 'end_time', "TIMESTAMP NULL COMMENT 'Game end time' AFTER start_time")
-                        # await self._check_and_add_column(cursor, 'games', 'status', "VARCHAR(20) NULL COMMENT 'Game status' AFTER end_time") # Already exists
                         await self._check_and_add_column(cursor, 'games', 'score', "JSON NULL COMMENT 'JSON scores' AFTER status")
                         await self._check_and_add_column(cursor, 'games', 'venue', "VARCHAR(150) NULL AFTER score")
                         await self._check_and_add_column(cursor, 'games', 'referee', "VARCHAR(100) NULL AFTER venue")
@@ -301,68 +288,65 @@ class DatabaseManager:
                     # --- Bets Table ---
                     bets_table_created = False
                     if not await self.table_exists(conn, 'bets'):
-                        # Use the schema provided by user
                         await cursor.execute('''
                             CREATE TABLE bets (
-                                bet_serial bigint(20) NOT NULL AUTO_INCREMENT,
-                                event_id varchar(255) DEFAULT NULL,
-                                guild_id bigint(20) NOT NULL,
-                                message_id bigint(20) DEFAULT NULL,
-                                status varchar(20) NOT NULL DEFAULT 'pending',
-                                user_id bigint(20) NOT NULL,
-                                game_id bigint(20) DEFAULT NULL,
-                                bet_type varchar(50) DEFAULT NULL,
-                                player_prop varchar(255) DEFAULT NULL,
-                                player_id varchar(50) DEFAULT NULL,
-                                league varchar(50) NOT NULL,
-                                team varchar(100) DEFAULT NULL,
-                                opponent varchar(50) DEFAULT NULL,
-                                line varchar(255) DEFAULT NULL,
-                                odds decimal(10,2) DEFAULT NULL,
-                                units decimal(10,2) NOT NULL,
-                                legs int(11) DEFAULT NULL,
-                                bet_won tinyint(4) DEFAULT 0,
-                                bet_loss tinyint(4) DEFAULT 0,
-                                confirmed tinyint(4) DEFAULT 0,
-                                created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-                                game_start datetime DEFAULT NULL,
-                                result_value decimal(15,2) DEFAULT NULL,
-                                result_description text,
-                                expiration_time timestamp NULL DEFAULT NULL,
-                                updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                channel_id bigint(20) DEFAULT NULL,
-                                bet_details longtext NOT NULL,
+                                bet_serial BIGINT(20) NOT NULL AUTO_INCREMENT,
+                                event_id VARCHAR(255) DEFAULT NULL,
+                                guild_id BIGINT(20) NOT NULL,
+                                message_id BIGINT(20) DEFAULT NULL,
+                                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                                user_id BIGINT(20) NOT NULL,
+                                game_id BIGINT(20) DEFAULT NULL,
+                                bet_type VARCHAR(50) DEFAULT NULL,
+                                player_prop VARCHAR(255) DEFAULT NULL,
+                                player_id VARCHAR(50) DEFAULT NULL,
+                                league VARCHAR(50) NOT NULL,
+                                team VARCHAR(100) DEFAULT NULL,
+                                opponent VARCHAR(50) DEFAULT NULL,
+                                line VARCHAR(255) DEFAULT NULL,
+                                odds DECIMAL(10,2) DEFAULT NULL,
+                                units DECIMAL(10,2) NOT NULL,
+                                legs INT(11) DEFAULT NULL,
+                                bet_won TINYINT(4) DEFAULT 0,
+                                bet_loss TINYINT(4) DEFAULT 0,
+                                confirmed TINYINT(4) DEFAULT 0,
+                                created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                                game_start DATETIME DEFAULT NULL,
+                                result_value DECIMAL(15,2) DEFAULT NULL,
+                                result_description TEXT,
+                                expiration_time TIMESTAMP NULL DEFAULT NULL,
+                                updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                channel_id BIGINT(20) DEFAULT NULL,
+                                bet_details LONGTEXT NOT NULL,
                                 PRIMARY KEY (bet_serial),
                                 KEY guild_id (guild_id),
                                 KEY user_id (user_id),
                                 KEY status (status),
                                 KEY created_at (created_at),
                                 KEY game_id (game_id),
-                                CONSTRAINT bets_ibfk_1 FOREIGN KEY (game_id) REFERENCES games (id) ON DELETE SET NULL
+                                CONSTRAINT bets_ibfk_1 FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                         ''')
                         logger.info("Table 'bets' created using provided schema.")
-                        bets_table_created = True # Mark as newly created
+                        bets_table_created = True
                     else:
                         logger.info("Table 'bets' already exists.")
-                        # Check specific columns from provided schema
-                        await self._check_and_add_column(cursor, 'bets', 'bet_details', "longtext NOT NULL COMMENT 'JSON containing specific bet details'")
-                        await self._check_and_add_column(cursor, 'bets', 'channel_id', "bigint(20) DEFAULT NULL COMMENT 'Channel where bet was posted'")
-                        # Verify game_id FK exists if table wasn't just created
+                        await self._check_and_add_column(cursor, 'bets', 'bet_details', "LONGTEXT NOT NULL COMMENT 'JSON containing specific bet details'")
+                        await self._check_and_add_column(cursor, 'bets', 'channel_id', "BIGINT(20) DEFAULT NULL COMMENT 'Channel where bet was posted'")
                         async with conn.cursor(aiomysql.DictCursor) as dict_cursor:
-                             await dict_cursor.execute(
-                                 "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE "
-                                 "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'bets' AND COLUMN_NAME = 'game_id' AND REFERENCED_TABLE_NAME = 'games'",
-                                 (self.db_name,)
-                             )
-                             fk_exists = await dict_cursor.fetchone()
-                             if not fk_exists:
-                                 logger.warning("Foreign key constraint 'bets_ibfk_1' (or similar) for bets.game_id -> games.id might be missing. Attempting to add.")
-                                 try:
-                                     await cursor.execute("ALTER TABLE bets ADD CONSTRAINT bets_ibfk_1 FOREIGN KEY (game_id) REFERENCES games (id) ON DELETE SET NULL")
-                                     logger.info("Added foreign key constraint for bets.game_id.")
-                                 except Exception as fk_err:
-                                     logger.error(f"Failed to add foreign key constraint for bets.game_id: {fk_err}")
+                            await dict_cursor.execute(
+                                "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE "
+                                "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'bets' AND COLUMN_NAME = 'game_id' AND REFERENCED_TABLE_NAME = 'games'",
+                                (self.db_name,)
+                            )
+                            fk_exists = await dict_cursor.fetchone()
+                            if not fk_exists:
+                                logger.warning("Foreign key constraint 'bets_ibfk_1' for bets.game_id -> games.id missing. Attempting to add.")
+                                try:
+                                    await cursor.execute("ALTER TABLE bets ADD CONSTRAINT bets_ibfk_1 FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL")
+                                    logger.info("Added foreign key constraint for bets.game_id.")
+                                except aiomysql.Error as fk_err:
+                                    logger.error("Failed to add foreign key constraint for bets.game_id: %s", fk_err, exc_info=True)
 
                     # --- Unit Records Table ---
                     unit_records_created = False
@@ -383,26 +367,20 @@ class DatabaseManager:
                                 INDEX idx_unit_records_year_month (year, month),
                                 INDEX idx_unit_records_user_id (user_id),
                                 INDEX idx_unit_records_guild_id (guild_id)
-                                -- Foreign key added conditionally below --
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                         ''')
                         logger.info("Table 'unit_records' created.")
-                        unit_records_created = True # Mark as newly created
+                        unit_records_created = True
                     else:
                         logger.info("Table 'unit_records' already exists.")
 
-                    # MODIFIED: Only attempt to add FK if unit_records table was newly created
                     if unit_records_created:
                         logger.info("Attempting to add foreign key constraint for newly created 'unit_records' table...")
                         try:
-                             await cursor.execute("ALTER TABLE unit_records ADD CONSTRAINT unit_records_ibfk_1 FOREIGN KEY (bet_serial) REFERENCES bets(bet_serial) ON DELETE CASCADE")
-                             logger.info("Added foreign key constraint for unit_records.bet_serial.")
-                        except Exception as fk_err:
-                             logger.error(f"Failed to add foreign key constraint for unit_records.bet_serial: {fk_err}. This might indicate orphaned records if the table existed before this run.", exc_info=True)
-                    else:
-                         logger.debug("Skipping foreign key check for 'unit_records' as table already existed.")
-                         # Optionally, could add a check here to see if the FK exists already if the table existed
-
+                            await cursor.execute("ALTER TABLE unit_records ADD CONSTRAINT unit_records_ibfk_1 FOREIGN KEY (bet_serial) REFERENCES bets(bet_serial) ON DELETE CASCADE")
+                            logger.info("Added foreign key constraint for unit_records.bet_serial.")
+                        except aiomysql.Error as fk_err:
+                            logger.error("Failed to add foreign key constraint for unit_records.bet_serial: %s", fk_err, exc_info=True)
 
                     # --- Guild Settings Table ---
                     if not await self.table_exists(conn, 'guild_settings'):
@@ -421,14 +399,14 @@ class DatabaseManager:
                                 authorized_role BIGINT NULL,
                                 voice_channel_id BIGINT NULL COMMENT 'Monthly VC',
                                 yearly_channel_id BIGINT NULL COMMENT 'Yearly VC',
-                                total_units_channel_id BIGINT NULL, # Unused?
+                                total_units_channel_id BIGINT NULL,
                                 daily_report_time TEXT NULL,
                                 member_role BIGINT NULL,
                                 bot_name_mask TEXT NULL,
                                 bot_image_mask TEXT NULL,
                                 guild_default_image TEXT NULL,
                                 default_parlay_thumbnail TEXT NULL,
-                                total_result_value DECIMAL(15, 2) DEFAULT 0.0, # Unused? Calculated from records
+                                total_result_value DECIMAL(15, 2) DEFAULT 0.0,
                                 min_units DECIMAL(15, 2) DEFAULT 0.1,
                                 max_units DECIMAL(15, 2) DEFAULT 10.0,
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -462,8 +440,7 @@ class DatabaseManager:
                         logger.info("Table 'cappers' created.")
                     else:
                         logger.info("Table 'cappers' already exists.")
-                        await self._check_and_add_column(cursor, 'cappers', 'bet_push', "INTEGER DEFAULT 0 NOT NULL COMMENT 'Count of pushed bets' AFTER bet_loss")
-
+                        await self._check_and_add_column(cursor, 'cappers', 'bet_push', "INTEGER DEFAULT 0 NOT NULL COMMENT 'Count of pushed bets'")
 
                     # --- Leagues Table ---
                     if not await self.table_exists(conn, 'leagues'):
@@ -541,20 +518,19 @@ class DatabaseManager:
                         logger.info("Table 'standings' created.")
                     else:
                         logger.info("Table 'standings' already exists.")
-                        # Ensure composite PK with season exists
                         async with conn.cursor(aiomysql.DictCursor) as dict_cursor:
                             await dict_cursor.execute("SHOW INDEX FROM standings WHERE Key_name = 'PRIMARY'")
                             pk_cols = {row['Column_name'] for row in await dict_cursor.fetchall()}
                             if 'season' not in pk_cols:
-                                logger.warning("Primary key for 'standings' might be missing 'season'. Attempting rebuild.")
+                                logger.warning("Primary key for 'standings' missing 'season'. Attempting rebuild.")
                                 try:
                                     await cursor.execute("ALTER TABLE standings DROP PRIMARY KEY")
                                     if not await self._column_exists(conn, 'standings', 'season'):
                                         await cursor.execute("ALTER TABLE standings ADD COLUMN season INT NOT NULL AFTER team_id")
                                     await cursor.execute("ALTER TABLE standings ADD PRIMARY KEY (league_id, team_id, season)")
                                     logger.info("Rebuilt 'standings' primary key including 'season'.")
-                                except Exception as pk_err:
-                                    logger.error(f"Failed to rebuild primary key for 'standings': {pk_err}. Manual check needed.")
+                                except aiomysql.Error as pk_err:
+                                    logger.error("Failed to rebuild primary key for 'standings': %s", pk_err, exc_info=True)
 
                     # --- Game Events Table ---
                     if not await self.table_exists(conn, 'game_events'):
@@ -581,7 +557,7 @@ class DatabaseManager:
                                 reaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                 bet_serial BIGINT NOT NULL,
                                 user_id BIGINT NOT NULL,
-                                emoji VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, # Ensure correct charset for emoji
+                                emoji VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
                                 channel_id BIGINT NOT NULL,
                                 message_id BIGINT NOT NULL,
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -600,14 +576,21 @@ class DatabaseManager:
                         await cursor.execute('''
                             CREATE TABLE api_games (
                                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                api_game_id VARCHAR(50) NOT NULL,
                                 sport VARCHAR(50) NOT NULL,
                                 league_id VARCHAR(50) NOT NULL,
                                 season INT NOT NULL,
+                                home_team_name VARCHAR(150) NULL,
+                                away_team_name VARCHAR(150) NULL,
+                                start_time DATETIME NULL,
+                                end_time DATETIME NULL,
+                                status VARCHAR(50) NULL,
+                                score VARCHAR(20) NULL,
                                 raw_json JSON NOT NULL,
                                 fetched_at DATETIME NOT NULL,
                                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                UNIQUE KEY unique_game (sport, league_id, season)
+                                UNIQUE KEY unique_game (sport, league_id, season, api_game_id)
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                         ''')
                         await cursor.execute('CREATE INDEX idx_api_games_sport_league ON api_games (sport, league_id)')
@@ -615,31 +598,65 @@ class DatabaseManager:
                         logger.info("Table 'api_games' created.")
                     else:
                         logger.info("Table 'api_games' already exists.")
+                        await self._check_and_add_column(cursor, 'api_games', 'home_team_name', "VARCHAR(150) NULL")
+                        await self._check_and_add_column(cursor, 'api_games', 'away_team_name', "VARCHAR(150) NULL")
+                        await self._check_and_add_column(cursor, 'api_games', 'start_time', "DATETIME NULL")
+                        await self._check_and_add_column(cursor, 'api_games', 'end_time', "DATETIME NULL")
+                        await self._check_and_add_column(cursor, 'api_games', 'status', "VARCHAR(50) NULL")
+                        await self._check_and_add_column(cursor, 'api_games', 'score', "VARCHAR(20) NULL")
 
-                    # Create the players table
-                    await cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS players (
-                            player_name TEXT,
-                            dateBorn TEXT,
-                            idPlayeridTeam TEXT,
-                            strCutouts TEXT,
-                            trEthnicity TEXT,
-                            strGender TEXT,
-                            strHeight TEXT,
-                            strNationality TEXT,
-                            strNumber TEXT,
-                            strPlayer TEXT,
-                            strPosition TEXT,
-                            strSport TEXT,
-                            strTeam TEXT,
-                            strThumb TEXT,
-                            strWeight TEXT
-                        )
-                    ''')
+                    # --- Players Table ---
+                    if not await self.table_exists(conn, 'players'):
+                        await cursor.execute('''
+                            CREATE TABLE players (
+                                player_name TEXT,
+                                dateBorn TEXT,
+                                idPlayeridTeam TEXT,
+                                strCutouts TEXT,
+                                strEthnicity TEXT,
+                                strGender TEXT,
+                                strHeight TEXT,
+                                strNationality TEXT,
+                                strNumber TEXT,
+                                strPlayer TEXT,
+                                strPosition TEXT,
+                                strSport TEXT,
+                                strTeam TEXT,
+                                strThumb TEXT,
+                                strWeight TEXT
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        ''')
+                        logger.info("Table 'players' created.")
+                    else:
+                        logger.info("Table 'players' already exists.")
+
+                    # --- Bet Legs Table ---
+                    if not await self.table_exists(conn, 'bet_legs'):
+                        await cursor.execute('''
+                            CREATE TABLE bet_legs (
+                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                bet_serial BIGINT NOT NULL,
+                                api_game_id VARCHAR(50) NULL,
+                                bet_type VARCHAR(50) NOT NULL,
+                                player_prop VARCHAR(255) NULL,
+                                player_id VARCHAR(50) NULL,
+                                line VARCHAR(255) NULL,
+                                odds DECIMAL(10,2) NULL,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (bet_serial) REFERENCES bets(bet_serial) ON DELETE CASCADE
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        ''')
+                        logger.info("Table 'bet_legs' created.")
+                    else:
+                        logger.info("Table 'bet_legs' already exists.")
+                        await self._check_and_add_column(cursor, 'bet_legs', 'player_prop', "VARCHAR(255) NULL")
+                        await self._check_and_add_column(cursor, 'bet_legs', 'player_id', "VARCHAR(50) NULL")
+                        await self._check_and_add_column(cursor, 'bet_legs', 'line', "VARCHAR(255) NULL")
+                        await self._check_and_add_column(cursor, 'bet_legs', 'odds', "DECIMAL(10,2) NULL")
 
                     logger.info("Database schema initialization/verification complete.")
         except Exception as e:
-            logger.error(f"Error initializing/verifying database schema: {e}", exc_info=True)
+            logger.error("Error initializing/verifying database schema: %s", e, exc_info=True)
             raise
 
     async def _column_exists(self, conn, table_name: str, column_name: str) -> bool:
@@ -655,10 +672,8 @@ class DatabaseManager:
     async def save_game(self, game_id: str, league_id: str, league_name: str, home_team: str, away_team: str, start_time: str, status: str = "Scheduled"):
         """Save a game to the games table."""
         try:
-            # Ensure status is always set to a valid value
             if not status or str(status).lower() in ("none", "null", "", "n/a"):
                 status = "scheduled"
-            # Map league_id to sport
             sport = "Baseball" if league_id == "4424" else \
                    "Hockey" if league_id == "4380" else \
                    "Football" if league_id == "4405" else \
@@ -680,7 +695,7 @@ class DatabaseManager:
                     league_id = VALUES(league_id),
                     league_name = VALUES(league_name),
                     home_team_name = VALUES(home_team_name),
-                    away_team_name = VALUES(away_team_name),
+                    away_team_name = VALUES(home_team_name),
                     start_time = VALUES(start_time),
                     status = VALUES(status),
                     updated_at = CURRENT_TIMESTAMP
@@ -689,76 +704,57 @@ class DatabaseManager:
                 game_id, sport, league_id, league_name, home_team, away_team, 
                 start_time, status
             ))
-            logger.info(f"Saved game {game_id} to database with status '{status}' and league_name '{league_name}'")
+            logger.info("Saved game %s to database with status '%s' and league_name '%s'", game_id, status, league_name)
             return True
         except Exception as e:
-            logger.error(f"Error saving game {game_id}: {str(e)}")
+            logger.error("Error saving game %s: %s", game_id, e, exc_info=True)
             return False
 
     async def upsert_api_game(self, game: dict):
         """Upsert a full API game record, storing all fields in their respective columns."""
-        import json
-        
-        # Ensure we have a season value
         season = game.get('season')
         if not season:
-            # Default to current year if no season provided
             season = datetime.now().year
             if game.get('sport', '').lower() == 'baseball':
-                # For baseball, check if we're in offseason
                 current_month = datetime.now().month
                 if current_month >= 10 or current_month <= 2:
-                    season = season + 1  # Use next year during offseason
-        
+                    season = season + 1
+
         query = '''
             INSERT INTO api_games (
-                api_game_id, sport, league_id, league_name, home_team_id, away_team_id, 
-                home_team_name, away_team_name, start_time, end_time, status, score, 
-                venue, referee, season, raw_json, fetched_at, created_at, updated_at
+                api_game_id, sport, league_id, season, home_team_name, away_team_name,
+                start_time, end_time, status, score, raw_json, fetched_at, created_at, updated_at
             ) VALUES (
-                %(api_game_id)s, %(sport)s, %(league_id)s, %(league_name)s, %(home_team_id)s, %(away_team_id)s,
-                %(home_team_name)s, %(away_team_name)s, %(start_time)s, %(end_time)s, %(status)s, %(score)s,
-                %(venue)s, %(referee)s, %(season)s, %(raw_json)s, %(fetched_at)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
             ON DUPLICATE KEY UPDATE
                 sport=VALUES(sport),
-                league_name=VALUES(league_name),
-                home_team_id=VALUES(home_team_id),
-                away_team_id=VALUES(away_team_id),
+                league_id=VALUES(league_id),
+                season=VALUES(season),
                 home_team_name=VALUES(home_team_name),
                 away_team_name=VALUES(away_team_name),
                 start_time=VALUES(start_time),
                 end_time=VALUES(end_time),
                 status=VALUES(status),
                 score=VALUES(score),
-                venue=VALUES(venue),
-                referee=VALUES(referee),
-                season=VALUES(season),
                 raw_json=VALUES(raw_json),
                 fetched_at=VALUES(fetched_at),
                 updated_at=CURRENT_TIMESTAMP
         '''
-        
-        params = {
-            'api_game_id': str(game.get('id')),
-            'sport': game.get('sport', ''),
-            'league_id': str(game.get('league', {}).get('id', '')),
-            'league_name': game.get('league', {}).get('name', ''),
-            'home_team_id': str(game.get('teams', {}).get('home', {}).get('id', '')),
-            'away_team_id': str(game.get('teams', {}).get('away', {}).get('id', '')),
-            'home_team_name': (game.get('teams', {}) or {}).get('home', {}).get('name'),
-            'away_team_name': (game.get('teams', {}) or {}).get('away', {}).get('name'),
-            'start_time': game.get('date'),
-            'end_time': None,
-            'status': game.get('status', {}).get('short', ''),
-            'score': json.dumps(game.get('scores', {})),
-            'venue': game.get('venue', None),
-            'referee': None,
-            'season': season,
-            'raw_json': json.dumps(game),
-            'fetched_at': datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-        }
-        
+        params = (
+            str(game.get('id')),
+            game.get('sport', ''),
+            str(game.get('league', {}).get('id', '')),
+            season,
+            (game.get('teams', {}) or {}).get('home', {}).get('name'),
+            (game.get('teams', {}) or {}).get('away', {}).get('name'),
+            game.get('date'),
+            None,
+            game.get('status', {}).get('short', ''),
+            json.dumps(game.get('scores', {})),
+            json.dumps(game),
+            datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        )
         await self.execute(query, params)
 
     async def save_team(self, team: dict):
@@ -800,78 +796,55 @@ class DatabaseManager:
     async def sync_games_from_api(self, force_season: int = None):
         """Sync games from API to database."""
         try:
-            # Create API client
             from api.sports_api import SportsAPI
             api = SportsAPI(self)
-            
-            # Get current date in YYYY-MM-DD format
             current_date = datetime.now().strftime("%Y-%m-%d")
-            
-            # Fetch games for each league
             for league_name, league_info in LEAGUE_IDS.items():
                 sport = league_info.get('sport', '').lower()
                 if not sport:
                     continue
-                    
                 try:
-                    # If force_season is provided, use it for MLB
                     season = None
                     if force_season and sport == 'baseball' and league_name == 'MLB':
                         season = force_season
-                        logger.info(f"Using forced season {season} for MLB")
+                        logger.info("Using forced season %s for MLB", season)
                     elif sport == 'baseball' and league_name == 'MLB':
-                        # For MLB, we need to be smarter about season selection
                         current_year = datetime.now().year
                         current_month = datetime.now().month
-                        
-                        # MLB regular season typically runs from late March/early April to early October
                         if current_month >= 10 or current_month <= 2:
-                            # During offseason (Oct-Feb), look at next year
                             season = current_year + 1
-                            logger.info(f"MLB: In offseason, using next season {season}")
+                            logger.info("MLB: In offseason, using next season %s", season)
                         else:
-                            # During season (Mar-Sep), look at current year
                             season = current_year
-                            logger.info(f"MLB: In season, using current season {season}")
+                            logger.info("MLB: In season, using current season %s", season)
                     else:
-                        # For non-MLB sports, use current year
                         season = datetime.now().year
-                        logger.info(f"Using current year {season} for {sport}/{league_name}")
-                    
-                    # Fetch games from API
+                        logger.info("Using current year %s for %s/%s", season, sport, league_name)
                     games = await api.fetch_games(
                         sport=sport,
                         league=league_name,
                         date=current_date,
                         season=season
                     )
-                    
-                    logger.info(f"Fetched {len(games)} games for {sport}/{league_name}")
-                    
-                    # Save games to database
+                    logger.info("Fetched %d games for %s/%s", len(games), sport, league_name)
                     for game in games:
                         try:
-                            # Add season to game data
                             game['season'] = season
                             await self.upsert_api_game(game)
-                            logger.info(f"Saved game {game.get('id')} to database")
+                            logger.info("Saved game %s to database", game.get('id'))
                         except Exception as e:
-                            logger.error(f"Error saving game {game.get('id')}: {e}")
+                            logger.error("Error saving game %s: %s", game.get('id'), e, exc_info=True)
                             continue
-                        
                 except Exception as e:
-                    logger.error(f"Error syncing games for {league_name}: {e}")
+                    logger.error("Error syncing games for %s: %s", league_name, e, exc_info=True)
                     continue
-                    
         except Exception as e:
-            logger.error(f"Error in sync_games_from_api: {e}")
+            logger.error("Error in sync_games_from_api: %s", e, exc_info=True)
             raise
 
     async def get_normalized_games_for_dropdown(self, league_name: str, season: int = None) -> List[Dict[str, Any]]:
         """Fetch and normalize games for a league from the api_games table for use in a bet dropdown."""
-        logger.info(f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}")
-        
-        # Initialize dropdown_games with manual entry option
+        logger.info("[get_normalized_games_for_dropdown] Starting fetch for league_name=%s, season=%s", league_name, season)
         dropdown_games = [{
             'id': 'manual',
             'api_game_id': 'manual',
@@ -882,45 +855,32 @@ class DatabaseManager:
             'home_team_name': 'Manual Entry',
             'away_team_name': 'Manual Entry',
         }]
-        
-        # Get sport and league name from LEAGUE_IDS
         sport = None
         league_key = None
         for key, league_info in LEAGUE_IDS.items():
             if key == league_name:
                 sport = league_info.get('sport', '').capitalize()
                 league_key = key
-                # Use the full league name from LEAGUE_CONFIG
                 league_name = LEAGUE_CONFIG.get(league_info.get('sport', ''), {}).get(key, {}).get('name', key)
-                # Convert MLB to full name
                 if league_name == "MLB":
                     league_name = "Major League Baseball"
-                logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name}")
+                logger.info("[get_normalized_games_for_dropdown] Found league info: sport=%s, league_key=%s, league_name=%s", sport, league_key, league_name)
                 break
-        
         if not sport or not league_name:
-            logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
-            return dropdown_games  # Return just manual entry option
-        
+            logger.warning("[get_normalized_games_for_dropdown] Could not find sport and league name for league_name=%s", league_name)
+            return dropdown_games
         league_abbr = get_league_abbreviation(league_name)
-        logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
-        
-        # First sync games from api_games to games table
+        logger.info("[get_normalized_games_for_dropdown] Looking up games for %s/%s (abbreviation: %s, key: %s)", sport, league_name, league_abbr, league_key)
         logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
         await self.sync_games_from_api(force_season=season)
         logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
-        
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")
-        
-        # Define finished statuses based on sport
+        logger.info("[get_normalized_games_for_dropdown] Using today_start=%s", today_start)
         if sport.lower() == "baseball":
             finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
         else:
             finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
-        logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
-
-        # Query by league_id, sport, and league_name with case-insensitive matching
+        logger.info("[get_normalized_games_for_dropdown] Using finished_statuses=%s", finished_statuses)
         query = """
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
             FROM api_games
@@ -932,55 +892,42 @@ class DatabaseManager:
             AND season = %s
             ORDER BY start_time ASC LIMIT 100
         """
-        
-        # Get league_id from LEAGUE_ID_MAP
-        league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
-        logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
-        
-        # For MLB, we need to check both current year and next year during offseason
+        from config.leagues import LEAGUE_ID_MAP
+        league_id = LEAGUE_ID_MAP.get(league_name, "1")
+        logger.info("[get_normalized_games_for_dropdown] Using league_id=%s", league_id)
         if sport.lower() == "baseball" and league_key == "MLB":
             current_year = datetime.now().year
             current_month = datetime.now().month
-            
-            # Determine which season to use
             if season is not None:
-                # If season is explicitly provided, use it
-                logger.info(f"[get_normalized_games_for_dropdown] MLB: Using provided season {season}")
+                logger.info("[get_normalized_games_for_dropdown] MLB: Using provided season %s", season)
                 rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (season,))
             elif current_month >= 10 or current_month <= 2:
-                # During offseason (Oct-Feb), look at next year
                 next_year = current_year + 1
-                logger.info(f"[get_normalized_games_for_dropdown] MLB: In offseason, checking {next_year}")
+                logger.info("[get_normalized_games_for_dropdown] MLB: In offseason, checking %s", next_year)
                 rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (next_year,))
             else:
-                # During season (Mar-Sep), look at current year
-                logger.info(f"[get_normalized_games_for_dropdown] MLB: In season, checking {current_year}")
+                logger.info("[get_normalized_games_for_dropdown] MLB: In season, checking %s", current_year)
                 rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (current_year,))
         else:
-            # For non-MLB sports, use current year if season not provided
             season = season if season is not None else datetime.now().year
-            logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Using season {season}")
+            logger.info("[get_normalized_games_for_dropdown] Non-MLB: Using season %s", season)
             rows = await self.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses) + (season,))
-        
         if not rows:
-            logger.warning(f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")
-            return dropdown_games  # Return just manual entry option
-
+            logger.warning("[get_normalized_games_for_dropdown] No active games found for sport=%s, league_id=%s, league_name=%s", sport, league_id, league_name)
+            return dropdown_games
         for row in rows:
             try:
-                # For MLB games, normalize team names
                 if sport.lower() == "baseball" and league_key == "MLB":
                     home_team = normalize_mlb_team_name(row['home_team_name'])
                     away_team = normalize_mlb_team_name(row['away_team_name'])
-                    logger.info(f"[get_normalized_games_for_dropdown] MLB: Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
+                    logger.info("[get_normalized_games_for_dropdown] MLB: Normalized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
                 else:
                     home_team = sanitize_team_name(row['home_team_name'])
                     away_team = sanitize_team_name(row['away_team_name'])
-                    logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
-                    
+                    logger.info("[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
                 game_data = {
                     'id': row['id'],
-                    'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
+                    'api_game_id': str(row['api_game_id']),
                     'home_team': home_team,
                     'away_team': away_team,
                     'start_time': row['start_time'],
@@ -989,10 +936,30 @@ class DatabaseManager:
                     'away_team_name': away_team,
                 }
                 dropdown_games.append(game_data)
-                logger.info(f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}")
+                logger.info("[get_normalized_games_for_dropdown] Added game to dropdown: %s", game_data)
             except Exception as e:
-                logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
+                logger.error("[get_normalized_games_for_dropdown] Error processing game data for league_id=%s, sport=%s, league_name=%s: %s", league_id, sport, league_name, e, exc_info=True)
                 continue
-        
-        logger.info(f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
+        logger.info("[get_normalized_games_for_dropdown] Returning %d normalized games for dropdown (including manual entry)", len(dropdown_games))
         return dropdown_games
+
+    async def get_open_bets_by_guild(self, guild_id: int):
+        """Fetch open bets for a guild."""
+        logger.info("Fetching open bets for guild_id=%s", guild_id)
+        query = """
+            SELECT DISTINCT COALESCE(b.api_game_id, l.api_game_id) as api_game_id,
+                   g.home_team_name, g.away_team_name, g.start_time, g.status,
+                   g.score, g.id as game_id
+            FROM bets b
+            LEFT JOIN bet_legs l ON b.bet_type = 'parlay' AND l.bet_id = b.id
+            JOIN api_games g ON COALESCE(b.api_game_id, l.api_game_id) = g.api_game_id
+            WHERE b.guild_id = %s AND b.confirmed = 1
+            AND (b.bet_type = 'game_line' OR l.bet_type = 'game_line')
+            AND g.status NOT IN ('finished', 'Match Finished', 'Final', 'Ended')
+        """
+        async with self._pool.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                await cursor.execute(query, (guild_id,))
+                rows = await cursor.fetchall()
+                logger.info("Fetched %d open bets for guild_id=%s", len(rows), guild_id)
+                return rows

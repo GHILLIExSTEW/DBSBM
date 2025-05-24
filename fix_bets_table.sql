@@ -49,4 +49,13 @@ CREATE INDEX idx_api_games_start_time ON api_games(start_time);
 CREATE INDEX idx_api_games_end_time ON api_games(end_time);
 
 -- Add any missing columns to existing tables
-ALTER TABLE bets ADD COLUMN IF NOT EXISTS bet_details JSON; 
+ALTER TABLE bets ADD COLUMN IF NOT EXISTS bet_details JSON;
+
+-- Ensure the referenced column in games table is indexed
+CREATE INDEX idx_games_id ON games(id);
+
+-- Drop the existing foreign key constraint if it exists
+ALTER TABLE bets DROP FOREIGN KEY IF EXISTS bets_ibfk_1;
+
+-- Add the foreign key constraint with correct data types and reference
+ALTER TABLE bets ADD CONSTRAINT bets_ibfk_1 FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL;
