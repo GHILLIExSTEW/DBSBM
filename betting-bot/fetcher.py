@@ -508,10 +508,12 @@ async def fetch_games(
     if not base_endpoint or not league_id:
         logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
         return
+
     endpoint = f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
     params = {"league": league_id, "date": date, "season": season}
     if end_date:
         params["to"] = end_date
+
     logger.debug(f"API request to {endpoint} with params: {params}")
     try:
         async with session.get(endpoint, headers=headers, params=params) as resp:
@@ -519,18 +521,44 @@ async def fetch_games(
             if resp.status != 200:
                 logger.error(f"Error fetching {league_name}: {resp.status} - {await resp.text()}")
                 return
+
             data = await resp.json()
             games = data.get("response", [])
             logger.info(f"Received {len(games)} games for {league_name}")
+
             if not games:
-                logger.warning(f"No games returned for {league_name} on {date}")
+                logger.warning(f"No games returned for {league_name} on {date}. Skipping future queries for this league.")
+                return  # Stop querying this league
+
+            # Save league-level data to cache
             cache_file = os.path.join(CACHE_DIR, f"{league_name}_{date}.json")
             with open(cache_file, "w") as f:
                 json.dump(data, f)
+
+            # Use H2H query format for each game
             for game in games:
-                normalized_game = map_game_data(game, sport, league_name, league_id)
-                if normalized_game:
-                    await save_game_to_db(pool, normalized_game)
+                home_team_id = game.get("teams", {}).get("home", {}).get("id")
+                away_team_id = game.get("teams", {}).get("away", {}).get("id")
+                if home_team_id and away_team_id:
+                    h2h_endpoint = f"{base_endpoint}/games/h2h"
+                    h2h_params = {
+                        "league": league_id,
+                        "season": season,
+                        "date": date,
+                        "h2h": f"{home_team_id}-{away_team_id}"
+                    }
+                    async with session.get(h2h_endpoint, headers=headers, params=h2h_params) as h2h_resp:
+                        logger.info(f"H2H API response status: {h2h_resp.status}")
+                        if h2h_resp.status == 200:
+                            h2h_data = await h2h_resp.json()
+                            h2h_games = h2h_data.get("response", [])
+                            for h2h_game in h2h_games:
+                                normalized_game = map_game_data(h2h_game, sport, league_name, league_id)
+                                if normalized_game:
+                                    await save_game_to_db(pool, normalized_game)
+                        else:
+                            logger.error(f"Error fetching H2H data: {h2h_resp.status} - {await h2h_resp.text()}")
+
     except Exception as e:
         logger.error(f"Error processing {league_name}: {str(e)}", exc_info=True)
 
@@ -541,16 +569,24 @@ async def initial_fetch(pool: aiomysql.Pool):
     tomorrow = today + timedelta(days=1)
     today_str = today.strftime("%Y-%m-%d")
     tomorrow_str = tomorrow.strftime("%Y-%m-%d")
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        for league_name, league_info in LEAGUE_IDS.items():
-            sport = league_info["sport"]
-            league_id = league_info["id"]
-            season = get_current_season(league_name)
-            logger.info(f"Fetching games for {league_name} (season: {season})")
-            tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
-            tasks.append(fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season))
-        await asyncio.gather(*tasks)
+
+    # Add a 6-hour timer for querying all leagues
+    last_full_fetch = datetime.now(timezone.utc)
+    while True:
+        now = datetime.now(timezone.utc)
+        if (now - last_full_fetch).total_seconds() >= 6 * 3600:
+            async with aiohttp.ClientSession() as session:
+                tasks = []
+                for league_name, league_info in LEAGUE_IDS.items():
+                    sport = league_info["sport"]
+                    league_id = league_info["id"]
+                    season = get_current_season(league_name)
+                    logger.info(f"Performing full fetch for {league_name} (season: {season})")
+                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
+                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season))
+                await asyncio.gather(*tasks)
+            last_full_fetch = now
+        await asyncio.sleep(15)
 
 
 # Remove old live_games_fetch and daily_3am_fetch functions
