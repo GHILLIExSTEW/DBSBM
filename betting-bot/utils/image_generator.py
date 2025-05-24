@@ -130,7 +130,8 @@ class BetSlipGenerator:
         selected_team: Optional[str] = None,
         market: Optional[str] = None,
         include_lock: bool = True,
-        line: Optional[str] = None
+        line: Optional[str] = None,
+        bet_id: Optional[str] = None
     ) -> Optional[bytes]:
         """Generate a bet slip image."""
         try:
@@ -214,7 +215,10 @@ class BetSlipGenerator:
             draw.text((odds_x, bet_details_y), odds_display, font=details_font, fill=odds_color, anchor="lt")
 
             # Draw footer
-            footer_text = "discord.gg/betting"  # Replace with your actual footer text
+            footer_text = "discord.gg/betting"
+            bet_id_text = f" • Bet ID: {bet_id}" if bet_id else ""
+            footer_text = footer_text + bet_id_text
+            
             footer_font = self.fonts['font_m_18']
             footer_color = '#808080'  # Gray color for footer
             footer_bbox = footer_font.getbbox(footer_text)
