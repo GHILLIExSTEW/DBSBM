@@ -65,7 +65,7 @@ class LiveGameChannelService:
             FROM bets b
             LEFT JOIN bet_legs l ON b.bet_type = 'parlay' AND l.bet_id = b.id
             JOIN api_games g ON COALESCE(b.api_game_id, l.api_game_id) = g.api_game_id
-            WHERE b.guild_id = ? AND b.confirmed = 1
+            WHERE b.guild_id = %s AND b.confirmed = 1
             AND (b.bet_type = 'game_line' OR l.bet_type = 'game_line')
             AND g.status NOT IN ('finished', 'Match Finished', 'Final', 'Ended')
             """,
