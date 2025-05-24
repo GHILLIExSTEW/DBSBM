@@ -144,8 +144,46 @@ class BetSlipGenerator:
             width = 600
             height = 400
 
+            # Load team logos
+            home_logo = None
+            away_logo = None
+            sport_category = get_sport_category_for_path(league)
+            if sport_category:
+                home_logo_path = os.path.join(self.LEAGUE_TEAM_BASE_DIR, sport_category, league, f"{normalize_team_name_any_league(home_team)}.png")
+                away_logo_path = os.path.join(self.LEAGUE_TEAM_BASE_DIR, sport_category, league, f"{normalize_team_name_any_league(away_team)}.png")
+                try:
+                    if os.path.exists(home_logo_path):
+                        home_logo = Image.open(home_logo_path).convert("RGBA")
+                    if os.path.exists(away_logo_path):
+                        away_logo = Image.open(away_logo_path).convert("RGBA")
+                except Exception as e:
+                    logger.error(f"Error loading team logos: {e}")
+
+            # Load league logo
+            league_logo = None
+            league_logo_path = os.path.join(self.LEAGUE_LOGO_BASE_DIR, sport_category, league, f"{league.lower()}.png")
+            try:
+                if os.path.exists(league_logo_path):
+                    league_logo = Image.open(league_logo_path).convert("RGBA")
+            except Exception as e:
+                logger.error(f"Error loading league logo: {e}")
+
             img = Image.new('RGBA', (width, height), "#2c2f36")  # Mid dark gray background
             draw = ImageDraw.Draw(img)
+
+            # Draw header with league logo
+            header_font = self.fonts['font_b_36']
+            header_text = f"{league} - Game Line"
+            header_y = 25
+            if league_logo:
+                logo_size = (45, 45)
+                logo_display = league_logo.resize(logo_size, Image.Resampling.LANCZOS)
+                bbox = header_font.getbbox(header_text)
+                text_w = bbox[2] - bbox[0]
+                total_width = logo_size[0] + 15 + text_w
+                start_x = (width - total_width) // 2
+                img.paste(logo_display, (int(start_x), header_y), logo_display)
+                draw.text((start_x + logo_size[0] + 15, header_y), header_text, font=header_font, fill="white")
 
             # Draw based on bet type
             if bet_type.lower() == "parlay" and parlay_legs:
@@ -159,9 +197,24 @@ class BetSlipGenerator:
                 self._draw_parlay_details(draw, width, height, parlay_legs, odds, units, bet_id, timestamp, is_same_game, img, parlay_team_logos)
             elif bet_type.lower() == "player_prop" and player_name:
                 # Draw team/opponent names above images, player name only below player image
-                self._draw_player_prop_section(img, draw, width, display_vs or f"{home_team} vs {away_team}", None, None, player_name, player_image)
+                self._draw_player_prop_section(img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo, away_logo, player_name, player_image)
             else:
-                self._draw_teams_section(img, draw, width, home_team, away_team, None, None, selected_team=selected_team)
+                self._draw_teams_section(img, draw, width, home_team, away_team, home_logo, away_logo, selected_team=selected_team)
+                if line:
+                    y = 260  # Position below teams
+                    center_x = width / 2
+                    line_font = self.fonts['font_m_24']
+                    draw.text((center_x, y), line, font=line_font, fill="white", anchor="mt")
+                    
+                    y += 40
+                    odds_font = self.fonts['font_b_28']
+                    odds_text = f"{odds}"
+                    draw.text((center_x, y), odds_text, font=odds_font, fill="white", anchor="mt")
+
+                    y += 40
+                    units_font = self.fonts['font_b_24']
+                    units_text = f"🔒To Risk {units:.2f} Units🔒"
+                    draw.text((center_x, y), units_text, font=units_font, fill="gold", anchor="mt")
 
             logger.info("Bet slip generated OK for bet ID: %s with units: %s", bet_id, units)
             return img.convert("RGB")
