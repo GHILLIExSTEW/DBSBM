@@ -50,6 +50,9 @@ class GameLineImageGenerator:
         away_name_x = away_section_center_x - away_name_w // 2
         away_color = green_color if selected_team and selected_team.lower() == away_team.lower() else white_color
         draw.text((away_name_x, y_base + text_y_offset), away_team, font=team_name_font, fill=away_color)
+        
+        # Return the y position after the team names section
+        return y_base + text_y_offset + home_name_h
 
     def draw_straight_details(self, draw, image_width, image_height, line, odds, units, bet_id, timestamp, img, start_y):
         y = start_y if start_y is not None else 100 + 70 + 10 + 24 + 30
