@@ -358,15 +358,18 @@ class BetDetailsModal(Modal):
                 opponent_input = self.view.bet_details.get("away_team_name", "N/A")
                 if team_input.lower() == self.view.bet_details.get("away_team_name", "").lower():
                     opponent_input = self.view.bet_details.get("home_team_name", "N/A")
+
             line_value = (
                 self.player_line.value.strip()
                 if self.line_type == "player_prop"
                 else self.line.value.strip()
             )
             odds_str = self.odds.value.strip()
+
             if not team_input or not line_value or not odds_str:
                 await interaction.followup.send("❌ All fields are required in the modal.", ephemeral=True)
                 return
+
             try:
                 odds_val = float(odds_str.replace("+", ""))
             except ValueError as ve:
@@ -374,80 +377,95 @@ class BetDetailsModal(Modal):
                     f"❌ Invalid odds: '{odds_str}'. {ve}", ephemeral=True
                 )
                 return
-            self.view.bet_details.update(
-                {
-                    "line": line_value,
-                    "odds_str": odds_str,
-                    "odds": odds_val,
-                    "team": team_input,
-                    "opponent": opponent_input,
-                }
-            )
+
+            # Update bet details
+            self.view.bet_details.update({
+                "line": line_value,
+                "odds_str": odds_str,
+                "odds": odds_val,
+                "team": team_input,
+                "opponent": opponent_input,
+            })
+
+            # Update view properties
+            self.view.home_team = team_input
+            self.view.away_team = opponent_input
+            self.view.league = self.view.bet_details.get("league", "UNKNOWN")
+            self.view.line = line_value
+            self.view.odds = odds_val
+
             try:
                 api_game_id = self.view.bet_details.get("api_game_id")
                 if api_game_id == "Other":
                     api_game_id = None
-                self.view.home_team = team_input
-                self.view.away_team = opponent_input
-                self.view.league = self.view.bet_details.get("league", "UNKNOWN")
-                self.view.line = line_value
-                self.view.odds = odds_val
+
+                # Create bet record if not exists
                 if "bet_serial" not in self.view.bet_details:
                     bet_serial = await self.view.bot.bet_service.create_straight_bet(
                         guild_id=interaction.guild_id,
                         user_id=interaction.user.id,
                         api_game_id=api_game_id,
-                        bet_type=self.view.bet_details.get("line_type", "game_line"),
+                        bet_type=self.line_type,
                         team=team_input,
                         opponent=opponent_input,
                         line=line_value,
                         units=1.0,
                         odds=odds_val,
                         channel_id=None,
-                        league=self.view.bet_details.get("league", "UNKNOWN"),
+                        league=self.view.league,
                     )
                     if not bet_serial:
                         raise BetServiceError("Failed to create bet record (no serial returned).")
                     self.view.bet_details["bet_serial"] = bet_serial
                     self.view.bet_id = str(bet_serial)
-                    logger.debug(
-                        f"Bet record {bet_serial} created from modal for user {interaction.user.id}."
-                    )
                 else:
-                    logger.warning(
-                        f"Bet_serial {self.view.bet_details['bet_serial']} already exists when submitting modal. Check flow."
-                    )
                     self.view.bet_id = str(self.view.bet_details["bet_serial"])
-                current_units = float(self.view.bet_details.get("units", 1.0))
+
+                # Generate bet slip
                 try:
+                    current_units = float(self.view.bet_details.get("units", 1.0))
                     bet_slip_generator = await self.view.get_bet_slip_generator()
+
+                    # Prepare player prop specific details
+                    player_name = None
+                    player_image = None
+                    display_vs = None
+                    if self.line_type == "player_prop":
+                        player_name = line_value.split(' - ')[0] if ' - ' in line_value else None
+                        if player_name:
+                            from utils.modals import get_player_image
+                            player_image_path = get_player_image(player_name, team_input, self.view.league)
+                            if player_image_path:
+                                from PIL import Image
+                                player_image = Image.open(player_image_path).convert("RGBA")
+                        display_vs = f"{team_input} vs {opponent_input}"
+
                     bet_slip_image = await bet_slip_generator.generate_bet_slip(
-                        home_team=self.view.home_team,
-                        away_team=self.view.away_team,
                         league=self.view.league,
-                        line=self.view.line,
-                        odds=self.view.odds,
+                        home_team=team_input,
+                        away_team=opponent_input,
+                        odds=odds_val,
                         units=current_units,
+                        bet_type=self.line_type,
+                        selected_team=team_input,
+                        line=line_value,
                         bet_id=self.view.bet_id,
                         timestamp=datetime.now(timezone.utc),
-                        bet_type=self.view.bet_details.get("line_type", "straight"),
-                        selected_team=self.view.bet_details.get("team"),
+                        player_name=player_name,
+                        player_image=player_image,
+                        display_vs=display_vs
                     )
+
                     if bet_slip_image:
-                        self.view.preview_image_bytes = io.BytesIO()
-                        bet_slip_image.save(self.view.preview_image_bytes, format="PNG")
+                        self.view.preview_image_bytes = io.BytesIO(bet_slip_image)
                         self.view.preview_image_bytes.seek(0)
-                        logger.debug(
-                            f"Bet slip image (re)generated from modal for bet {self.view.bet_id}"
-                        )
                     else:
-                        logger.warning(
-                            f"Failed to generate bet slip image from modal for bet {self.view.bet_id}."
-                        )
                         self.view.preview_image_bytes = None
+
                 except Exception as img_e:
                     logger.exception(f"Error generating bet slip image in modal: {img_e}")
                     self.view.preview_image_bytes = None
+
             except BetServiceError as bse:
                 logger.exception(f"BetService error creating/updating bet from modal: {bse}")
                 await interaction.followup.send(f"❌ Error saving bet record: {bse}", ephemeral=True)
@@ -458,6 +476,7 @@ class BetDetailsModal(Modal):
                 await interaction.followup.send(f"❌ Error processing bet data: {e}", ephemeral=True)
                 self.view.stop()
                 return
+
             await self.view.edit_message(
                 content="Bet details updated. Processing...", view=self.view
             )

@@ -319,9 +319,8 @@ class StraightBetDetailsModal(Modal):
                     team_input = self.team_input.value.strip()
                     opponent_input = self.opponent_input.value.strip()
                 else:
-                    # For non-manual entries, get from view_ref
                     team_input = self.view_ref.bet_details.get("team", self.view_ref.bet_details.get("home_team_name", ""))
-                    opponent_input = self.view_ref.bet_details.get("opponent", self.view_ref.bet_details.get("away_team_name", "N/A"))
+                    opponent_input = self.view_ref.bet_details.get("opponent", self.view_ref.bet_details.get("away_team_name", ""))
             else:
                 # Handle regular game lines
                 if self.is_manual:
@@ -353,118 +352,82 @@ class StraightBetDetailsModal(Modal):
                 "player_name": player_name if self.line_type == "player_prop" else None
             })
 
-            # Always position selected team as home (left), opponent as away (right)
-            display_home = team_input
-            display_away = opponent_input
-
-            self.view_ref.home_team = display_home
-            self.view_ref.away_team = display_away
-
+            # Update view properties
+            self.view_ref.home_team = team_input
+            self.view_ref.away_team = opponent_input
             self.view_ref.league = self.league_config.get("name", self.selected_league_key)
             self.view_ref.line = line_value
             self.view_ref.odds = odds_val
-            
+
+            # Create or get bet_id
             if "bet_serial" not in self.view_ref.bet_details:
                 game_id_for_db = self.view_ref.bet_details.get("game_id")
                 if game_id_for_db == "Other": game_id_for_db = None
 
                 bet_serial = await self.view_ref.bot.bet_service.create_straight_bet(
-                    guild_id=interaction.guild_id, user_id=interaction.user.id,
+                    guild_id=interaction.guild_id, 
+                    user_id=interaction.user.id,
                     api_game_id=game_id_for_db,
-                    bet_type=self.view_ref.bet_details.get("line_type", "game_line"),
-                    team=team_input, opponent=opponent_input, line=line_value,
-                    units=1.0, odds=odds_val, channel_id=None,
+                    bet_type=self.line_type,
+                    team=team_input, 
+                    opponent=opponent_input, 
+                    line=line_value,
+                    units=1.0, 
+                    odds=odds_val, 
+                    channel_id=None,
                     league=self.view_ref.league
                 )
-                if not bet_serial: raise BetServiceError("Failed to create bet record.")
+                if not bet_serial: 
+                    raise BetServiceError("Failed to create bet record.")
                 self.view_ref.bet_details["bet_serial"] = bet_serial
                 self.view_ref.bet_id = str(bet_serial)
             else:
                 self.view_ref.bet_id = str(self.view_ref.bet_details['bet_serial'])
 
+            # Generate bet slip
             current_units = float(self.view_ref.bet_details.get("units", 1.0))
             bet_slip_generator = await self.view_ref.get_bet_slip_generator()
-            selected_team = self.view_ref.bet_details.get("team")
-            if self.league_config.get('sport_type') in ["Individual Player", "Racing", "Fighting"] and not self.is_manual:
-                display_home = self.view_ref.bet_details.get("home_team_name", team_input)
-                display_away = self.view_ref.bet_details.get("away_team_name", "N/A")
 
-            # For player props, use player_name and line_value as prop
+            # Handle player props
             player_image = None
-            corrected_player_name = player_name
-            corrected_team_name = team_input
-            if self.line_type == "player_prop":
-                # Use PLAYER_PROP_SPORT_ID_MAP for player prop image lookup
-                league_key = self.selected_league_key
-                sport_id = PLAYER_PROP_SPORT_ID_MAP.get(league_key, self.league_config.get("sport_category", ""))
-                if not sport_id:
-                    logger.warning("[Player Image] sport_id is empty! Check PLAYER_PROP_SPORT_ID_MAP or LEAGUE_CONFIG for this league.")
-                else:
-                    team = team_input.lower().replace(" ", "_")
-                    team_dir = os.path.join(BASE_DIR, "static", "logos", "players", sport_id, team)
-                    logger.info(f"[Player Image] Searching in team_dir: {team_dir}")
-                    if os.path.isdir(team_dir):
-                        image_files = [f for f in os.listdir(team_dir) if f.endswith('.png')]
-                        logger.info(f"[Player Image] Found image files: {[os.path.join(team_dir, f) for f in image_files]}")
-                        candidates = [os.path.splitext(os.path.basename(f))[0] for f in image_files]
-                        search_name = player_name.lower().replace(" ", "_")
-                        logger.info(f"[Player Image] Search names: {[search_name]}")
-                        
-                        # Get best match
-                        best_match = process.extractOne(search_name, candidates, scorer=fuzz.ratio)
-                        if best_match:
-                            best_name, score, _ = best_match  # Unpack all three values, ignore index
-                            logger.info(f"[Player Image] Fuzzy match: '{search_name}' vs candidates -> '{best_name}' (score {score})")
-                            
-                            # Use best match if it's the only strong candidate or above threshold
-                            if score >= 60 or len(candidates) == 1:
-                                image_path = os.path.join(team_dir, best_name + '.png')
-                                logger.info(f"[Player Image] Using best match: {best_name} (score {score})")
-                                player_image = Image.open(image_path).convert("RGBA")
-                                corrected_player_name = best_name.replace("_", " ").title()
-                            else:
-                                logger.warning(f"[Player Image] No match above threshold. Best: {best_name} (score {score})")
-                        else:
-                            logger.warning(f"[Player Image] No match found for '{search_name}'")
-                    else:
-                        logger.warning(f"[Player Image] Team directory does not exist: {team_dir}")
-                corrected_team_name = team_input.replace("_", " ").title()
+            display_vs = None
+            if self.line_type == "player_prop" and player_name:
+                # Try to get player image if available
+                from utils.modals import get_player_image
+                player_image_path = get_player_image(player_name, team_input, self.selected_league_key)
+                if player_image_path:
+                    player_image = Image.open(player_image_path).convert("RGBA")
+                display_vs = f"{team_input} vs {opponent_input}"
 
-            if display_away == "N/A":
-                display_vs = corrected_team_name
-            else:
-                display_vs = f"{corrected_team_name} vs {opponent_input.replace('_', ' ').title()}"
-
+            # Generate the bet slip
             bet_slip_image = await bet_slip_generator.generate_bet_slip(
-                home_team=corrected_team_name,
-                away_team=opponent_input.replace('_', ' ').title(),
                 league=self.view_ref.league,
-                line=line_value.strip().title(),
+                home_team=team_input,
+                away_team=opponent_input,
                 odds=odds_val,
                 units=current_units,
+                bet_type=self.line_type,
+                selected_team=team_input,
+                line=line_value,
                 bet_id=self.view_ref.bet_id,
                 timestamp=datetime.now(timezone.utc),
-                bet_type=self.view_ref.bet_details.get("line_type", "straight"),
-                selected_team=selected_team,
-                player_name=corrected_player_name if self.line_type == "player_prop" else None,
+                player_name=player_name,
                 player_image=player_image,
                 display_vs=display_vs
             )
+            
             if bet_slip_image:
-                self.view_ref.preview_image_bytes = io.BytesIO()
-                bet_slip_image.save(self.view_ref.preview_image_bytes, format='PNG')
+                self.view_ref.preview_image_bytes = io.BytesIO(bet_slip_image)
                 self.view_ref.preview_image_bytes.seek(0)
-            else: self.view_ref.preview_image_bytes = None
+            else:
+                self.view_ref.preview_image_bytes = None
 
             self.view_ref.current_step = 4 
-            await self.view_ref.go_next(interaction) 
+            await self.view_ref.go_next(interaction)
 
         except Exception as e:
             logger.exception(f"Error in StraightBetDetailsModal.on_submit: {e}")
-            # Use a safe fallback for player_name if not set
-            safe_player_name = player_name if player_name is not None else "Unknown"
-            await interaction.followup.send(f"❌ Error processing bet details for player: {safe_player_name}: {str(e)}", ephemeral=True)
-
+            await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
         response_method = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message

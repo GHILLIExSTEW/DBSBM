@@ -1,12 +1,12 @@
-import logging
 import os
 import time
-import io
+from typing import Optional, Union, Dict, List, Tuple
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-import traceback
+from PIL import Image, ImageDraw, ImageFont
+import io
+import logging
+from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from config.asset_paths import (
     get_sport_category_for_path,
     BASE_DIR
@@ -20,6 +20,9 @@ from .player_prop_image_generator import PlayerPropImageGenerator
 from .parlay_image_generator import ParlayImageGenerator
 
 logger = logging.getLogger(__name__)
+
+# Constants
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SPORT_CATEGORY_MAP = {
     "NBA": "BASKETBALL", "NCAAB": "BASKETBALL", "WNBA": "BASKETBALL", "EUROLEAGUE": "BASKETBALL", "CBA": "BASKETBALL",
@@ -122,19 +125,43 @@ class BetSlipGenerator:
     async def generate_bet_slip(
         self,
         league: str,
-        bet_type: str,
         home_team: str,
         away_team: str,
-        odds: str,
+        odds: Union[str, float],
         units: float,
+        bet_type: str = "straight",
         selected_team: Optional[str] = None,
         market: Optional[str] = None,
         include_lock: bool = True,
         line: Optional[str] = None,
         bet_id: Optional[str] = None,
-        timestamp: Optional[datetime] = None
+        timestamp: Optional[datetime] = None,
+        player_name: Optional[str] = None,
+        player_image: Optional[Image.Image] = None,
+        display_vs: Optional[str] = None
     ) -> Optional[bytes]:
-        """Generate a bet slip image."""
+        """Generate a bet slip image.
+        
+        Args:
+            league (str): League name
+            home_team (str): Home team name 
+            away_team (str): Away team name
+            odds (Union[str, float]): Bet odds
+            units (float): Number of units
+            bet_type (str, optional): Type of bet. Defaults to "straight"
+            selected_team (Optional[str], optional): Selected team for the bet. Defaults to None
+            market (Optional[str], optional): Market type. Defaults to None
+            include_lock (bool, optional): Whether to include lock icon. Defaults to True
+            line (Optional[str], optional): Betting line. Defaults to None
+            bet_id (Optional[str], optional): Unique bet ID. Defaults to None
+            timestamp (Optional[datetime], optional): Bet timestamp. Defaults to None
+            player_name (Optional[str], optional): Player name for props. Defaults to None
+            player_image (Optional[Image.Image], optional): Player image for props. Defaults to None
+            display_vs (Optional[str], optional): Custom VS text. Defaults to None
+        
+        Returns:
+            Optional[bytes]: Generated image as bytes
+        """
         try:
             width = 600
             height = 400
@@ -150,13 +177,15 @@ class BetSlipGenerator:
                 away_logo = self._load_team_logo(away_team, league) 
                 league_logo = self._load_league_logo(league)
 
+            # Create base image
             img = Image.new('RGBA', (width, height), "#2c2f36")  # Mid dark gray background
             draw = ImageDraw.Draw(img)
 
             # Draw header with league and sport type
             header_font = self.fonts['font_b_36']
-            header_text = f"{league} - Game Line"
+            header_text = f"{league} - {bet_type.title()}"
             header_y = 25
+
             if league_logo:
                 logo_size = (45, 45)
                 logo_display = league_logo.resize(logo_size, Image.Resampling.LANCZOS)
@@ -172,13 +201,21 @@ class BetSlipGenerator:
                 draw.text((width // 2 - text_w // 2, header_y), header_text, font=header_font, fill='white', anchor="lt")
 
             # Draw teams section with logos and vs text
-            game_line_gen = GameLineImageGenerator(self.fonts, padding=20)
-            next_y = game_line_gen.draw_teams_section(
-                img, draw, width, home_team, away_team, home_logo, away_logo, selected_team
-            )
+            if bet_type.lower() == "player_prop" and player_name:
+                y_after_content = self._draw_player_prop_section(
+                    img, draw, width, display_vs or f"{home_team} vs {away_team}",
+                    home_logo, away_logo, player_name, player_image,
+                    player_team=selected_team, home_team=home_team, away_team=away_team
+                )
+                separator_y = y_after_content + 20
+            else:
+                game_line_gen = GameLineImageGenerator(self.fonts, padding=20)
+                next_y = game_line_gen.draw_teams_section(
+                    img, draw, width, home_team, away_team, home_logo, away_logo, selected_team
+                )
+                separator_y = next_y + 20
 
             # Draw separator line
-            separator_y = next_y + 20
             line_color = '#4a4a4a'  # Subtle gray for the line
             line_thickness = 2
             line_padding = 40  # Padding from edges
@@ -197,7 +234,7 @@ class BetSlipGenerator:
                 units_text = f"🔒 {units_text}"
 
             # Format odds with market and line
-            odds_display = odds
+            odds_display = str(odds)
             if line:
                 odds_display = f"{odds} ({line})"
             elif market:
@@ -234,6 +271,7 @@ class BetSlipGenerator:
             footer_x = width // 2 - footer_w // 2  # Center horizontally
             draw.text((footer_x, footer_y), footer_text, font=footer_font, fill=footer_color)
 
+            # Convert to bytes
             img_byte_arr = io.BytesIO()
             img.save(img_byte_arr, format='PNG', optimize=True)
             img_byte_arr.seek(0)
