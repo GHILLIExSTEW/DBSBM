@@ -462,7 +462,7 @@ class BetSlipGenerator:
         home_section_center_x = self.padding + section_width // 2
         player_section_center_x = image_width - self.padding - section_width // 2
 
-        # Draw team vs opponent or just team
+        # Draw team vs opponent or just team (above images)
         vs_w, vs_h = self._get_text_dimensions(display_vs, team_name_font)
         vs_x = center_x - vs_w // 2
         vs_y = y_base
@@ -497,7 +497,7 @@ class BetSlipGenerator:
             except Exception as e:
                 logger.error("Error pasting player image: %s", e, exc_info=True)
 
-        # Draw player name below the images
+        # Draw player name below the images (centered)
         player_name_w, player_name_h = self._get_text_dimensions(player_name, player_name_font)
         player_name_x = center_x - player_name_w // 2
         draw.text((player_name_x, y_base + text_y_offset), player_name, font=player_name_font, fill=text_color, anchor="lt")
@@ -686,9 +686,11 @@ class BetSlipGenerator:
                     draw, width, height, parlay_legs, odds, units, bet_id, timestamp, is_same_game, img, team_logos
                 )
             elif bet_type.lower() == "player_prop" and player_name:
+                # Draw team/opponent names above images, player name only below player image
                 y_after_player = self._draw_player_prop_section(
                     img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo_pil, player_name, player_image
                 )
+                # Draw the line (stat) only, without player name in front
                 final_y = self._draw_straight_details(
                     draw, width, height, line, odds, units, bet_id, timestamp, img, start_y=y_after_player
                 )
