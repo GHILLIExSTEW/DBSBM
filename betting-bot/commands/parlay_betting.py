@@ -16,6 +16,7 @@ from discord.ext import commands
 from utils.errors import BetServiceError, ValidationError, GameNotFoundError
 from utils.image_generator import BetSlipGenerator
 from config.asset_paths import get_sport_category_for_path
+from config.team_mappings import normalize_team_name
 from data.game_utils import get_normalized_games_for_dropdown
 from utils.validators import validate_units
 from utils.formatters import format_parlay_bet_details_embed
@@ -259,10 +260,13 @@ class BetDetailsModal(Modal):
                 league = self.view_ref.current_leg_construction_details.get('league', 'UNKNOWN')
                 logo_image = bet_slip_gen._load_team_logo(team_value, league)
                 if logo_image:
+                    # Use robust normalization for 'St.' teams and filename
                     normalized_team_name = bet_slip_gen._normalize_team_name(team_value)
+                    normalized_team_name_no_period = normalized_team_name.replace('.', '')
                     sport = get_sport_category_for_path(league.upper()) or 'OTHER_SPORTS'
                     team_dir = os.path.join(bet_slip_gen.LEAGUE_TEAM_BASE_DIR, sport, league.upper())
-                    team_logo_path = os.path.join(team_dir, f"{normalized_team_name}.png")
+                    team_logo_filename = f"{normalize_team_name(normalized_team_name_no_period)}.png"
+                    team_logo_path = os.path.join(team_dir, team_logo_filename)
                     if not os.path.exists(team_logo_path):
                         team_logo_path = bet_slip_gen.DEFAULT_LOGO_PATH
                     logo_image.close()
