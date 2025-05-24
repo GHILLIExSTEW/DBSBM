@@ -447,8 +447,12 @@ class BetSlipGenerator:
         image_width: int,
         display_vs: str,
         home_logo: Optional[Image.Image],
+        away_logo: Optional[Image.Image],
         player_name: str,
-        player_image: Optional[Image.Image]
+        player_image: Optional[Image.Image],
+        player_team: Optional[str] = None,
+        home_team: Optional[str] = None,
+        away_team: Optional[str] = None,
     ):
         y_base = 85
         logo_size = (120, 120)
@@ -490,17 +494,28 @@ class BetSlipGenerator:
         # Move y_base down for images
         y_base += max(left_name_h, right_name_h if right_name else 0) + 8
 
+        # Determine which logo to use (player's team logo always on left)
+        logo_to_draw = None
+        if player_team and home_team and away_team:
+            if player_team.strip().lower() == home_team.strip().lower():
+                logo_to_draw = home_logo
+            elif player_team.strip().lower() == away_team.strip().lower():
+                logo_to_draw = away_logo
+            else:
+                logo_to_draw = home_logo  # fallback
+        else:
+            logo_to_draw = home_logo
         # Draw team logo on the left
-        if home_logo:
+        if logo_to_draw:
             try:
-                home_logo_resized = home_logo.resize(logo_size, Image.Resampling.LANCZOS)
+                home_logo_resized = logo_to_draw.resize(logo_size, Image.Resampling.LANCZOS)
                 home_logo_x = home_section_center_x - logo_size[0] // 2
                 if home_logo_resized.mode == 'RGBA':
                     img.paste(home_logo_resized, (int(home_logo_x), int(y_base)), home_logo_resized)
                 else:
                     img.paste(home_logo_resized, (int(home_logo_x), int(y_base)))
             except Exception as e:
-                logger.error("Error pasting home logo: %s", e, exc_info=True)
+                logger.error("Error pasting team logo: %s", e, exc_info=True)
 
         # Draw player image on the right, dynamically resized
         if player_image:
@@ -709,7 +724,7 @@ class BetSlipGenerator:
             elif bet_type.lower() == "player_prop" and player_name:
                 # Draw team/opponent names above images, player name only below player image
                 y_after_player = self._draw_player_prop_section(
-                    img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo_pil, player_name, player_image
+                    img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo_pil, away_logo_pil, player_name, player_image, player_team=selected_team, home_team=home_team, away_team=away_team
                 )
                 # Draw the line (stat) only, without player name in front
                 final_y = self._draw_straight_details(
@@ -746,7 +761,7 @@ class BetSlipGenerator:
                     )
                 elif bet_type.lower() == "player_prop" and player_name:
                     y_after_player = self._draw_player_prop_section(
-                        img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo_pil, player_name, player_image
+                        img, draw, width, display_vs or f"{home_team} vs {away_team}", home_logo_pil, away_logo_pil, player_name, player_image
                     )
                     self._draw_straight_details(
                         draw, width, height, line, odds, units, bet_id, timestamp, img, start_y=y_after_player
