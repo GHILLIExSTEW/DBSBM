@@ -198,9 +198,9 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
             away_team_name = safe_get(away_team, "name", default="Unknown")
             
             if league.upper() == "MLB":
-                from data.game_utils import normalize_mlb_team_name
-                home_team_name = normalize_mlb_team_name(home_team_name)
-                away_team_name = normalize_mlb_team_name(away_team_name)
+                from data.game_utils import normalize_team_name_any_league
+                home_team_name = normalize_team_name_any_league(home_team_name)
+                away_team_name = normalize_team_name_any_league(away_team_name)
             
             game_data = {
                 "id": str(safe_get(game, "id", default="")),

@@ -13,6 +13,7 @@ from config.asset_paths import (
 )
 from config.team_mappings import normalize_team_name
 from data.db_manager import DatabaseManager
+from data.game_utils import normalize_team_name_any_league
 
 logger = logging.getLogger(__name__)
 
@@ -869,8 +870,8 @@ class BetSlipGenerator:
                     else None
                 )
 
-            normalized_team_name = normalize_team_name(team_name)
-            logo_path = os.path.join(team_dir, f"{normalized_team_name}.png")
+            normalized_team_name = normalize_team_name_any_league(team_name)
+            logo_path = os.path.join(team_dir, f"{normalize_team_name(normalized_team_name)}.png")
             absolute_logo_path = os.path.abspath(logo_path)
             logger.info(
                 "Attempting to load team logo: Team='%s', Normalized='%s', League='%s', Sport='%s', Path='%s'",
@@ -928,7 +929,7 @@ class BetSlipGenerator:
             return None
 
     def _normalize_team_name(self, team_name: str) -> str:
-        return normalize_team_name(team_name)
+        return normalize_team_name_any_league(team_name)
 
     def _format_odds_with_sign(self, odds: float) -> str:
         return f"+{int(odds)}" if odds > 0 else str(int(odds))

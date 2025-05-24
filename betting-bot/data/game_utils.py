@@ -360,16 +360,10 @@ async def get_normalized_games_for_dropdown(
 
     for row in rows:
         try:
-            # For MLB games, normalize team names
-            if sport.lower() == "baseball" and league_key == "MLB":
-                home_team = normalize_mlb_team_name(row['home_team_name'])
-                away_team = normalize_mlb_team_name(row['away_team_name'])
-                logger.info(f"[get_normalized_games_for_dropdown] MLB: Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
-            else:
-                home_team = sanitize_team_name(row['home_team_name'])
-                away_team = sanitize_team_name(row['away_team_name'])
-                logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
-                
+            # Normalize team names for all leagues using the new function
+            home_team = normalize_team_name_any_league(row['home_team_name'])
+            away_team = normalize_team_name_any_league(row['away_team_name'])
+            logger.info(f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
             game_data = {
                 'id': row['id'],
                 'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
