@@ -17,6 +17,8 @@ from rapidfuzz import process, fuzz
 from config.leagues import LEAGUE_CONFIG
 from utils.errors import BetServiceError # Example, if used directly in modal
 from config.asset_paths import BASE_DIR
+# Import the correct version of the image generator
+from utils.image_generator import BetSlipGenerator
 
 # Add this mapping at the top of the file (after imports)
 PLAYER_PROP_SPORT_ID_MAP = {

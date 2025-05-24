@@ -96,6 +96,9 @@ class BetSlipGenerator:
         self.db_manager = DatabaseManager()
         self.padding = 10
         self.fonts = FONTS
+        self.LEAGUE_TEAM_BASE_DIR = os.path.join(BASE_DIR, "static", "logos", "teams")
+        self.LEAGUE_LOGO_BASE_DIR = os.path.join(BASE_DIR, "static", "logos", "leagues")
+        self.DEFAULT_LOGO_PATH = os.path.join(BASE_DIR, "static", "logos", "default_logo.png")
 
         self.game_line_generator = GameLineImageGenerator(self.fonts, self.padding)
         self.player_prop_generator = PlayerPropImageGenerator(self.fonts, self.padding)
@@ -109,3 +112,72 @@ class BetSlipGenerator:
 
     def _draw_parlay_details(self, *args, **kwargs):
         return self.parlay_generator.draw_parlay_details(*args, **kwargs)
+
+    async def generate_bet_slip(
+        self,
+        home_team: str,
+        away_team: str,
+        league: str,
+        odds: float,
+        units: float,
+        bet_id: str,
+        timestamp: datetime,
+        bet_type: str = "straight",
+        line: Optional[str] = None,
+        parlay_legs: Optional[List[Dict]] = None,
+        is_same_game: bool = False,
+        team_logo_paths: Optional[List[str]] = None,
+        selected_team: Optional[str] = None,
+        player_name: Optional[str] = None,
+        player_image: Optional[Image.Image] = None,
+        display_vs: Optional[str] = None
+    ) -> Optional[Image.Image]:
+        try:
+            if line:
+                line = line.upper()
+
+            # Validate units
+            if units <= 0:
+                logger.error("Invalid units value %s for bet ID %s. Units must be positive.", units, bet_id)
+                raise ValueError(f"Units must be positive, got {units}")
+
+            width = 600
+            height = 400
+
+            img = Image.new('RGBA', (width, height), "#2c2f36")  # Mid dark gray background
+            draw = ImageDraw.Draw(img)
+
+            # Draw based on bet type
+            if bet_type.lower() == "parlay" and parlay_legs:
+                parlay_team_logos = []
+                for team_logo_path in team_logo_paths:
+                    try:
+                        logo = Image.open(team_logo_path).convert("RGBA")
+                        parlay_team_logos.append(logo)
+                    except:
+                        parlay_team_logos.append(None)
+                self._draw_parlay_details(draw, width, height, parlay_legs, odds, units, bet_id, timestamp, is_same_game, img, parlay_team_logos)
+            elif bet_type.lower() == "player_prop" and player_name:
+                # Draw team/opponent names above images, player name only below player image
+                self._draw_player_prop_section(img, draw, width, display_vs or f"{home_team} vs {away_team}", None, None, player_name, player_image)
+            else:
+                self._draw_teams_section(img, draw, width, home_team, away_team, None, None, selected_team=selected_team)
+
+            logger.info("Bet slip generated OK for bet ID: %s with units: %s", bet_id, units)
+            return img.convert("RGB")
+
+        except Exception as e:
+            logger.error("Error in generate_bet_slip: %s", str(e), exc_info=True)
+            try:
+                err_img = Image.new('RGB', (600, 100), "darkred")
+                err_draw = ImageDraw.Draw(err_img)
+                err_draw.text(
+                    (10, 10),
+                    f"Error creating slip:\n{str(e)[:100]}",
+                    font=ImageFont.load_default(),
+                    fill="white"
+                )
+                return err_img
+            except Exception as final_err:
+                logger.error("Fallback image failed: %s", final_err)
+            return None
