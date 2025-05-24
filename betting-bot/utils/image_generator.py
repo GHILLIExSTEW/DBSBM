@@ -453,11 +453,12 @@ class BetSlipGenerator:
         player_team: Optional[str] = None,
         home_team: Optional[str] = None,
         away_team: Optional[str] = None,
+        regenerate_logo: bool = True  # New parameter to control logo regeneration
     ):
         y_base = 85
         logo_size = (120, 120)
         player_img_max_size = (90, 90)  # Dynamically constrain player image
-        text_y_offset = logo_size[1] + 8
+        text_y_offset = logo_size[1] + 16  # Adjusted for better spacing
         team_name_font = self.fonts['font_m_18']  # Smaller font for team names
         player_name_font = self.fonts['font_b_24']
         text_color = 'white'
@@ -467,7 +468,6 @@ class BetSlipGenerator:
         player_section_center_x = image_width - self.padding - section_width // 2
 
         # Determine left (player's team) and right (opponent) names for above images
-        # Use home_team and away_team to decide which is player_team and which is opponent
         if player_team and home_team and away_team:
             if player_team.strip().lower() == home_team.strip().lower():
                 left_name = home_team
@@ -481,24 +481,19 @@ class BetSlipGenerator:
                 parts = display_vs.split(' vs ')
                 left_name = parts[0].strip()
                 right_name = parts[1].strip()
-            elif ' VS ' in display_vs:
-                parts = display_vs.split(' VS ')
-                left_name = parts[0].strip()
-                right_name = parts[1].strip()
             else:
                 left_name = display_vs.strip()
                 right_name = ''
 
-        # Draw left (player's team) and right (opponent) names ABOVE the images (not above logo/image)
-        # Move y_base down for images first
         y_base_images = y_base
-        y_base += logo_size[1] + 8
+        y_base += logo_size[1] + 16  # Adjusted for better spacing
 
         # Draw left (player's team) name above left image
         left_name_w, left_name_h = self._get_text_dimensions(left_name, team_name_font)
         left_name_x = home_section_center_x - left_name_w // 2
         left_name_y = y_base_images - left_name_h - 8
         draw.text((left_name_x, left_name_y), left_name, font=team_name_font, fill=text_color, anchor="lt")
+
         # Draw right (opponent) name above right image
         if right_name:
             right_name_w, right_name_h = self._get_text_dimensions(right_name, team_name_font)
@@ -507,26 +502,27 @@ class BetSlipGenerator:
             draw.text((right_name_x, right_name_y), right_name, font=team_name_font, fill=text_color, anchor="lt")
 
         # Draw player's team logo on the left
-        logo_to_draw = None
-        if player_team and home_team and away_team:
-            if player_team.strip().lower() == home_team.strip().lower():
-                logo_to_draw = home_logo
-            elif player_team.strip().lower() == away_team.strip().lower():
-                logo_to_draw = away_logo
-            else:
-                logo_to_draw = home_logo  # fallback
-        else:
-            logo_to_draw = home_logo
-        if logo_to_draw:
-            try:
-                home_logo_resized = logo_to_draw.resize(logo_size, Image.Resampling.LANCZOS)
-                home_logo_x = home_section_center_x - logo_size[0] // 2
-                if home_logo_resized.mode == 'RGBA':
-                    img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)), home_logo_resized)
+        if regenerate_logo:
+            logo_to_draw = None
+            if player_team and home_team and away_team:
+                if player_team.strip().lower() == home_team.strip().lower():
+                    logo_to_draw = home_logo
+                elif player_team.strip().lower() == away_logo.strip().lower():
+                    logo_to_draw = away_logo
                 else:
-                    img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)))
-            except Exception as e:
-                logger.error("Error pasting team logo: %s", e, exc_info=True)
+                    logo_to_draw = home_logo  # fallback
+            else:
+                logo_to_draw = home_logo
+            if logo_to_draw:
+                try:
+                    home_logo_resized = logo_to_draw.resize(logo_size, Image.Resampling.LANCZOS)
+                    home_logo_x = home_section_center_x - logo_size[0] // 2
+                    if home_logo_resized.mode == 'RGBA':
+                        img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)), home_logo_resized)
+                    else:
+                        img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)))
+                except Exception as e:
+                    logger.error("Error pasting team logo: %s", e, exc_info=True)
 
         # Draw player image on the right (never opponent logo)
         if player_image:

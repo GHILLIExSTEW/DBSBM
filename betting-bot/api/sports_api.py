@@ -372,6 +372,13 @@ class SportsAPI:
                 season = datetime.now().year
                 logger.info(f"[fetch_games] Non-MLB: Using current year as season: {season}")
 
+        # Restrict season to current year or next year
+        current_year = datetime.now().year
+        next_year = current_year + 1
+        if season not in [current_year, next_year]:
+            logger.error(f"[fetch_games] Invalid season: {season}. Allowed seasons are {current_year} and {next_year}.")
+            raise ValueError(f"Invalid season: {season}. Allowed seasons are {current_year} and {next_year}.")
+
         params = {
             'league': league_config['id'],
             'season': season,
@@ -501,4 +508,4 @@ async def main():
             print("\nExiting...")
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

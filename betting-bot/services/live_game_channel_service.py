@@ -104,6 +104,7 @@ class LiveGameChannelService:
         api_game_id = bet.get("api_game_id")
         name = self._format_channel_name(home, away, status, score, start_time)
         overwrites = {guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False)}
+
         try:
             channel = await guild.create_text_channel(
                 name=name[:100], overwrites=overwrites, reason="Live game update channel"
@@ -111,10 +112,13 @@ class LiveGameChannelService:
             logger.info("Created live game channel %s for game %s in guild %s", channel.name, api_game_id, guild.id)
             return channel
         except discord.errors.Forbidden:
-            logger.error("Missing permissions to create channel in guild %s", guild.id)
+            logger.error("Missing permissions to create channel in guild %s. Ensure the bot has 'Manage Channels' permission.", guild.id)
+            return None
+        except discord.errors.HTTPException as http_err:
+            logger.error("HTTPException occurred while creating channel for game %s in guild %s: %s", api_game_id, guild.id, http_err)
             return None
         except Exception as e:
-            logger.error("Failed to create live game channel for game %s in guild %s: %s", api_game_id, guild.id, e)
+            logger.error("Unexpected error while creating live game channel for game %s in guild %s: %s", api_game_id, guild.id, e, exc_info=True)
             return None
 
     async def _update_channel_name(self, guild: discord.Guild, channel_id: int, bet: dict):
