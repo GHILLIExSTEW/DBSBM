@@ -870,8 +870,10 @@ class BetSlipGenerator:
                     else None
                 )
 
+            # Always normalize to 'St. <Rest>' (with a space), then pass to normalize_team_name for filename
             normalized_team_name = normalize_team_name_any_league(team_name)
-            logo_path = os.path.join(team_dir, f"{normalize_team_name(normalized_team_name)}.png")
+            logo_filename = f"{normalize_team_name(normalized_team_name)}.png"
+            logo_path = os.path.join(team_dir, logo_filename)
             absolute_logo_path = os.path.abspath(logo_path)
             logger.info(
                 "Attempting to load team logo: Team='%s', Normalized='%s', League='%s', Sport='%s', Path='%s'",
