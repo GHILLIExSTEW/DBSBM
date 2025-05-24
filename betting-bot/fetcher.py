@@ -553,83 +553,33 @@ async def initial_fetch(pool: aiomysql.Pool):
         await asyncio.gather(*tasks)
 
 
-async def daily_3am_fetch(pool: aiomysql.Pool):
-    """Fetch games daily at 3 AM EDT."""
+# Remove old live_games_fetch and daily_3am_fetch functions
+# Add new 15-second update loop
+async def update_api_games_every_15_seconds(pool: aiomysql.Pool):
+    """Fetch and update all leagues' games every 15 seconds."""
+    logger.info("Starting 15-second API update loop for api_games table.")
     while True:
-        now = datetime.now(timezone.utc)
-        next_sync = now.replace(hour=3, minute=0, second=0, microsecond=0)
-        if next_sync <= now:
-            next_sync += timedelta(days=1)
-        await asyncio.sleep((next_sync - now).total_seconds())
-        await clear_api_games_table(pool)
-        today = datetime.now(timezone.utc)
-        tomorrow = today + timedelta(days=1)
-        today_str = today.strftime("%Y-%m-%d")
-        tomorrow_str = tomorrow.strftime("%Y-%m-%d")
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            for league_name, league_info in LEAGUE_IDS.items():
-                sport = league_info["sport"]
-                league_id = league_info["id"]
-                season = get_current_season(league_name)
-                logger.info(f"Fetching games for {league_name} (season: {season})")
-                tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
-                tasks.append(fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season))
-            await asyncio.gather(*tasks)
-
-
-async def live_games_fetch(pool: aiomysql.Pool):
-    """Fetch data for live games with active bets every 5 minutes."""
-    while True:
-        live_games = await get_live_games(pool)
-        if not live_games:
-            logger.info("No live games found, skipping 5-minute fetch")
-            await asyncio.sleep(300)
-            continue
-        live_game_ids = [game["id"] for game in live_games]
-        live_league_ids = {str(game["league_id"]) for game in live_games}
-        logger.info(f"Found {len(live_games)} live games in leagues: {live_league_ids}")
-        active_bets = await get_active_bets(pool, live_game_ids)
-        if not active_bets:
-            logger.info("No active bets found for live games, skipping 5-minute fetch")
-            await asyncio.sleep(300)
-            continue
-        bet_league_ids = {str(bet["league"]) for bet in active_bets}
-        logger.info(f"Found {len(active_bets)} active bets in leagues: {bet_league_ids}")
-        target_league_ids = live_league_ids.intersection(bet_league_ids)
-        if not target_league_ids:
-            logger.info("No leagues with live games and bets, skipping 5-minute fetch")
-            await asyncio.sleep(300)
-            continue
-        today_edt = datetime.now(EDT).strftime("%Y-%m-%d")
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        if current_year == 2024 and current_month < 7:
-            season = 2024
-        elif current_year == 2024 and current_month >= 7:
-            season = 2025
-        else:
-            season = current_year
-        logger.info(f"Starting 5-minute fetch for live games with bets in {target_league_ids}")
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            for league_name, league_info in LEAGUE_IDS.items():
-                sport = league_info.get("sport")
-                league_id = str(league_info.get("id"))
-                if league_id not in target_league_ids:
-                    continue
-                league_season = league_info.get("season", season)
-                tasks.append(
-                    fetch_games(pool, session, sport, league_name, league_id, today_edt, league_season)
-                )
-            await asyncio.gather(*tasks, return_exceptions=True)
-        logger.info("5-minute fetch for live games with bets completed")
-        await asyncio.sleep(300)
+        try:
+            now = datetime.now(timezone.utc)
+            today_str = now.strftime("%Y-%m-%d")
+            async with aiohttp.ClientSession() as session:
+                tasks = []
+                for league_name, league_info in LEAGUE_IDS.items():
+                    sport = league_info["sport"]
+                    league_id = league_info["id"]
+                    season = get_current_season(league_name)
+                    logger.info(f"[15s] Fetching games for {league_name} (season: {season})")
+                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
+                await asyncio.gather(*tasks, return_exceptions=True)
+            logger.info("[15s] All leagues updated. Sleeping 15 seconds.")
+        except Exception as e:
+            logger.error(f"[15s] Error in 15-second update loop: {e}", exc_info=True)
+        await asyncio.sleep(15)
 
 
 async def main():
-    """Run initial fetch, daily 3 AM EDT fetch, and 5-minute live games fetch."""
-    logger.info("Entering main function of fetcher.py")
+    """Run initial fetch, then update api_games every 15 seconds."""
+    logger.info("Entering main function of fetcher.py (15s update mode)")
     try:
         logger.info(f"Using database: {MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
         logger.info(f"API endpoints configured for: {list(ENDPOINTS.keys())}")
@@ -641,12 +591,8 @@ async def main():
             logger.info("Starting initial fetch...")
             await initial_fetch(pool)
             logger.info("Initial fetch completed successfully")
-            logger.info("Starting background tasks...")
-            await asyncio.gather(
-                daily_3am_fetch(pool),
-                live_games_fetch(pool),
-                return_exceptions=True
-            )
+            logger.info("Starting 15-second background update task...")
+            await update_api_games_every_15_seconds(pool)
         finally:
             logger.info("Closing database connection pool...")
             pool.close()

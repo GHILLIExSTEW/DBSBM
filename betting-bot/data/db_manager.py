@@ -440,6 +440,7 @@ class DatabaseManager:
                         logger.info("Table 'guild_settings' already exists.")
                         await self._check_and_add_column(cursor, 'guild_settings', 'voice_channel_id', "BIGINT NULL COMMENT 'Monthly VC'")
                         await self._check_and_add_column(cursor, 'guild_settings', 'yearly_channel_id', "BIGINT NULL COMMENT 'Yearly VC'")
+                        await self._check_and_add_column(cursor, 'guild_settings', 'live_game_updates', "TINYINT(1) DEFAULT 0 COMMENT 'Enable 15s live game updates'", after='yearly_channel_id')
 
                     # --- Cappers Table ---
                     if not await self.table_exists(conn, 'cappers'):

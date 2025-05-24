@@ -279,6 +279,12 @@ class GuildSettingsView(discord.ui.View):
             'select': None,  # This will be handled by message input
             'setting_key': 'default_parlay_image',
             'is_premium_only': True
+        },
+        {
+            'name': 'Enable Live Game Updates',
+            'select': None,  # Will be handled by a yes/no prompt
+            'setting_key': 'live_game_updates',
+            'is_boolean': True
         }
         # Note: User avatars are stored per user in the cappers table's image_path column
         # and are only available for premium guild members with the authorized role
@@ -354,6 +360,29 @@ class GuildSettingsView(discord.ui.View):
                         f"Please upload an image for {step['name'].lower()} or type 'skip' to skip this step:",
                         ephemeral=True
                     )
+                return
+
+            # Handle boolean (yes/no) steps
+            if step.get('is_boolean', False):
+                view = discord.ui.View(timeout=60)
+                async def yes_callback(inner_interaction):
+                    self.settings[step['setting_key']] = 1
+                    self.current_step += 1
+                    await self.process_next_selection(inner_interaction)
+                async def no_callback(inner_interaction):
+                    self.settings[step['setting_key']] = 0
+                    self.current_step += 1
+                    await self.process_next_selection(inner_interaction)
+                yes_btn = discord.ui.Button(label="Yes", style=discord.ButtonStyle.green)
+                no_btn = discord.ui.Button(label="No", style=discord.ButtonStyle.red)
+                yes_btn.callback = yes_callback
+                no_btn.callback = no_callback
+                view.add_item(yes_btn)
+                view.add_item(no_btn)
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+                else:
+                    await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
                 return
 
             # For selection steps, defer the interaction
@@ -517,6 +546,9 @@ class GuildSettingsView(discord.ui.View):
                         final_settings[k] = int(v)
                     else:
                         final_settings[k] = v
+            # Ensure live_game_updates is set (default to 0 if not present)
+            if 'live_game_updates' not in final_settings:
+                final_settings['live_game_updates'] = 0
 
             await self.admin_service.setup_guild(self.guild.id, final_settings)
             

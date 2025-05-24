@@ -90,6 +90,7 @@ class AdminService:
                         default_parlay_image = %s,
                         min_units = %s,
                         max_units = %s,
+                        live_game_updates = %s,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE guild_id = %s
                     """,
@@ -111,6 +112,7 @@ class AdminService:
                     settings.get('default_parlay_image'),
                     settings.get('min_units'),
                     settings.get('max_units'),
+                    settings.get('live_game_updates', 0),
                     guild_id
                 )
             else:
@@ -122,9 +124,9 @@ class AdminService:
                         command_channel_2, admin_channel_1, admin_role, authorized_role,
                         member_role, voice_channel_id, yearly_channel_id, daily_report_time,
                         bot_name_mask, bot_image_mask, guild_background, guild_default_image,
-                        default_parlay_image, min_units, max_units, is_paid
+                        default_parlay_image, min_units, max_units, is_paid, live_game_updates
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     guild_id,
@@ -146,7 +148,8 @@ class AdminService:
                     settings.get('default_parlay_image'),
                     settings.get('min_units'),
                     settings.get('max_units'),
-                    settings.get('is_paid', False)
+                    settings.get('is_paid', False),
+                    settings.get('live_game_updates', 0)
                 )
 
             return True

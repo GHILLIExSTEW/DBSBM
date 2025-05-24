@@ -15,6 +15,7 @@ from discord.ext import tasks
 import signal
 from api.sports_api import SportsAPI
 import aiohttp
+from services.live_game_channel_service import LiveGameChannelService
 
 # --- Logging Setup ---
 log_level_str = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -181,6 +182,7 @@ class BettingBot(commands.Bot):
         self.bet_slip_generators = {}
         self.webapp_process = None
         self.fetcher_process = None
+        self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
 
     async def get_bet_slip_generator(self, guild_id: int) -> BetSlipGenerator:
         if guild_id not in self.bet_slip_generators:
@@ -391,6 +393,8 @@ class BettingBot(commands.Bot):
             logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info('------ Bot is Ready ------')
 
+        await self.live_game_channel_service.start()
+
     async def on_guild_join(self, guild: discord.Guild):
         logger.info("Joined new guild: %s (%s)", guild.name, guild.id)
 
@@ -428,7 +432,8 @@ class BettingBot(commands.Bot):
                 self.user_service.stop(),
                 self.voice_service.stop(),
                 self.game_service.stop(),
-                self.data_sync_service.stop()
+                self.data_sync_service.stop(),
+                self.live_game_channel_service.stop()
             ]
             
             # Wait for all services to stop with a timeout
