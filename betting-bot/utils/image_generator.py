@@ -131,7 +131,8 @@ class BetSlipGenerator:
         market: Optional[str] = None,
         include_lock: bool = True,
         line: Optional[str] = None,
-        bet_id: Optional[str] = None
+        bet_id: Optional[str] = None,
+        timestamp: Optional[datetime] = None
     ) -> Optional[bytes]:
         """Generate a bet slip image."""
         try:
@@ -217,7 +218,12 @@ class BetSlipGenerator:
             # Draw footer
             footer_text = "discord.gg/betting"
             bet_id_text = f" • Bet ID: {bet_id}" if bet_id else ""
-            footer_text = footer_text + bet_id_text
+            time_text = ""
+            if timestamp:
+                tz = timezone.utc  # Use UTC timezone
+                formatted_time = timestamp.astimezone(tz).strftime("%Y-%m-%d %H:%M UTC")
+                time_text = f" • {formatted_time}"
+            footer_text = footer_text + bet_id_text + time_text
             
             footer_font = self.fonts['font_m_18']
             footer_color = '#808080'  # Gray color for footer
