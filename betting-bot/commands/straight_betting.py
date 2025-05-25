@@ -159,69 +159,54 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
-        self.parent_view = parent_view
-        options = []
-        # Only include games whose status does NOT contain 'finished' (case-insensitive)
-        active_games = []
-        for game in games:
-            if game.get("api_game_id") == "manual":
-                continue  # Skip manual entry from games list as we'll add it separately
-            status = str(game.get("status", "")).lower()
-            if "finished" in status:
-                continue
-            active_games.append(game)
-        # Limit to 24 active games (so Manual Entry is always present and total is 25)
-        for game in active_games[:24]:
-            game_api_id = game.get("api_game_id")
-            home_team = game.get("home_team_name", "Unknown")
-            away_team = game.get("away_team_name", "Unknown")
-            start_time = game.get("start_time", "")
-            if isinstance(start_time, str) and len(start_time) > 16:
-                start_time = start_time[:16]
-            label = f"{home_team} vs {away_team}"
-            if start_time:
-                label += f" ({start_time})"
-            if game_api_id is None:
-                logger.warning(f"Game missing 'api_game_id': {game}")
-                continue
-            options.append(SelectOption(label=label, value=str(game_api_id)))
-        # Always add Manual Entry option at the end
-        options.append(SelectOption(label="Manual Entry", value="manual"))
         super().__init__(
-            placeholder="Select Game (or Manual Entry)...",
-            options=options,
-            min_values=1,
-            max_values=1,
-            disabled=False  # Never disable since Manual Entry is always available
+            placeholder="Select a game...",
+            options=[
+                SelectOption(
+                    label=f"{game['home_team_name']} vs {game['away_team_name']} ({game['status']})",
+                    value=game['api_game_id'],  # Use api_game_id from database
+                    description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"
+                )
+                for game in games if game.get('api_game_id')  # Only include games with api_game_id
+            ] + [
+                SelectOption(label="Manual Entry", value="manual", description="Enter game details manually")
+            ],
+            row=0
         )
-        logger.debug(f"Dropdown options: {options}")
+        self.parent_view = parent_view
+        self.games = games
 
     async def callback(self, interaction: Interaction):
-        selected_api_game_id = self.values[0]
-        logger.debug(f"Selected game ID: {selected_api_game_id}")
+        selected_value = self.values[0]
+        logger.debug(f"Selected game value: {selected_value}")
         
-        if selected_api_game_id == "manual":
-            self.parent_view.bet_details["api_game_id"] = None
-            self.parent_view.bet_details["home_team_name"] = "Manual Entry"
-            self.parent_view.bet_details["away_team_name"] = "Manual Entry"
-            self.parent_view.bet_details["is_manual"] = True
+        if selected_value == "manual":
+            self.parent_view.bet_details.update({
+                'api_game_id': None,
+                'home_team_name': "Manual Entry",
+                'away_team_name': "Manual Entry",
+                'is_manual': True
+            })
         else:
-            # Find the selected game in the games list
-            game = next(
-                (g for g in self.parent_view.games if str(g.get("api_game_id")) == selected_api_game_id),
+            selected_game = next(
+                (game for game in self.games if game['api_game_id'] == selected_value),
                 None
             )
-            if game:
-                logger.debug(f"Found game details: {game}")
+            if selected_game:
+                logger.debug(f"Found selected game: {selected_game}")
                 self.parent_view.bet_details.update({
-                    "api_game_id": selected_api_game_id,
-                    "home_team_name": game.get("home_team_name", "Unknown"),
-                    "away_team_name": game.get("away_team_name", "Unknown"),
-                    "is_manual": False
+                    'api_game_id': selected_game['api_game_id'],
+                    'home_team_name': selected_game['home_team_name'],
+                    'away_team_name': selected_game['away_team_name'],
+                    'is_manual': False
                 })
+                logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
             else:
-                logger.error(f"Could not find game with ID {selected_api_game_id}")
-                await interaction.response.send_message("Error finding game details. Please try again.", ephemeral=True)
+                logger.error(f"Could not find game with api_game_id {selected_value}")
+                await interaction.response.send_message(
+                    "Error: Could not find the selected game.", 
+                    ephemeral=True
+                )
                 return
 
         await interaction.response.defer()

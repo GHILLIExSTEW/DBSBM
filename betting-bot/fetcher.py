@@ -628,54 +628,35 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
     """Update bet-related games every 5 seconds."""
     logger.info("Starting 5-second update loop for bet games")
     api = None
-    stats_timer = datetime.now()
-    games_updated = 0
 
     try:
         # Initialize SportsAPI once outside the loop
         api = SportsAPI(db_manager=pool)
-        await api.__aenter__()
+        await api.__aenter__()  # Initialize the API session
         logger.info("SportsAPI initialized for bet games update loop")
-
+        
         while True:
             try:
+                # Get active games with bets
                 async with pool.acquire() as conn:
                     async with conn.cursor(aiomysql.DictCursor) as cur:
                         await cur.execute("""
-                            SELECT DISTINCT 
-                                ag.api_game_id, 
-                                ag.sport, 
-                                ag.league_id,
-                                ag.status,
-                                ag.start_time
+                            SELECT DISTINCT ag.api_game_id, ag.sport, ag.league_id 
                             FROM bets b
                             JOIN api_games ag ON b.api_game_id = ag.api_game_id
                             WHERE b.confirmed = 1 
                             AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Game Finished', 'Final')
-                            AND ag.start_time <= NOW()
                         """)
                         bet_games = await cur.fetchall()
 
                 if bet_games:
                     for game in bet_games:
                         try:
-                            # Use the single API instance to update game
-                            updated = await api.update_game(
-                                game['api_game_id'], 
-                                game['sport'], 
-                                game['league_id']
-                            )
-                            if updated:
-                                games_updated += 1
+                            # Use existing API instance
+                            await api.update_game(game['api_game_id'], game['sport'], game['league_id'])
                         except Exception as e:
                             logger.error(f"Error updating game {game['api_game_id']}: {e}")
                             continue
-
-                # Log stats every minute
-                if (datetime.now() - stats_timer).total_seconds() >= 60:
-                    logger.info(f"Games updated in last minute: {games_updated}")
-                    stats_timer = datetime.now()
-                    games_updated = 0
 
             except Exception as e:
                 logger.error(f"Error in bet games update loop: {e}")
