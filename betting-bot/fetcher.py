@@ -498,6 +498,7 @@ async def fetch_games(
     date: str,
     season: int,
     end_date: str = None,
+    max_retries: int = 3
 ):
     """Fetch game data for a specific league and date range, saving to database and cache."""
     logger.info(
@@ -505,62 +506,76 @@ async def fetch_games(
     )
     headers = {"x-apisports-key": API_KEY}
     base_endpoint = ENDPOINTS.get(sport)
+    
     if not base_endpoint or not league_id:
         logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
-        return
+        return False
 
     endpoint = f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
     params = {"league": league_id, "date": date, "season": season}
     if end_date:
         params["to"] = end_date
 
-    logger.debug(f"API request to {endpoint} with params: {params}")
-    try:
-        async with session.get(endpoint, headers=headers, params=params) as resp:
-            logger.info(f"API response status for {league_name}: {resp.status}")
-            if resp.status != 200:
-                logger.error(f"Error fetching {league_name}: {resp.status} - {await resp.text()}")
-                return
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            async with session.get(endpoint, headers=headers, params=params) as resp:
+                logger.info(f"API response status for {league_name}: {resp.status}")
+                
+                if resp.status == 429:  # Rate limit
+                    wait_time = int(resp.headers.get('retry-after', 60))
+                    logger.warning(f"Rate limit hit for {league_name}. Waiting {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                    retry_count += 1
+                    continue
+                    
+                elif resp.status != 200:
+                    error_text = await resp.text()
+                    logger.error(f"Error fetching {league_name}: {resp.status} - {error_text}")
+                    if retry_count + 1 < max_retries:
+                        retry_count += 1
+                        await asyncio.sleep(5 * (retry_count + 1))  # Exponential backoff
+                        continue
+                    return False
 
-            data = await resp.json()
-            games = data.get("response", [])
-            logger.info(f"Received {len(games)} games for {league_name}")
+                data = await resp.json()
+                if not data or "response" not in data:
+                    logger.error(f"Invalid API response for {league_name}: {data}")
+                    return False
 
-            if not games:
-                logger.warning(f"No games returned for {league_name} on {date}. Skipping future queries for this league.")
-                return  # Stop querying this league
+                games = data.get("response", [])
+                logger.info(f"Received {len(games)} games for {league_name}")
 
-            # Save league-level data to cache
-            cache_file = os.path.join(CACHE_DIR, f"{league_name}_{date}.json")
-            with open(cache_file, "w") as f:
-                json.dump(data, f)
+                if not games:
+                    logger.info(f"No games found for {league_name} on {date}")
+                    return True  # Consider this a success - just no games available
 
-            # Use H2H query format for each game
-            for game in games:
-                home_team_id = game.get("teams", {}).get("home", {}).get("id")
-                away_team_id = game.get("teams", {}).get("away", {}).get("id")
-                if home_team_id and away_team_id:
-                    h2h_endpoint = f"{base_endpoint}/games/h2h"
-                    h2h_params = {
-                        "league": league_id,
-                        "season": season,
-                        "date": date,
-                        "h2h": f"{home_team_id}-{away_team_id}"
-                    }
-                    async with session.get(h2h_endpoint, headers=headers, params=h2h_params) as h2h_resp:
-                        logger.info(f"H2H API response status: {h2h_resp.status}")
-                        if h2h_resp.status == 200:
-                            h2h_data = await h2h_resp.json()
-                            h2h_games = h2h_data.get("response", [])
-                            for h2h_game in h2h_games:
-                                normalized_game = map_game_data(h2h_game, sport, league_name, league_id)
-                                if normalized_game:
-                                    await save_game_to_db(pool, normalized_game)
-                        else:
-                            logger.error(f"Error fetching H2H data: {h2h_resp.status} - {await h2h_resp.text()}")
+                # Process and save each game
+                saved_count = 0
+                for game in games:
+                    try:
+                        game_data = map_game_data(game, sport, league_name, league_id)
+                        if game_data and await save_game_to_db(pool, game_data):
+                            saved_count += 1
+                    except Exception as e:
+                        logger.error(f"Error processing game for {league_name}: {e}", exc_info=True)
+                
+                logger.info(f"Successfully saved {saved_count}/{len(games)} games for {league_name}")
+                return True
 
-    except Exception as e:
-        logger.error(f"Error processing {league_name}: {str(e)}", exc_info=True)
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error fetching {league_name}: {e}")
+            if retry_count + 1 < max_retries:
+                retry_count += 1
+                await asyncio.sleep(5 * (retry_count + 1))
+                continue
+            return False
+            
+        except Exception as e:
+            logger.error(f"Unexpected error fetching {league_name}: {e}", exc_info=True)
+            return False
+
+    return False  # All retries exhausted
 
 
 async def initial_fetch(pool: aiomysql.Pool):
@@ -570,23 +585,40 @@ async def initial_fetch(pool: aiomysql.Pool):
     today_str = today.strftime("%Y-%m-%d")
     tomorrow_str = tomorrow.strftime("%Y-%m-%d")
 
-    # Add a 6-hour timer for querying all leagues
-    last_full_fetch = datetime.now(timezone.utc)
-    while True:
-        now = datetime.now(timezone.utc)
-        if (now - last_full_fetch).total_seconds() >= 6 * 3600:
-            async with aiohttp.ClientSession() as session:
-                tasks = []
-                for league_name, league_info in LEAGUE_IDS.items():
-                    sport = league_info["sport"]
-                    league_id = league_info["id"]
-                    season = get_current_season(league_name)
-                    logger.info(f"Performing full fetch for {league_name} (season: {season})")
-                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
-                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season))
-                await asyncio.gather(*tasks)
-            last_full_fetch = now
-        await asyncio.sleep(15)
+    logger.info("Starting initial data fetch for all leagues")
+    failed_fetches = []
+    try:
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for league_name, league_info in LEAGUE_IDS.items():
+                sport = league_info["sport"]
+                league_id = league_info["id"]
+                season = get_current_season(league_name)
+                logger.info(f"[initial] Scheduling initial fetch for {league_name} (season: {season})")
+                # Create tasks for both today and tomorrow
+                today_task = fetch_games(pool, session, sport, league_name, league_id, today_str, season)
+                tomorrow_task = fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season)
+                tasks.append((league_name, today_task, "today"))
+                tasks.append((league_name, tomorrow_task, "tomorrow"))
+            
+            # Execute all tasks and track results
+            results = await asyncio.gather(*(task for _, task, _ in tasks), return_exceptions=True)
+            for i, result in enumerate(results):
+                league_name, _, day = tasks[i]
+                if isinstance(result, Exception):
+                    failed_fetches.append(f"{league_name} ({day})")
+                    logger.error(f"Error fetching {league_name} for {day}: {result}", exc_info=True)
+
+        if failed_fetches:
+            logger.warning(f"Initial fetch completed with {len(failed_fetches)} failures: {', '.join(failed_fetches)}")
+        else:
+            logger.info("Initial data fetch completed successfully for all leagues")
+            
+        # Return success status
+        return len(failed_fetches) == 0
+    except Exception as e:
+        logger.error(f"Error during initial fetch: {e}", exc_info=True)
+        return False
 
 
 # Remove old live_games_fetch and daily_3am_fetch functions
@@ -594,23 +626,81 @@ async def initial_fetch(pool: aiomysql.Pool):
 async def update_api_games_every_15_seconds(pool: aiomysql.Pool):
     """Fetch and update all leagues' games every 15 seconds."""
     logger.info("Starting 15-second API update loop for api_games table.")
+    
+    # Track API call limits
+    calls_per_minute = 0
+    last_reset = datetime.now(timezone.utc)
+    MAX_CALLS_PER_MINUTE = 30  # Adjust based on API limits
+    
     while True:
         try:
             now = datetime.now(timezone.utc)
             today_str = now.strftime("%Y-%m-%d")
+            
+            # Reset API call counter every minute
+            if (now - last_reset).total_seconds() >= 60:
+                calls_per_minute = 0
+                last_reset = now
+            
+            # Skip this iteration if we're at the API limit
+            if calls_per_minute >= MAX_CALLS_PER_MINUTE:
+                logger.warning("API rate limit approaching - skipping this update cycle")
+                await asyncio.sleep(5)
+                continue
+            
             async with aiohttp.ClientSession() as session:
-                tasks = []
-                for league_name, league_info in LEAGUE_IDS.items():
-                    sport = league_info["sport"]
-                    league_id = league_info["id"]
-                    season = get_current_season(league_name)
-                    logger.info(f"[15s] Fetching games for {league_name} (season: {season})")
-                    tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
-                await asyncio.gather(*tasks, return_exceptions=True)
-            logger.info("[15s] All leagues updated. Sleeping 15 seconds.")
+                async with pool.acquire() as conn:
+                    # First, get a list of leagues that have active games
+                    async with conn.cursor(aiomysql.DictCursor) as cur:
+                        await cur.execute("""
+                            SELECT DISTINCT ag.league_name, ag.sport
+                            FROM api_games ag
+                            WHERE DATE(ag.start_time) = CURDATE()
+                            AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended')
+                            UNION
+                            SELECT DISTINCT ag2.league_name, ag2.sport
+                            FROM api_games ag2
+                            JOIN bets b ON ag2.api_game_id = b.api_game_id
+                            WHERE b.confirmed = 1
+                            AND ag2.status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended')
+                        """)
+                        active_leagues = await cur.fetchall()
+
+                # Update active leagues first
+                if active_leagues:
+                    logger.info(f"[15s] Found {len(active_leagues)} leagues with active games/bets")
+                    tasks = []
+                    for league in active_leagues:
+                        if calls_per_minute >= MAX_CALLS_PER_MINUTE:
+                            break
+                            
+                        league_name = league['league_name']
+                        sport = league['sport']
+                        league_info = LEAGUE_IDS.get(league_name)
+                        
+                        if league_info:
+                            league_id = league_info["id"]
+                            season = get_current_season(league_name)
+                            logger.info(f"[15s] Updating active league {league_name} (season: {season})")
+                            tasks.append(fetch_games(pool, session, sport, league_name, league_id, today_str, season))
+                            calls_per_minute += 1
+                    
+                    if tasks:
+                        # Execute updates in parallel
+                        results = await asyncio.gather(*tasks, return_exceptions=True)
+                        # Log any errors
+                        for i, result in enumerate(results):
+                            if isinstance(result, Exception):
+                                logger.error(f"Error updating league {active_leagues[i]['league_name']}: {result}")
+                else:
+                    logger.info("[15s] No active leagues found")
+
+            logger.info("[15s] League updates completed. Sleeping 15 seconds.")
+            await asyncio.sleep(15)
+            
         except Exception as e:
             logger.error(f"[15s] Error in 15-second update loop: {e}", exc_info=True)
-        await asyncio.sleep(15)
+            await asyncio.sleep(5)  # Short sleep on error before retrying
 
 
 async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
@@ -701,31 +791,81 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
 async def main():
     """Run initial fetch, then update api_games every 15 seconds and bet games every 5 seconds."""
     logger.info("Entering main function of fetcher.py (15s update mode)")
+    
+    # Track running state
+    running = True
+    pool = None
+    background_tasks = set()
+
     try:
         logger.info(f"Using database: {MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
         logger.info(f"API endpoints configured for: {list(ENDPOINTS.keys())}")
         logger.info(f"League IDs configured: {list(LEAGUE_IDS.keys())}")
+        
+        # Create database pool
         logger.info("Creating database connection pool...")
         pool = await create_db_pool()
         logger.info("Database connection pool created successfully")
+
         try:
+            # Perform initial fetch
             logger.info("Starting initial fetch...")
-            await initial_fetch(pool)
-            logger.info("Initial fetch completed successfully")
-            logger.info("Starting 15-second and 5-second background update tasks...")
-            await asyncio.gather(
-                update_api_games_every_15_seconds(pool),
-                update_bet_games_every_5_seconds(pool)
-            )
+            initial_success = await initial_fetch(pool)
+            if not initial_success:
+                logger.error("Initial fetch failed - will retry in background tasks")
+
+            # Start background tasks
+            logger.info("Starting background update tasks...")
+            api_update_task = asyncio.create_task(update_api_games_every_15_seconds(pool))
+            bet_update_task = asyncio.create_task(update_bet_games_every_5_seconds(pool))
+            background_tasks.add(api_update_task)
+            background_tasks.add(bet_update_task)
+
+            # Monitor background tasks
+            while running:
+                # Check if any tasks failed
+                for task in background_tasks:
+                    if task.done():
+                        try:
+                            await task
+                        except Exception as e:
+                            logger.error(f"Background task failed: {e}", exc_info=True)
+                            # Restart the failed task
+                            if task == api_update_task:
+                                api_update_task = asyncio.create_task(update_api_games_every_15_seconds(pool))
+                                background_tasks.add(api_update_task)
+                            elif task == bet_update_task:
+                                bet_update_task = asyncio.create_task(update_bet_games_every_5_seconds(pool))
+                                background_tasks.add(bet_update_task)
+                
+                await asyncio.sleep(1)  # Check task status every second
+
+        except asyncio.CancelledError:
+            logger.info("Received cancel signal - shutting down gracefully")
+            running = False
+        except Exception as e:
+            logger.error(f"Fatal error in main loop: {e}", exc_info=True)
+            raise
         finally:
-            logger.info("Closing database connection pool...")
-            pool.close()
-            await pool.wait_closed()
-            logger.info("Database connection pool closed")
+            # Cancel all background tasks
+            for task in background_tasks:
+                if not task.done():
+                    task.cancel()
+            
+            # Wait for tasks to finish
+            if background_tasks:
+                await asyncio.gather(*background_tasks, return_exceptions=True)
+            
+            # Close database pool
+            if pool:
+                logger.info("Closing database connection pool...")
+                pool.close()
+                await pool.wait_closed()
+                logger.info("Database connection pool closed")
+
     except Exception as e:
-        logger.error(f"Fatal error in main: {e}")
-        logger.exception("Full traceback:")
-        raise
+        logger.error(f"Fatal error in main: {e}", exc_info=True)
+        sys.exit(1)  # Exit with error code
 
 
 if __name__ == "__main__":

@@ -244,27 +244,44 @@ class BettingBot(commands.Bot):
             logger.info("Started Flask web server (webapp.py) as a subprocess with logging to %s", webapp_log_path)
 
     def start_fetcher(self):
+        """Start the fetcher process and monitor its status."""
         if self.fetcher_process is None or self.fetcher_process.poll() is not None:
             fetcher_log_path = os.path.join(BASE_DIR, "logs", "fetcher.log")
             os.makedirs(os.path.dirname(fetcher_log_path), exist_ok=True)
+            logger.info("Setting up fetcher process with log at: %s", fetcher_log_path)
+
             with open(fetcher_log_path, "a") as log_file:
+                # Prepare environment variables
                 env = os.environ.copy()
                 env["PYTHONUNBUFFERED"] = "1"
                 env["LOG_LEVEL"] = "DEBUG"
+
+                # Critical environment variables for fetcher
                 required_vars = {
                     "API_KEY": os.getenv("API_KEY"),
                     "MYSQL_HOST": os.getenv("MYSQL_HOST"),
-                    "MYSQL_PORT": os.getenv("MYSQL_PORT"),
+                    "MYSQL_PORT": os.getenv("MYSQL_PORT", "3306"),
                     "MYSQL_USER": os.getenv("MYSQL_USER"),
                     "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
                     "MYSQL_DB": os.getenv("MYSQL_DB"),
                     "MYSQL_POOL_MIN_SIZE": os.getenv("MYSQL_POOL_MIN_SIZE", "1"),
-                    "MYSQL_POOL_MAX_SIZE": os.getenv("MYSQL_POOL_MAX_SIZE", "10"),
+                    "MYSQL_POOL_MAX_SIZE": os.getenv("MYSQL_POOL_MAX_SIZE", "10")
                 }
+
+                # Validate all required variables are present
+                missing_vars = [var for var, value in required_vars.items() if not value]
+                if missing_vars:
+                    logger.error("Missing required environment variables for fetcher: %s", ", ".join(missing_vars))
+                    return False
+
+                # Add validated variables to environment
                 for var, value in required_vars.items():
-                    env[var] = value
-                    logger.info("Passing %s to fetcher process", var)
+                    env[var] = str(value)
+                    logger.info("Passing %s=%s to fetcher process", var, "*" * len(str(value)) if "PASSWORD" in var else value)
+
                 try:
+                    # Start the fetcher process with the validated environment
+                    logger.info("Starting fetcher process...")
                     self.fetcher_process = subprocess.Popen(
                         [sys.executable, os.path.join(BASE_DIR, "fetcher.py")],
                         stdout=log_file,
@@ -272,28 +289,48 @@ class BettingBot(commands.Bot):
                         text=True,
                         bufsize=1,
                         env=env,
+                        cwd=BASE_DIR
                     )
-                    logger.info("Started fetcher (fetcher.py) as a subprocess with logging to %s", fetcher_log_path)
+                    logger.info("Started fetcher (fetcher.py) as subprocess with PID %d", self.fetcher_process.pid)
+
+                    # Create monitoring task if not already running
+                    if not hasattr(self, '_fetcher_monitor_task'):
+                        self._fetcher_monitor_task = asyncio.create_task(self._monitor_fetcher(fetcher_log_path))
+                        logger.info("Created fetcher monitoring task")
+
+                    return True
                 except Exception as e:
                     logger.error("Failed to start fetcher process: %s", e, exc_info=True)
-                    return
-            async def monitor_fetcher():
-                while True:
-                    if self.fetcher_process.poll() is not None:
-                        return_code = self.fetcher_process.returncode
-                        logger.error("Fetcher process ended unexpectedly with return code %d", return_code)
-                        try:
-                            with open(fetcher_log_path, "r") as f:
-                                lines = f.readlines()
-                                last_lines = lines[-20:] if len(lines) > 20 else lines
-                                logger.error("Last few lines from fetcher.log:\n%s", "".join(last_lines))
-                        except Exception as e:
-                            logger.error("Failed to read fetcher.log: %s", e)
-                        await asyncio.sleep(5)
-                        logger.info("Restarting fetcher process...")
-                        self.start_fetcher()
-                    await asyncio.sleep(5)
-            asyncio.create_task(monitor_fetcher())
+                    return False
+
+    async def _monitor_fetcher(self, log_path: str):
+        """Monitor the fetcher process and restart it if it crashes."""
+        while True:
+            if self.fetcher_process is None:
+                logger.error("Fetcher process object is None")
+                await asyncio.sleep(5)
+                self.start_fetcher()
+                continue
+
+            if self.fetcher_process.poll() is not None:
+                return_code = self.fetcher_process.returncode
+                logger.error("Fetcher process ended unexpectedly with return code %d", return_code)
+
+                # Get last few lines of log for context
+                try:
+                    with open(log_path, "r") as f:
+                        lines = f.readlines()
+                        last_lines = lines[-20:] if len(lines) > 20 else lines
+                        logger.error("Last few lines from fetcher.log:\n%s", "".join(last_lines))
+                except Exception as e:
+                    logger.error("Failed to read fetcher.log: %s", e)
+
+                # Wait a bit before restarting
+                await asyncio.sleep(5)
+                logger.info("Restarting fetcher process...")
+                self.start_fetcher()
+
+            await asyncio.sleep(5)  # Check every 5 seconds
 
     async def setup_hook(self):
         """Initialize the bot and load extensions."""
