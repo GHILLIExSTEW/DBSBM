@@ -14,8 +14,8 @@ from typing import Optional, Union
 from .straight_betting import StraightBetWorkflowView
 from .parlay_betting import ParlayBetWorkflowView
 from config.leagues import LEAGUE_IDS 
-from ..utils.game_line_image_generator import GameLineImageGenerator
-from ..utils.player_prop_image_generator import PlayerPropImageGenerator
+from utils.player_prop_image_generator import PlayerPropImageGenerator
+from utils.game_line_image_generator import generate_player_prop_bet_image as generate_game_line_image
 
 logger = logging.getLogger(__name__)
 
@@ -290,3 +290,33 @@ class PlayerPropBetWorkflowView(View):
                 f"❌ Failed to generate player prop bet slip: {str(e)}",
                 ephemeral=True
             )
+
+@app_commands.command(name="bet", description="Place a bet (straight or parlay).")
+async def bet(interaction: Interaction):
+    logger.info(f"/bet command invoked by {interaction.user} (ID: {interaction.user.id})")
+    try:
+        view = BetTypeView(interaction, interaction.client)
+        logger.debug("BetTypeView initialized successfully.")
+        await interaction.response.send_message(
+            "Select the type of bet you want to place:",
+            view=view,
+            ephemeral=True
+        )
+        logger.info("/bet command response sent successfully.")
+    except Exception as e:
+        logger.error(f"Error in /bet command: {e}", exc_info=True)
+        await interaction.response.send_message(
+            "❌ An error occurred while processing your request.", ephemeral=True
+        )
+
+# Add the command to the bot's command tree
+async def setup(bot: commands.Bot):
+    logger.info("Setting up betting commands...")
+    try:
+        bot.tree.add_command(bet)
+        logger.debug("/bet command added to command tree.")
+        logger.info("Syncing commands globally...")
+        synced = await bot.tree.sync()
+        logger.info(f"Commands synced successfully: {[cmd.name for cmd in synced]}")
+    except Exception as e:
+        logger.error(f"Error during command setup or syncing: {e}", exc_info=True)
