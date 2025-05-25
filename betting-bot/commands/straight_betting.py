@@ -810,7 +810,7 @@ class StraightBetWorkflowView(View):
                 est_yesterday = est_now - timedelta(days=1)
                 self.games = [
                     game for game in self.games
-                    if game.get('start_time') and datetime.fromisoformat(game['start_time']).astimezone(pytz.timezone('US/Eastern')).date() > est_yesterday.date()
+                    if game.get('start_time') and (game['start_time'] if isinstance(game['start_time'], datetime) else datetime.fromisoformat(game['start_time'])).astimezone(pytz.timezone('US/Eastern')).date() > est_yesterday.date()
                 ]
 
                 # Ensure odds are included in the game details

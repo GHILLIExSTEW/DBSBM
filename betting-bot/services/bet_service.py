@@ -195,17 +195,17 @@ class BetService:
                 logger.debug(f"Mapped api_game_id {api_game_id} to game_id {game_id}")
 
             # Check if game_id exists in the games table
-            game_check_query = "SELECT id FROM games WHERE id = %s"
+            game_check_query = "SELECT id FROM api_games WHERE id = %s"
             async with self.db_manager.db.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(game_check_query, (game_id,))
                     game_exists = await cursor.fetchone()
 
-            logger.debug(f"Validating game_id {game_id} in the games table")
+            logger.debug(f"Validating game_id {game_id} in the api_games table")
             if not game_exists:
-                logger.error(f"Game ID {game_id} does not exist in the games table. Cannot insert bet.")
+                logger.error(f"Game ID {game_id} does not exist in the api_games table. Cannot insert bet.")
                 return
-            logger.debug(f"Game ID {game_id} exists in the games table. Proceeding with bet insertion.")
+            logger.debug(f"Game ID {game_id} exists in the api_games table. Proceeding with bet insertion.")
 
             # Construct bet_details
             internal_bet_details_dict = {
