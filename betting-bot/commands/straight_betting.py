@@ -17,7 +17,7 @@ from discord import (
 from discord.ui import View, Select, Modal, TextInput, Button
 import logging
 from typing import Optional, List, Dict, Union, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import io
 import os
 from discord.ext import commands
@@ -25,6 +25,10 @@ from io import BytesIO
 import traceback
 import json
 import aiohttp
+import pytz
+import requests
+from database import get_database_connection  # Ensure this is defined in your project
+
 from data.game_utils import get_normalized_games_for_dropdown
 
 from utils.errors import (
@@ -35,6 +39,7 @@ from utils.errors import (
 from utils.image_generator import BetSlipGenerator
 from utils.modals import StraightBetDetailsModal
 from config.leagues import LEAGUE_CONFIG
+from betting_bot.api.sports_api import SportsAPI
 
 logger = logging.getLogger(__name__)
 
@@ -800,6 +805,14 @@ class StraightBetWorkflowView(View):
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
                 logger.debug(f"Retrieved {len(self.games)} games for league: {league}")
 
+                # Exclude games from yesterday in EST time
+                est_now = datetime.now(pytz.timezone('US/Eastern'))
+                est_yesterday = est_now - timedelta(days=1)
+                self.games = [
+                    game for game in self.games
+                    if game.get('start_time') and datetime.fromisoformat(game['start_time']).astimezone(pytz.timezone('US/Eastern')).date() > est_yesterday.date()
+                ]
+
                 # Ensure odds are included in the game details
                 for game in self.games:
                     game_odds = game.get("odds", {})
@@ -1146,3 +1159,13 @@ class StraightBetWorkflowView(View):
             self.preview_image_bytes.seek(0)
             file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
         await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+
+
+async def populate_api_games_on_restart(db):
+    async with SportsAPI(db_manager=db) as api:
+        await api.fetch_and_save_daily_games()
+
+# Example usage during server startup
+async def on_server_startup():
+    db = await get_database_connection()
+    await populate_api_games_on_restart(db)
