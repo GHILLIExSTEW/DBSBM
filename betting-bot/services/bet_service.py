@@ -183,7 +183,7 @@ class BetService:
         
         try:
             # Verify game exists in api_games table and get internal ID
-            internal_game_id = await self.get_game_id_by_api_id(api_game_id)
+            internal_game_id = await self._get_or_create_game(api_game_id)
             if internal_game_id is None:
                 logger.error(f"Game ID {api_game_id} not found in database.")
                 raise BetServiceError(f"Game ID {api_game_id} not found in database.")
@@ -628,3 +628,39 @@ class BetService:
             await self.db_manager.execute(query, params)
         except Exception as e:
             logger.error(f"Failed to handle reaction remove for message {message_id}: {e}", exc_info=True)
+
+    async def _get_or_create_game(self, api_game_id: str) -> int:
+        # 1) look up in games
+        row = await self.db_manager.fetch_one(
+            "SELECT id FROM games WHERE api_game_id = %s", (api_game_id,)
+        )
+        if row:
+            return row["id"]
+        # 2) pull details from api_games
+        src = await self.db_manager.fetch_one(
+            """
+            SELECT sport, league_id, home_team_name, away_team_name, start_time, status
+            FROM api_games WHERE api_game_id = %s
+            """,
+            (api_game_id,)
+        )
+        if not src:
+            raise BetServiceError(f"No api_games row for {api_game_id}")
+        # 3) insert into games
+        await self.db_manager.execute(
+            """
+            INSERT INTO games
+              (api_game_id, sport, league_id, home_team_name, away_team_name, start_time, status, created_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())
+            """,
+            (
+                api_game_id,
+                src["sport"],
+                src["league_id"],
+                src["home_team_name"],
+                src["away_team_name"],
+                src["start_time"],
+                src["status"],
+            )
+        )
+        return await self.db_manager.fetchval("SELECT LAST_INSERT_ID()")
