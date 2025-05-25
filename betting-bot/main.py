@@ -14,6 +14,7 @@ import signal
 from api.sports_api import SportsAPI
 import aiohttp
 from services.live_game_channel_service import LiveGameChannelService
+from commands.straight_betting import get_database_connection
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -341,6 +342,29 @@ class BettingBot(commands.Bot):
         self.start_flask_webapp()
         self.start_fetcher()
         logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
+
+        async def query_active_bets_periodically():
+            while True:
+                try:
+                    db = await get_database_connection()
+                    async with SportsAPI(db_manager=db) as api:
+                        active_bets_query = """
+                        SELECT DISTINCT api_game_id FROM bets
+                        WHERE confirmed = 1 AND start_time <= NOW()
+                        """
+                        async with db.acquire() as conn:
+                            async with conn.cursor() as cursor:
+                                await cursor.execute(active_bets_query)
+                                active_games = await cursor.fetchall()
+
+                        for game in active_games:
+                            await api.fetch_and_save_game_updates(game["api_game_id"])
+                except Exception as e:
+                    logger.error(f"Error in periodic active bets query: {e}")
+                await asyncio.sleep(5)
+
+        # Schedule the periodic task
+        asyncio.create_task(query_active_bets_periodically())
 
     async def on_ready(self):
         logger.info("Logged in as %s (%s)", self.user.name, self.user.id)

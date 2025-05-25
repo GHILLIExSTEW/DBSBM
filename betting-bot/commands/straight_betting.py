@@ -1165,10 +1165,16 @@ async def populate_api_games_on_restart(db):
     async with SportsAPI(db_manager=db) as api:
         await api.fetch_and_save_daily_games()
 
+async def populate_all_leagues_on_restart(db):
+    async with SportsAPI(db_manager=db) as api:
+        leagues = ["NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "UFC/MMA", "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"]
+        for league in leagues:
+            await api.fetch_and_save_daily_games(league)
+
 # Example usage during server startup
 async def on_server_startup():
     db = await get_database_connection()
-    await populate_api_games_on_restart(db)
+    await populate_all_leagues_on_restart(db)
 
 db_manager = DatabaseManager()
 
