@@ -14,7 +14,8 @@ from typing import Optional, Union
 from .straight_betting import StraightBetWorkflowView
 from .parlay_betting import ParlayBetWorkflowView
 from config.leagues import LEAGUE_IDS 
-from betting_bot.utils.game_line_image_generator import generate_bet_slip_image, generate_player_prop_bet_image  # Import the image generation functions
+from ..utils.game_line_image_generator import GameLineImageGenerator
+from ..utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -274,7 +275,7 @@ class PlayerPropBetWorkflowView(View):
             output_path = "/workspaces/DBSBM/generated_player_prop_bet.png"
 
             # Generate the player prop bet image
-            generate_player_prop_bet_image(player_name, player_picture_path, team_name, team_logo_path, line, units, output_path)
+            PlayerPropImageGenerator().generate_player_prop_bet_image(player_name, player_picture_path, team_name, team_logo_path, line, units, output_path)
             logger.info(f"Player prop bet image generated and saved to {output_path}")
 
             # Send the image to the user
