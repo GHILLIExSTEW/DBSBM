@@ -27,7 +27,7 @@ import json
 import aiohttp
 import pytz
 import requests
-from database import get_database_connection  # Ensure this is defined in your project
+from data.db_manager import DatabaseManager
 
 from data.game_utils import get_normalized_games_for_dropdown
 
@@ -1169,3 +1169,9 @@ async def populate_api_games_on_restart(db):
 async def on_server_startup():
     db = await get_database_connection()
     await populate_api_games_on_restart(db)
+
+db_manager = DatabaseManager()
+
+async def get_database_connection():
+    """Get or create a MySQL connection pool."""
+    return await db_manager.connect()
