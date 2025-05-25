@@ -690,9 +690,30 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
             await api.__aexit__(None, None, None)
             logger.info("SportsAPI connection closed")
 
+async def setup_db_pool() -> aiomysql.Pool:
+    """Set up and return a MySQL connection pool."""
+    try:
+        logger.info("Creating MySQL connection pool...")
+        pool = await aiomysql.create_pool(
+            host=os.getenv('MYSQL_HOST'),
+            port=int(os.getenv('MYSQL_PORT', 3306)),
+            user=os.getenv('MYSQL_USER'),
+            password=os.getenv('MYSQL_PASSWORD'),
+            db=os.getenv('MYSQL_DB'),
+            minsize=int(os.getenv('MYSQL_POOL_MIN_SIZE', 1)),
+            maxsize=int(os.getenv('MYSQL_POOL_MAX_SIZE', 10)),
+            autocommit=True
+        )
+        logger.info("MySQL connection pool created successfully")
+        return pool
+    except Exception as e:
+        logger.error(f"Failed to create MySQL connection pool: {e}")
+        raise
+
 # Update main function to only use the 5-second update loop
 async def main():
     """Main function to run the fetcher."""
+    pool = None
     try:
         pool = await setup_db_pool()
         logger.info("Database pool created successfully")
@@ -703,11 +724,10 @@ async def main():
         logger.error(f"Error in main: {e}")
         raise
     finally:
-        try:
-            await pool.close()
+        if pool:
+            pool.close()
+            await pool.wait_closed()
             logger.info("Database pool closed")
-        except Exception as e:
-            logger.error(f"Error closing database pool: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
