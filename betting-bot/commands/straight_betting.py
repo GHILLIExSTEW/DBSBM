@@ -176,7 +176,7 @@ class GameSelect(Select):
                     game_options.append(
                         SelectOption(
                             label=f"{label} ({game['status']})",
-                            value=value,
+                            value=str(game['api_game_id']),  # Use api_game_id instead of internal id
                             description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"[:100]
                         )
                     )
@@ -205,7 +205,7 @@ class GameSelect(Select):
         logger.debug(f"Selected game value: {selected_value}")
         
         if selected_value == "manual_entry":
-            # For manual entry, create a placeholder game record
+            # Manual entry code remains the same...
             try:
                 # Insert placeholder game
                 query = """
@@ -247,37 +247,22 @@ class GameSelect(Select):
                 )
                 return
         else:
-            # For regular game selection
+            # Find the selected game by api_game_id
             selected_game = next(
-                (game for game in self.games if str(game.get('api_game_id')) == selected_value),
+                (game for game in self.games if str(game['api_game_id']) == selected_value),
                 None
             )
             
             if selected_game:
                 logger.debug(f"Found selected game: {selected_game}")
-                # Verify game exists in database
-                game_check = await self.parent_view.bot.db_manager.fetch_one(
-                    "SELECT id FROM api_games WHERE api_game_id = %s",
-                    (selected_game['api_game_id'],)
-                )
-                
-                if not game_check:
-                    logger.error(f"Game {selected_game['api_game_id']} not found in api_games table")
-                    await interaction.response.send_message(
-                        "Error: Selected game not found in database.", 
-                        ephemeral=True
-                    )
-                    return
-
+                # Important: Store the api_game_id, not the internal id
                 self.parent_view.bet_details.update({
-                    'api_game_id': str(selected_game['api_game_id']),
-                    'game_id': game_check['id'],
+                    'api_game_id': selected_game['api_game_id'],  # Use api_game_id string
                     'home_team_name': selected_game['home_team_name'],
                     'away_team_name': selected_game['away_team_name'],
-                    'is_manual': False,
-                    'selected_game': selected_game
+                    'is_manual': False
                 })
-                logger.debug(f"Updated bet details with game info: {self.parent_view.bet_details}")
+                logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
             else:
                 logger.error(f"Could not find game with api_game_id {selected_value}")
                 await interaction.response.send_message(
@@ -286,8 +271,6 @@ class GameSelect(Select):
                 )
                 return
 
-        # Debug log final state
-        logger.debug(f"Final bet details before proceeding: {self.parent_view.bet_details}")
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 

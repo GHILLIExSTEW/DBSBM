@@ -154,13 +154,13 @@ class BetService:
             return False
 
     async def get_game_id_by_api_id(self, api_game_id: str) -> Optional[int]:
-        """Retrieve the api_games.id for a given api_game_id."""
+        """Get internal game ID from api_game_id."""
         try:
             query = "SELECT id FROM api_games WHERE api_game_id = %s"
-            result = await self.db_manager.execute(query, (api_game_id,))
-            return result[0][0] if result else None
+            result = await self.db_manager.fetch_one(query, (api_game_id,))
+            return result['id'] if result else None
         except Exception as e:
-            logger.error(f"Error retrieving game_id for api_game_id {api_game_id}: {e}", exc_info=True)
+            logger.error(f"Error retrieving game_id for api_game_id {api_game_id}: {str(e)}")
             return None
 
     async def create_straight_bet(
@@ -171,53 +171,35 @@ class BetService:
         bet_type: str,
         units: float,
         odds: float,
-        team: Optional[str] = None,
-        opponent: Optional[str] = None,
-        line: Optional[str] = None,
-        player_prop_details: Optional[str] = None,
-        player_id: Optional[str] = None,
-        api_game_id: Optional[str] = None,
-        game_start: Optional[datetime] = None,
-        expiration_time: Optional[datetime] = None,
-        channel_id: Optional[int] = None,
-    ) -> Optional[int]:
-        """Create a straight bet, populating all relevant fields based on the new schema."""
+        team: str,
+        opponent: str,
+        line: str,
+        api_game_id: str,
+        channel_id: int
+    ) -> int:
+        """Create a straight bet record."""
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
+        
         try:
-            logger.debug(f"Received api_game_id: {api_game_id}")
-            game_id = None
-            if api_game_id:
-                logger.debug(f"Fetching game_id for api_game_id: {api_game_id}")
-                game_id = await self.get_game_id_by_api_id(api_game_id)
-                if not game_id:
-                    logger.error(f"Invalid api_game_id {api_game_id}: not found in api_games table")
-                    raise BetServiceError(f"Game ID {api_game_id} not found in database.")
-                logger.debug(f"Mapped api_game_id {api_game_id} to game_id {game_id}")
-
-            # Check if game_id exists in the api_games table
-            game_check_query = "SELECT id FROM api_games WHERE api_game_id = %s"
-            async with self.db_manager.db.acquire() as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(game_check_query, (api_game_id,))
-                    game_exists = await cursor.fetchone()
-
-            logger.debug(f"Validating api_game_id {api_game_id} in the api_games table")
+            # Verify game exists in api_games table
+            game_exists = await self.db_manager.fetch_one(
+                "SELECT 1 FROM api_games WHERE api_game_id = %s",
+                (api_game_id,)
+            )
+            
             if not game_exists:
-                logger.error(f"Game ID {api_game_id} does not exist in the api_games table. Cannot insert bet.")
-                return
-            logger.debug(f"Game ID {api_game_id} exists in the api_games table. Proceeding with bet insertion.")
+                logger.error(f"Game ID {api_game_id} not found in database.")
+                raise BetServiceError(f"Game ID {api_game_id} not found in database.")
 
             # Construct bet_details
             internal_bet_details_dict = {
                 "api_game_id": api_game_id,
                 "provided_bet_type": bet_type,
                 "provided_line": line,
-                "player_id": player_id,
-                "player_prop_details": player_prop_details,
                 "team_selected": team,
                 "opponent_involved": opponent,
-                "game_start_iso": game_start.isoformat() if game_start else None,
-                "expiration_time_iso": expiration_time.isoformat() if expiration_time else None,
+                "game_start_iso": None,
+                "expiration_time_iso": None,
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
 
@@ -244,11 +226,11 @@ class BetService:
                 team,
                 opponent,
                 line,
-                player_prop_details,
-                player_id,
-                game_id,
-                game_start,
-                expiration_time,
+                None,  # player_prop_details
+                None,  # player_id
+                None,  # game_id (to be set after insertion)
+                None,  # game_start
+                None,  # expiration_time
                 1,
                 channel_id,
                 0,
