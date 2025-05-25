@@ -39,7 +39,7 @@ from utils.errors import (
 from utils.image_generator import BetSlipGenerator
 from utils.modals import StraightBetDetailsModal
 from config.leagues import LEAGUE_CONFIG
-from betting_bot.api.sports_api import SportsAPI
+from api.sports_api import SportsAPI
 
 logger = logging.getLogger(__name__)
 
