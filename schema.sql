@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS api_games (
     end_time TIMESTAMP NULL COMMENT 'Game end time in UTC (if known)',
     status VARCHAR(20) NULL COMMENT 'Game status (e.g., NS, LIVE, FT)',
     score JSON NULL COMMENT 'JSON storing scores',
+    odds JSON NULL COMMENT 'JSON storing betting odds',
     venue VARCHAR(150) NULL,
     referee VARCHAR(100) NULL,
     raw_json JSON NOT NULL,
@@ -219,4 +220,4 @@ BEGIN
     CLOSE cur;
 END //
 
-DELIMITER ; 
+DELIMITER ;

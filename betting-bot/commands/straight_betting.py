@@ -189,6 +189,7 @@ class GameSelect(Select):
             max_values=1,
             disabled=False  # Never disable since Manual Entry is always available
         )
+        logger.debug(f"Dropdown options: {options}")
 
     async def callback(self, interaction: Interaction):
         selected_api_game_id = self.values[0]
@@ -799,6 +800,11 @@ class StraightBetWorkflowView(View):
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
                 logger.debug(f"Retrieved {len(self.games)} games for league: {league}")
 
+                # Ensure odds are included in the game details
+                for game in self.games:
+                    game_odds = game.get("odds", {})
+                    logger.debug(f"Game {game['api_game_id']} odds: {game_odds}")
+
                 # Add GameSelect regardless of whether there are games
                 new_view_items.append(GameSelect(self, self.games))
                 new_view_items.append(ConfirmButton(self))
@@ -1135,7 +1141,6 @@ class StraightBetWorkflowView(View):
             )
             if self.preview_image_bytes:
                 self.preview_image_bytes.close()
-                self.preview_image_bytes = None
         file_to_send = None
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)

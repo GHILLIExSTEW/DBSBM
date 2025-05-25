@@ -1,8 +1,9 @@
 # REV 1.0.0 - Enhanced logging for game fetching and normalization
 from typing import List, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import logging
+import pytz
 from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
 
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
@@ -311,6 +312,11 @@ async def get_normalized_games_for_dropdown(
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")
     
+    # Calculate the start of today in EST
+    est_now = datetime.now(pytz.timezone("US/Eastern"))
+    est_today_start = est_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    utc_today_start = est_today_start.astimezone(pytz.utc)
+
     # Define finished statuses based on sport
     if sport.lower() == "baseball":
         finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
@@ -320,7 +326,7 @@ async def get_normalized_games_for_dropdown(
 
     # Query by league_id, sport, and league_name with case-insensitive matching
     query = """
-        SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
+        SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
         FROM api_games
         WHERE sport = %s 
         AND league_id = %s 
