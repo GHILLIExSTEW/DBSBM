@@ -964,6 +964,48 @@ class DatabaseManager:
                 logger.info("Fetched %d open bets for guild_id=%s", len(rows), guild_id)
                 return rows
 
+    async def _get_or_create_game(self, api_game_id: str) -> int:
+        row = await self.db_manager.fetch_one(
+            "SELECT id FROM games WHERE id = %s", (api_game_id,)
+        )
+        if row:
+            return row["id"]
+
+        src = await self.db_manager.fetch_one(
+            """
+            SELECT sport, league_id, home_team_name, away_team_name,
+                   start_time, status
+            FROM api_games
+            WHERE api_game_id = %s
+            """,
+            (api_game_id,),
+        )
+        if not src:
+            raise BetServiceError(f"No api_games row for {api_game_id}")
+
+        # Insert USING api_game_id as the PK
+        insert_q = """
+          INSERT INTO games (
+            id, sport, league_id, home_team_name, away_team_name,
+            start_time, status, created_at
+          ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, NOW()
+          )
+        """
+        await self.db_manager.execute(
+            insert_q,
+            (
+              int(api_game_id),
+              src["sport"],
+              src["league_id"],
+              src["home_team_name"],
+              src["away_team_name"],
+              src["start_time"],
+              src["status"],
+            ),
+        )
+        return int(api_game_id)
+
     @property
     def db(self):
         """Returns the MySQL connection pool."""
