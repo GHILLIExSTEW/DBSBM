@@ -194,18 +194,18 @@ class BetService:
                     raise BetServiceError(f"Game ID {api_game_id} not found in database.")
                 logger.debug(f"Mapped api_game_id {api_game_id} to game_id {game_id}")
 
-            # Check if game_id exists in the games table
-            game_check_query = "SELECT id FROM api_games WHERE id = %s"
+            # Check if game_id exists in the api_games table
+            game_check_query = "SELECT id FROM api_games WHERE api_game_id = %s"
             async with self.db_manager.db.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(game_check_query, (game_id,))
+                    await cursor.execute(game_check_query, (api_game_id,))
                     game_exists = await cursor.fetchone()
 
-            logger.debug(f"Validating game_id {game_id} in the api_games table")
+            logger.debug(f"Validating api_game_id {api_game_id} in the api_games table")
             if not game_exists:
-                logger.error(f"Game ID {game_id} does not exist in the api_games table. Cannot insert bet.")
+                logger.error(f"Game ID {api_game_id} does not exist in the api_games table. Cannot insert bet.")
                 return
-            logger.debug(f"Game ID {game_id} exists in the api_games table. Proceeding with bet insertion.")
+            logger.debug(f"Game ID {api_game_id} exists in the api_games table. Proceeding with bet insertion.")
 
             # Construct bet_details
             internal_bet_details_dict = {
@@ -291,6 +291,19 @@ class BetService:
             logger.error("Cannot create parlay bet with no legs.")
             return None
         try:
+            # Validate all api_game_ids first
+            for leg in legs_data:
+                api_game_id = leg.get('game_id')
+                if api_game_id and api_game_id != 'Other':
+                    game_exists = await self.db_manager.fetch_one(
+                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        (api_game_id,)
+                    )
+                    if not game_exists:
+                        logger.error(f"API Game ID {api_game_id} not found in api_games table")
+                        raise BetServiceError(f"Game ID {api_game_id} not found in database")
+                    logger.debug(f"Validated API Game ID {api_game_id} exists in database")
+            
             total_odds = self._calculate_parlay_odds(legs_data)
             if total_odds == 0.0 and len(legs_data) > 0:
                 logger.warning(f"Calculated parlay odds are 0.0 for legs: {legs_data}. Proceeding with 0 odds.")
