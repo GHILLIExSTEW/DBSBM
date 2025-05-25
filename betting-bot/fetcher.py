@@ -731,3 +731,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# Reduce verbosity of SportsAPI initialization messages
+logging.getLogger('api.sports_api').setLevel(logging.WARNING)  # Change from INFO to WARNING

@@ -198,28 +198,32 @@ class GameSelect(Select):
 
     async def callback(self, interaction: Interaction):
         selected_api_game_id = self.values[0]
-        self.parent_view.bet_details["api_game_id"] = selected_api_game_id
-
-        logger.debug(f"Selected api_game_id: {selected_api_game_id} by user {interaction.user.id}")
-
+        logger.debug(f"Selected game ID: {selected_api_game_id}")
+        
         if selected_api_game_id == "manual":
-            # Handle manual entry
+            self.parent_view.bet_details["api_game_id"] = None
             self.parent_view.bet_details["home_team_name"] = "Manual Entry"
             self.parent_view.bet_details["away_team_name"] = "Manual Entry"
             self.parent_view.bet_details["is_manual"] = True
         else:
-            # Handle game selection
+            # Find the selected game in the games list
             game = next(
                 (g for g in self.parent_view.games if str(g.get("api_game_id")) == selected_api_game_id),
-                None,
+                None
             )
             if game:
-                self.parent_view.bet_details["home_team_name"] = game.get("home_team_name", "Unknown")
-                self.parent_view.bet_details["away_team_name"] = game.get("away_team_name", "Unknown")
-                self.parent_view.bet_details["is_manual"] = False
+                logger.debug(f"Found game details: {game}")
+                self.parent_view.bet_details.update({
+                    "api_game_id": selected_api_game_id,
+                    "home_team_name": game.get("home_team_name", "Unknown"),
+                    "away_team_name": game.get("away_team_name", "Unknown"),
+                    "is_manual": False
+                })
+            else:
+                logger.error(f"Could not find game with ID {selected_api_game_id}")
+                await interaction.response.send_message("Error finding game details. Please try again.", ephemeral=True)
+                return
 
-        logger.debug(f"Game selected: {selected_api_game_id} by user {interaction.user.id}")
-        self.disabled = False
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
