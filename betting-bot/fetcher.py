@@ -633,7 +633,7 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
         # Initialize SportsAPI once outside the loop
         api = SportsAPI(db_manager=pool)
         await api.__aenter__()  # Initialize the API session
-        logger.info("SportsAPI initialized for bet games update loop")
+        logger.debug("SportsAPI initialized for bet games update loop")  # Changed to debug level
         
         while True:
             try:
@@ -669,7 +669,7 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
     finally:
         if api:
             await api.__aexit__(None, None, None)
-            logger.info("SportsAPI connection closed")
+            logger.debug("SportsAPI connection closed")  # Changed to debug level
 
 async def setup_db_pool() -> aiomysql.Pool:
     """Set up and return a MySQL connection pool."""

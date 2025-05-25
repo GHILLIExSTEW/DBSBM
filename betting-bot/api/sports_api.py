@@ -291,7 +291,7 @@ class SportsAPI:
         self.db_manager = db_manager
         self.live_updates_enabled = False  # Default to disabled
         self._update_task = None
-        logger.info("SportsAPI initialized with API-Sports integration")
+        logger.debug("SportsAPI initialized with API-Sports integration")  # Changed from info to debug
 
     async def __aenter__(self):
         self.fetcher = await APISportsFetcher().__aenter__()

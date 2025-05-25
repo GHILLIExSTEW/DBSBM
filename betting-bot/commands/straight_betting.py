@@ -159,18 +159,35 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
+        # Create a set to track used values and ensure uniqueness
+        used_values = set()
+        game_options = []
+        
+        for game in games:
+            if game.get('api_game_id'):  # Only include games with api_game_id
+                value = str(game['api_game_id'])
+                if value not in used_values:  # Check for duplicates
+                    used_values.add(value)
+                    game_options.append(
+                        SelectOption(
+                            label=f"{game['home_team_name']} vs {game['away_team_name']} ({game['status']})",
+                            value=value,
+                            description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"
+                        )
+                    )
+
+        # Add manual entry option
+        game_options.append(
+            SelectOption(
+                label="Manual Entry",
+                value="manual",
+                description="Enter game details manually"
+            )
+        )
+
         super().__init__(
             placeholder="Select a game...",
-            options=[
-                SelectOption(
-                    label=f"{game['home_team_name']} vs {game['away_team_name']} ({game['status']})",
-                    value=game['api_game_id'],  # Use api_game_id from database
-                    description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"
-                )
-                for game in games if game.get('api_game_id')  # Only include games with api_game_id
-            ] + [
-                SelectOption(label="Manual Entry", value="manual", description="Enter game details manually")
-            ],
+            options=game_options,
             row=0
         )
         self.parent_view = parent_view
