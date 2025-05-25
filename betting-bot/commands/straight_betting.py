@@ -159,28 +159,34 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
-        # Create a set to track used values and ensure uniqueness
-        used_values = set()
         game_options = []
+        seen_values = set()  # Track used values
         
+        # Process game options first
         for game in games:
-            if game.get('api_game_id'):  # Only include games with api_game_id
+            if game.get('api_game_id'):
                 value = str(game['api_game_id'])
-                if value not in used_values:  # Check for duplicates
-                    used_values.add(value)
+                # Check for duplicates and add only if unique
+                if value not in seen_values:
+                    seen_values.add(value)
+                    label = f"{game['home_team_name']} vs {game['away_team_name']}"
+                    if len(label) > 100:  # Discord has a 100 char limit
+                        label = label[:97] + "..."
+                    
                     game_options.append(
                         SelectOption(
-                            label=f"{game['home_team_name']} vs {game['away_team_name']} ({game['status']})",
+                            label=f"{label} ({game['status']})",
                             value=value,
-                            description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"
+                            description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"[:100]
                         )
                     )
-
-        # Add manual entry option
+        
+        # Add manual entry option with a unique value
+        manual_value = "manual_entry"  # Changed from "manual" to ensure uniqueness
         game_options.append(
             SelectOption(
                 label="Manual Entry",
-                value="manual",
+                value=manual_value,
                 description="Enter game details manually"
             )
         )
@@ -192,12 +198,13 @@ class GameSelect(Select):
         )
         self.parent_view = parent_view
         self.games = games
+        logger.debug(f"Created GameSelect with {len(game_options)} unique options")
 
     async def callback(self, interaction: Interaction):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
         
-        if selected_value == "manual":
+        if selected_value == "manual_entry":  # Match the new manual entry value
             self.parent_view.bet_details.update({
                 'api_game_id': None,
                 'home_team_name': "Manual Entry",
@@ -205,14 +212,15 @@ class GameSelect(Select):
                 'is_manual': True
             })
         else:
+            # Find the selected game in the games list
             selected_game = next(
-                (game for game in self.games if game['api_game_id'] == selected_value),
+                (game for game in self.games if str(game['api_game_id']) == selected_value),
                 None
             )
             if selected_game:
                 logger.debug(f"Found selected game: {selected_game}")
                 self.parent_view.bet_details.update({
-                    'api_game_id': selected_game['api_game_id'],
+                    'api_game_id': str(selected_game['api_game_id']),  # Ensure string type
                     'home_team_name': selected_game['home_team_name'],
                     'away_team_name': selected_game['away_team_name'],
                     'is_manual': False
