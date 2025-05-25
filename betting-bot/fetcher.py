@@ -613,8 +613,50 @@ async def update_api_games_every_15_seconds(pool: aiomysql.Pool):
         await asyncio.sleep(15)
 
 
+async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
+    """Update games with bets and whose start time has passed every 5 seconds."""
+    logger.info("Starting 5-second update loop for bet games.")
+    while True:
+        try:
+            async with pool.acquire() as conn:
+                async with conn.cursor(aiomysql.DictCursor) as cur:
+                    await cur.execute(
+                        '''
+                        SELECT DISTINCT b.api_game_id, ag.sport, ag.league_id, ag.league_name, ag.start_time
+                        FROM bets b
+                        JOIN api_games ag ON b.api_game_id = ag.api_game_id
+                        WHERE b.confirmed = 1 AND ag.start_time <= NOW()
+                        '''
+                    )
+                    bet_games = await cur.fetchall()
+            if bet_games:
+                async with aiohttp.ClientSession() as session:
+                    for game in bet_games:
+                        sport = game["sport"]
+                        league_id = game["league_id"]
+                        api_game_id = game["api_game_id"]
+                        endpoint = ENDPOINTS.get(sport.lower())
+                        if endpoint:
+                            h2h_endpoint = f"{endpoint}/games"
+                            params = {"id": api_game_id}
+                            headers = {"x-apisports-key": API_KEY}
+                            async with session.get(h2h_endpoint, headers=headers, params=params) as resp:
+                                if resp.status == 200:
+                                    data = await resp.json()
+                                    games = data.get("response", [])
+                                    for g in games:
+                                        normalized_game = map_game_data(g, sport, game["league_name"], league_id)
+                                        if normalized_game:
+                                            await save_game_to_db(pool, normalized_game)
+                                else:
+                                    logger.error(f"Failed to update bet game {api_game_id}: {resp.status} - {await resp.text()}")
+        except Exception as e:
+            logger.error(f"[5s] Error in bet games update loop: {e}", exc_info=True)
+        await asyncio.sleep(5)
+
+
 async def main():
-    """Run initial fetch, then update api_games every 15 seconds."""
+    """Run initial fetch, then update api_games every 15 seconds and bet games every 5 seconds."""
     logger.info("Entering main function of fetcher.py (15s update mode)")
     try:
         logger.info(f"Using database: {MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
@@ -627,8 +669,11 @@ async def main():
             logger.info("Starting initial fetch...")
             await initial_fetch(pool)
             logger.info("Initial fetch completed successfully")
-            logger.info("Starting 15-second background update task...")
-            await update_api_games_every_15_seconds(pool)
+            logger.info("Starting 15-second and 5-second background update tasks...")
+            await asyncio.gather(
+                update_api_games_every_15_seconds(pool),
+                update_bet_games_every_5_seconds(pool)
+            )
         finally:
             logger.info("Closing database connection pool...")
             pool.close()
