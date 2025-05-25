@@ -349,8 +349,10 @@ class BettingBot(commands.Bot):
                     db = await get_database_connection()
                     async with SportsAPI(db_manager=db) as api:
                         active_bets_query = """
-                        SELECT DISTINCT api_game_id FROM bets
-                        WHERE confirmed = 1 AND start_time <= NOW()
+                        SELECT DISTINCT b.api_game_id
+                        FROM bets b
+                        JOIN api_games ag ON b.api_game_id = ag.api_game_id
+                        WHERE b.confirmed = 1 AND ag.start_time <= NOW()
                         """
                         async with db.acquire() as conn:
                             async with conn.cursor() as cursor:
