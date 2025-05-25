@@ -205,15 +205,49 @@ class GameSelect(Select):
         logger.debug(f"Selected game value: {selected_value}")
         
         if selected_value == "manual_entry":
-            self.parent_view.bet_details.update({
-                'api_game_id': None,  # Set to None for manual entry
-                'home_team_name': "Manual Entry",
-                'away_team_name': "Manual Entry",
-                'is_manual': True
-            })
-            logger.debug("Manual entry selected, bet details updated")
+            # For manual entry, create a placeholder game record
+            try:
+                # Insert placeholder game
+                query = """
+                    INSERT INTO api_games 
+                    (api_game_id, sport, league_id, home_team_name, away_team_name, status, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                    RETURNING id
+                """
+                placeholder_id = f"MANUAL_{int(datetime.now().timestamp())}"
+                result = await self.parent_view.bot.db_manager.fetch_one(
+                    query,
+                    (
+                        placeholder_id,
+                        self.parent_view.bet_details.get('league', 'OTHER'),
+                        0,  # placeholder league_id
+                        "Manual Entry",
+                        "Manual Entry",
+                        "Manual"
+                    )
+                )
+                
+                if not result:
+                    raise ValueError("Failed to create manual game entry")
+                
+                # Store both IDs
+                self.parent_view.bet_details.update({
+                    'api_game_id': placeholder_id,  # This is the external ID
+                    'game_id': result['id'],  # This is the internal ID
+                    'home_team_name': "Manual Entry",
+                    'away_team_name': "Manual Entry",
+                    'is_manual': True
+                })
+                logger.debug(f"Created manual entry game with api_game_id: {placeholder_id}, internal id: {result['id']}")
+            except Exception as e:
+                logger.error(f"Failed to create manual entry game: {e}")
+                await interaction.response.send_message(
+                    "Error creating manual entry. Please try again.", 
+                    ephemeral=True
+                )
+                return
         else:
-            # Find the selected game in the games list
+            # For regular game selection
             selected_game = next(
                 (game for game in self.games if str(game.get('api_game_id')) == selected_value),
                 None
@@ -221,13 +255,27 @@ class GameSelect(Select):
             
             if selected_game:
                 logger.debug(f"Found selected game: {selected_game}")
-                # Store complete game info
+                # Verify game exists in database
+                game_check = await self.parent_view.bot.db_manager.fetch_one(
+                    "SELECT id FROM api_games WHERE api_game_id = %s",
+                    (selected_game['api_game_id'],)
+                )
+                
+                if not game_check:
+                    logger.error(f"Game {selected_game['api_game_id']} not found in api_games table")
+                    await interaction.response.send_message(
+                        "Error: Selected game not found in database.", 
+                        ephemeral=True
+                    )
+                    return
+
                 self.parent_view.bet_details.update({
                     'api_game_id': str(selected_game['api_game_id']),
+                    'game_id': game_check['id'],
                     'home_team_name': selected_game['home_team_name'],
                     'away_team_name': selected_game['away_team_name'],
                     'is_manual': False,
-                    'selected_game': selected_game  # Store full game details
+                    'selected_game': selected_game
                 })
                 logger.debug(f"Updated bet details with game info: {self.parent_view.bet_details}")
             else:
@@ -238,9 +286,8 @@ class GameSelect(Select):
                 )
                 return
 
-        # Verify api_game_id is properly set
-        logger.debug(f"Final api_game_id value: {self.parent_view.bet_details.get('api_game_id')}")
-        
+        # Debug log final state
+        logger.debug(f"Final bet details before proceeding: {self.parent_view.bet_details}")
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
