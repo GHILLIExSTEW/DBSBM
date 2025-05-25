@@ -3,6 +3,7 @@
 
 import json
 import logging
+import asyncio
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Union
 from zoneinfo import ZoneInfo
@@ -183,13 +184,28 @@ class BetService:
         """Create a straight bet, populating all relevant fields based on the new schema."""
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
         try:
-            # Map api_game_id to api_games.id
+            logger.debug(f"Received api_game_id: {api_game_id}")
             game_id = None
             if api_game_id:
+                logger.debug(f"Fetching game_id for api_game_id: {api_game_id}")
                 game_id = await self.get_game_id_by_api_id(api_game_id)
                 if not game_id:
                     logger.error(f"Invalid api_game_id {api_game_id}: not found in api_games table")
                     raise BetServiceError(f"Game ID {api_game_id} not found in database.")
+                logger.debug(f"Mapped api_game_id {api_game_id} to game_id {game_id}")
+
+            # Check if game_id exists in the games table
+            game_check_query = "SELECT id FROM games WHERE id = %s"
+            async with self.db_manager.db.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(game_check_query, (game_id,))
+                    game_exists = await cursor.fetchone()
+
+            logger.debug(f"Validating game_id {game_id} in the games table")
+            if not game_exists:
+                logger.error(f"Game ID {game_id} does not exist in the games table. Cannot insert bet.")
+                return
+            logger.debug(f"Game ID {game_id} exists in the games table. Proceeding with bet insertion.")
 
             # Construct bet_details
             internal_bet_details_dict = {

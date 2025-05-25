@@ -963,3 +963,10 @@ class DatabaseManager:
                 rows = await cursor.fetchall()
                 logger.info("Fetched %d open bets for guild_id=%s", len(rows), guild_id)
                 return rows
+
+    @property
+    def db(self):
+        """Returns the MySQL connection pool."""
+        if self._pool is None:
+            raise RuntimeError("Database connection pool is not initialized. Call connect() first.")
+        return self._pool

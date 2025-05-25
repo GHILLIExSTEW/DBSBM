@@ -213,7 +213,7 @@ class BetTypeView(View):
                 view = StraightBetWorkflowView(
                     self.original_interaction, 
                     self.bot,
-                    message_to_control=self.message, 
+                    message_to_control=self.message  # Ensure message context is passed
                 )
                 if not view.message: 
                     logger.error("StraightBetWorkflowView initiated without a message to control.")
@@ -297,11 +297,14 @@ async def bet(interaction: Interaction):
     try:
         view = BetTypeView(interaction, interaction.client)
         logger.debug("BetTypeView initialized successfully.")
+        # Send the initial message
         await interaction.response.send_message(
             "Select the type of bet you want to place:",
             view=view,
             ephemeral=True
         )
+        # Retrieve and assign the message object
+        view.message = await interaction.original_response()
         logger.info("/bet command response sent successfully.")
     except Exception as e:
         logger.error(f"Error in /bet command: {e}", exc_info=True)

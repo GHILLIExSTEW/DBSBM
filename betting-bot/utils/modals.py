@@ -427,13 +427,32 @@ class StraightBetDetailsModal(Modal):
 
         except Exception as e:
             logger.exception(f"Error in StraightBetDetailsModal.on_submit: {e}")
-            await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
+            try:
+                if not interaction.followup:
+                    logger.error("Follow-up webhook is invalid or expired. Interaction details: %s", interaction)
+                    # Fallback: Notify the user via a direct message or log the issue for manual resolution
+                    try:
+                        user = interaction.user
+                        if user:
+                            await user.send("❌ Unable to process your request due to a webhook issue. Please try again later.")
+                    except discord.HTTPException as dm_err:
+                        logger.error(f"Failed to send fallback DM to user: {dm_err}")
+                    return
+
+                await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
+            except discord.HTTPException as http_err:
+                logger.error(f"Failed to send follow-up message: {http_err}")
+
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
         response_method = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
         try:
+            if not interaction.followup:
+                logger.error("Follow-up webhook is invalid or expired.")
+                return
             await response_method('❌ Modal error. Please try again.', ephemeral=True)
-        except discord.HTTPException: pass
+        except discord.HTTPException as http_err:
+            logger.error(f"Failed to send error message: {http_err}")
         if hasattr(self, "view_ref") and self.view_ref: self.view_ref.stop()
 
 
@@ -482,7 +501,10 @@ def get_player_image(player_name: str, team: str, league_key: str) -> Optional[s
         # Get best match
         best_match = process.extractOne(search_name, candidates, scorer=fuzz.ratio)
         if best_match:
-            best_name, score, _ = best_match  # Unpack all three values, ignore index
+            if len(best_match) == 3:
+                best_name, score, _ = best_match  # Unpack all three values, ignore index
+            else:
+                best_name, score = best_match  # Handle cases with only two values
             logger.info(f"[Player Image] Fuzzy match: '{search_name}' vs candidates -> '{best_name}' (score {score})")
             
             # Use best match if it's the only strong candidate or above threshold

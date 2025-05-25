@@ -194,6 +194,8 @@ class GameSelect(Select):
         selected_api_game_id = self.values[0]
         self.parent_view.bet_details["api_game_id"] = selected_api_game_id
 
+        logger.debug(f"Selected api_game_id: {selected_api_game_id} by user {interaction.user.id}")
+
         if selected_api_game_id == "manual":
             # Handle manual entry
             self.parent_view.bet_details["home_team_name"] = "Manual Entry"
@@ -728,6 +730,9 @@ class StraightBetWorkflowView(View):
             if self.latest_interaction and self.latest_interaction.response.is_done():
                 try:
                     logger.debug("Self.message is None, trying to send followup via latest_interaction.")
+                    if not self.latest_interaction.followup:
+                        logger.error("Follow-up webhook is invalid or expired.")
+                        return
                     await self.latest_interaction.followup.send(
                         content=content or "Updating...",
                         view=view,

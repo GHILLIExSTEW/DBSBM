@@ -40,6 +40,11 @@ def generate_player_prop_bet_image(player_name, player_picture_path, team_name, 
     image.save(output_path)
 
 class GameLineImageGenerator:
+    def __init__(self, fonts=None, padding=0):
+        """Initialize the GameLineImageGenerator with optional fonts and padding."""
+        self.fonts = fonts
+        self.padding = padding
+
     @staticmethod
     def generate_bet_slip_image(team1_name, team1_logo_path, team2_name, team2_logo_path, line, units, output_path):
         """Generates a game line bet slip image."""
@@ -77,3 +82,10 @@ class GameLineImageGenerator:
 
         # Save the image
         image.save(output_path)
+
+    @staticmethod
+    def draw_teams_section(draw, team1_name, team2_name, y_position):
+        """Draws the teams section on the image."""
+        # Placeholder implementation
+        draw.text((10, y_position), f"{team1_name} vs {team2_name}", fill="white")
+        return y_position + 50
