@@ -361,21 +361,20 @@ class StraightBetDetailsModal(Modal):
 
             # Create or get bet_id
             if "bet_serial" not in self.view_ref.bet_details:
-                game_id_for_db = self.view_ref.bet_details.get("game_id")
-                if game_id_for_db == "Other": game_id_for_db = None
-
+                # Use the API game ID stored from selection or manual entry
+                api_game_id_for_bet = self.view_ref.bet_details.get("api_game_id")
                 bet_serial = await self.view_ref.bot.bet_service.create_straight_bet(
-                    guild_id=interaction.guild_id, 
+                    guild_id=interaction.guild_id,
                     user_id=interaction.user.id,
-                    api_game_id=game_id_for_db,
+                    api_game_id=api_game_id_for_bet,
                     bet_type=self.line_type,
-                    team=team_input, 
-                    opponent=opponent_input, 
+                    team=team_input,
+                    opponent=opponent_input,
                     line=line_value,
-                    units=1.0, 
-                    odds=odds_val, 
+                    units=1.0,
+                    odds=odds_val,
                     channel_id=None,
-                    league=self.view_ref.league
+                    league=self.view_ref.league,
                 )
                 if not bet_serial: 
                     raise BetServiceError("Failed to create bet record.")

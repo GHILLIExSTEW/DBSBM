@@ -154,11 +154,12 @@ class BetService:
             return False
 
     async def get_game_id_by_api_id(self, api_game_id: str) -> Optional[int]:
-        """Get internal game ID from api_game_id."""
+        """Get internal game ID from api_game_id as a plain integer."""
         try:
             query = "SELECT id FROM api_games WHERE api_game_id = %s"
-            result = await self.db_manager.fetch_one(query, (api_game_id,))
-            return result['id'] if result else None
+            # fetchval returns a single value or None
+            game_id = await self.db_manager.fetchval(query, (api_game_id,))
+            return game_id
         except Exception as e:
             logger.error(f"Error retrieving game_id for api_game_id {api_game_id}: {str(e)}")
             return None
@@ -181,13 +182,9 @@ class BetService:
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
         
         try:
-            # Verify game exists in api_games table
-            game_exists = await self.db_manager.fetch_one(
-                "SELECT 1 FROM api_games WHERE api_game_id = %s",
-                (api_game_id,)
-            )
-            
-            if not game_exists:
+            # Verify game exists in api_games table and get internal ID
+            internal_game_id = await self.get_game_id_by_api_id(api_game_id)
+            if internal_game_id is None:
                 logger.error(f"Game ID {api_game_id} not found in database.")
                 raise BetServiceError(f"Game ID {api_game_id} not found in database.")
 
@@ -228,7 +225,7 @@ class BetService:
                 line,
                 None,  # player_prop_details
                 None,  # player_id
-                None,  # game_id (to be set after insertion)
+                internal_game_id,  # game_id
                 None,  # game_start
                 None,  # expiration_time
                 1,
