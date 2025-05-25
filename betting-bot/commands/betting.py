@@ -14,6 +14,7 @@ from typing import Optional, Union
 from .straight_betting import StraightBetWorkflowView
 from .parlay_betting import ParlayBetWorkflowView
 from config.leagues import LEAGUE_IDS 
+from utils.game_line_image_generator import generate_bet_slip_image, generate_player_prop_bet_image  # Import the image generation functions
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +220,7 @@ class BetTypeView(View):
                     self.stop()
                     return
                 await view.start_flow(interaction_from_select) # Pass the component interaction
-            else:  # parlay
+            elif bet_type == "parlay":
                 logger.debug("Initializing ParlayBetWorkflowView")
                 view = ParlayBetWorkflowView( 
                     self.original_interaction, 
@@ -228,6 +229,13 @@ class BetTypeView(View):
                     # using self.original_interaction (the /bet command interaction)
                 )
                 await view.start_flow() # Parlay's start_flow doesn't need interaction_from_select here
+            elif bet_type == "player_prop":
+                logger.debug("Initializing PlayerPropBetWorkflowView")
+                view = PlayerPropBetWorkflowView(
+                    self.original_interaction,
+                    self.bot
+                )
+                await view.start_flow(interaction_from_select)
 
             logger.debug(f"{bet_type} bet workflow started successfully")
         except Exception as e:
@@ -246,64 +254,38 @@ class BetTypeView(View):
             self.stop()
 
 
-class BettingCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+class PlayerPropBetWorkflowView(View):
+    def __init__(self, interaction: Interaction, bot: commands.Bot):
+        super().__init__(timeout=600)
+        self.original_interaction = interaction
         self.bot = bot
-        logger.info("Initializing BettingCog")
+        self.message: Optional[Union[discord.WebhookMessage, discord.InteractionMessage]] = None
+        logger.debug(f"PlayerPropBetWorkflowView initialized for user {interaction.user} (ID: {interaction.user.id})")
 
-    @app_commands.command(
-        name="bet",
-        description="Place a new bet (straight or parlay) through a guided workflow.",
-    )
-    @app_commands.check(is_allowed_command_channel)
-    async def bet_command(self, interaction: discord.Interaction):
-        logger.info(
-            f"/bet command initiated by {interaction.user} (ID: {interaction.user.id}) in guild {interaction.guild_id}, channel {interaction.channel_id}"
-        )
+    async def start_flow(self, interaction: Interaction):
         try:
-            # The check is_allowed_command_channel runs before this.
-            # If it fails, it sends a response and this function isn't called.
-            view = BetTypeView(interaction, self.bot)
-            
-            # Send the initial response for the /bet command.
-            # Since the check passed, we can proceed to send this message.
+            # Example data for player prop bet
+            player_name = "John Doe"
+            player_picture_path = "betting-bot/assets/player_pictures/john_doe.png"
+            team_name = "Team A"
+            team_logo_path = "betting-bot/assets/logos/team_a_logo.png"
+            line = "Over 20.5 Points"
+            units = "5"
+            output_path = "/workspaces/DBSBM/generated_player_prop_bet.png"
+
+            # Generate the player prop bet image
+            generate_player_prop_bet_image(player_name, player_picture_path, team_name, team_logo_path, line, units, output_path)
+            logger.info(f"Player prop bet image generated and saved to {output_path}")
+
+            # Send the image to the user
             await interaction.response.send_message(
-                "Starting bet placement: Please select bet type...",
-                view=view,
-                ephemeral=True,
+                content="Player Prop Bet Slip:",
+                file=discord.File(output_path),
+                ephemeral=True
             )
-            # Store the message object so the view can control it
-            view.message = await interaction.original_response() 
-            logger.debug(f"Bet type selection message sent successfully (ID: {view.message.id})")
-
-        except app_commands.CheckFailure:
-            # This block is hit if is_allowed_command_channel returns False AND
-            # if, for some reason, it didn't send its own response (our current implementation does).
-            # It's good for robustness.
-            logger.warning(f"/bet command check failed for {interaction.user.id} in channel {interaction.channel_id}. The check function should have responded.")
-            if not interaction.response.is_done():
-                 await interaction.response.send_message("You cannot use this command in this channel.", ephemeral=True)
         except Exception as e:
-            logger.exception(
-                f"Error in /bet command for user {interaction.user} (ID: {interaction.user.id}): {e}"
+            logger.error(f"Error in PlayerPropBetWorkflowView: {e}", exc_info=True)
+            await interaction.response.send_message(
+                f"❌ Failed to generate player prop bet slip: {str(e)}",
+                ephemeral=True
             )
-            error_message = f"❌ An error occurred while starting the betting workflow: {str(e)}"
-            # Check if an initial response has been sent before trying to send/followup
-            if not interaction.response.is_done():
-                await interaction.response.send_message(error_message, ephemeral=True)
-            else:
-                try:
-                    await interaction.followup.send(error_message, ephemeral=True)
-                except discord.HTTPException: # Fallback if followup fails
-                    logger.error("Failed to send followup error message for /bet command after initial response.")
-
-
-async def setup(bot: commands.Bot):
-    """Adds the betting cog to the bot."""
-    try:
-        cog = BettingCog(bot)
-        await bot.add_cog(cog)
-        logger.info("BettingCog loaded successfully")
-    except Exception as e:
-        logger.error(f"Failed to load BettingCog: {e}")
-        raise
