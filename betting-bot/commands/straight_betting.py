@@ -204,28 +204,32 @@ class GameSelect(Select):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
         
-        if selected_value == "manual_entry":  # Match the new manual entry value
+        if selected_value == "manual_entry":
             self.parent_view.bet_details.update({
-                'api_game_id': None,
+                'api_game_id': None,  # Set to None for manual entry
                 'home_team_name': "Manual Entry",
                 'away_team_name': "Manual Entry",
                 'is_manual': True
             })
+            logger.debug("Manual entry selected, bet details updated")
         else:
             # Find the selected game in the games list
             selected_game = next(
-                (game for game in self.games if str(game['api_game_id']) == selected_value),
+                (game for game in self.games if str(game.get('api_game_id')) == selected_value),
                 None
             )
+            
             if selected_game:
                 logger.debug(f"Found selected game: {selected_game}")
+                # Store complete game info
                 self.parent_view.bet_details.update({
-                    'api_game_id': str(selected_game['api_game_id']),  # Ensure string type
+                    'api_game_id': str(selected_game['api_game_id']),
                     'home_team_name': selected_game['home_team_name'],
                     'away_team_name': selected_game['away_team_name'],
-                    'is_manual': False
+                    'is_manual': False,
+                    'selected_game': selected_game  # Store full game details
                 })
-                logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
+                logger.debug(f"Updated bet details with game info: {self.parent_view.bet_details}")
             else:
                 logger.error(f"Could not find game with api_game_id {selected_value}")
                 await interaction.response.send_message(
@@ -234,6 +238,9 @@ class GameSelect(Select):
                 )
                 return
 
+        # Verify api_game_id is properly set
+        logger.debug(f"Final api_game_id value: {self.parent_view.bet_details.get('api_game_id')}")
+        
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
