@@ -624,199 +624,90 @@ async def initial_fetch(pool: aiomysql.Pool):
         logger.error(f"Error during initial fetch: {e}", exc_info=True)
         return False
 
-
-# Remove old live_games_fetch, daily_3am_fetch, and update_api_games_every_15_seconds functions
-# Only using the 5-second update loop for efficiency
-
-
 async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
     """Update bet-related games every 5 seconds."""
     logger.info("Starting 5-second update loop for bet games")
+    api = None
+    stats_timer = datetime.now()
+    games_updated = 0
 
     try:
-        last_log = datetime.now()
-        games_updated = 0
-        
-        # Create a single SportsAPI instance for the entire update loop
-        async with SportsAPI(db_manager=pool) as api:
-            while True:
-                try:
-                    async with pool.acquire() as conn:
-                        async with conn.cursor(aiomysql.DictCursor) as cur:
-                            await cur.execute(
-                                '''
-                                SELECT DISTINCT b.api_game_id, ag.sport, ag.league_id, ag.league_name, ag.start_time
-                                FROM bets b
-                                JOIN api_games ag ON b.api_game_id = ag.api_game_id
-                                WHERE b.confirmed = 1 
-                                AND ag.start_time <= NOW()
-                                AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended')
-                                '''
-                            )
-                            bet_games = await cur.fetchall()
-                            
-                    # Log update stats every minute
-                    now = datetime.now()
-                    if (now - last_log).total_seconds() >= 60:
-                        logger.info(f"Bet update loop stats: {games_updated} games updated in last minute")
-                        games_updated = 0
-                        last_log = now
-                        
-                    if bet_games:
-                        logger.debug(f"Found {len(bet_games)} active bet games to update")
-                        async with aiohttp.ClientSession() as session:
-                            for game in bet_games:
-                                sport = game["sport"]
-                                league_id = game["league_id"]
-                                api_game_id = game["api_game_id"]
-                                league_name = game["league_name"]
-                                endpoint = ENDPOINTS.get(sport.lower())
-                                if endpoint:
-                                    # Try both /games and /games/h2h endpoints for best coverage
-                                    # 1. Try /games?id=api_game_id
-                                    game_endpoint = f"{endpoint}/games"
-                                    params = {"id": api_game_id}
-                                    headers = {"x-apisports-key": API_KEY}
-                                    async with session.get(game_endpoint, headers=headers, params=params) as resp:
-                                        if resp.status == 200:
-                                            data = await resp.json()
-                                            games = data.get("response", [])
-                                            for g in games:
-                                                normalized_game = map_game_data(g, sport, league_name, league_id)
-                                                if normalized_game:
-                                                    await save_game_to_db(pool, normalized_game)
-                                        else:
-                                            logger.error(f"Failed to update bet game {api_game_id}: {resp.status} - {await resp.text()}")
-                                    # 2. Try /games/h2h if home/away IDs are available
-                                    home_team_id = None
-                                    away_team_id = None
-                                    # Try to extract from api_games table
-                                    async with pool.acquire() as conn2:
-                                        async with conn2.cursor(aiomysql.DictCursor) as cur2:
-                                            await cur2.execute(
-                                                "SELECT home_team_id, away_team_id, season, start_time FROM api_games WHERE api_game_id = %s LIMIT 1",
-                                                (api_game_id,)
-                                            )
-                                            row = await cur2.fetchone()
-                                            if row:
-                                                home_team_id = row.get("home_team_id")
-                                                away_team_id = row.get("away_team_id")
-                                                season = row.get("season") or get_current_season(league_name)
-                                                date = row.get("start_time")
-                                                if date and isinstance(date, datetime):
-                                                    date = date.strftime("%Y-%m-%d")
-                                                elif date:
-                                                    date = str(date)[:10]
-                                                else:
-                                                    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                                                if home_team_id and away_team_id:
-                                                    h2h_endpoint = f"{endpoint}/games/h2h"
-                                                    h2h_params = {
-                                                        "league": league_id,
-                                                        "season": season,
-                                                        "date": date,
-                                                        "h2h": f"{home_team_id}-{away_team_id}"
-                                                    }
-                                                    async with session.get(h2h_endpoint, headers=headers, params=h2h_params) as h2h_resp:
-                                                        if h2h_resp.status == 200:
-                                                            h2h_data = await h2h_resp.json()
-                                                            h2h_games = h2h_data.get("response", [])
-                                                            for h2h_game in h2h_games:
-                                                                normalized_game = map_game_data(h2h_game, sport, league_name, league_id)
-                                                                if normalized_game:
-                                                                    await save_game_to_db(pool, normalized_game)
-                                                                    games_updated += 1
-                                                        else:
-                                                            logger.error(f"Error fetching H2H data for bet game {api_game_id}: {h2h_resp.status} - {await h2h_resp.text()}")
-                except aiohttp.ClientError as e:
-                    logger.error(f"Network error in bet update loop: {e}", exc_info=True)
-                    await asyncio.sleep(5)  # Longer sleep on network errors
-                except Exception as e:
-                    logger.error(f"Error in bet update loop: {e}", exc_info=True)
-                    await asyncio.sleep(1)  # Short sleep on other errors
-                
-                # Sleep for 5 seconds between update cycles
-                await asyncio.sleep(5)
-    except Exception as e:
-        logger.error(f"Fatal error in bet update loop: {e}", exc_info=True)
-        raise
+        # Initialize SportsAPI once outside the loop
+        api = SportsAPI(db_manager=pool)
+        await api.__aenter__()
+        logger.info("SportsAPI initialized for bet games update loop")
 
+        while True:
+            try:
+                async with pool.acquire() as conn:
+                    async with conn.cursor(aiomysql.DictCursor) as cur:
+                        await cur.execute("""
+                            SELECT DISTINCT 
+                                ag.api_game_id, 
+                                ag.sport, 
+                                ag.league_id,
+                                ag.status,
+                                ag.start_time
+                            FROM bets b
+                            JOIN api_games ag ON b.api_game_id = ag.api_game_id
+                            WHERE b.confirmed = 1 
+                            AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Game Finished', 'Final')
+                            AND ag.start_time <= NOW()
+                        """)
+                        bet_games = await cur.fetchall()
 
-async def main():
-    """Run initial fetch, then update bet games every 5 seconds."""
-    logger.info("Entering main function of fetcher.py")
-    
-    # Track running state
-    running = True
-    pool = None
-    background_tasks = set()
-
-    try:
-        logger.info(f"Using database: {MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
-        logger.info(f"API endpoints configured for: {list(ENDPOINTS.keys())}")
-        logger.info(f"League IDs configured: {list(LEAGUE_IDS.keys())}")
-        
-        # Create database pool
-        logger.info("Creating database connection pool...")
-        pool = await create_db_pool()
-        logger.info("Database connection pool created successfully")
-
-        try:
-            # Perform initial fetch
-            logger.info("Starting initial fetch...")
-            initial_success = await initial_fetch(pool)
-            if not initial_success:
-                logger.error("Initial fetch failed - will retry in background tasks")
-
-            # Start background tasks
-            logger.info("Starting background update tasks...")
-            bet_update_task = asyncio.create_task(update_bet_games_every_5_seconds(pool))
-            background_tasks.add(bet_update_task)
-
-            # Monitor background tasks
-            while running:
-                # Check if any tasks failed
-                for task in background_tasks:
-                    if task.done():
+                if bet_games:
+                    for game in bet_games:
                         try:
-                            await task
+                            # Use the single API instance to update game
+                            updated = await api.update_game(
+                                game['api_game_id'], 
+                                game['sport'], 
+                                game['league_id']
+                            )
+                            if updated:
+                                games_updated += 1
                         except Exception as e:
-                            logger.error(f"Background task failed: {e}", exc_info=True)
-                            # Restart the failed task
-                            if task == bet_update_task:
-                                bet_update_task = asyncio.create_task(update_bet_games_every_5_seconds(pool))
-                                background_tasks.add(bet_update_task)
-                
-                await asyncio.sleep(1)  # Check task status every second
+                            logger.error(f"Error updating game {game['api_game_id']}: {e}")
+                            continue
 
-        except asyncio.CancelledError:
-            logger.info("Received cancel signal - shutting down gracefully")
-            running = False
-        except Exception as e:
-            logger.error(f"Fatal error in main loop: {e}", exc_info=True)
-            raise
-        finally:
-            # Cancel all background tasks
-            for task in background_tasks:
-                if not task.done():
-                    task.cancel()
-            
-            # Wait for tasks to finish
-            if background_tasks:
-                await asyncio.gather(*background_tasks, return_exceptions=True)
-            
-            # Close database pool
-            if pool:
-                logger.info("Closing database connection pool...")
-                pool.close()
-                await pool.wait_closed()
-                logger.info("Database connection pool closed")
+                # Log stats every minute
+                if (datetime.now() - stats_timer).total_seconds() >= 60:
+                    logger.info(f"Games updated in last minute: {games_updated}")
+                    stats_timer = datetime.now()
+                    games_updated = 0
+
+            except Exception as e:
+                logger.error(f"Error in bet games update loop: {e}")
+
+            await asyncio.sleep(5)
 
     except Exception as e:
-        logger.error(f"Fatal error in main: {e}", exc_info=True)
-        sys.exit(1)  # Exit with error code
+        logger.error(f"Fatal error in update loop: {e}")
+        raise
+    finally:
+        if api:
+            await api.__aexit__(None, None, None)
+            logger.info("SportsAPI connection closed")
 
+# Update main function to only use the 5-second update loop
+async def main():
+    """Main function to run the fetcher."""
+    try:
+        pool = await setup_db_pool()
+        logger.info("Database pool created successfully")
+        
+        # Only run the 5-second update loop
+        await update_bet_games_every_5_seconds(pool)
+    except Exception as e:
+        logger.error(f"Error in main: {e}")
+        raise
+    finally:
+        try:
+            await pool.close()
+            logger.info("Database pool closed")
+        except Exception as e:
+            logger.error(f"Error closing database pool: {e}")
 
 if __name__ == "__main__":
-    logger.info("Executing fetcher.py as main script")
     asyncio.run(main())
