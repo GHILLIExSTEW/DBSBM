@@ -15,7 +15,7 @@ from config.team_mappings import normalize_team_name
 from data.db_manager import DatabaseManager
 from data.game_utils import normalize_team_name_any_league
 
-from .game_line_image_generator import GameLineImageGenerator
+from betting_bot.utils.game_line_image_generator import GameLineImageGenerator
 from .player_prop_image_generator import PlayerPropImageGenerator
 from .parlay_image_generator import ParlayImageGenerator
 

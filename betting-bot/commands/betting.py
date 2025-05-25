@@ -14,7 +14,7 @@ from typing import Optional, Union
 from .straight_betting import StraightBetWorkflowView
 from .parlay_betting import ParlayBetWorkflowView
 from config.leagues import LEAGUE_IDS 
-from utils.game_line_image_generator import generate_bet_slip_image, generate_player_prop_bet_image  # Import the image generation functions
+from betting_bot.utils.game_line_image_generator import generate_bet_slip_image, generate_player_prop_bet_image  # Import the image generation functions
 
 logger = logging.getLogger(__name__)
 
