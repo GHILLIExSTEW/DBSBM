@@ -635,21 +635,64 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
                         sport = game["sport"]
                         league_id = game["league_id"]
                         api_game_id = game["api_game_id"]
+                        league_name = game["league_name"]
                         endpoint = ENDPOINTS.get(sport.lower())
                         if endpoint:
-                            h2h_endpoint = f"{endpoint}/games"
+                            # Try both /games and /games/h2h endpoints for best coverage
+                            # 1. Try /games?id=api_game_id
+                            game_endpoint = f"{endpoint}/games"
                             params = {"id": api_game_id}
                             headers = {"x-apisports-key": API_KEY}
-                            async with session.get(h2h_endpoint, headers=headers, params=params) as resp:
+                            async with session.get(game_endpoint, headers=headers, params=params) as resp:
                                 if resp.status == 200:
                                     data = await resp.json()
                                     games = data.get("response", [])
                                     for g in games:
-                                        normalized_game = map_game_data(g, sport, game["league_name"], league_id)
+                                        normalized_game = map_game_data(g, sport, league_name, league_id)
                                         if normalized_game:
                                             await save_game_to_db(pool, normalized_game)
                                 else:
                                     logger.error(f"Failed to update bet game {api_game_id}: {resp.status} - {await resp.text()}")
+                            # 2. Try /games/h2h if home/away IDs are available
+                            home_team_id = None
+                            away_team_id = None
+                            # Try to extract from api_games table
+                            async with pool.acquire() as conn2:
+                                async with conn2.cursor(aiomysql.DictCursor) as cur2:
+                                    await cur2.execute(
+                                        "SELECT home_team_id, away_team_id, season, start_time FROM api_games WHERE api_game_id = %s LIMIT 1",
+                                        (api_game_id,)
+                                    )
+                                    row = await cur2.fetchone()
+                                    if row:
+                                        home_team_id = row.get("home_team_id")
+                                        away_team_id = row.get("away_team_id")
+                                        season = row.get("season") or get_current_season(league_name)
+                                        date = row.get("start_time")
+                                        if date and isinstance(date, datetime):
+                                            date = date.strftime("%Y-%m-%d")
+                                        elif date:
+                                            date = str(date)[:10]
+                                        else:
+                                            date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                                        if home_team_id and away_team_id:
+                                            h2h_endpoint = f"{endpoint}/games/h2h"
+                                            h2h_params = {
+                                                "league": league_id,
+                                                "season": season,
+                                                "date": date,
+                                                "h2h": f"{home_team_id}-{away_team_id}"
+                                            }
+                                            async with session.get(h2h_endpoint, headers=headers, params=h2h_params) as h2h_resp:
+                                                if h2h_resp.status == 200:
+                                                    h2h_data = await h2h_resp.json()
+                                                    h2h_games = h2h_data.get("response", [])
+                                                    for h2h_game in h2h_games:
+                                                        normalized_game = map_game_data(h2h_game, sport, league_name, league_id)
+                                                        if normalized_game:
+                                                            await save_game_to_db(pool, normalized_game)
+                                                else:
+                                                    logger.error(f"Error fetching H2H data for bet game {api_game_id}: {h2h_resp.status} - {await h2h_resp.text()}")
         except Exception as e:
             logger.error(f"[5s] Error in bet games update loop: {e}", exc_info=True)
         await asyncio.sleep(5)
