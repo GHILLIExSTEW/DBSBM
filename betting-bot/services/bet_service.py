@@ -182,11 +182,19 @@ class BetService:
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
         
         try:
-            # Verify game exists in api_games table and get internal ID
-            internal_game_id = await self._get_or_create_game(api_game_id)
-            if internal_game_id is None:
-                logger.error(f"Game ID {api_game_id} not found in database.")
-                raise BetServiceError(f"Game ID {api_game_id} not found in database.")
+            # Handle game_id for database foreign key constraint
+            internal_game_id = None
+            if api_game_id:
+                # Only try to get/create game if we have a valid api_game_id
+                try:
+                    internal_game_id = await self._get_or_create_game(api_game_id)
+                except BetServiceError as e:
+                    logger.warning(f"Could not get/create game for api_game_id {api_game_id}: {e}")
+                    # For manual entries or when game not found, set to None (NULL in DB)
+                    internal_game_id = None
+            else:
+                # Manual entry - no api_game_id, set game_id to NULL
+                logger.info("Manual entry bet - setting game_id to NULL")
 
             # Construct bet_details
             internal_bet_details_dict = {
@@ -647,7 +655,7 @@ class BetService:
         if not src:
             raise BetServiceError(f"No api_games row for {api_game_id}")
         # 3) insert into games
-        await self.db_manager.execute(
+        rowcount, last_id = await self.db_manager.execute(
             """
             INSERT INTO games
               (api_game_id, sport, league_id, home_team_name, away_team_name, start_time, status, created_at)
@@ -663,4 +671,6 @@ class BetService:
                 src["status"],
             )
         )
-        return await self.db_manager.fetchval("SELECT LAST_INSERT_ID()")
+        if last_id is None:
+            raise BetServiceError(f"Failed to create game record for api_game_id {api_game_id}")
+        return last_id

@@ -306,40 +306,10 @@ class StraightBetDetailsModal(Modal):
         self.add_item(self.odds_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        # 1) build a preview embed:
-        preview = discord.Embed(
-            title="Bet Preview",
-            color=discord.Color.blurple()
-        )
-        preview.add_field(name="Line Type", value=self.line_type, inline=True)
-        preview.add_field(name="Team", value=self.view_ref.bet_details.get("team"), inline=True)
-        preview.add_field(name="Opponent", value=self.view_ref.bet_details.get("opponent"), inline=True)
-        preview.add_field(name="Line", value=self.line_input.value.strip(), inline=True)
-        preview.add_field(name="Odds", value=self.odds_input.value.strip(), inline=True)
-        
-        # For player props, add player-specific fields
-        if self.line_type == "player_prop":
-            preview.add_field(name="Player", value=self.player_name_input.value.strip(), inline=True)
-            preview.add_field(name="Prop/Line", value=self.line_input.value.strip(), inline=True)
-
-        # 2) send it (ephemeral or not)
-        await interaction.response.send_message(embed=preview, ephemeral=False)
-
-        # 3) present your confirm/cancel buttons
-        confirm_view = ConfirmBetView()
-        await interaction.followup.send(
-            "Please confirm or cancel:",
-            view=confirm_view,
-            ephemeral=False
-        )
-
-        # 4) wait and then call create_straight_bet()
-        confirmed = await confirm_view.wait()
-        if not confirmed:
-            return
-
-        player_name = None  # Ensure player_name is always defined
         try:
+            # Process and validate input data
+            player_name = None
+            
             # Handle player props
             if self.line_type == "player_prop":
                 player_name = self.player_name_input.value.strip()
@@ -364,16 +334,29 @@ class StraightBetDetailsModal(Modal):
                 line_value = self.line_input.value.strip()
                 odds_str = self.odds_input.value.strip()
 
+            # Validate required fields
             if not line_value or not odds_str or (self.line_type == "player_prop" and not player_name):
-                await interaction.followup.send("❌ All details are required in the modal.", ephemeral=True)
+                await interaction.response.defer()
+                await self.view_ref.edit_message(
+                    content="❌ All details are required in the modal. Please try again.",
+                    view=None
+                )
+                self.view_ref.stop()
                 return
 
+            # Validate odds format
             try:
                 odds_val = float(odds_str.replace("+", ""))
             except ValueError:
-                await interaction.followup.send(f"❌ Invalid odds format: '{odds_str}'. Use numbers e.g., -110 or 200.", ephemeral=True)
+                await interaction.response.defer()
+                await self.view_ref.edit_message(
+                    content=f"❌ Invalid odds format: '{odds_str}'. Use numbers e.g., -110 or 200.",
+                    view=None
+                )
+                self.view_ref.stop()
                 return
 
+            # Update bet details
             self.view_ref.bet_details.update({
                 "line": line_value,
                 "odds_str": odds_str,
@@ -391,9 +374,8 @@ class StraightBetDetailsModal(Modal):
             self.view_ref.line = line_value
             self.view_ref.odds = odds_val
 
-            # Create or get bet_id
+            # Create bet if not exists
             if "bet_serial" not in self.view_ref.bet_details:
-                # Use the API game ID stored from selection or manual entry
                 api_game_id_for_bet = self.view_ref.bet_details.get("api_game_id")
                 bet_serial = await self.view_ref.bot.bet_service.create_straight_bet(
                     guild_id=interaction.guild_id,
@@ -415,20 +397,21 @@ class StraightBetDetailsModal(Modal):
             else:
                 self.view_ref.bet_id = str(self.view_ref.bet_details['bet_serial'])
 
-            # Generate bet slip
+            # Generate bet slip preview
             current_units = float(self.view_ref.bet_details.get("units", 1.0))
             bet_slip_generator = await self.view_ref.get_bet_slip_generator()
 
-            # Handle player props
+            # Handle player prop image
             player_image = None
             display_vs = None
             if self.line_type == "player_prop" and player_name:
-                # Try to get player image if available
-                from utils.modals import get_player_image
-                player_image_path = get_player_image(player_name, team_input, self.selected_league_key)
-                if player_image_path:
-                    player_image = Image.open(player_image_path).convert("RGBA")
-                display_vs = f"{team_input} vs {opponent_input}"
+                try:
+                    player_image_path = get_player_image(player_name, team_input, self.selected_league_key)
+                    if player_image_path:
+                        player_image = Image.open(player_image_path).convert("RGBA")
+                    display_vs = f"{team_input} vs {opponent_input}"
+                except Exception as img_e:
+                    logger.warning(f"Failed to load player image for {player_name}: {img_e}")
 
             # Generate the bet slip
             bet_slip_image = await bet_slip_generator.generate_bet_slip(
@@ -453,38 +436,69 @@ class StraightBetDetailsModal(Modal):
             else:
                 self.view_ref.preview_image_bytes = None
 
-            self.view_ref.current_step = 4 
-            await self.view_ref.go_next(interaction)
+            # Build preview embed
+            preview = discord.Embed(
+                title="Bet Preview",
+                color=discord.Color.blurple()
+            )
+            preview.add_field(name="Line Type", value=self.line_type, inline=True)
+            preview.add_field(name="Team", value=team_input, inline=True)
+            preview.add_field(name="Opponent", value=opponent_input, inline=True)
+            preview.add_field(name="Line", value=line_value, inline=True)
+            preview.add_field(name="Odds", value=odds_str, inline=True)
+            
+            if self.line_type == "player_prop" and player_name:
+                preview.add_field(name="Player", value=player_name, inline=True)
+
+            # Generate file for attachment
+            file_to_send = None
+            if self.view_ref.preview_image_bytes:
+                self.view_ref.preview_image_bytes.seek(0)
+                file_to_send = discord.File(self.view_ref.preview_image_bytes, filename="bet_preview.png")
+
+            # Always update the ephemeral message with the preview and controls
+            await interaction.response.defer()
+            await self.view_ref.edit_message(
+                content="Preview updated. Confirm or cancel your bet.",
+                embed=preview,
+                file=file_to_send,
+                view=self.view_ref
+            )
+            # The rest of the flow (confirm/cancel) is handled by the workflow view/buttons, not here
 
         except Exception as e:
-            logger.exception(f"Error in StraightBetDetailsModal.on_submit: {e}")
+            logger.exception(f"Error in StraightBetDetailsModal on_submit (outer try): {e}")
             try:
-                if not interaction.followup:
-                    logger.error("Follow-up webhook is invalid or expired. Interaction details: %s", interaction)
-                    # Fallback: Notify the user via a direct message or log the issue for manual resolution
-                    try:
-                        user = interaction.user
-                        if user:
-                            await user.send("❌ Unable to process your request due to a webhook issue. Please try again later.")
-                    except discord.HTTPException as dm_err:
-                        logger.error(f"Failed to send fallback DM to user: {dm_err}")
-                    return
-
-                await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
-            except discord.HTTPException as http_err:
-                logger.error(f"Failed to send follow-up message: {http_err}")
+                await interaction.response.defer()
+                await self.view_ref.edit_message(
+                    content="❌ Error processing details from modal. Please try again.",
+                    view=None
+                )
+            except Exception as edit_error:
+                logger.error(f"Failed to edit message after modal error: {edit_error}")
+            if hasattr(self, "view_ref") and self.view_ref:
+                self.view_ref.stop()
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
-        response_method = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
         try:
-            if not interaction.followup:
-                logger.error("Follow-up webhook is invalid or expired.")
-                return
-            await response_method('❌ Modal error. Please try again.', ephemeral=True)
-        except discord.HTTPException as http_err:
-            logger.error(f"Failed to send error message: {http_err}")
-        if hasattr(self, "view_ref") and self.view_ref: self.view_ref.stop()
+            # Always try to edit the original ephemeral message instead of sending new ones
+            await interaction.response.defer()
+            await self.view_ref.edit_message(
+                content="❌ Error processing bet details. Please try again or cancel.",
+                view=None
+            )
+            self.view_ref.stop()
+        except Exception as edit_error:
+            logger.error(f"Failed to edit message after modal error: {edit_error}")
+            # Only as last resort, try to send a followup
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send("❌ Modal error. Please restart the workflow.", ephemeral=True)
+                else:
+                    await interaction.response.send_message("❌ Modal error. Please restart the workflow.", ephemeral=True)
+            except discord.HTTPException:
+                pass
 
 
 # Add other modal classes here (ParlayLegDetailsModal, ParlayTotalOddsModal, etc.)
