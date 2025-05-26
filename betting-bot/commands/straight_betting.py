@@ -161,28 +161,45 @@ class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         game_options = []
         seen_values = set()  # Track used values
-        
-        # Process game options first
         for game in games:
+            # Prefer api_game_id if present, else use internal id
             if game.get('api_game_id'):
-                value = str(game['api_game_id'])
-                # Check for duplicates and add only if unique
-                if value not in seen_values:
-                    seen_values.add(value)
-                    label = f"{game['home_team_name']} vs {game['away_team_name']}"
-                    if len(label) > 100:  # Discord has a 100 char limit
-                        label = label[:97] + "..."
-                    
-                    game_options.append(
-                        SelectOption(
-                            label=f"{label} ({game['status']})",
-                            value=str(game['api_game_id']),  # Use api_game_id instead of internal id
-                            description=f"Start: {game['start_time'].strftime('%Y-%m-%d %H:%M')}"[:100]
-                        )
-                    )
-        
-        # Add manual entry option with a unique value
-        manual_value = "manual_entry"  # Changed from "manual" to ensure uniqueness
+                value = f"api_{game['api_game_id']}"
+            elif game.get('id'):
+                value = f"dbid_{game['id']}"
+            else:
+                continue  # skip if neither id present
+            if value in seen_values:
+                continue
+            seen_values.add(value)
+            label = f"{game.get('home_team_name', 'N/A')} vs {game.get('away_team_name', 'N/A')}"
+            if len(label) > 90:
+                label = label[:87] + "..."
+            status = game.get('status', '')
+            label_disp = f"{label} ({status})" if status else label
+            start_time = game.get('start_time')
+            if start_time:
+                if isinstance(start_time, str):
+                    try:
+                        from dateutil.parser import parse as dtparse
+                        start_time = dtparse(start_time)
+                    except Exception:
+                        start_time = None
+                if start_time:
+                    desc = f"Start: {start_time.strftime('%Y-%m-%d %H:%M')}"
+                else:
+                    desc = ""
+            else:
+                desc = ""
+            game_options.append(
+                SelectOption(
+                    label=label_disp,
+                    value=value,
+                    description=desc[:100]
+                )
+            )
+        # Add manual entry option
+        manual_value = "manual_entry"
         game_options.append(
             SelectOption(
                 label="Manual Entry",
@@ -190,7 +207,6 @@ class GameSelect(Select):
                 description="Enter game details manually"
             )
         )
-
         super().__init__(
             placeholder="Select a game...",
             options=game_options,
@@ -198,79 +214,42 @@ class GameSelect(Select):
         )
         self.parent_view = parent_view
         self.games = games
-        logger.debug(f"Created GameSelect with {len(game_options)} unique options")
+        logger.debug(f"Created GameSelect with {len(game_options)} unique options (including manual entry)")
 
     async def callback(self, interaction: Interaction):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
-        
         if selected_value == "manual_entry":
-            # Manual entry code remains the same...
-            try:
-                # Insert placeholder game
-                query = """
-                    INSERT INTO api_games 
-                    (api_game_id, sport, league_id, home_team_name, away_team_name, status, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
-                    RETURNING id
-                """
-                placeholder_id = f"MANUAL_{int(datetime.now().timestamp())}"
-                result = await self.parent_view.bot.db_manager.fetch_one(
-                    query,
-                    (
-                        placeholder_id,
-                        self.parent_view.bet_details.get('league', 'OTHER'),
-                        0,  # placeholder league_id
-                        "Manual Entry",
-                        "Manual Entry",
-                        "Manual"
-                    )
-                )
-                
-                if not result:
-                    raise ValueError("Failed to create manual game entry")
-                
-                # Store both IDs
-                self.parent_view.bet_details.update({
-                    'api_game_id': placeholder_id,  # This is the external ID
-                    'game_id': result['id'],  # This is the internal ID
-                    'home_team_name': "Manual Entry",
-                    'away_team_name': "Manual Entry",
-                    'is_manual': True
-                })
-                logger.debug(f"Created manual entry game with api_game_id: {placeholder_id}, internal id: {result['id']}")
-            except Exception as e:
-                logger.error(f"Failed to create manual entry game: {e}")
-                await interaction.response.send_message(
-                    "Error creating manual entry. Please try again.", 
-                    ephemeral=True
-                )
-                return
+            self.parent_view.bet_details.update({
+                'api_game_id': None,
+                'is_manual': True,
+                'home_team_name': "Manual Entry",
+                'away_team_name': "Manual Entry",
+            })
         else:
-            # Find the selected game by api_game_id
-            selected_game = next(
-                (game for game in self.games if str(game['api_game_id']) == selected_value),
-                None
-            )
-            
+            selected_game = None
+            if selected_value.startswith("api_"):
+                api_game_id = selected_value[4:]
+                selected_game = next((g for g in self.games if str(g.get('api_game_id')) == api_game_id), None)
+            elif selected_value.startswith("dbid_"):
+                dbid = selected_value[5:]
+                selected_game = next((g for g in self.games if str(g.get('id')) == dbid), None)
             if selected_game:
-                logger.debug(f"Found selected game: {selected_game}")
-                # Important: Store the api_game_id, not the internal id
                 self.parent_view.bet_details.update({
-                    'api_game_id': selected_game['api_game_id'],  # Use api_game_id string
-                    'home_team_name': selected_game['home_team_name'],
-                    'away_team_name': selected_game['away_team_name'],
+                    'api_game_id': selected_game.get('api_game_id'),
+                    'game_id': selected_game.get('id'),
+                    'home_team_name': selected_game.get('home_team_name'),
+                    'away_team_name': selected_game.get('away_team_name'),
                     'is_manual': False
                 })
                 logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
             else:
-                logger.error(f"Could not find game with api_game_id {selected_value}")
+                logger.error(f"Could not find game for selected value {selected_value}")
                 await interaction.response.send_message(
-                    "Error: Could not find the selected game.", 
+                    "Error: Could not find the selected game.",
                     ephemeral=True
                 )
                 return
-
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
@@ -499,21 +478,59 @@ class BetDetailsModal(Modal):
                                 player_image = Image.open(player_image_path).convert("RGBA")
                         display_vs = f"{team_input} vs {opponent_input}"
 
-                    bet_slip_image = await bet_slip_generator.generate_bet_slip(
-                        league=self.view.league,
-                        home_team=team_input,
-                        away_team=opponent_input,
-                        odds=odds_val,
-                        units=current_units,
-                        bet_type=self.line_type,
-                        selected_team=team_input,
-                        line=line_value,
-                        bet_id=self.view.bet_id,
-                        timestamp=datetime.now(timezone.utc),
-                        player_name=player_name,
-                        player_image=player_image,
-                        display_vs=display_vs
-                    )
+                    if self.line_type == "game_line":
+                        bet_slip_image = await bet_slip_generator.generate_game_line_slip(
+                            league=self.view.league,
+                            home_team=team_input,
+                            away_team=opponent_input,
+                            odds=odds_val,
+                            units=current_units,
+                            selected_team=team_input,
+                            line=line_value,
+                            bet_id=self.view.bet_id,
+                            timestamp=datetime.now(timezone.utc),
+                        )
+                    elif self.line_type == "player_prop":
+                        bet_slip_image = await bet_slip_generator.generate_player_prop_slip(
+                            league=self.view.league,
+                            home_team=team_input,
+                            away_team=opponent_input,
+                            odds=odds_val,
+                            units=current_units,
+                            selected_team=team_input,
+                            line=line_value,
+                            bet_id=self.view.bet_id,
+                            timestamp=datetime.now(timezone.utc),
+                            player_name=player_name,
+                            player_image=player_image,
+                            display_vs=display_vs,
+                        )
+                    elif self.line_type == "parlay":
+                        bet_slip_image = await bet_slip_generator.generate_parlay_slip(
+                            league=self.view.league,
+                            home_team=team_input,
+                            away_team=opponent_input,
+                            odds=odds_val,
+                            units=current_units,
+                            selected_team=team_input,
+                            line=line_value,
+                            bet_id=self.view.bet_id,
+                            timestamp=datetime.now(timezone.utc),
+                            # Add any extra parlay fields here
+                        )
+                    else:
+                        bet_slip_image = await bet_slip_generator.generate_bet_slip(
+                            league=self.view.league,
+                            home_team=team_input,
+                            away_team=opponent_input,
+                            odds=odds_val,
+                            units=current_units,
+                            bet_type=self.line_type,
+                            selected_team=team_input,
+                            line=line_value,
+                            bet_id=self.view.bet_id,
+                            timestamp=datetime.now(timezone.utc),
+                        )
 
                     if bet_slip_image:
                         self.view.preview_image_bytes = io.BytesIO(bet_slip_image)
@@ -536,11 +553,32 @@ class BetDetailsModal(Modal):
                 self.view.stop()
                 return
 
-            await self.view.edit_message(
-                content="Bet details updated. Processing...", view=self.view
+            # 1) build a preview embed:
+            preview = discord.Embed(
+                title="Bet Preview",
+                color=discord.Color.blurple()
             )
-            self.view.current_step = 4
-            await self.view.go_next(interaction)
+            preview.add_field(name="League", value=self.view.bet_details.get("league", "N/A"), inline=True)
+            preview.add_field(name="Game", value=f"{self.view.bet_details.get('home_team_name', 'N/A')} vs {self.view.bet_details.get('away_team_name', 'N/A')}", inline=True)
+            preview.add_field(name="Line", value=self.view.bet_details.get("line", "N/A"), inline=True)
+            preview.add_field(name="Odds", value=self.view.bet_details.get("odds_str", 'N/A'), inline=True)
+            preview.add_field(name="Units", value=self.view.bet_details.get("units_str", 'N/A'), inline=True)
+            preview.set_footer(text="Confirm or cancel your bet.")
+
+            file_to_send = None
+            if self.view.preview_image_bytes:
+                self.view.preview_image_bytes.seek(0)
+                file_to_send = File(self.view.preview_image_bytes, filename="bet_preview.png")
+
+            # Always update the ephemeral message with the preview and controls
+            await self.view.edit_message(
+                content="Preview updated. Confirm or cancel your bet.",
+                embed=preview,
+                file=file_to_send,
+                view=self.view
+            )
+            # The rest of the flow (confirm/cancel) is handled by the workflow view/buttons, not here
+
         except Exception as e:
             logger.exception(f"Error in BetDetailsModal on_submit (outer try): {e}")
             try:
@@ -854,20 +892,21 @@ class StraightBetWorkflowView(View):
                     return
                 logger.debug(f"Fetching games for league: {league}")
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
-                logger.debug(f"Retrieved {len(self.games)} games for league: {league}")
+                logger.debug(f"Retrieved {len(self.games)} games for league: {league}: {self.games}")
 
-                # Exclude games from yesterday in EST time
-                est_now = datetime.now(pytz.timezone('US/Eastern'))
-                est_yesterday = est_now - timedelta(days=1)
-                self.games = [
-                    game for game in self.games
-                    if game.get('start_time') and (game['start_time'] if isinstance(game['start_time'], datetime) else datetime.fromisoformat(game['start_time'])).astimezone(pytz.timezone('US/Eastern')).date() > est_yesterday.date()
+                # Only exclude games that are finished; include all others regardless of start_time
+                finished_statuses = [
+                    "Match Finished", "Finished", "FT", "Game Finished", "Final"
                 ]
-
-                # Ensure odds are included in the game details
+                filtered_games = []
                 for game in self.games:
-                    game_odds = game.get("odds", {})
-                    logger.debug(f"Game {game['api_game_id']} odds: {game_odds}")
+                    status = (game.get('status') or '').strip()
+                    if status not in finished_statuses:
+                        filtered_games.append(game)
+                    else:
+                        logger.debug(f"Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}")
+                self.games = filtered_games
+                logger.debug(f"Games after filtering: {self.games}")
 
                 # Add GameSelect regardless of whether there are games
                 new_view_items.append(GameSelect(self, self.games))
@@ -1006,8 +1045,14 @@ class StraightBetWorkflowView(View):
                     else:
                         logger.warning(f"No game found in api_games for api_game_id {api_game_id}")
                 except Exception as e:
-                    logger.error(f"Error fetching internal game_id for api_game_id {api_game_id}: {e}")
+                    logger.error(f"Error fetching internal game_id: {e}")
+        except Exception as e:
+            logger.error(f"Error in submit_bet: {e}")
+            await self.edit_message(content=f"❌ Failed to submit bet: {e}", view=None)
+            self.stop()
+            return
 
+        try:
             update_query = """
                 UPDATE bets SET units = %s, odds = %s, channel_id = %s, confirmed = 1, 
                                bet_details = %s, status = %s, game_id = %s
@@ -1065,44 +1110,57 @@ class StraightBetWorkflowView(View):
                 if not target_webhook:
                     target_webhook = await post_channel.create_webhook(name=f"{self.bot.user.name} Bets")
             except Exception as e:
-                logger.error(f"Straight bet: Webhook setup failed for channel {post_channel.id}: {e}")
-                raise ValueError("Webhook setup failed.")
+                logger.error(f"Error creating or fetching webhook: {e}")
+                await self.edit_message(content="Error: Failed to create bet posting webhook.", view=None)
+                self.stop()
+                return
 
-            sent_message = await target_webhook.send(
-                file=discord_file_to_send,
-                username=webhook_username[:80],
+            # Construct the bet posting message
+            embed = discord.Embed(
+                title="New Bet Placed!",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="League", value=details.get("league", "N/A"), inline=True)
+            embed.add_field(name="Game", value=f"{details.get('home_team_name', 'N/A')} vs {details.get('away_team_name', 'N/A')}", inline=True)
+            embed.add_field(name="Line", value=details.get("line", "N/A"), inline=True)
+            embed.add_field(name="Odds", value=details.get("odds_str", "N/A"), inline=True)
+            embed.add_field(name="Units", value=details.get("units_str", "N/A"), inline=True)
+            embed.set_footer(text=f"Bet ID: {bet_serial} | User: {interaction.user.display_name}", icon_url=webhook_avatar_url)
+
+            # Send the bet posting message
+            await target_webhook.send(
+                embed=embed,
+                username=webhook_username,
                 avatar_url=webhook_avatar_url,
-                wait=True
+                files=[discord_file_to_send] if discord_file_to_send else None
             )
 
-            if sent_message and hasattr(self.bot.bet_service, "pending_reactions"):
-                self.bot.bet_service.pending_reactions[sent_message.id] = {
-                    "bet_serial": bet_serial,
-                    "user_id": interaction.user.id,
-                    "guild_id": interaction.guild_id,
-                    "channel_id": post_channel_id,
-                    "bet_type": bet_type
-                }
-            await self.edit_message(content=f"✅ Bet ID `{bet_serial}` posted to {post_channel.mention}!", view=None, file=None)
+            await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
+            self.stop()
         except Exception as e:
-            logger.exception(f"Error submitting straight bet {bet_serial}: {e}")
-            await self.edit_message(content=f"❌ Error placing bet: {e}", view=None)
-        finally:
-            if self.preview_image_bytes:
-                self.preview_image_bytes.close()
-                self.preview_image_bytes = None
+            logger.exception(f"Error in submit_bet (outer try): {e}")
+            await self.edit_message(content=f"❌ Error processing bet submission: {e}", view=None)
             self.stop()
 
-    def get_content(self) -> str:
-        step_num = self.current_step
+    async def on_timeout(self):
+        logger.warning(f"StraightBetWorkflowView timed out for user {self.original_interaction.user.id}")
+        await self.edit_message(
+            content="⏰ Bet workflow timed out due to inactivity. Please start a new bet.", view=None
+        )
+        self.stop()
+
+    def get_content(self, step_num: Optional[int] = None):
+        if step_num is None:
+            step_num = self.current_step
         if step_num == 1:
-            return f"**Step {step_num}**: Select League"
+            return "Welcome to the Straight Betting Workflow! Please select your desired league from the list."
         if step_num == 2:
-            return f"**Step {step_num}**: Select Line Type"
+            return "Great choice! Now, please select the type of line you want to bet on."
         if step_num == 3:
-            return f"**Step {step_num}**: Select Game or Enter Manually"
+            league = self.bet_details.get("league", "N/A")
+            return f"Fetching available games for the selected league: **{league}**. Please wait..."
         if step_num == 4:
-            return "Please fill in the bet details in the popup form."
+            return "No further action required. This is the final step."
         if step_num == 5:
             preview_info = "(Preview below)" if self.preview_image_bytes else "(Generating preview...)"
             units = self.bet_details.get("units_str", "N/A")

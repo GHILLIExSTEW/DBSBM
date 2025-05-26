@@ -305,7 +305,39 @@ class StraightBetDetailsModal(Modal):
         )
         self.add_item(self.odds_input)
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
+    async def on_submit(self, interaction: discord.Interaction):
+        # 1) build a preview embed:
+        preview = discord.Embed(
+            title="Bet Preview",
+            color=discord.Color.blurple()
+        )
+        preview.add_field(name="Line Type", value=self.line_type, inline=True)
+        preview.add_field(name="Team", value=self.view_ref.bet_details.get("team"), inline=True)
+        preview.add_field(name="Opponent", value=self.view_ref.bet_details.get("opponent"), inline=True)
+        preview.add_field(name="Line", value=self.line_input.value.strip(), inline=True)
+        preview.add_field(name="Odds", value=self.odds_input.value.strip(), inline=True)
+        
+        # For player props, add player-specific fields
+        if self.line_type == "player_prop":
+            preview.add_field(name="Player", value=self.player_name_input.value.strip(), inline=True)
+            preview.add_field(name="Prop/Line", value=self.line_input.value.strip(), inline=True)
+
+        # 2) send it (ephemeral or not)
+        await interaction.response.send_message(embed=preview, ephemeral=False)
+
+        # 3) present your confirm/cancel buttons
+        confirm_view = ConfirmBetView()
+        await interaction.followup.send(
+            "Please confirm or cancel:",
+            view=confirm_view,
+            ephemeral=False
+        )
+
+        # 4) wait and then call create_straight_bet()
+        confirmed = await confirm_view.wait()
+        if not confirmed:
+            return
+
         player_name = None  # Ensure player_name is always defined
         try:
             # Handle player props
