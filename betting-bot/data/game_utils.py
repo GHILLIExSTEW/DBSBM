@@ -304,19 +304,6 @@ async def get_normalized_games_for_dropdown(
     league_abbr = get_league_abbreviation(league_name)
     logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
     
-    # --- DO NOT SYNC FROM API HERE ---
-    # logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
-    # await db_manager.sync_games_from_api()
-    # logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
-    
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    logger.info(f"[get_normalized_games_for_dropdown] Using today_start={today_start}")
-    
-    # Calculate the start of today in EST
-    est_now = datetime.now(pytz.timezone("US/Eastern"))
-    est_today_start = est_now.replace(hour=0, minute=0, second=0, microsecond=0)
-    utc_today_start = est_today_start.astimezone(pytz.utc)
-
     # Define finished statuses based on sport
     if sport.lower() == "baseball":
         finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
@@ -324,14 +311,13 @@ async def get_normalized_games_for_dropdown(
         finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
     logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
 
-    # Query by league_id, sport, and league_name with case-insensitive matching
+    # Query by league_id, sport, and league_name with case-insensitive matching, but DO NOT filter by start_time
     query = """
         SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
         FROM api_games
         WHERE sport = %s 
         AND league_id = %s 
         AND UPPER(league_name) = UPPER(%s)
-        AND start_time >= %s
         AND status NOT IN (%s, %s, %s, %s, %s)
         ORDER BY start_time ASC LIMIT 100
     """
@@ -340,28 +326,9 @@ async def get_normalized_games_for_dropdown(
     league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     
-    # For MLB, we need to check both current year and next year during offseason
-    if sport.lower() == "baseball" and league_key == "MLB":
-        current_year = datetime.now().year
-        next_year = current_year + 1
-        logger.info(f"[get_normalized_games_for_dropdown] MLB: Checking current_year={current_year} and next_year={next_year}")
-        
-        # First try current year
-        logger.info(f"[get_normalized_games_for_dropdown] MLB: Trying current year {current_year}")
-        rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
-        logger.info(f"[get_normalized_games_for_dropdown] MLB: Found {len(rows) if rows else 0} games for current year")
-        
-        # If no games found and we're near the end of the year or in offseason, try next year
-        if not rows and (datetime.now().month >= 10 or datetime.now().month <= 2):
-            logger.info(f"[get_normalized_games_for_dropdown] MLB: No games found for {current_year}, checking {next_year}")
-            # Try fetching games for next year
-            await db_manager.sync_games_from_api(force_season=next_year)
-            rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
-            logger.info(f"[get_normalized_games_for_dropdown] MLB: Found {len(rows) if rows else 0} games for next year")
-    else:
-        logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Fetching games for {sport}/{league_name}")
-        rows = await db_manager.fetch_all(query, (sport, league_id, league_name, today_start) + tuple(finished_statuses))
-        logger.info(f"[get_normalized_games_for_dropdown] Non-MLB: Found {len(rows) if rows else 0} games")
+    logger.info(f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name}")
+    rows = await db_manager.fetch_all(query, (sport, league_id, league_name) + tuple(finished_statuses))
+    logger.info(f"[get_normalized_games_for_dropdown] Found {len(rows) if rows else 0} games")
     
     if not rows:
         logger.warning(f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")

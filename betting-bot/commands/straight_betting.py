@@ -161,7 +161,8 @@ class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         game_options = []
         seen_values = set()  # Track used values
-        for game in games:
+        # Only include up to 24 games (Discord limit is 25 options including manual entry)
+        for game in games[:24]:
             # Prefer api_game_id if present, else use internal id
             if game.get('api_game_id'):
                 value = f"api_{game['api_game_id']}"
@@ -198,7 +199,7 @@ class GameSelect(Select):
                     description=desc[:100]
                 )
             )
-        # Add manual entry option
+        # Always add manual entry as the last option
         manual_value = "manual_entry"
         game_options.append(
             SelectOption(
@@ -245,10 +246,12 @@ class GameSelect(Select):
                 logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
             else:
                 logger.error(f"Could not find game for selected value {selected_value}")
-                await interaction.response.send_message(
-                    "Error: Could not find the selected game.",
-                    ephemeral=True
+                await interaction.response.defer()
+                await self.parent_view.edit_message(
+                    content="Error: Could not find the selected game. Please try again or cancel.",
+                    view=None
                 )
+                self.parent_view.stop()
                 return
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -591,12 +594,22 @@ class BetDetailsModal(Modal):
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
         logger.error(f"Error in BetDetailsModal: {error}", exc_info=True)
         try:
-            if not interaction.response.is_done():
-                await interaction.response.send_message("Modal error.", ephemeral=True)
-            else:
-                await interaction.followup.send("Modal error.", ephemeral=True)
-        except discord.HTTPException:
-            pass
+            # Always try to edit the original ephemeral message instead of sending new ones
+            await self.view.edit_message(
+                content="❌ Error processing bet details. Please try again or cancel.",
+                view=None
+            )
+            self.view.stop()
+        except Exception as edit_error:
+            logger.error(f"Failed to edit message after modal error: {edit_error}")
+            # Only as last resort, try to send a followup
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send("❌ Modal error. Please restart the workflow.", ephemeral=True)
+                else:
+                    await interaction.response.send_message("❌ Modal error. Please restart the workflow.", ephemeral=True)
+            except discord.HTTPException:
+                pass
 
 
 class UnitsSelect(Select):
@@ -649,7 +662,12 @@ class ChannelSelect(Select):
     async def callback(self, interaction: Interaction):
         channel_id_str = self.values[0]
         if channel_id_str == "none_available":
-            await interaction.response.send_message("No channels available to select.", ephemeral=True)
+            await interaction.response.defer()
+            await self.parent_view.edit_message(
+                content="❌ No channels available to select. Please contact an admin.",
+                view=None
+            )
+            self.parent_view.stop()
             return
         self.parent_view.bet_details["channel_id"] = int(channel_id_str)
         logger.debug(f"Channel selected: {channel_id_str} by user {interaction.user.id}")
@@ -764,47 +782,28 @@ class StraightBetWorkflowView(View):
         )
         if not self.message:
             logger.error("StraightBetWorkflowView.start_flow called but self.message is None.")
-            response_interaction = (
-                interaction_that_triggered_workflow_start or self.original_interaction
-            )
-            try:
-                if not response_interaction.response.is_done():
-                    await response_interaction.response.send_message(
-                        "❌ Workflow error: Message context lost.", ephemeral=True
-                    )
-                else:
-                    await response_interaction.followup.send(
-                        "❌ Workflow error: Message context lost.", ephemeral=True
-                    )
-            except discord.HTTPException as http_err:
-                logger.error(f"Failed to send message context lost error: {http_err}")
             self.stop()
             return
         try:
             await self.go_next(interaction_that_triggered_workflow_start)
         except Exception as e:
             logger.exception(f"Failed during initial go_next in StraightBetWorkflow: {e}")
-            response_interaction = (
-                interaction_that_triggered_workflow_start or self.original_interaction
+            await self.edit_message(
+                content="❌ Failed to start bet workflow. Please try again.",
+                view=None
             )
-            try:
-                if not response_interaction.response.is_done():
-                    await response_interaction.response.send_message(
-                        "❌ Failed to start bet workflow.", ephemeral=True
-                    )
-                else:
-                    await response_interaction.followup.send(
-                        "❌ Failed to start bet workflow.", ephemeral=True
-                    )
-            except discord.HTTPException as http_err:
-                logger.error(f"Failed to send workflow start error: {http_err}")
             self.stop()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         if interaction.user.id != self.original_interaction.user.id:
-            await interaction.response.send_message(
-                "You cannot interact with this bet placement.", ephemeral=True
+            # Don't send a new message, just deny the interaction silently
+            # or edit the original message to show the error
+            await interaction.response.defer()
+            await self.edit_message(
+                content="❌ Only the original user can interact with this bet workflow.",
+                view=None
             )
+            self.stop()
             return False
         self.latest_interaction = interaction
         return True
@@ -821,22 +820,8 @@ class StraightBetWorkflowView(View):
         )
         attachments = [file] if file else discord.utils.MISSING
         if not self.message:
-            logger.error("Cannot edit message: self.message is None.")
-            if self.latest_interaction and self.latest_interaction.response.is_done():
-                try:
-                    logger.debug("Self.message is None, trying to send followup via latest_interaction.")
-                    if not self.latest_interaction.followup:
-                        logger.error("Follow-up webhook is invalid or expired.")
-                        return
-                    await self.latest_interaction.followup.send(
-                        content=content or "Updating...",
-                        view=view,
-                        files=attachments if attachments != discord.utils.MISSING else None,
-                        ephemeral=True,
-                    )
-                    self.message = await self.latest_interaction.original_response()
-                except Exception as e:
-                    logger.error(f"Failed to send followup when self.message was None: {e}")
+            logger.error("Cannot edit message: self.message is None. This should never happen. Stopping workflow.")
+            self.stop()
             return
         try:
             await self.message.edit(content=content, embed=embed, view=view, attachments=attachments)
@@ -1183,90 +1168,98 @@ class StraightBetWorkflowView(View):
         return "Processing your bet request..."
 
     async def _handle_units_selection(self, interaction: discord.Interaction, units: float):
-        logger.debug(
-            f"StraightBet _handle_units_selection: units={units}, bet_serial={self.bet_details.get('bet_serial')}"
-        )
+        # Always generate and attach the bet slip image, and update the preview
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
-        if "bet_serial" not in self.bet_details:
-            logger.error("Straight: bet_serial missing when trying to update units in DB.")
-            try:
-                bet_serial = await self.bot.bet_service.create_straight_bet(
-                    guild_id=self.original_interaction.guild_id,
-                    user_id=self.original_interaction.user.id,
-                    api_game_id=self.bet_details.get("api_game_id"),
-                    bet_type=self.bet_details.get("line_type", "game_line"),
-                    team=self.bet_details.get("team"),
-                    opponent=self.bet_details.get("opponent"),
-                    line=self.bet_details.get("line"),
+        try:
+            bet_slip_generator = await self.get_bet_slip_generator()
+            bet_type = self.bet_details.get("line_type", "game_line")
+            league = self.bet_details.get("league", "N/A")
+            home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+            away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+            line = self.bet_details.get("line", "N/A")
+            odds = float(self.bet_details.get("odds", 0.0))
+            bet_id = str(self.bet_details.get("bet_serial", ""))
+            timestamp = datetime.now(timezone.utc)
+            image_bytes = None
+            if bet_type == "game_line":
+                bet_slip_image = await bet_slip_generator.generate_game_line_slip(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    odds=odds,
                     units=units,
-                    odds=self.bet_details.get("odds"),
-                    channel_id=None,
-                    league=self.bet_details.get("league", "UNKNOWN"),
+                    selected_team=self.bet_details.get("team", home_team),
+                    line=line,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
                 )
-                if not bet_serial:
-                    raise BetServiceError("Failed to create bet record before units update.")
-                self.bet_details["bet_serial"] = bet_serial
-                logger.info(f"Straight bet record {bet_serial} created during units selection.")
-            except BetServiceError as bse:
-                logger.error(f"Error creating straight record in _handle_units_selection: {bse}")
-                await interaction.followup.send(f"❌ Error initializing bet: {bse}", ephemeral=True)
-                self.stop()
-                return
-        try:
-            await self.bot.db_manager.execute(
-                "UPDATE bets SET units = %s WHERE bet_serial = %s",
-                (units, self.bet_details["bet_serial"]),
-            )
-            logger.info(f"Units for straight bet {self.bet_details['bet_serial']} updated to {units}.")
-        except Exception as e:
-            logger.error(
-                f"Failed to update units in DB for straight bet {self.bet_details.get('bet_serial')}: {e}"
-            )
-            await interaction.followup.send(
-                "❌ Error saving unit selection. Please try again.", ephemeral=True
-            )
-            return
-        try:
-            bet_slip_gen = await self.get_bet_slip_generator()
-            bet_slip_image = await bet_slip_gen.generate_bet_slip(
-                home_team=self.home_team or self.bet_details.get("team", "N/A"),
-                away_team=self.away_team or self.bet_details.get("opponent", "N/A"),
-                league=self.league or self.bet_details.get("league", "N/A"),
-                line=self.line or self.bet_details.get("line", "N/A"),
-                odds=self.bet_details.get("odds", 0.0),
-                units=units,
-                bet_id=str(self.bet_details.get("bet_serial", "N/A")),
-                timestamp=datetime.now(timezone.utc),
-                bet_type=self.bet_details.get("line_type", "straight"),
-                selected_team=self.bet_details.get("team"),
-            )
-            if bet_slip_image:
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.close()
-                self.preview_image_bytes = io.BytesIO()
-                bet_slip_image.save(self.preview_image_bytes, format="PNG")
-                self.preview_image_bytes.seek(0)
-                logger.debug(
-                    f"Straight slip preview updated for bet {self.bet_details.get('bet_serial')} with units {units}."
+            elif bet_type == "player_prop":
+                player_name = None
+                player_image = None
+                display_vs = None
+                if line:
+                    player_name = line.split(' - ')[0] if ' - ' in line else None
+                    if player_name:
+                        from utils.modals import get_player_image
+                        player_image_path = get_player_image(player_name, home_team, league)
+                        if player_image_path:
+                            from PIL import Image
+                            player_image = Image.open(player_image_path).convert("RGBA")
+                    display_vs = f"{home_team} vs {away_team}"
+                bet_slip_image = await bet_slip_generator.generate_player_prop_slip(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    odds=odds,
+                    units=units,
+                    selected_team=self.bet_details.get("team", home_team),
+                    line=line,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
+                    player_name=player_name,
+                    player_image=player_image,
+                    display_vs=display_vs,
+                )
+            elif bet_type == "parlay":
+                bet_slip_image = await bet_slip_generator.generate_parlay_slip(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    odds=odds,
+                    units=units,
+                    selected_team=self.bet_details.get("team", home_team),
+                    line=line,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
                 )
             else:
-                logger.warning(
-                    f"Failed to regen straight preview for bet {self.bet_details.get('bet_serial')}."
+                bet_slip_image = await bet_slip_generator.generate_bet_slip(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    odds=odds,
+                    units=units,
+                    bet_type=bet_type,
+                    selected_team=self.bet_details.get("team", home_team),
+                    line=line,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
                 )
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.close()
-                    self.preview_image_bytes = None
-        except Exception as img_e:
-            logger.error(
-                f"Error regen straight preview in _handle_units_selection: {img_e}", exc_info=True
-            )
-            if self.preview_image_bytes:
-                self.preview_image_bytes.close()
+            if bet_slip_image:
+                image_bytes = io.BytesIO(bet_slip_image)
+                image_bytes.seek(0)
+                self.preview_image_bytes = image_bytes
+            else:
+                self.preview_image_bytes = None
+        except Exception as e:
+            logger.exception(f"Error generating bet slip image after units selection: {e}")
+            self.preview_image_bytes = None
+        # Always update the ephemeral message with the preview and controls
         file_to_send = None
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)
-            file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
+            file_to_send = File(self.preview_image_bytes, filename="bet_preview_units.png")
         await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
 
 
