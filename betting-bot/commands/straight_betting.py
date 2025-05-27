@@ -36,13 +36,10 @@ from utils.errors import (
     ValidationError,
     GameNotFoundError,
 )
-from utils.game_line_image_generator import GameLineImageGenerator
-from utils.player_prop_image_generator import PlayerPropImageGenerator
-from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from utils.modals import StraightBetDetailsModal
-from utils.modals import ParlayBetDetailsModal
 from config.leagues import LEAGUE_CONFIG
 from api.sports_api import SportsAPI
+from utils.image_generator import BetSlipGenerator  # import for type hints and usage
 
 logger = logging.getLogger(__name__)
 
@@ -368,6 +365,7 @@ class UnitsSelect(Select):
         self.parent_view.bet_details["units_str"] = self.values[0]
         logger.debug(f"Units selected: {self.values[0]} by user {interaction.user.id}")
         await interaction.response.defer(ephemeral=True)
+        # Only update the preview, do not advance the step
         await self.parent_view._handle_units_selection(interaction, float(self.values[0]))
 
 
@@ -645,8 +643,10 @@ class StraightBetWorkflowView(View):
                     )
                     self.stop()
                     return
-                new_view_items.append(UnitsSelect(self))
-                new_view_items.append(ConfirmUnitsButton(self))
+                # Always clear and add the units dropdown and confirm button
+                self.clear_items()
+                self.add_item(UnitsSelect(self))
+                self.add_item(ConfirmUnitsButton(self))
                 file_to_send = None
                 if self.preview_image_bytes:
                     self.preview_image_bytes.seek(0)

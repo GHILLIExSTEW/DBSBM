@@ -17,5 +17,6 @@ matplotlib>=3.5.0
 numpy>=1.21.0
 aiomysql>=0.2.0 
 rapidfuzz==3.13.0
-Flask
-
+Flask>=1.0.0
+discord-py-interactions>=4.0.0
+discord-py-slash-command>=0.0.10

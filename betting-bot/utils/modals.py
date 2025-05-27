@@ -397,23 +397,17 @@ class StraightBetDetailsModal(Modal):
             else:
                 self.view_ref.bet_id = str(self.view_ref.bet_details['bet_serial'])
 
-            # Generate bet slip preview
-            current_units = float(self.view_ref.bet_details.get("units", 1.0))
-            bet_slip_generator = await self.view_ref.get_bet_slip_generator()
-
-            # Handle player prop image
-            player_image = None
-            display_vs = None
+            # Handle player prop image path
+            player_picture_path = None
             if self.line_type == "player_prop" and player_name:
                 try:
-                    player_image_path = get_player_image(player_name, team_input, self.selected_league_key)
-                    if player_image_path:
-                        player_image = Image.open(player_image_path).convert("RGBA")
-                    display_vs = f"{team_input} vs {opponent_input}"
+                    player_picture_path = get_player_image(player_name, team_input, self.selected_league_key)
                 except Exception as img_e:
-                    logger.warning(f"Failed to load player image for {player_name}: {img_e}")
+                    logger.warning(f"Failed to get player image path for {player_name}: {img_e}")
 
             # Generate the bet slip
+            bet_slip_generator = await self.view_ref.get_bet_slip_generator()
+            current_units = float(self.view_ref.bet_details.get("units", 1.0))
             bet_slip_image = await bet_slip_generator.generate_bet_slip(
                 league=self.view_ref.league,
                 home_team=team_input,
@@ -426,8 +420,7 @@ class StraightBetDetailsModal(Modal):
                 bet_id=self.view_ref.bet_id,
                 timestamp=datetime.now(timezone.utc),
                 player_name=player_name,
-                player_image=player_image,
-                display_vs=display_vs
+                player_picture_path=player_picture_path
             )
             
             if bet_slip_image:
@@ -436,35 +429,20 @@ class StraightBetDetailsModal(Modal):
             else:
                 self.view_ref.preview_image_bytes = None
 
-            # Build preview embed
-            preview = discord.Embed(
-                title="Bet Preview",
-                color=discord.Color.blurple()
-            )
-            preview.add_field(name="Line Type", value=self.line_type, inline=True)
-            preview.add_field(name="Team", value=team_input, inline=True)
-            preview.add_field(name="Opponent", value=opponent_input, inline=True)
-            preview.add_field(name="Line", value=line_value, inline=True)
-            preview.add_field(name="Odds", value=odds_str, inline=True)
-            
-            if self.line_type == "player_prop" and player_name:
-                preview.add_field(name="Player", value=player_name, inline=True)
-
             # Generate file for attachment
             file_to_send = None
             if self.view_ref.preview_image_bytes:
                 self.view_ref.preview_image_bytes.seek(0)
                 file_to_send = discord.File(self.view_ref.preview_image_bytes, filename="bet_preview.png")
 
-            # Always update the ephemeral message with the preview and controls
+            # Only send the image and controls, no embed
             await interaction.response.defer()
             await self.view_ref.edit_message(
                 content="Preview updated. Confirm or cancel your bet.",
-                embed=preview,
+                embed=None,
                 file=file_to_send,
                 view=self.view_ref
             )
-            # The rest of the flow (confirm/cancel) is handled by the workflow view/buttons, not here
 
         except Exception as e:
             logger.exception(f"Error in StraightBetDetailsModal on_submit (outer try): {e}")
