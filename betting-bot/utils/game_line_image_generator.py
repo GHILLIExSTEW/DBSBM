@@ -199,7 +199,7 @@ class GameLineImageGenerator:
         odds_y = sep_above_odds_y + 24
         draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
 
-        # To Risk/To Win row
+        # To Risk/To Win row (centered vertically between odds and footer)
         if odds_val < 0:
             risk_label = "To Risk"
             amount = units
@@ -217,7 +217,12 @@ class GameLineImageGenerator:
             lock_img = None
         lock_w = risk_h
         total_w = lock_w + 8 + risk_w + 8 + lock_w
-        risk_y = odds_y + odds_h + 24
+        # Compute footer baseline y to center risk text between odds and footer
+        footer_padding = 8  # Increased from 4 to 8
+        ascent, descent = font_footer.getmetrics()
+        footer_y = image_height - footer_padding - descent
+        # Center risk row vertically between odds_y and footer_y
+        risk_y = odds_y + ((footer_y - odds_y - risk_h) // 2)
         start_x = (image_width - total_w) // 2
         # Left lock
         if lock_img:
@@ -227,17 +232,6 @@ class GameLineImageGenerator:
         # Right lock
         if lock_img:
             image.paste(lock_img, (int(start_x + lock_w + 8 + risk_w + 8), int(risk_y)), lock_img)
-
-        # Separator line below units text (above footer)
-        sep_gap = 36  # Increased from 24 to 36
-        sep_below_units_y = risk_y + risk_h + sep_gap
-        draw.line([(padding, sep_below_units_y), (image_width - padding, sep_below_units_y)], fill="#aaaaaa", width=1)
-
-        # Footer (flush with bottom edge)
-        footer_padding = 8  # Increased from 4 to 8
-        ascent, descent = font_footer.getmetrics()
-        # The baseline of the text should be image_height - padding
-        footer_y = image_height - footer_padding - descent
 
         if bet_id:
             bet_id_text = f"Bet #{bet_id}"

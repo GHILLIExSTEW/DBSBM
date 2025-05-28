@@ -653,57 +653,46 @@ class StraightBetWorkflowView(View):
                     file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
                 await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
             elif self.current_step == 6:
+                # Step 6: Channel selection with preview image
                 if not all(k in self.bet_details for k in ["bet_serial", "units_str"]):
                     await self.edit_message(
                         content="❌ Bet details incomplete. Please restart.", view=None
                     )
                     self.stop()
                     return
-                logger.info(f"Step 6: Fetching embed channels for guild {self.original_interaction.guild_id}")
+                # Fetch allowed embed channels
                 guild_settings = await self.bot.db_manager.fetch_one(
                     "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
                     (str(self.original_interaction.guild_id),)
                 )
                 allowed_channels = []
                 if guild_settings:
-                    channel_ids = [
-                        guild_settings.get("embed_channel_1"),
-                        guild_settings.get("embed_channel_2")
-                    ]
-                    for channel_id in channel_ids:
+                    for channel_id in (guild_settings.get("embed_channel_1"), guild_settings.get("embed_channel_2")):
                         if channel_id:
                             try:
-                                channel_id_int = int(channel_id)
-                                channel = self.bot.get_channel(channel_id_int)
-                                if not channel:
-                                    channel = await self.bot.fetch_channel(channel_id_int)
-                                if channel and isinstance(channel, discord.TextChannel):
-                                    permissions = channel.permissions_for(interaction.guild.me)
-                                    if permissions.send_messages and permissions.view_channel:
-                                        if channel not in allowed_channels:
-                                            allowed_channels.append(channel)
+                                cid = int(channel_id)
+                                channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                                if isinstance(channel, discord.TextChannel) and channel.permissions_for(interaction.guild.me).send_messages:
+                                    if channel not in allowed_channels:
+                                        allowed_channels.append(channel)
                             except Exception as e:
                                 logger.error(f"Error processing channel {channel_id}: {e}")
                 if not allowed_channels:
                     await self.edit_message(
-                        content="❌ No valid embed channels configured. Please contact an admin.",
-                        view=None
+                        content="❌ No valid embed channels configured. Please contact an admin.", view=None
                     )
                     self.stop()
                     return
-                new_view_items.append(ChannelSelect(self, allowed_channels))
-            elif self.current_step == 7:
-                preview_info = "(Final Preview below)" if self.preview_image_bytes else "(Image generation failed)"
-                content = f"**Confirm Your Bet** {preview_info}"
-                new_view_items.append(FinalConfirmButton(self))
-                new_view_items.append(CancelButton(self))
-                for item in new_view_items:
-                    self.add_item(item)
+                # Render channel dropdown and carry preview image forward
+                self.clear_items()
+                self.add_item(ChannelSelect(self, allowed_channels))
+                self.add_item(CancelButton(self))
+                # Attach current preview image
                 file_to_send = None
                 if self.preview_image_bytes:
                     self.preview_image_bytes.seek(0)
                     file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
-                await self.edit_message(content=content, view=self, file=file_to_send)
+                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
                 self.is_processing = False
                 return
             else:
