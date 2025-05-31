@@ -662,8 +662,8 @@ class ParlayBetWorkflowView(View):
                 modal.view_ref = self
                 try:
                     await interaction.response.send_modal(modal)
-                    content = f"**Parlay Leg {leg_number}**: Please fill details in the popup."
-                    await self.edit_message_for_current_leg(interaction, content=content, view=self)
+                    # Do NOT edit the message or send any other response after sending a modal!
+                    return  # <-- Fix: return immediately after sending modal
                 except discord.HTTPException as e:
                     logger.error(f"Parlay: Failed to send BetDetailsModal (step 4): {e}")
                     await self.edit_message_for_current_leg(interaction, content="❌ Error opening leg details form.", view=None); self.stop()
