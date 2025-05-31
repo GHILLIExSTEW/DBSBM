@@ -107,7 +107,7 @@ class LeagueSelect(Select):
                 seen.add(norm)
                 unique_leagues.append(league)
         options = [
-            SelectOption(label=league, value=league)
+            SelectOption(label=league[:100], value=league[:100])
             for league in unique_leagues[:24]
         ]
         options.append(SelectOption(label="Other", value="OTHER"))
@@ -132,13 +132,13 @@ class LineTypeSelect(Select):
         self.parent_view = parent_view
         options = [
             SelectOption(
-                label="Game Line",
-                value="game_line",
+                label="Game Line"[:100],
+                value="game_line"[:100],
                 description="Moneyline or game over/under",
             ),
             SelectOption(
-                label="Player Prop",
-                value="player_prop",
+                label="Player Prop"[:100],
+                value="player_prop"[:100],
                 description="Bet on player performance",
             ),
         ]
@@ -173,11 +173,25 @@ class GameSelect(Select):
             if value in seen_values:
                 continue
             seen_values.add(value)
-            label = f"{game.get('home_team_name', 'N/A')} vs {game.get('away_team_name', 'N/A')}"
-            if len(label) > 90:
-                label = label[:87] + "..."
+            
+            # Format the label with team names and status
+            home_team = game.get('home_team_name', 'N/A')
+            away_team = game.get('away_team_name', 'N/A')
             status = game.get('status', '')
-            label_disp = f"{label} ({status})" if status else label
+            
+            # Calculate max length for team names based on status length
+            status_suffix = f" ({status})" if status else ""
+            max_team_length = (90 - len(status_suffix)) // 2  # Divide remaining space between teams
+            
+            # Truncate team names if needed
+            if len(home_team) > max_team_length:
+                home_team = home_team[:max_team_length-3] + "..."
+            if len(away_team) > max_team_length:
+                away_team = away_team[:max_team_length-3] + "..."
+                
+            label = f"{home_team} vs {away_team}{status_suffix}"
+            
+            # Get start time for description
             start_time = game.get('start_time')
             if start_time:
                 if isinstance(start_time, str):
@@ -192,10 +206,11 @@ class GameSelect(Select):
                     desc = ""
             else:
                 desc = ""
+                
             game_options.append(
                 SelectOption(
-                    label=label_disp,
-                    value=value,
+                    label=label[:100],
+                    value=value[:100],
                     description=desc[:100]
                 )
             )
@@ -204,14 +219,15 @@ class GameSelect(Select):
         game_options.append(
             SelectOption(
                 label="Manual Entry",
-                value=manual_value,
+                value=manual_value[:100],
                 description="Enter game details manually"
             )
         )
         super().__init__(
-            placeholder="Select a game...",
+            placeholder="Select a game or choose Manual Entry",
             options=game_options,
-            row=0
+            min_values=1,
+            max_values=1,
         )
         self.parent_view = parent_view
         self.games = games
@@ -300,8 +316,8 @@ class TeamSelect(Select):
     def __init__(self, parent_view: View, home_team: str, away_team: str):
         self.parent_view = parent_view
         options = [
-            SelectOption(label=home_team, value=home_team),
-            SelectOption(label=away_team, value=away_team),
+            SelectOption(label=home_team[:100], value=home_team[:100]),
+            SelectOption(label=away_team[:100], value=away_team[:100]),
         ]
         super().__init__(
             placeholder="Which team are you selecting?",
@@ -344,16 +360,22 @@ class TeamSelect(Select):
 
 
 class UnitsSelect(Select):
-    def __init__(self, parent_view: View):
+    def __init__(self, parent_view: View, units_display_mode='auto'):
         self.parent_view = parent_view
-        options = [
-            SelectOption(label="0.5 Units", value="0.5"),
-            SelectOption(label="1 Unit", value="1.0"),
-            SelectOption(label="1.5 Units", value="1.5"),
-            SelectOption(label="2 Units", value="2.0"),
-            SelectOption(label="2.5 Units", value="2.5"),
-            SelectOption(label="3 Units", value="3.0"),
-        ]
+        self.units_display_mode = units_display_mode
+        options = []
+        if units_display_mode == 'manual':
+            # Add To Win group
+            options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
+            # Add To Risk group
+            options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
+        else:
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'{u:.1f} Unit' + ('' if u == 1.0 else 's'), value=str(u)))
         super().__init__(
             placeholder="Select Units for Bet...",
             options=options,
@@ -362,11 +384,24 @@ class UnitsSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        self.parent_view.bet_details["units_str"] = self.values[0]
-        logger.debug(f"Units selected: {self.values[0]} by user {interaction.user.id}")
+        value = self.values[0]
+        if self.units_display_mode == 'manual':
+            if value.startswith('separator'):
+                await interaction.response.defer(ephemeral=True)
+                return
+            units_str, mode = value.split('|')
+            units = float(units_str)
+            display_as_risk = (mode == 'risk')
+            self.parent_view.bet_details['units_str'] = units_str
+            self.parent_view.bet_details['units'] = units
+            self.parent_view.bet_details['display_as_risk'] = display_as_risk
+        else:
+            self.parent_view.bet_details['units_str'] = value
+            self.parent_view.bet_details['units'] = float(value)
+            self.parent_view.bet_details['display_as_risk'] = None
+        logger.debug(f"Units selected: {value} by user {interaction.user.id}")
         await interaction.response.defer(ephemeral=True)
-        # Only update the preview, do not advance the step
-        await self.parent_view._handle_units_selection(interaction, float(self.values[0]))
+        await self.parent_view._handle_units_selection(interaction, float(self.parent_view.bet_details['units']))
 
 
 class ChannelSelect(Select):
@@ -375,7 +410,7 @@ class ChannelSelect(Select):
         sorted_channels = sorted(channels, key=lambda x: x.name.lower())
         options = [
             SelectOption(
-                label=channel.name,
+                label=channel.name[:100],
                 value=str(channel.id),
                 description=f"ID: {channel.id}"[:100],
             )
@@ -405,7 +440,6 @@ class ChannelSelect(Select):
         logger.debug(f"Channel selected: {channel_id_str} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
-        await self.parent_view.go_next(interaction)
 
 
 class ConfirmButton(Button):
@@ -479,6 +513,8 @@ class FinalConfirmButton(Button):
         logger.debug(f"Final confirm button clicked by user {interaction.user.id}")
         await interaction.response.defer(ephemeral=True)
         await self.parent_view.submit_bet(interaction)
+        self.parent_view.stop()
+        return
 
 
 class StraightBetWorkflowView(View):
@@ -500,6 +536,7 @@ class StraightBetWorkflowView(View):
         self.line: Optional[str] = None
         self.odds: Optional[float] = None
         self.bet_id: Optional[str] = None
+        self._stopped = False
 
     async def get_bet_slip_generator(self) -> BetSlipGenerator:
         if self.bet_slip_generator is None:
@@ -566,8 +603,8 @@ class StraightBetWorkflowView(View):
             logger.exception(f"Unexpected error editing message {self.message.id}: {e}")
 
     async def go_next(self, interaction: Interaction):
-        if self.is_processing:
-            logger.debug(f"Skipping go_next (step {self.current_step}); already processing.")
+        if self.is_processing or self.is_finished() or getattr(self, '_stopped', False):
+            logger.debug(f"Skipping go_next (step {self.current_step}); already processing or workflow stopped.")
             if not interaction.response.is_done():
                 try:
                     await interaction.response.defer(ephemeral=True)
@@ -599,8 +636,10 @@ class StraightBetWorkflowView(View):
                     "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"
                 ]
                 new_view_items.append(LeagueSelect(self, allowed_leagues))
+                new_view_items.append(CancelButton(self))
             elif self.current_step == 2:
                 new_view_items.append(LineTypeSelect(self))
+                new_view_items.append(CancelButton(self))
             elif self.current_step == 3:
                 league = self.bet_details.get("league")
                 if not league:
@@ -610,8 +649,6 @@ class StraightBetWorkflowView(View):
                 logger.debug(f"Fetching games for league: {league}")
                 self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
                 logger.debug(f"Retrieved {len(self.games)} games for league: {league}: {self.games}")
-
-                # Only exclude games that are finished; include all others regardless of start_time
                 finished_statuses = [
                     "Match Finished", "Finished", "FT", "Game Finished", "Final"
                 ]
@@ -624,43 +661,101 @@ class StraightBetWorkflowView(View):
                         logger.debug(f"Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}")
                 self.games = filtered_games
                 logger.debug(f"Games after filtering: {self.games}")
-
-                # Add GameSelect regardless of whether there are games
                 new_view_items.append(GameSelect(self, self.games))
                 new_view_items.append(ConfirmButton(self))
-
-                # If no games available, show a message encouraging Manual Entry
+                new_view_items.append(CancelButton(self))
                 if not self.games:
                     content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
             elif self.current_step == 4:
                 self.is_processing = False
                 return
             elif self.current_step == 5:
-                if "bet_serial" not in self.bet_details:
-                    await self.edit_message(
-                        content="❌ Bet details not fully captured or bet not created. Please restart.",
-                        view=None,
-                    )
-                    self.stop()
-                    return
-                # Always clear and add the units dropdown and confirm button
+                # Set default units to 1.0 if not already set
+                if "units" not in self.bet_details:
+                    self.bet_details["units"] = 1.0
+                    self.bet_details["units_str"] = "1.0"
+                # Always assign the next bet serial for preview if not set
+                if "bet_serial" not in self.bet_details or not self.bet_details["bet_serial"]:
+                    from utils.bet_utils import fetch_next_bet_serial
+                    self.bet_details["bet_serial"] = await fetch_next_bet_serial(self.bot)
+                # Always generate preview for 1.0 units before showing the ephemeral message
+                try:
+                    bet_type = self.bet_details.get("line_type", "game_line")
+                    league = self.bet_details.get("league", "N/A")
+                    home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+                    away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+                    line = self.bet_details.get("line", "N/A")
+                    odds = float(self.bet_details.get("odds", 0.0))
+                    bet_id = str(self.bet_details.get("bet_serial", ""))
+                    timestamp = datetime.now(timezone.utc)
+                    units = 1.0
+                    if bet_type == "game_line":
+                        from utils.game_line_image_generator import GameLineImageGenerator
+                        generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                        bet_slip_image_bytes = generator.generate_bet_slip_image(
+                            league=league,
+                            home_team=home_team,
+                            away_team=away_team,
+                            line=line,
+                            odds=odds,
+                            units=units,
+                            bet_id=bet_id,
+                            timestamp=timestamp,
+                            selected_team=self.bet_details.get("team", home_team),
+                            output_path=None
+                        )
+                        if bet_slip_image_bytes:
+                            self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                            self.preview_image_bytes.seek(0)
+                        else:
+                            self.preview_image_bytes = None
+                    elif bet_type == "player_prop":
+                        from utils.player_prop_image_generator import PlayerPropImageGenerator
+                        generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                        player_name = self.bet_details.get("player_name")
+                        if not player_name and line:
+                            player_name = line.split(' - ')[0] if ' - ' in line else line
+                        team_name = home_team
+                        league = self.bet_details.get("league", "N/A")
+                        bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                            player_name=player_name or team_name,
+                            team_name=team_name,
+                            league=league,
+                            line=line,
+                            units=units,
+                            output_path=None,
+                            bet_id=bet_id,
+                            timestamp=timestamp,
+                            guild_id=str(self.original_interaction.guild_id)
+                        )
+                        if bet_slip_image_bytes:
+                            self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                            self.preview_image_bytes.seek(0)
+                        else:
+                            self.preview_image_bytes = None
+                    elif bet_type == "parlay":
+                        # If you support parlay preview here, add logic
+                        pass
+                except Exception as e:
+                    logger.exception(f"Error generating initial preview image for units step: {e}")
+                    self.preview_image_bytes = None
                 self.clear_items()
                 self.add_item(UnitsSelect(self))
                 self.add_item(ConfirmUnitsButton(self))
+                self.add_item(CancelButton(self))
                 file_to_send = None
                 if self.preview_image_bytes:
                     self.preview_image_bytes.seek(0)
                     file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
                 await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+                return
             elif self.current_step == 6:
-                # Step 6: Channel selection with preview image
                 if not all(k in self.bet_details for k in ["bet_serial", "units_str"]):
                     await self.edit_message(
                         content="❌ Bet details incomplete. Please restart.", view=None
                     )
                     self.stop()
                     return
-                # Fetch allowed embed channels
                 guild_settings = await self.bot.db_manager.fetch_one(
                     "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
                     (str(self.original_interaction.guild_id),)
@@ -683,11 +778,10 @@ class StraightBetWorkflowView(View):
                     )
                     self.stop()
                     return
-                # Render channel dropdown and carry preview image forward
                 self.clear_items()
                 self.add_item(ChannelSelect(self, allowed_channels))
+                self.add_item(FinalConfirmButton(self))
                 self.add_item(CancelButton(self))
-                # Attach current preview image
                 file_to_send = None
                 if self.preview_image_bytes:
                     self.preview_image_bytes.seek(0)
@@ -702,8 +796,6 @@ class StraightBetWorkflowView(View):
                 )
                 self.stop()
                 return
-            if self.current_step < 8:
-                new_view_items.append(CancelButton(self))
             for item in new_view_items:
                 self.add_item(item)
             await self.edit_message(content=content, view=self)
@@ -719,61 +811,46 @@ class StraightBetWorkflowView(View):
     async def submit_bet(self, interaction: Interaction):
         details = self.bet_details
         bet_serial = details.get("bet_serial")
+        bet_service = getattr(self.bot, "bet_service", None)
         if not bet_serial:
-            logger.error("Straight bet: Attempted to submit without bet_serial.")
-            await self.edit_message(content="❌ Bet ID missing.", view=None)
-            self.stop()
-            return
-
+            # Insert the bet now with all final values
+            if bet_service:
+                try:
+                    bet_serial = await bet_service.create_straight_bet(
+                        guild_id=self.original_interaction.guild_id,
+                        user_id=self.original_interaction.user.id,
+                        league=details.get("league"),
+                        bet_type=details.get("line_type", "straight"),
+                        units=float(details.get("units", 1.0)),
+                        odds=float(details.get("odds", 0.0)),
+                        team=details.get("team"),
+                        opponent=details.get("opponent"),
+                        line=details.get("line"),
+                        api_game_id=details.get("api_game_id"),
+                        channel_id=details.get("channel_id"),
+                        confirmed=1
+                    )
+                    if not bet_serial:
+                        logger.error("Failed to create straight bet in DB at submit step.")
+                        await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                        self.stop()
+                        return
+                    self.bet_details["bet_serial"] = bet_serial
+                except Exception as e:
+                    logger.error(f"Failed to create straight bet in DB at submit step: {e}")
+                    await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                    self.stop()
+                    return
         logger.info(f"Submitting straight bet {bet_serial} by user {interaction.user.id}")
         await self.edit_message(content=f"Processing bet `{bet_serial}`...", view=None, file=None)
-
         try:
             post_channel_id = details.get("channel_id")
             post_channel = self.bot.get_channel(post_channel_id) if post_channel_id else None
             if not post_channel or not isinstance(post_channel, TextChannel):
                 raise ValueError(f"Invalid channel <#{post_channel_id}> for bet posting.")
-
             units_val = float(details.get("units", 1.0))
             odds_val = float(details.get("odds", 0.0))
             bet_type = details.get("line_type", "straight")
-            bet_details_json = json.dumps(details)
-
-            # Fetch internal game_id from api_games table
-            internal_game_id = None
-            api_game_id = details.get("api_game_id")
-            if api_game_id and api_game_id != "Other":
-                try:
-                    row = await self.bot.db_manager.fetch_one(
-                        "SELECT id FROM api_games WHERE api_game_id = %s", (api_game_id,)
-                    )
-                    if row and row.get("id"):
-                        internal_game_id = row["id"]
-                        logger.info(f"Fetched internal game_id {internal_game_id} for api_game_id {api_game_id}")
-                    else:
-                        logger.warning(f"No game found in api_games for api_game_id {api_game_id}")
-                except Exception as e:
-                    logger.error(f"Error fetching internal game_id: {e}")
-        except Exception as e:
-            logger.error(f"Error in submit_bet: {e}")
-            await self.edit_message(content=f"❌ Failed to submit bet: {e}", view=None)
-            self.stop()
-            return
-
-        try:
-            update_query = """
-                UPDATE bets SET units = %s, odds = %s, channel_id = %s, confirmed = 1, 
-                               bet_details = %s, status = %s, game_id = %s
-                WHERE bet_serial = %s 
-            """
-            rowcount, _ = await self.bot.db_manager.execute(
-                update_query, 
-                (units_val, odds_val, post_channel_id, bet_details_json, "pending", internal_game_id, bet_serial)
-            )
-            if rowcount is None or rowcount == 0:
-                logger.warning(f"Straight bet {bet_serial} DB update for confirmation affected 0 rows.")
-                raise BetServiceError("Failed to confirm bet details in DB.")
-
             discord_file_to_send = None
             if self.preview_image_bytes:
                 self.preview_image_bytes.seek(0)
@@ -794,37 +871,54 @@ class StraightBetWorkflowView(View):
                     selected_team=details.get("team"),
                 )
                 if bet_slip_image:
-                    temp_bytes = io.BytesIO()
-                    bet_slip_image.save(temp_bytes, format="PNG")
-                    temp_bytes.seek(0)
-                    discord_file_to_send = File(temp_bytes, filename=f"bet_slip_{bet_serial}.png")
-                    temp_bytes.close()
-
+                    if isinstance(bet_slip_image, bytes):
+                        self.preview_image_bytes = io.BytesIO(bet_slip_image)
+                    else:
+                        self.preview_image_bytes = io.BytesIO()
+                        bet_slip_image.save(self.preview_image_bytes, format='PNG')
+                    self.preview_image_bytes.seek(0)
+                else:
+                    self.preview_image_bytes = None
             capper_data = await self.bot.db_manager.fetch_one(
                 "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
                 (interaction.guild_id, interaction.user.id)
             )
             webhook_username = capper_data.get("display_name") if capper_data and capper_data.get("display_name") else interaction.user.display_name
             webhook_avatar_url = None
-            if capper_data and capper_data.get("image_path") and capper_data.get("image_path").startswith(("http://", "https://")):
-                webhook_avatar_url = capper_data.get("image_path")
-            else:
-                webhook_avatar_url = interaction.user.display_avatar.url if interaction.user.display_avatar else None
-
+            if capper_data and capper_data.get("image_path"):
+                webhook_avatar_url = capper_data["image_path"]
+            # Fetch member_role for mention
+            member_role_id = None
+            guild_settings = await self.bot.db_manager.fetch_one(
+                "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                (str(interaction.guild_id),)
+            )
+            if guild_settings and guild_settings.get("member_role"):
+                member_role_id = guild_settings["member_role"]
+            role_mention = f"<@&{member_role_id}>" if member_role_id else None
+            webhooks = await post_channel.webhooks()
             target_webhook = None
+            for webhook in webhooks:
+                if webhook.name == "Bet Bot":
+                    target_webhook = webhook
+                    break
+            if not target_webhook:
+                target_webhook = await post_channel.create_webhook(name="Bet Bot")
             try:
-                webhooks = await post_channel.webhooks()
-                target_webhook = discord.utils.find(lambda wh: wh.user and wh.user.id == self.bot.user.id, webhooks)
-                if not target_webhook:
-                    target_webhook = await post_channel.create_webhook(name=f"{self.bot.user.name} Bets")
+                webhook_content = role_mention if role_mention else None
+                await target_webhook.send(
+                    content=webhook_content,
+                    file=discord_file_to_send,
+                    username=webhook_username,
+                    avatar_url=webhook_avatar_url
+                )
+                await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
+                self.stop()
             except Exception as e:
-                logger.error(f"Error creating or fetching webhook: {e}")
-                await self.edit_message(content="Error: Failed to create bet posting webhook.", view=None)
+                logger.error(f"Error posting bet via webhook: {e}")
+                await self.edit_message(content="Error: Failed to post bet message.", view=None)
                 self.stop()
                 return
-
-            await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
-            self.stop()
         except Exception as e:
             logger.exception(f"Error in submit_bet (outer try): {e}")
             await self.edit_message(content=f"❌ Error processing bet submission: {e}", view=None)
@@ -851,31 +945,18 @@ class StraightBetWorkflowView(View):
             return "No further action required. This is the final step."
         if step_num == 5:
             preview_info = "(Preview below)" if self.preview_image_bytes else "(Generating preview...)"
-            units = self.bet_details.get("units_str", "N/A")
-            # Add lock emoji left and right of units for step 5 as well
-            return f"**Step {step_num}**: Bet details captured {preview_info}. 🔒 Units: `{units}` 🔒 Select Units for your bet and confirm."
+            return f"**Step {step_num}**: Select Units for your bet. {preview_info}"
         if step_num == 6:
             units = self.bet_details.get("units_str", "N/A")
-            preview_info = (
-                "(Preview below with updated units)"
-                if self.preview_image_bytes
-                else "(Preview image failed)"
-            )
-            # Add lock emoji left and right of units
+            preview_info = "(Preview below)" if self.preview_image_bytes else "(Preview image failed)"
             return f"**Step {step_num}**: 🔒 Units: `{units}` 🔒 {preview_info}. Select Channel to post your bet."
-        if step_num == 7:
-            preview_info = (
-                "(Final Preview below)" if self.preview_image_bytes else "(Image generation failed)"
-            )
-            return f"**Confirm Your Bet** {preview_info}"
         return "Processing your bet request..."
 
     async def _handle_units_selection(self, interaction: discord.Interaction, units: float):
-        # Always generate and attach the bet slip image, and update the preview
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
+        bet_slip_image = None  # Always define this
         try:
-            bet_slip_generator = await self.get_bet_slip_generator()
             bet_type = self.bet_details.get("line_type", "game_line")
             league = self.bet_details.get("league", "N/A")
             home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
@@ -884,86 +965,75 @@ class StraightBetWorkflowView(View):
             odds = float(self.bet_details.get("odds", 0.0))
             bet_id = str(self.bet_details.get("bet_serial", ""))
             timestamp = datetime.now(timezone.utc)
-            image_bytes = None
-            if bet_type == "game_line":
-                bet_slip_image = await bet_slip_generator.generate_game_line_slip(
-                    league=league,
-                    home_team=home_team,
-                    away_team=away_team,
-                    odds=odds,
-                    units=units,
-                    selected_team=self.bet_details.get("team", home_team),
-                    line=line,
-                    bet_id=bet_id,
-                    timestamp=timestamp,
-                )
-            elif bet_type == "player_prop":
-                player_name = None
-                player_image = None
-                display_vs = None
-                if line:
-                    player_name = line.split(' - ')[0] if ' - ' in line else None
-                    if player_name:
-                        from utils.modals import get_player_image
-                        player_image_path = get_player_image(player_name, home_team, league)
-                        if player_image_path:
-                            from PIL import Image
-                            player_image = Image.open(player_image_path).convert("RGBA")
-                    display_vs = f"{home_team} vs {away_team}"
-                bet_slip_image = await bet_slip_generator.generate_player_prop_slip(
-                    league=league,
-                    home_team=home_team,
-                    away_team=away_team,
-                    odds=odds,
-                    units=units,
-                    selected_team=self.bet_details.get("team", home_team),
-                    line=line,
-                    bet_id=bet_id,
-                    timestamp=timestamp,
-                    player_name=player_name,
-                    player_image=player_image,
-                    display_vs=display_vs,
-                )
-            elif bet_type == "parlay":
-                bet_slip_image = await bet_slip_generator.generate_parlay_slip(
-                    league=league,
-                    home_team=home_team,
-                    away_team=away_team,
-                    odds=odds,
-                    units=units,
-                    selected_team=self.bet_details.get("team", home_team),
-                    line=line,
-                    bet_id=bet_id,
-                    timestamp=timestamp,
-                )
-            else:
-                bet_slip_image = await bet_slip_generator.generate_bet_slip(
-                    league=league,
-                    home_team=home_team,
-                    away_team=away_team,
-                    odds=odds,
-                    units=units,
-                    bet_type=bet_type,
-                    selected_team=self.bet_details.get("team", home_team),
-                    line=line,
-                    bet_id=bet_id,
-                    timestamp=timestamp,
-                )
-            if bet_slip_image:
-                image_bytes = io.BytesIO(bet_slip_image)
-                image_bytes.seek(0)
-                self.preview_image_bytes = image_bytes
-            else:
+            if self.preview_image_bytes:
+                self.preview_image_bytes.close()
                 self.preview_image_bytes = None
+            if bet_type == "game_line":
+                from utils.game_line_image_generator import GameLineImageGenerator
+                generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                bet_slip_image_bytes = generator.generate_bet_slip_image(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    line=line,
+                    odds=odds,
+                    units=units,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
+                    selected_team=self.bet_details.get("team", home_team),
+                    output_path=None
+                )
+                if bet_slip_image_bytes:
+                    self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                    self.preview_image_bytes.seek(0)
+                    bet_slip_image = bet_slip_image_bytes
+                else:
+                    self.preview_image_bytes = None
+                    bet_slip_image = None
+            elif bet_type == "player_prop":
+                from utils.player_prop_image_generator import PlayerPropImageGenerator
+                generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                player_name = self.bet_details.get("player_name")
+                if not player_name and line:
+                    player_name = line.split(' - ')[0] if ' - ' in line else line
+                team_name = home_team
+                league = self.bet_details.get("league", "N/A")
+                bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                    player_name=player_name or team_name,
+                    team_name=team_name,
+                    league=league,
+                    line=line,
+                    units=units,
+                    output_path=None,
+                    bet_id=bet_id,
+                    timestamp=timestamp,
+                    guild_id=str(self.original_interaction.guild_id)
+                )
+                if bet_slip_image_bytes:
+                    self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                    self.preview_image_bytes.seek(0)
+                    bet_slip_image = bet_slip_image_bytes
+                else:
+                    self.preview_image_bytes = None
+                    bet_slip_image = None
+            else:
+                bet_slip_image = None
         except Exception as e:
             logger.exception(f"Error generating bet slip image after units selection: {e}")
             self.preview_image_bytes = None
-        # Always update the ephemeral message with the preview and controls
+        self.clear_items()
+        self.add_item(UnitsSelect(self))
+        self.add_item(ConfirmUnitsButton(self))
+        self.add_item(CancelButton(self))
         file_to_send = None
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)
             file_to_send = File(self.preview_image_bytes, filename="bet_preview_units.png")
         await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+
+    def stop(self):
+        self._stopped = True
+        super().stop()
 
 
 async def populate_api_games_on_restart(db):
@@ -980,9 +1050,3 @@ async def populate_all_leagues_on_restart(db):
 async def on_server_startup():
     db = await get_database_connection()
     await populate_all_leagues_on_restart(db)
-
-db_manager = DatabaseManager()
-
-async def get_database_connection():
-    """Get or create a MySQL connection pool."""
-    return await db_manager.connect()

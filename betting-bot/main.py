@@ -14,7 +14,6 @@ import signal
 from api.sports_api import SportsAPI
 import aiohttp
 from services.live_game_channel_service import LiveGameChannelService
-from commands.straight_betting import get_database_connection
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -383,19 +382,14 @@ class BettingBot(commands.Bot):
         async def query_active_bets_periodically():
             while True:
                 try:
-                    db = await get_database_connection()
-                    async with SportsAPI(db_manager=db) as api:
-                        active_bets_query = """
+                    active_bets_query = """
                         SELECT DISTINCT b.api_game_id
                         FROM bets b
                         JOIN api_games ag ON b.api_game_id = ag.api_game_id
                         WHERE b.confirmed = 1 AND ag.start_time <= NOW()
-                        """
-                        async with db.acquire() as conn:
-                            async with conn.cursor() as cursor:
-                                await cursor.execute(active_bets_query)
-                                active_games = await cursor.fetchall()
-
+                    """
+                    active_games = await self.db_manager.fetch_all(active_bets_query)
+                    async with SportsAPI(db_manager=self.db_manager) as api:
                         for game in active_games:
                             await api.fetch_and_save_game_updates(game["api_game_id"])
                 except Exception as e:

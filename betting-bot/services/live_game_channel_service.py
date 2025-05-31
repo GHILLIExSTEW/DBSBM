@@ -78,6 +78,17 @@ class LiveGameChannelService:
         if guild_id not in self.guild_game_channels:
             self.guild_game_channels[guild_id] = {}
         tracked = self.guild_game_channels[guild_id]
+        finished_statuses = {s.lower() for s in ['finished', 'match finished', 'final', 'ended']}
+        # Remove finished games from tracked
+        to_remove = []
+        for api_game_id, channel_id in tracked.items():
+            # Find the bet in bets
+            bet = next((b for b in bets if b['api_game_id'] == api_game_id), None)
+            if bet and bet.get('status', '').strip().lower() in finished_statuses:
+                to_remove.append(api_game_id)
+        for api_game_id in to_remove:
+            logger.info(f"Removing finished game {api_game_id} from tracking for guild {guild_id}")
+            tracked.pop(api_game_id, None)
         for bet in bets:
             api_game_id = bet["api_game_id"]
             if not api_game_id:

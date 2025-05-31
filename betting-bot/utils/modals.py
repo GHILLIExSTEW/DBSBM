@@ -10,6 +10,7 @@ import os
 from PIL import Image
 import glob
 from rapidfuzz import process, fuzz
+import time
 
 # Import your project's configurations and utilities
 # Adjust these paths if your config/utils structure is different
@@ -310,6 +311,7 @@ class StraightBetDetailsModal(Modal):
         # Collect inputs
         line = self.line_input.value.strip()
         odds_str = self.odds_input.value.strip()
+        
         # Update view_ref bet_details
         if self.view_ref and hasattr(self.view_ref, 'bet_details'):
             self.view_ref.bet_details['line'] = line
@@ -321,6 +323,15 @@ class StraightBetDetailsModal(Modal):
             # Default units for preview
             self.view_ref.bet_details['units'] = 1.0
             self.view_ref.bet_details['units_str'] = '1.0'
+            
+            # Update other fields if they exist
+            if hasattr(self, 'team_input'):
+                self.view_ref.bet_details['team'] = self.team_input.value.strip()
+            if hasattr(self, 'opponent_input'):
+                self.view_ref.bet_details['opponent'] = self.opponent_input.value.strip()
+            if hasattr(self, 'player_name_input'):
+                self.view_ref.bet_details['player_name'] = self.player_name_input.value.strip()
+        
         # Generate preview image
         try:
             gen = await self.view_ref.get_bet_slip_generator()
@@ -333,7 +344,7 @@ class StraightBetDetailsModal(Modal):
                 units=1.0,
                 selected_team=self.view_ref.bet_details.get('team', ''),
                 line=line,
-                bet_id=str(self.view_ref.bet_details.get('bet_id', '')),
+                bet_id=str(self.view_ref.bet_details.get('bet_serial', '')),
                 timestamp=datetime.now(timezone.utc),
             )
             if image:
@@ -345,9 +356,10 @@ class StraightBetDetailsModal(Modal):
                 self.view_ref.preview_image_bytes = None
         except Exception:
             self.view_ref.preview_image_bytes = None
+            
         # Advance workflow to units selection
         if hasattr(self.view_ref, 'current_step'):
-            self.view_ref.current_step = 4
+            self.view_ref.current_step = 4  # Set to step 4 so go_next will make it step 5
         if hasattr(self.view_ref, 'go_next'):
             await self.view_ref.go_next(interaction)
 

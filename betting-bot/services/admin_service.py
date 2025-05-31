@@ -91,6 +91,7 @@ class AdminService:
                         min_units = %s,
                         max_units = %s,
                         live_game_updates = %s,
+                        units_display_mode = %s,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE guild_id = %s
                     """,
@@ -113,6 +114,7 @@ class AdminService:
                     settings.get('min_units'),
                     settings.get('max_units'),
                     settings.get('live_game_updates', 0),
+                    settings.get('units_display_mode'),
                     guild_id
                 )
             else:
@@ -124,7 +126,8 @@ class AdminService:
                         command_channel_2, admin_channel_1, admin_role, authorized_role,
                         member_role, voice_channel_id, yearly_channel_id, daily_report_time,
                         bot_name_mask, bot_image_mask, guild_background, guild_default_image,
-                        default_parlay_image, min_units, max_units, is_paid, live_game_updates
+                        default_parlay_image, min_units, max_units, is_paid, live_game_updates,
+                        units_display_mode
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
@@ -149,7 +152,8 @@ class AdminService:
                     settings.get('min_units'),
                     settings.get('max_units'),
                     settings.get('is_paid', False),
-                    settings.get('live_game_updates', 0)
+                    settings.get('live_game_updates', 0),
+                    settings.get('units_display_mode')
                 )
 
             return True

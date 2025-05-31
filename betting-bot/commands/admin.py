@@ -285,6 +285,12 @@ class GuildSettingsView(discord.ui.View):
             'select': None,  # Will be handled by a yes/no prompt
             'setting_key': 'live_game_updates',
             'is_boolean': True
+        },
+        {
+            'name': 'Units Display Mode',
+            'select': None,  # Will be handled by a select menu
+            'setting_key': 'units_display_mode',
+            'is_premium_only': True
         }
         # Note: User avatars are stored per user in the cappers table's image_path column
         # and are only available for premium guild members with the authorized role

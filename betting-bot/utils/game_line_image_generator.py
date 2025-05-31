@@ -48,18 +48,19 @@ def generate_player_prop_bet_image(player_name, player_picture_path, team_name, 
         return buffer.getvalue()
 
 class GameLineImageGenerator:
-    def __init__(self, fonts=None, padding=0):
+    def __init__(self, fonts=None, padding=0, guild_id=None):
         """Initialize the GameLineImageGenerator with optional fonts and padding."""
         self.fonts = fonts
         self.padding = padding
+        self.guild_id = guild_id
 
-    def generate_bet_slip_image(self, team1_name, team1_logo_path, team2_name, team2_logo_path, line, units, output_path, league, bet_id=None, odds=None, selected_team=None):
+    def generate_bet_slip_image(self, league, home_team, away_team, line, odds, units, bet_id=None, timestamp=None, selected_team=None, output_path=None, units_display_mode='auto', display_as_risk=None):
         """Generates a game line bet slip image."""
         from PIL import Image, ImageDraw, ImageFont
         from datetime import datetime, timezone
         import os
+        from config.asset_paths import get_sport_category_for_path
 
-        # --- Reference values from image_generator copy.py ---
         image_width, image_height = 600, 400
         bg_color = "#232733"
         padding = 24
@@ -73,7 +74,6 @@ class GameLineImageGenerator:
         footer_font_size = 18
         lock_icon_path = "betting-bot/static/lock_icon.png"
 
-        # --- Fonts ---
         font_dir = "betting-bot/assets/fonts"
         font_bold = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size)
         font_bold_team = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", team_font_size)
@@ -83,51 +83,25 @@ class GameLineImageGenerator:
         font_risk = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size)
         font_footer = ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", footer_font_size)
 
-        # --- Create image ---
         image = Image.new("RGB", (image_width, image_height), bg_color)
         draw = ImageDraw.Draw(image)
 
-        # --- Header (centered block: logo + text, dynamic league) ---
-        def get_sport_category(league):
-            mapping = {
-                "NBA": "BASKETBALL", "NCAAB": "BASKETBALL", "WNBA": "BASKETBALL", "EUROLEAGUE": "BASKETBALL", "CBA": "BASKETBALL",
-                "NFL": "FOOTBALL", "NCAAF": "FOOTBALL", "CFL": "FOOTBALL", "XFL": "FOOTBALL",
-                "MLB": "BASEBALL", "NCAAB_BASEBALL": "BASEBALL", "NPB": "BASEBALL", "KBO": "BASEBALL",
-                "NHL": "HOCKEY", "KHL": "HOCKEY", "SHL": "HOCKEY",
-                "MLS": "SOCCER", "EPL": "SOCCER", "LA_LIGA": "SOCCER", "SERIE_A": "SOCCER", "BUNDESLIGA": "SOCCER",
-                "LIGUE_1": "SOCCER", "UEFA_CL": "SOCCER", "COPA_LIBERTADORES": "SOCCER", "A_LEAGUE": "SOCCER", "J_LEAGUE": "SOCCER",
-                "ATP": "TENNIS", "WTA": "TENNIS", "ITF": "TENNIS", "GRAND_SLAM": "TENNIS",
-                "UFC": "MMA", "BELLATOR": "MMA", "ONE_CHAMPIONSHIP": "MMA", "PFL": "MMA",
-                "PGA": "GOLF", "LPGA": "GOLF", "EUROPEAN_TOUR": "GOLF", "MASTERS": "GOLF",
-                "BOXING": "BOXING", "CRICKET": "CRICKET", "IPL": "CRICKET", "BBL": "CRICKET", "TEST_CRICKET": "CRICKET",
-                "RUGBY_UNION": "RUGBY", "SUPER_RUGBY": "RUGBY", "SIX_NATIONS": "RUGBY",
-                "RUGBY_LEAGUE": "RUGBY", "NRL": "RUGBY", "SUPER_LEAGUE": "RUGBY",
-                "F1": "MOTORSPORTS", "NASCAR": "MOTORSPORTS", "INDYCAR": "MOTORSPORTS", "MOTOGP": "MOTORSPORTS",
-                "DARTS": "DARTS", "PDC": "DARTS", "VOLLEYBALL": "VOLLEYBALL", "FIVB": "VOLLEYBALL",
-                "TABLE_TENNIS": "TABLE_TENNIS", "ITTF": "TABLE_TENNIS", "CYCLING": "CYCLING",
-                "TOUR_DE_FRANCE": "CYCLING", "GIRO_D_ITALIA": "CYCLING", "VUELTA_A_ESPANA": "CYCLING",
-                "ESPORTS_CSGO": "ESPORTS", "ESPORTS_LOL": "ESPORTS", "ESPORTS_DOTA2": "ESPORTS",
-                "ESPORTS_OVERWATCH": "ESPORTS", "ESPORTS_FIFA": "ESPORTS",
-                "AUSSIE_RULES": "AUSTRALIAN_FOOTBALL", "AFL": "AUSTRALIAN_FOOTBALL",
-                "HANDBALL": "HANDBALL", "EHF_CL": "HANDBALL", "SNOOKER": "SNOOKER",
-                "WORLD_CHAMPIONSHIP_SNOOKER": "SNOOKER", "BADMINTON": "BADMINTON", "BWF": "BADMINTON",
-                "LACROSSE": "LACROSSE", "NLL": "LACROSSE", "FIELD_HOCKEY": "FIELD_HOCKEY", "FIH_PRO_LEAGUE": "FIELD_HOCKEY"
-            }
-            return mapping.get(league.upper(), "OTHER_SPORTS")
-
+        # Header (league logo + text)
         logo_display_size = (45, 45)
         league_upper = league.upper()
         league_lower = league.lower()
-        sport_category = get_sport_category(league_upper)
+        sport_category = get_sport_category_for_path(league_upper)
         league_logo_path = f"betting-bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.png"
-        league_logo = Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
+        try:
+            league_logo = Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
+        except Exception:
+            league_logo = None
         header_text = f"{league_upper} - Game Line"
         header_w, header_h = font_bold.getbbox(header_text)[2:]
         block_h = max(logo_display_size[1], header_h)
         block_w = logo_display_size[0] + 15 + header_w if league_logo else header_w
         block_x = (image_width - block_w) // 2
         block_y = 25
-        # Vertically center logo and text in block
         if league_logo:
             logo_y = block_y + (block_h - logo_display_size[1]) // 2
             text_y = block_y + (block_h - header_h) // 2
@@ -138,7 +112,7 @@ class GameLineImageGenerator:
             text_y = block_y
         draw.text((text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt")
 
-        # --- Teams Section ---
+        # Teams Section
         y_base = 85
         section_width = image_width // 2 - padding * 1.5
         home_section_center_x = padding + section_width // 2
@@ -146,19 +120,17 @@ class GameLineImageGenerator:
         center_x = image_width // 2
 
         # Home logo
-        try:
-            home_logo = Image.open(team1_logo_path).resize(logo_size)
+        home_logo = self._load_team_logo(home_team, league)
+        if home_logo:
+            home_logo_resized = home_logo.convert('RGBA').resize(logo_size)
             home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-            image.paste(home_logo, (home_logo_x, y_base), home_logo if home_logo.mode == 'RGBA' else None)
-        except Exception:
-            pass
+            image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
         # Away logo
-        try:
-            away_logo = Image.open(team2_logo_path).resize(logo_size)
+        away_logo = self._load_team_logo(away_team, league)
+        if away_logo:
+            away_logo_resized = away_logo.convert('RGBA').resize(logo_size)
             away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-            image.paste(away_logo, (away_logo_x, y_base), away_logo if away_logo.mode == 'RGBA' else None)
-        except Exception:
-            pass
+            image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
 
         # VS
         vs_text = "VS"
@@ -168,15 +140,15 @@ class GameLineImageGenerator:
         draw.text((vs_x, vs_y), vs_text, font=font_vs, fill="#FFD700", anchor="lt")
 
         # Team names
-        home_color = "#00FF00" if selected_team and selected_team.lower() == team1_name.lower() else "white"
-        away_color = "#00FF00" if selected_team and selected_team.lower() == team2_name.lower() else "white"
-        home_name_w, _ = font_bold_team.getbbox(team1_name)[2:]
-        away_name_w, _ = font_bold_team.getbbox(team2_name)[2:]
+        home_color = "#00FF00" if selected_team and selected_team.lower() == home_team.lower() else "white"
+        away_color = "#00FF00" if selected_team and selected_team.lower() == away_team.lower() else "white"
+        home_name_w, _ = font_bold_team.getbbox(home_team)[2:]
+        away_name_w, _ = font_bold_team.getbbox(away_team)[2:]
         home_name_x = home_section_center_x - home_name_w // 2
         away_name_x = away_section_center_x - away_name_w // 2
         team_name_y = y_base + logo_size[1] + 8
-        draw.text((home_name_x, team_name_y), team1_name, font=font_bold_team, fill=home_color, anchor="lt")
-        draw.text((away_name_x, team_name_y), team2_name, font=font_bold_team, fill=away_color, anchor="lt")
+        draw.text((home_name_x, team_name_y), home_team, font=font_bold_team, fill=home_color, anchor="lt")
+        draw.text((away_name_x, team_name_y), away_team, font=font_bold_team, fill=away_color, anchor="lt")
 
         # ML line
         line_text = str(line)
@@ -199,47 +171,53 @@ class GameLineImageGenerator:
         odds_y = sep_above_odds_y + 24
         draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
 
-        # To Risk/To Win row (centered vertically between odds and footer)
-        if odds_val < 0:
-            risk_label = "To Risk"
-            amount = units
-        else:
-            risk_label = "To Win"
-            amount = units * abs(odds_val) / 100 if odds_val > 0 else units
-        unit_label = "Unit" if round(amount, 2) == 1 else "Units"
-        risk_text = f"{risk_label} {amount:.2f} {unit_label}"
-        risk_w, risk_h = font_risk.getbbox(risk_text)[2:]
-        # Lock icon PNG
+        # Risk/Units (yellow, lock icons)
+        profit = 0.0
         try:
-            lock_img = Image.open(lock_icon_path).convert("RGBA")
-            lock_img = lock_img.resize((risk_h, risk_h))
+            odds_val = float(odds)
+            if odds_val < 0:
+                profit = units * (100.0 / abs(odds_val))
+            elif odds_val > 0:
+                profit = units * (odds_val / 100.0)
+            else:
+                profit = 0.0
         except Exception:
-            lock_img = None
-        lock_w = risk_h
-        total_w = lock_w + 8 + risk_w + 8 + lock_w
-        # Compute footer baseline y to center risk text between odds and footer
-        footer_padding = 8  # Increased from 4 to 8
-        ascent, descent = font_footer.getmetrics()
-        footer_y = image_height - footer_padding - descent
-        # Center risk row vertically between odds_y and footer_y
-        risk_y = odds_y + ((footer_y - odds_y - risk_h) // 2)
-        start_x = (image_width - total_w) // 2
-        # Left lock
-        if lock_img:
-            image.paste(lock_img, (int(start_x), int(risk_y)), lock_img)
-        # Risk text
-        draw.text((start_x + lock_w + 8, risk_y), risk_text, font=font_risk, fill="#FFD700", anchor="lt")
-        # Right lock
-        if lock_img:
-            image.paste(lock_img, (int(start_x + lock_w + 8 + risk_w + 8), int(risk_y)), lock_img)
+            profit = 0.0
+        unit_label = "Unit" if units <= 1 else "Units"
+        if units_display_mode == 'manual' and display_as_risk is not None:
+            payout_text = f"To Risk {units:.2f} {unit_label}" if display_as_risk else f"To Win {units:.2f} {unit_label}"
+        else:
+            if profit < 1.0:
+                payout_text = f"To Risk {units:.2f} {unit_label}"
+            else:
+                payout_text = f"To Win {units:.2f} {unit_label}"
+        payout_w, payout_h = font_risk.getbbox(payout_text)[2:]
+        payout_y = odds_y + odds_h + 8
+        lock_icon = None
+        try:
+            lock_icon = Image.open(lock_icon_path).resize((24, 24))
+        except Exception:
+            lock_icon = None
+        if lock_icon:
+            image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon)
+            draw.text(((image_width - payout_w) // 2, payout_y), payout_text, font=font_risk, fill="#FFD700", anchor="lt")
+            image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), lock_icon)
+        else:
+            draw.text(((image_width - payout_w) // 2, payout_y), payout_text, font=font_risk, fill="#FFD700", anchor="lt")
 
-        if bet_id:
-            bet_id_text = f"Bet #{bet_id}"
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#aaaaaa", anchor="ls")
-            draw.text((image_width - padding, footer_y), timestamp, font=font_footer, fill="#aaaaaa", anchor="rs")
+        # Footer (bet id and timestamp)
+        footer_padding = 12
+        footer_y = image_height - footer_padding - font_footer.size
+        bet_id_text = f"Bet #{bet_id}" if bet_id else ""
+        timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC") if timestamp else ""
+        # Draw bet ID bottom left
+        draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
+        # Draw timestamp bottom right
+        ts_bbox = font_footer.getbbox(timestamp_text)
+        ts_width = ts_bbox[2] - ts_bbox[0]
+        draw.text((image_width - padding - ts_width, footer_y), timestamp_text, font=font_footer, fill="#888888")
 
-        # Save or return
+        # Save or return as bytes
         if output_path:
             image.save(output_path)
             return None
@@ -324,3 +302,42 @@ class GameLineImageGenerator:
         draw.text((away_name_x, y_base + text_y_offset), away_team, font=font_away, fill=away_color, anchor="lt")
         
         return y_base + text_y_offset + 50  # Return y position for next section
+
+    def _load_team_logo(self, team_name: str, league: str):
+        import os
+        from PIL import Image
+        from config.asset_paths import get_sport_category_for_path
+        from data.game_utils import normalize_team_name_any_league
+        import logging
+        logger = logging.getLogger(__name__)
+        sport = get_sport_category_for_path(league.upper())
+        if not sport:
+            default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if self.guild_id else "betting-bot/static/logos/default_image.png"
+            logger.warning(f"[LOGO] No sport category for league '{league}'. Using fallback: {default_path}")
+            return Image.open(default_path).convert("RGBA")
+        normalized = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
+        fname = f"{normalized}.png"
+        logo_path = os.path.join("betting-bot/static/logos/teams", sport, league.upper(), fname)
+        if os.path.exists(logo_path):
+            logger.info(f"[LOGO] Found logo for '{team_name}' at: {logo_path}")
+            return Image.open(logo_path).convert("RGBA")
+        default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if self.guild_id else "betting-bot/static/logos/default_image.png"
+        logger.warning(f"[LOGO] Logo not found for '{team_name}' (tried: {logo_path}). Using fallback: {default_path}")
+        return Image.open(default_path).convert("RGBA")
+
+    def _load_player_image(self, player_name: str, team_name: str, league: str):
+        import os
+        from PIL import Image
+        from config.asset_paths import get_sport_category_for_path
+        from data.game_utils import normalize_team_name_any_league
+        sport = get_sport_category_for_path(league.upper())
+        if not sport:
+            default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if getattr(self, 'guild_id', None) else "betting-bot/static/logos/default_image.png"
+            return Image.open(default_path).convert("RGBA")
+        normalized_team = normalize_team_name_any_league(team_name).replace(".", "")
+        normalized_player = normalize_team_name_any_league(player_name).replace(".", "")
+        player_img_path = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team, f"{normalized_player}.png")
+        if os.path.exists(player_img_path):
+            return Image.open(player_img_path).convert("RGBA")
+        default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if getattr(self, 'guild_id', None) else "betting-bot/static/logos/default_image.png"
+        return Image.open(default_path).convert("RGBA")
