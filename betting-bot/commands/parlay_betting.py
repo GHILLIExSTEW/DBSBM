@@ -117,9 +117,25 @@ class LineTypeSelect(Select):
             except Exception as send_e:
                 logger.error(f"[LineTypeSelect] Failed to send error message: {send_e}")
 
-class ParlayGameSelect(Select):
-    def __init__(self, parent_view: View, games: List[Dict], selected_games: List[str] = None):
+class ConfirmGameButton(Button):
+    def __init__(self, parent_view: 'ParlayBetWorkflowView', selected_game_id: str):
+        super().__init__(
+            style=ButtonStyle.green,
+            label="Confirm Game Selection",
+            custom_id=f"parlay_confirm_game_{parent_view.original_interaction.id}_{selected_game_id}"
+        )
         self.parent_view = parent_view
+        self.selected_game_id = selected_game_id
+
+    async def callback(self, interaction: Interaction):
+        await interaction.response.defer()
+        await self.parent_view.handle_game_selection(interaction, self.selected_game_id)
+
+class ParlayGameSelect(Select):
+    def __init__(self, parent_view: View, games: List[Dict], selected_games: List[str] = None, selected_value: str = None, confirmed: bool = False):
+        self.parent_view = parent_view
+        self.selected_value = selected_value
+        self.confirmed = confirmed
         options = []
         selected_games = selected_games or []
         logger.info(f"[ParlayGameSelect] Initializing with {len(games)} games, {len(selected_games)} already selected")
@@ -128,7 +144,8 @@ class ParlayGameSelect(Select):
         options.append(SelectOption(
             label="Manual Entry",
             value=manual_entry_value,
-            description="Manually enter game details"
+            description="Manually enter game details",
+            default=(self.selected_value == manual_entry_value)
         ))
         logger.info("[ParlayGameSelect] Added Manual Entry option")
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
@@ -155,7 +172,8 @@ class ParlayGameSelect(Select):
                 option = SelectOption(
                     label=label[:100],  # Discord has a 100 char limit
                     value=option_value,
-                    description=f"Start: {start_time}" if start_time else None
+                    description=f"Start: {start_time}" if start_time else None,
+                    default=(self.selected_value == option_value)
                 )
                 options.append(option)
                 logger.info(f"[ParlayGameSelect] Added game option: {label} (ID: {game_api_id})")
@@ -166,15 +184,25 @@ class ParlayGameSelect(Select):
             placeholder="Select a Game for Parlay",
             min_values=1,
             max_values=1,
-            options=options
+            options=options,
+            disabled=self.confirmed
         )
         logger.info(f"[ParlayGameSelect] Initialized with {len(options)} total options")
 
     async def callback(self, interaction: Interaction):
-        """Handle game selection."""
         try:
             logger.info(f"[ParlayGameSelect] Game selected: {self.values[0]}")
-            await self.parent_view.handle_game_selection(interaction, self.values[0])
+            self.disabled = True
+            confirm_button = ConfirmGameButton(self.parent_view, self.values[0])
+            self.parent_view.clear_items()
+            self.parent_view.add_item(self)  # Add the same (now disabled) dropdown
+            self.parent_view.add_item(confirm_button)
+            self.parent_view.add_item(CancelButton(self.parent_view))
+            await self.parent_view.edit_message_for_current_leg(
+                interaction,
+                content="Confirm your game selection for this parlay leg.",
+                view=self.parent_view
+            )
         except Exception as e:
             logger.error(f"[ParlayGameSelect] Error in callback: {e}", exc_info=True)
             await interaction.response.send_message("Error processing game selection. Please try again.", ephemeral=True)
@@ -230,18 +258,46 @@ class BetDetailsModal(Modal):
         self.leg_number = leg_number
         self.view_ref: Optional['ParlayBetWorkflowView'] = None
 
-        # Only show team field for manual entry or player prop
-        if self.is_manual or self.line_type == "player_prop":
-            self.team = TextInput(label="Team Involved/Player's Team", required=True, max_length=100, placeholder="Enter team name")
-            self.add_item(self.team)
-        if self.is_manual:
-            self.opponent = TextInput(label="Opponent for this Leg", required=True, max_length=100, placeholder="Enter opponent name")
-            self.add_item(self.opponent)
-
-        prop_label = "Player - Line (e.g., Name O/U Pts)" if line_type == "player_prop" else "Line (e.g., Moneyline, Spread -X.X)"
-        prop_placeholder = "E.g., Player Name - Points Over X.X" if line_type == "player_prop" else "E.g., Moneyline, Spread -7.5"
-        self.line_input = TextInput(label=prop_label, required=True, max_length=100, placeholder=prop_placeholder)
-        self.add_item(self.line_input)
+        # For player prop, ask for player name and line (no odds)
+        if self.line_type == "player_prop":
+            self.player_name_input = TextInput(
+                label="Player Name",
+                required=True,
+                max_length=100,
+                placeholder="e.g., LeBron James, Shohei Ohtani"
+            )
+            self.add_item(self.player_name_input)
+            self.prop_line_input = TextInput(
+                label="Player Prop / Line",
+                required=True,
+                max_length=100,
+                placeholder="e.g., Over 25.5 Points, Over 7.5 Assists"
+            )
+            self.add_item(self.prop_line_input)
+        else:
+            # Game line: if manual, ask for team/opponent
+            if self.is_manual:
+                self.team_input = TextInput(
+                    label="Team Involved",
+                    required=True,
+                    max_length=100,
+                    placeholder="Enter team name"
+                )
+                self.add_item(self.team_input)
+                self.opponent_input = TextInput(
+                    label="Opponent for this Leg",
+                    required=True,
+                    max_length=100,
+                    placeholder="Enter opponent name"
+                )
+                self.add_item(self.opponent_input)
+            self.line_input = TextInput(
+                label="Line (e.g., Moneyline, Spread -X.X)",
+                required=True,
+                max_length=100,
+                placeholder="Enter line details"
+            )
+            self.add_item(self.line_input)
 
     async def on_submit(self, interaction: Interaction):
         if not self.view_ref:
@@ -253,59 +309,59 @@ class BetDetailsModal(Modal):
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         try:
-            team_value = self.team.value.strip()
-            opponent_value = self.opponent.value.strip() if hasattr(self, 'opponent') else self.view_ref.current_leg_construction_details.get('away_team_name', 'N/A')
-            line_value = self.line_input.value.strip()
-
-            if not team_value or not line_value or (self.is_manual and not opponent_value):
-                await interaction.followup.send("❌ All fields are required for the leg.", ephemeral=True)
-                return
-
-            # Load team logo for this leg
+            current_details = self.view_ref.current_leg_construction_details
+            league = current_details.get('league', 'UNKNOWN')
+            leg_details_to_add = {
+                'game_id': current_details.get('game_id') if current_details.get('game_id') != 'Other' else None,
+                'bet_type': self.line_type,
+                'league': league
+            }
+            if self.line_type == "player_prop":
+                player_name = self.player_name_input.value.strip()
+                prop_line = self.prop_line_input.value.strip()
+                leg_details_to_add.update({
+                    'player_name': player_name,
+                    'team': player_name,
+                    'line': prop_line
+                })
+            else:
+                if self.is_manual:
+                    team = self.team_input.value.strip()
+                    opponent = self.opponent_input.value.strip()
+                else:
+                    team = current_details.get('home_team_name')
+                    opponent = current_details.get('away_team_name')
+                line_value = self.line_input.value.strip()
+                leg_details_to_add.update({
+                    'team': team,
+                    'opponent': opponent,
+                    'line': line_value
+                })
+            # Load team logo if available
             bet_slip_gen = await self.view_ref.get_bet_slip_generator()
             team_logo_path = None
             try:
-                league = self.view_ref.current_leg_construction_details.get('league', 'UNKNOWN')
-                logo_image = bet_slip_gen._load_team_logo(team_value, league)
+                logo_image = bet_slip_gen._load_team_logo(leg_details_to_add.get('team'), league)
                 if logo_image:
-                    # Use robust normalization for 'St.' teams and filename
-                    normalized_team_name = bet_slip_gen._normalize_team_name(team_value)
-                    normalized_team_name_no_period = normalized_team_name.replace('.', '')
+                    normalized_name = bet_slip_gen._normalize_team_name(leg_details_to_add.get('team', '')).replace('.', '')
                     sport = get_sport_category_for_path(league.upper()) or 'OTHER_SPORTS'
                     team_dir = os.path.join(bet_slip_gen.LEAGUE_TEAM_BASE_DIR, sport, league.upper())
-                    team_logo_filename = f"{normalize_team_name(normalized_team_name_no_period)}.png"
-                    team_logo_path = os.path.join(team_dir, team_logo_filename)
-                    if not os.path.exists(team_logo_path):
+                    logo_file = f"{normalize_team_name(normalized_name)}.png"
+                    logo_path = os.path.join(team_dir, logo_file)
+                    if os.path.exists(logo_path):
+                        team_logo_path = logo_path
+                    else:
                         team_logo_path = bet_slip_gen.DEFAULT_LOGO_PATH
                     logo_image.close()
-            except Exception as e:
-                logger.warning(f"Failed to load team logo for {team_value} in league {league}: {e}")
-                team_logo_path = bet_slip_gen.DEFAULT_LOGO_PATH
-
-            current_details = self.view_ref.current_leg_construction_details
-            leg_details_to_add = {
-                'game_id': current_details.get('game_id') if current_details.get('game_id') != 'Other' else None,
-                'team': team_value,
-                'opponent': opponent_value,
-                'line': line_value,
-                'bet_type': self.line_type,
-                'league': current_details.get('league', 'UNKNOWN'),
-                'team_logo_path': team_logo_path
-            }
-            
-            if not self.is_manual and current_details.get('home_team_name'):
-                leg_details_to_add['home_team'] = current_details.get('home_team_name')
-                leg_details_to_add['away_team'] = current_details.get('away_team_name')
-            else:
-                leg_details_to_add['home_team'] = team_value
-                leg_details_to_add['away_team'] = opponent_value
-
+            except Exception:
+                team_logo_path = None
+            if team_logo_path:
+                leg_details_to_add['team_logo_path'] = team_logo_path
             await self.view_ref.add_leg(interaction, leg_details_to_add)
         except Exception as e:
             logger.exception(f"Error in Parlay Leg Modal {self.leg_number} on_submit: {e}")
             await interaction.followup.send("❌ Failed to process leg details. Please restart parlay.", ephemeral=True)
-            if self.view_ref:
-                self.view_ref.stop()
+            self.view_ref.stop()
 
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
         logger.error(f"Error in Parlay Leg Modal {self.leg_number}: {error}", exc_info=True)
@@ -555,9 +611,7 @@ class TeamSelect(Select):
             modal.view_ref = self.parent_view
             if not interaction.response.is_done():
                 await interaction.response.send_modal(modal)
-                await self.parent_view.edit_message_for_current_leg(
-                    interaction, content="Please fill in the bet details in the popup form.", view=self.parent_view
-                )
+                return  # Fix: Do not edit message after sending modal
             else:
                 logger.error("Tried to send modal, but interaction already responded to.")
                 await self.parent_view.edit_message_for_current_leg(
@@ -616,6 +670,46 @@ class ParlayBetWorkflowView(View):
         leg_count = len(self.bet_details['legs'])
         logger.info(f"Leg {leg_count} added to parlay by user {self.original_interaction.user.id}. Details: {leg_details}")
         
+        # Generate preview image after each leg is added
+        try:
+            generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
+            legs = []
+            for leg in self.bet_details.get('legs', []):
+                leg_data = {
+                    'bet_type': leg.get('line_type', 'game_line'),
+                    'league': leg.get('league', ''),
+                    'home_team': leg.get('home_team_name', leg.get('team', '')),
+                    'away_team': leg.get('away_team_name', leg.get('opponent', '')),
+                    'selected_team': leg.get('team', ''),
+                    'line': leg.get('line', ''),
+                }
+                if leg.get('line_type') == 'player_prop':
+                    leg_data['player_name'] = leg.get('player_name', '')
+                legs.append(leg_data)
+            bet_id = str(self.bet_details.get('bet_serial', ''))
+            bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            total_odds = self.bet_details.get('total_odds', 0.0)
+            units = float(self.bet_details.get('units', 1.0))
+            image_bytes = generator.generate_image(
+                legs=legs,
+                output_path=None,
+                total_odds=total_odds,
+                units=units,
+                bet_id=bet_id,
+                bet_datetime=bet_datetime
+            )
+            if image_bytes:
+                self.preview_image_bytes = io.BytesIO(image_bytes)
+                self.preview_image_bytes.seek(0)
+                file_to_send = File(self.preview_image_bytes, filename=f"parlay_preview_leg{leg_count}.png")
+            else:
+                self.preview_image_bytes = None
+                file_to_send = None
+        except Exception as e:
+            logger.exception(f"Error generating parlay preview image after leg add: {e}")
+            self.preview_image_bytes = None
+            file_to_send = None
+        
         summary_lines = [f"**Parlay Legs ({leg_count}):**"]
         for i, leg in enumerate(self.bet_details['legs']):
             summary_lines.append(f"{i+1}. {leg.get('league','N/A')}: {leg.get('team','N/A')} {leg.get('line','N/A')}")
@@ -623,10 +717,10 @@ class ParlayBetWorkflowView(View):
 
         decision_view = LegDecisionView(self)
         try:
-            await self.edit_message_for_current_leg(modal_interaction, content=f"{summary_text}\n\nAdd another leg or finalize?", view=decision_view)
+            await self.edit_message_for_current_leg(modal_interaction, content=f"{summary_text}\n\nAdd another leg or finalize?", view=decision_view, file=file_to_send)
         except Exception as e:
             logger.error(f"Failed to edit self.message in add_leg, trying followup on modal_interaction: {e}")
-            await modal_interaction.followup.send(f"{summary_text}\n\nAdd another leg or finalize?", view=decision_view, ephemeral=True)
+            await modal_interaction.followup.send(f"{summary_text}\n\nAdd another leg or finalize?", view=decision_view, ephemeral=True, file=file_to_send)
             self.message = await modal_interaction.original_response()
 
         self.current_step = 4
@@ -757,8 +851,8 @@ class ParlayBetWorkflowView(View):
                 self.add_item(ManualEntryButton(self))
                 content += f"Select Game for {league} Leg (or Enter Manually)"
             elif self.current_step == 4:
-                line_type = self.current_leg_construction_details.get('line_type')
-                game_id = self.current_leg_construction_details.get('game_id')
+                line_type = self.parent_view.current_leg_construction_details.get('line_type')
+                game_id = self.parent_view.current_leg_construction_details.get('game_id')
                 is_manual = game_id == "Other"
                 leg_number = current_leg_count + 1
                 
@@ -949,15 +1043,14 @@ class ParlayBetWorkflowView(View):
             self.preview_image_bytes = None
         self.clear_items()
         self.add_item(UnitsSelect(self))
-        self.add_item(ConfirmUnitsButton(self))
         self.add_item(CancelButton(self))
         file_to_send = None
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)
-            file_to_send = File(self.preview_image_bytes, filename="parlay_preview.png")
+            file_to_send = File(self.preview_image_bytes, filename="parlay_preview_units.png")
         await self.edit_message_for_current_leg(
             interaction,
-            content=self.get_content(),
+            content=self.get_content() if hasattr(self, 'get_content') else None,
             view=self,
             file=file_to_send
         )
