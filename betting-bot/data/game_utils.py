@@ -7,6 +7,7 @@ import pytz
 from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
 
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from config.asset_paths import get_sport_category_for_path
 
 logger = logging.getLogger(__name__)
 

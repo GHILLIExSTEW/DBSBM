@@ -336,49 +336,59 @@ async def create_db_pool() -> aiomysql.Pool:
     logger.info(f"  User: {MYSQL_USER}")
     logger.info(f"  Password: {'*' * len(MYSQL_PASSWORD) if MYSQL_PASSWORD else 'Not set'}")
     logger.info("Testing database connection...")
-    try:
-        async with aiomysql.connect(
-            host=MYSQL_HOST,
-            port=MYSQL_PORT,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            db=MYSQL_DB,
-            connect_timeout=10
-        ) as test_conn:
-            logger.info("Test connection successful")
-        logger.info("Creating connection pool...")
-        pool = await aiomysql.create_pool(
-            host=MYSQL_HOST,
-            port=MYSQL_PORT,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            db=MYSQL_DB,
-            autocommit=True,
-            minsize=MYSQL_POOL_MIN_SIZE,
-            maxsize=MYSQL_POOL_MAX_SIZE,
-            connect_timeout=10
-        )
-        logger.info("Database connection pool created successfully")
-        return pool
-    except aiomysql.Error as e:
-        error_code = e.args[0] if e.args else 'unknown'
-        sql_state = e.args[1] if len(e.args) > 1 else 'unknown'
-        error_message = str(e)
-        logger.error("MySQL error creating database pool:")
-        logger.error(f"  Error code: {error_code}")
-        logger.error(f"  SQL state: {sql_state}")
-        logger.error(f"  Error message: {error_message}")
-        if error_code == 1045:
-            logger.error("Access denied - please check username and password")
-        elif error_code == 2003:
-            logger.error(f"Could not connect to MySQL server at {MYSQL_HOST}:{MYSQL_PORT}")
-        elif error_code == 1049:
-            logger.error(f"Database '{MYSQL_DB}' does not exist")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error creating database pool: {e}")
-        logger.exception("Full traceback:")
-        raise
+
+    max_retries = 3
+    retry_delay = 5  # seconds
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            async with aiomysql.connect(
+                host=MYSQL_HOST,
+                port=MYSQL_PORT,
+                user=MYSQL_USER,
+                password=MYSQL_PASSWORD,
+                db=MYSQL_DB,
+                connect_timeout=30
+            ) as test_conn:
+                logger.info("Test connection successful")
+            logger.info("Creating connection pool...")
+            pool = await aiomysql.create_pool(
+                host=MYSQL_HOST,
+                port=MYSQL_PORT,
+                user=MYSQL_USER,
+                password=MYSQL_PASSWORD,
+                db=MYSQL_DB,
+                autocommit=True,
+                minsize=1,
+                maxsize=5,
+                connect_timeout=30,
+                echo=True
+            )
+            logger.info("Database connection pool created successfully")
+            return pool
+        except aiomysql.OperationalError as e:
+            last_error = e
+            error_code = e.args[0] if e.args else 'unknown'
+            sql_state = e.args[1] if len(e.args) > 1 else 'unknown'
+            error_message = str(e)
+            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed to connect to MySQL:")
+            logger.warning(f"  Error code: {error_code}")
+            logger.warning(f"  SQL state: {sql_state}")
+            logger.warning(f"  Error message: {error_message}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+        except Exception as e:
+            last_error = e
+            logger.error(f"Unexpected error creating database pool: {e}")
+            logger.exception("Full traceback:")
+            raise
+
+    if last_error:
+        logger.critical("FATAL: All connection attempts failed")
+        raise ConnectionError(f"Failed to connect after {max_retries} attempts: {last_error}") from last_error
 
 
 async def clear_api_games_table(pool: aiomysql.Pool):

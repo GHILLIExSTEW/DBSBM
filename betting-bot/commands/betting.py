@@ -225,11 +225,10 @@ class BetTypeView(View):
                 logger.debug("Initializing ParlayBetWorkflowView")
                 view = ParlayBetWorkflowView( 
                     self.original_interaction, 
-                    self.bot
-                    # ParlayBetWorkflowView's start_flow will handle sending its own initial message
-                    # using self.original_interaction (the /bet command interaction)
+                    self.bot,
+                    message_to_control=self.message  # Pass the message to control
                 )
-                await view.start_flow() # Parlay's start_flow doesn't need interaction_from_select here
+                await view.start_flow(interaction_from_select)  # Pass the interaction for consistency
             elif bet_type == "player_prop":
                 logger.debug("Initializing PlayerPropBetWorkflowView")
                 view = PlayerPropBetWorkflowView(

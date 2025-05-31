@@ -82,7 +82,7 @@ class BetService:
             query_select = """
                 SELECT bet_serial, guild_id, user_id
                 FROM bets
-                WHERE confirmed = 0
+                WHERE confirmed = 0 
                 AND created_at < %s
             """
             expired_bets = await self.db_manager.fetch_all(query_select, (cutoff_time,))
@@ -113,6 +113,7 @@ class BetService:
                 except Exception as e:
                     logger.error(f"Failed to clean up bet {bet_serial_int}: {e}", exc_info=True)
                     continue
+
             logger.info(f"Finished cleanup. Deleted {deleted_count} unconfirmed bets.")
         except Exception as e:
             logger.error(f"Error in cleanup_unconfirmed_bets: {e}", exc_info=True)
@@ -176,27 +177,21 @@ class BetService:
         opponent: str,
         line: str,
         api_game_id: str,
-        channel_id: int
+        channel_id: int,
+        confirmed: int = 0
     ) -> int:
         """Create a straight bet record."""
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
-        
         try:
-            # Handle game_id for database foreign key constraint
             internal_game_id = None
             if api_game_id:
-                # Only try to get/create game if we have a valid api_game_id
                 try:
                     internal_game_id = await self._get_or_create_game(api_game_id)
                 except BetServiceError as e:
                     logger.warning(f"Could not get/create game for api_game_id {api_game_id}: {e}")
-                    # For manual entries or when game not found, set to None (NULL in DB)
                     internal_game_id = None
             else:
-                # Manual entry - no api_game_id, set game_id to NULL
                 logger.info("Manual entry bet - setting game_id to NULL")
-
-            # Construct bet_details
             internal_bet_details_dict = {
                 "api_game_id": api_game_id,
                 "provided_bet_type": bet_type,
@@ -207,7 +202,6 @@ class BetService:
                 "expiration_time_iso": None,
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
-
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
@@ -238,13 +232,11 @@ class BetService:
                 None,  # expiration_time
                 1,
                 channel_id,
-                0,
+                confirmed,
                 "pending",
                 bet_details_json,
             )
-
             rowcount, last_id = await self.db_manager.execute(query, args)
-
             if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
                 logger.info(f"Straight bet created successfully with bet_serial: {last_id}")
                 return last_id
@@ -253,7 +245,6 @@ class BetService:
                     f"Failed to create straight bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
                 )
                 return None
-
         except IntegrityError as e:
             logger.error(f"Database integrity error creating straight bet: {e}", exc_info=True)
             raise BetServiceError(f"Failed to create bet due to database error: {str(e)}")
@@ -271,6 +262,7 @@ class BetService:
         channel_id: Optional[int] = None,
         game_start: Optional[datetime] = None,
         expiration_time: Optional[datetime] = None,
+        confirmed: int = 0
     ) -> Optional[int]:
         """Create a parlay bet, populating all relevant fields based on the new schema."""
         logger.info(f"Attempting to create parlay bet for user {user_id} in guild {guild_id}")
@@ -278,7 +270,6 @@ class BetService:
             logger.error("Cannot create parlay bet with no legs.")
             return None
         try:
-            # Validate all api_game_ids first
             for leg in legs_data:
                 api_game_id = leg.get('game_id')
                 if api_game_id and api_game_id != 'Other':
@@ -290,12 +281,9 @@ class BetService:
                         logger.error(f"API Game ID {api_game_id} not found in api_games table")
                         raise BetServiceError(f"Game ID {api_game_id} not found in database")
                     logger.debug(f"Validated API Game ID {api_game_id} exists in database")
-            
             total_odds = self._calculate_parlay_odds(legs_data)
             if total_odds == 0.0 and len(legs_data) > 0:
                 logger.warning(f"Calculated parlay odds are 0.0 for legs: {legs_data}. Proceeding with 0 odds.")
-
-            # Construct bet_details
             internal_bet_details_dict = {
                 "legs_info": legs_data,
                 "calculated_total_odds": total_odds,
@@ -303,9 +291,7 @@ class BetService:
                 "expiration_time_iso": expiration_time.isoformat() if expiration_time else None,
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
-
             num_legs = len(legs_data)
-
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
@@ -328,13 +314,11 @@ class BetService:
                 game_start,
                 expiration_time,
                 channel_id,
-                0,
+                confirmed,
                 "pending",
                 bet_details_json,
             )
-
             rowcount, last_id = await self.db_manager.execute(query, args)
-
             if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
                 logger.info(f"Parlay bet created successfully with bet_serial: {last_id} and {num_legs} legs.")
                 return last_id
@@ -343,7 +327,6 @@ class BetService:
                     f"Failed to create parlay bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
                 )
                 return None
-
         except Exception as e:
             logger.error(f"Error creating parlay bet: {e}", exc_info=True)
             return None

@@ -21,7 +21,7 @@ from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 
 try:
-    from config.asset_paths import SPORT_CATEGORIES, DEFAULT_FALLBACK_CATEGORY
+    from config.asset_paths import SPORT_CATEGORIES, DEFAULT_FALLBACK_CATEGORY, get_sport_category_for_path
     from config.leagues import LEAGUE_IDS # Contains league name to sport mapping
     from config.team_mappings import normalize_team_name # For sanitizing team names
 except ImportError as e:
@@ -52,34 +52,11 @@ SAVE_BASE_PATH = os.path.join(STATIC_DIR, "logos", "teams") # This will be stati
 REQUEST_DELAY_SECONDS = 0.25
 DOWNLOAD_TIMEOUT_SECONDS = 15
 
-# Helper to get sport category for path (simplified from your asset_paths)
 def get_sport_folder_name(sport_name: str) -> str:
-    """Determines a consistent folder name for the sport."""
-    sport_name_upper = sport_name.upper()
-    for category, leagues_in_cat in SPORT_CATEGORIES.items():
-        # This mapping is a bit indirect. We need to see if the sport_name
-        # itself is a category or if it belongs to one.
-        if sport_name_upper == category:
-            return category.upper() # e.g., "SOCCER", "FOOTBALL"
-        # A more direct mapping from sport_name to folder_name might be needed
-        # For now, let's use a simplified approach.
-        # A direct map from "American Football" -> "FOOTBALL" would be better.
-    # Fallback based on common sport names to categories
-    if "FOOTBALL" in sport_name_upper and "AMERICAN" in sport_name_upper:
-        return "FOOTBALL"
-    if "SOCCER" in sport_name_upper:
-        return "SOCCER"
-    if "BASKETBALL" in sport_name_upper:
-        return "BASKETBALL"
-    if "BASEBALL" in sport_name_upper:
-        return "BASEBALL"
-    if "HOCKEY" in sport_name_upper:
-        return "HOCKEY"
-    if "MOTORSPORT" in sport_name_upper:
-        return "RACING" # Align with your SPORT_CATEGORIES
-    if "FIGHTING" in sport_name_upper:
-        return "FIGHTING"
-    # Add more specific mappings as needed based on your SPORT_CATEGORIES
+    """Determines a consistent folder name for the sport using the canonical mapping."""
+    category = get_sport_category_for_path(sport_name)
+    if category:
+        return category.upper()
     logger.warning(f"Could not determine a standard sport folder for '{sport_name}'. Using '{DEFAULT_FALLBACK_CATEGORY}'.")
     return DEFAULT_FALLBACK_CATEGORY.upper()
 
