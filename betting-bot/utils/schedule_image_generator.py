@@ -6,6 +6,9 @@ from typing import List, Dict, Optional
 from PIL import Image, ImageDraw, ImageFont
 import os
 import pytz
+from config.asset_paths import get_sport_category_for_path
+from data.game_utils import normalize_team_name_any_league
+from config.team_mappings import normalize_team_name
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +32,24 @@ class ScheduleImageGenerator:
         self.background_color = '#1a1a1a'
         self.text_color = '#ffffff'
 
-    def _load_team_logo(self, team_name: str, league_code: str) -> Optional[Image.Image]:
-        """Load a team's logo from the assets directory."""
+    def _load_team_logo(self, team_name: str, league_name: str) -> Optional[Image.Image]:
+        """Load a team's logo using the same logic as betting flows."""
         try:
-            # Convert team name to filename format
-            safe_name = team_name.lower().replace(' ', '_')
-            logo_path = os.path.join(self.logos_dir, 'teams', league_code, f"{safe_name}.png")
-            
+            # Get sport category
+            sport = get_sport_category_for_path(league_name.upper())
+            if not sport:
+                default_path = os.path.join("betting-bot/static/logos/default_logo.png")
+                return Image.open(default_path).convert("RGBA")
+            # Normalize team name
+            normalized = normalize_team_name_any_league(team_name).replace(".", "")
+            fname = f"{normalize_team_name(normalized)}.png"
+            logo_path = os.path.join("betting-bot/static/logos/teams", sport, league_name.upper(), fname)
             if os.path.exists(logo_path):
-                return Image.open(logo_path)
-            return None
+                return Image.open(logo_path).convert("RGBA")
+            default_path = os.path.join("betting-bot/static/logos/default_logo.png")
+            return Image.open(default_path).convert("RGBA")
         except Exception as e:
-            logger.error(f"Error loading logo for {team_name}: {e}")
+            logger.error(f"Error loading logo for {team_name} ({league_name}): {e}")
             return None
 
     def _create_game_image(self, game: Dict, game_time: str) -> Image.Image:
