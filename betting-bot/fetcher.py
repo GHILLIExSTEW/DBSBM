@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 import sys
 
-from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season, LEAGUE_SEASON_YEAR, get_auto_season_year
+from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season, get_auto_season_year
 from api.sports_api import SportsAPI
 
 # Configure logging to file and console
