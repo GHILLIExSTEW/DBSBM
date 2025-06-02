@@ -192,16 +192,18 @@ class PlayerPropImageGenerator:
         logo_w = logo_display_size[0] if league_logo else 0
         gap = 12 if league_logo else 0
         total_header_w = logo_w + gap + header_w
+        # Vertically center logo and text as a group
+        block_h = max(logo_display_size[1], header_h)
         block_x = (image_width - total_header_w) // 2
         block_y = 25
-        # Draw logo and text centered as a group
         if league_logo:
-            logo_y = block_y + (header_h - logo_display_size[1]) // 2
+            logo_y = block_y + (block_h - logo_display_size[1]) // 2
+            text_y = block_y + (block_h - header_h) // 2
             image.paste(league_logo, (block_x, logo_y), league_logo)
             text_x = block_x + logo_w + gap
         else:
             text_x = block_x
-        text_y = block_y
+            text_y = block_y
         draw.text((text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt")
 
         # Teams/Player Section
