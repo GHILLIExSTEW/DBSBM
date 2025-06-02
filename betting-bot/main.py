@@ -222,7 +222,7 @@ class BettingBot(commands.Bot):
         for attempt in range(1, retries + 1):
             try:
                 # Verify required commands are present
-                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid", "load_logos"]
+                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid"]
                 current_commands = [cmd.name for cmd in self.tree.get_commands()]
                 missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
                 
@@ -246,6 +246,15 @@ class BettingBot(commands.Bot):
                 final_commands = [cmd.name for cmd in self.tree.get_commands()]
                 if not all(cmd in final_commands for cmd in required_commands):
                     raise Exception("Not all required commands present after sync")
+                    
+                # Handle guild-specific commands
+                if TEST_GUILD_ID:
+                    test_guild = discord.Object(id=TEST_GUILD_ID)
+                    # Copy global commands to test guild
+                    self.tree.copy_global_to(guild=test_guild)
+                    # Add guild-specific commands
+                    await self.tree.sync(guild=test_guild)
+                    logger.info(f"Successfully synced commands to test guild {TEST_GUILD_ID}")
                     
                 return True
             except Exception as e:
@@ -381,9 +390,11 @@ class BettingBot(commands.Bot):
         )
         logger.info("Ensured guild_settings table exists.")
 
-        await self.load_extensions()
-        commands_list = [cmd.name for cmd in self.tree.get_commands()]
-        logger.info("Registered commands: %s", commands_list)
+        # Only load extensions if we're not in scheduler mode
+        if not os.getenv("SCHEDULER_MODE"):
+            await self.load_extensions()
+            commands_list = [cmd.name for cmd in self.tree.get_commands()]
+            logger.info("Registered commands: %s", commands_list)
 
         logger.info("Starting services...")
         service_starts = [
@@ -402,29 +413,14 @@ class BettingBot(commands.Bot):
                 service_name = service_starts[i].__self__.__class__.__name__ if hasattr(service_starts[i], "__self__") else f"Service {i}"
                 logger.error("Error starting %s: %s", service_name, result, exc_info=True)
         logger.info("Services startup initiated, including LiveGameChannelService.")
-        self.start_flask_webapp()
-        self.start_fetcher()
-        logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
-
-        async def query_active_bets_periodically():
-            while True:
-                try:
-                    active_bets_query = """
-                        SELECT DISTINCT b.api_game_id
-                        FROM bets b
-                        JOIN api_games ag ON b.api_game_id = ag.api_game_id
-                        WHERE b.confirmed = 1 AND ag.start_time <= NOW()
-                    """
-                    active_games = await self.db_manager.fetch_all(active_bets_query)
-                    async with SportsAPI(db_manager=self.db_manager) as api:
-                        for game in active_games:
-                            await api.fetch_and_save_game_updates(game["api_game_id"])
-                except Exception as e:
-                    logger.error(f"Error in periodic active bets query: {e}")
-                await asyncio.sleep(5)
-
-        # Schedule the periodic task
-        asyncio.create_task(query_active_bets_periodically())
+        
+        # Only start webapp and fetcher if not in scheduler mode
+        if not os.getenv("SCHEDULER_MODE"):
+            self.start_flask_webapp()
+            self.start_fetcher()
+            logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
+        else:
+            logger.info("Bot setup_hook completed successfully in scheduler mode")
 
     async def on_ready(self):
         logger.info("Logged in as %s (%s)", self.user.name, self.user.id)
@@ -435,25 +431,27 @@ class BettingBot(commands.Bot):
             logger.debug("- %s (%s)", guild.name, guild.id)
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
-        try:
-            # Single point of command syncing
-            success = await self.sync_commands_with_retry()
-            if not success:
-                logger.error("Failed to sync commands after retries")
-                return
+        # Only sync commands if not in scheduler mode
+        if not os.getenv("SCHEDULER_MODE"):
+            try:
+                # Single point of command syncing
+                success = await self.sync_commands_with_retry()
+                if not success:
+                    logger.error("Failed to sync commands after retries")
+                    return
+                    
+                global_commands = [cmd.name for cmd in self.tree.get_commands()]
+                logger.info("Final global commands: %s", global_commands)
                 
-            global_commands = [cmd.name for cmd in self.tree.get_commands()]
-            logger.info("Final global commands: %s", global_commands)
-            
-            # Verify all required commands are present
-            required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid", "load_logos"]
-            missing_commands = [cmd for cmd in required_commands if cmd not in global_commands]
-            if missing_commands:
-                logger.error(f"Missing required commands after sync: {missing_commands}")
-                return
-                
-        except Exception as e:
-            logger.error("Failed to sync command tree: %s", e, exc_info=True)
+                # Verify all required commands are present
+                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid"]
+                missing_commands = [cmd for cmd in required_commands if cmd not in global_commands]
+                if missing_commands:
+                    logger.error(f"Missing required commands after sync: {missing_commands}")
+                    return
+                    
+            except Exception as e:
+                logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info("------ Bot is Ready ------")
 
     async def on_guild_join(self, guild: discord.Guild):
