@@ -245,7 +245,7 @@ class BettingBot(commands.Bot):
                 
                 # Get all guilds from the table
                 guilds_query = """
-                    SELECT guild_id 
+                    SELECT guild_id, is_paid, subscription_level 
                     FROM guild_settings
                 """
                 guilds = await self.db_manager.fetch_all(guilds_query)
@@ -253,6 +253,20 @@ class BettingBot(commands.Bot):
                 # Sync commands to each guild in the table
                 for guild in guilds:
                     guild_id = guild['guild_id']
+                    is_paid = guild['is_paid']
+                    subscription_level = 'premium' if is_paid else 'initial'
+                    
+                    # Update subscription level if needed
+                    if is_paid and subscription_level != 'premium':
+                        await self.db_manager.execute(
+                            """
+                            UPDATE guild_settings 
+                            SET subscription_level = 'premium'
+                            WHERE guild_id = %s
+                            """,
+                            (guild_id,)
+                        )
+                    
                     guild_obj = discord.Object(id=guild_id)
                     
                     # Clear existing commands for this guild
@@ -265,7 +279,7 @@ class BettingBot(commands.Bot):
                     
                     # Sync commands to this guild
                     await self.tree.sync(guild=guild_obj)
-                    logger.info(f"Synced commands to guild {guild_id}")
+                    logger.info(f"Synced commands to guild {guild_id} (subscription: {subscription_level})")
                 
                 # Handle load_logos command for test guild and authorized user
                 if TEST_GUILD_ID:
@@ -409,7 +423,9 @@ class BettingBot(commands.Bot):
             """
             CREATE TABLE IF NOT EXISTS guild_settings (
                 guild_id INTEGER PRIMARY KEY,
-                live_game_updates INTEGER DEFAULT 0
+                live_game_updates INTEGER DEFAULT 0,
+                is_paid INTEGER DEFAULT 0,
+                subscription_level VARCHAR(20) DEFAULT 'initial'
             )
             """
         )
