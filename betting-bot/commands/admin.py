@@ -344,7 +344,10 @@ class GuildSettingsView(discord.ui.View):
             no_btn.callback = no_callback
             view.add_item(yes_btn)
             view.add_item(no_btn)
-            await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            else:
+                await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
             return
 
         # For selection steps, defer the interaction
@@ -360,7 +363,10 @@ class GuildSettingsView(discord.ui.View):
             items = interaction.guild.roles
 
         if not items:
-            await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            else:
+                await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
             return
 
         # Create a new view that inherits from the current view
@@ -388,9 +394,20 @@ class GuildSettingsView(discord.ui.View):
         skip_button = SkipButton()
         view.add_item(skip_button)
 
-        # Send the message using followup
-        response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-        view.message = await response.original_message()
+        # Send or edit the message
+        if initial:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+            else:
+                await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+        else:
+            if self.message:
+                try:
+                    await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
+                except discord.NotFound:
+                    await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+            else:
+                await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
@@ -399,7 +416,14 @@ class GuildSettingsView(discord.ui.View):
             final_settings = {}
             for k, v in self.settings.items():
                 if v and v != "none":
-                    if k in ['embed_channel_1', 'command_channel_1', 'admin_channel_1', 'admin_role', 'authorized_role', 'member_role']:
+                    if k in ['embed_channel_1', 'command_channel_1']:
+                        # Handle lists for channels
+                        if isinstance(v, list):
+                            final_settings[k] = [int(x) for x in v]
+                        else:
+                            final_settings[k] = [int(v)]
+                    elif k in ['admin_channel_1', 'admin_role', 'authorized_role', 'member_role']:
+                        # Handle single values for roles and admin channel
                         final_settings[k] = int(v)
                     else:
                         final_settings[k] = v
@@ -410,15 +434,21 @@ class GuildSettingsView(discord.ui.View):
             await self.admin_service.setup_guild(self.guild.id, final_settings)
             
             if self.message:
-                await self.message.edit(content="✅ Guild setup completed successfully!", view=None)
+                try:
+                    await self.message.edit(content="✅ Guild setup completed successfully!", view=None)
+                except discord.NotFound:
+                    await interaction.followup.send("✅ Guild setup completed successfully!", ephemeral=True)
             else:
-                await interaction.edit_original_response(content="✅ Guild setup completed successfully!", view=None)
+                await interaction.followup.send("✅ Guild setup completed successfully!", ephemeral=True)
         except Exception as e:
             logger.exception(f"Error saving guild settings: {e}")
             if self.message:
-                await self.message.edit(content="❌ An error occurred while saving settings.", view=None)
+                try:
+                    await self.message.edit(content="❌ An error occurred while saving settings.", view=None)
+                except discord.NotFound:
+                    await interaction.followup.send("❌ An error occurred while saving settings.", ephemeral=True)
             else:
-                await interaction.edit_original_response(content="❌ An error occurred while saving settings.", view=None)
+                await interaction.followup.send("❌ An error occurred while saving settings.", ephemeral=True)
         finally:
             self.stop()
 
