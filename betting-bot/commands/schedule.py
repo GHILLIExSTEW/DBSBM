@@ -75,8 +75,35 @@ class ScheduleCog(commands.Cog):
             """
             
             logger.info("Fetching upcoming games...")
-            games = await self.bot.db_manager.fetch_all(query)
-            logger.info(f"Found {len(games) if games else 0} upcoming games")
+            try:
+                # First, let's check what games exist in the database
+                all_games = await self.bot.db_manager.fetch_all("""
+                    SELECT COUNT(*) as count, status 
+                    FROM api_games 
+                    GROUP BY status
+                """)
+                logger.info(f"Games in database by status: {all_games}")
+
+                # Now check games after NOW()
+                future_games = await self.bot.db_manager.fetch_all("""
+                    SELECT COUNT(*) as count 
+                    FROM api_games 
+                    WHERE start_time >= NOW()
+                """)
+                logger.info(f"Games with start_time >= NOW(): {future_games}")
+
+                # Finally, run our actual query
+                games = await self.bot.db_manager.fetch_all(query)
+                logger.info(f"Found {len(games) if games else 0} upcoming games")
+                if games:
+                    logger.info(f"First game: {games[0]}")
+            except Exception as e:
+                logger.error(f"Error fetching games: {e}", exc_info=True)
+                await interaction.followup.send(
+                    "An error occurred while fetching the schedule.",
+                    ephemeral=True
+                )
+                return
             
             if not games:
                 await interaction.followup.send(
