@@ -44,80 +44,61 @@ class ScheduleImageGenerator:
             return None
 
     def _create_game_image(self, game: Dict, game_time: str) -> Image.Image:
-        """Create an image for a single game."""
-        # Create new image
+        """Create an image for a single game with teams side-by-side and logos."""
         image = Image.new('RGB', (self.image_width, self.image_height), self.background_color)
         draw = ImageDraw.Draw(image)
-        
+
         # Load team logos
         home_logo = self._load_team_logo(game['home_team_name'], str(game['league_id']))
         away_logo = self._load_team_logo(game['away_team_name'], str(game['league_id']))
-        
-        # Draw team logos
+
+        # Calculate positions
+        center_x = self.image_width // 2
+        logo_y = self.padding
+        name_y = logo_y + self.logo_size + 10
+        vs_text = "vs"
+        vs_font = self.team_font
+        vs_width, vs_height = draw.textsize(vs_text, font=vs_font)
+
+        # Home team (left)
+        home_x = center_x - 200
         if home_logo:
             home_logo = home_logo.resize((self.logo_size, self.logo_size))
-            image.paste(home_logo, (self.padding, self.padding), home_logo if home_logo.mode == 'RGBA' else None)
-        
+            image.paste(home_logo, (home_x, logo_y), home_logo if home_logo.mode == 'RGBA' else None)
+        draw.text((home_x, name_y), game['home_team_name'], font=self.team_font, fill=self.text_color)
+
+        # Away team (right)
+        away_x = center_x + 100
         if away_logo:
             away_logo = away_logo.resize((self.logo_size, self.logo_size))
-            image.paste(away_logo, (self.padding, self.padding * 2 + self.logo_size), away_logo if away_logo.mode == 'RGBA' else None)
-        
-        # Draw team names
-        draw.text(
-            (self.padding * 2 + self.logo_size, self.padding),
-            game['home_team_name'],
-            font=self.team_font,
-            fill=self.text_color
-        )
-        
-        draw.text(
-            (self.padding * 2 + self.logo_size, self.padding * 2 + self.logo_size),
-            game['away_team_name'],
-            font=self.team_font,
-            fill=self.text_color
-        )
-        
-        # Draw game time
-        draw.text(
-            (self.image_width - self.padding - 100, self.image_height // 2),
-            game_time,
-            font=self.time_font,
-            fill=self.text_color
-        )
-        
+            image.paste(away_logo, (away_x, logo_y), away_logo if away_logo.mode == 'RGBA' else None)
+        draw.text((away_x, name_y), game['away_team_name'], font=self.team_font, fill=self.text_color)
+
+        # VS text (center)
+        draw.text((center_x - vs_width // 2, name_y), vs_text, font=vs_font, fill=self.text_color)
+
+        # Game time (right side, vertically centered)
+        draw.text((self.image_width - self.padding - 120, self.image_height // 2 - 10), game_time, font=self.time_font, fill=self.text_color)
+
         return image
 
     async def generate_schedule_image(self, games: List[Dict], user_timezone: str) -> Optional[str]:
-        """Generate an image showing the schedule of games."""
+        """Generate an image showing the schedule of games with logos and local times."""
         try:
             # Create title image
             title_height = 100
             title_image = Image.new('RGB', (self.image_width, title_height), self.background_color)
             title_draw = ImageDraw.Draw(title_image)
-            
-            # Draw title
             title_text = f"Games Scheduled for {datetime.now().strftime('%Y-%m-%d')}"
-            title_draw.text(
-                (self.padding, self.padding),
-                title_text,
-                font=self.title_font,
-                fill=self.text_color
-            )
-            
+            title_draw.text((self.padding, self.padding), title_text, font=self.title_font, fill=self.text_color)
+
             # Create footer image
             footer_height = 60
             footer_image = Image.new('RGB', (self.image_width, footer_height), self.background_color)
             footer_draw = ImageDraw.Draw(footer_image)
-            
-            # Draw footer
             footer_text = f"Total Games: {len(games)}"
-            footer_draw.text(
-                (self.padding, self.padding),
-                footer_text,
-                font=self.team_font,
-                fill=self.text_color
-            )
-            
+            footer_draw.text((self.padding, self.padding), footer_text, font=self.team_font, fill=self.text_color)
+
             # Create game images
             game_images = []
             for game in games:
@@ -127,32 +108,25 @@ class ScheduleImageGenerator:
                     start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
                 user_tz = pytz.timezone(user_timezone)
                 local_time = start_time.astimezone(user_tz)
-                
-                # Create game image
-                game_image = self._create_game_image(game, local_time.strftime('%I:%M %p'))
+                # Format as e.g. 10:40 PM
+                game_time = local_time.strftime('%I:%M %p')
+                game_image = self._create_game_image(game, game_time)
                 game_images.append(game_image)
-            
+
             # Combine all images
             total_height = title_height + (len(game_images) * self.image_height) + footer_height
             final_image = Image.new('RGB', (self.image_width, total_height), self.background_color)
-            
-            # Paste title
             final_image.paste(title_image, (0, 0))
-            
-            # Paste game images
             y_offset = title_height
             for game_image in game_images:
                 final_image.paste(game_image, (0, y_offset))
                 y_offset += self.image_height
-            
-            # Paste footer
             final_image.paste(footer_image, (0, y_offset))
-            
+
             # Save the image
             image_path = os.path.join(self.base_dir, "generated_schedule.png")
             final_image.save(image_path)
             return image_path
-            
         except Exception as e:
             logger.error(f"Error generating schedule image: {e}", exc_info=True)
             return None 
