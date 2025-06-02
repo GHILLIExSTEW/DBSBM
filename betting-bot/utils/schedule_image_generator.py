@@ -52,89 +52,130 @@ class ScheduleImageGenerator:
             return None
 
     def _create_game_image(self, game: Dict, game_time: str) -> Image.Image:
-        """Create an image for a single game with teams side-by-side and logos."""
+        """Create an image for a single game, left-aligned, with start time below teams."""
         image = Image.new('RGB', (self.image_width, self.image_height), self.background_color)
         draw = ImageDraw.Draw(image)
 
         # Load team logos
-        home_logo = self._load_team_logo(game['home_team_name'], str(game['league_id']))
-        away_logo = self._load_team_logo(game['away_team_name'], str(game['league_id']))
+        home_logo = self._load_team_logo(game['home_team_name'], game['league_id'])
+        away_logo = self._load_team_logo(game['away_team_name'], game['league_id'])
 
-        # Calculate positions
-        center_x = self.image_width // 2
+        # Layout constants
+        x = self.padding
         logo_y = self.padding
         name_y = logo_y + self.logo_size + 10
+        vs_y = name_y
+        time_y = name_y + 40
+        logo_spacing = 30
+        name_spacing = 30
+        logo_size = (self.logo_size, self.logo_size)
+
+        # Draw home logo and name
+        if home_logo:
+            home_logo = home_logo.resize(logo_size)
+            image.paste(home_logo, (x, logo_y), home_logo if home_logo.mode == 'RGBA' else None)
+        draw.text((x + self.logo_size + 10, logo_y + self.logo_size // 2 - 10), game['home_team_name'], font=self.team_font, fill=self.text_color)
+
+        # Draw 'vs'
         vs_text = "vs"
         vs_font = self.team_font
         try:
-            # Pillow >= 8.0.0
             bbox = draw.textbbox((0, 0), vs_text, font=vs_font)
             vs_width, vs_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
         except AttributeError:
-            # Older Pillow
             vs_width, vs_height = draw.textsize(vs_text, font=vs_font)
+        vs_x = x
+        vs_y = logo_y + self.logo_size + 10
+        draw.text((vs_x, vs_y), vs_text, font=vs_font, fill=self.text_color)
 
-        # Home team (left)
-        home_x = center_x - 200
-        if home_logo:
-            home_logo = home_logo.resize((self.logo_size, self.logo_size))
-            image.paste(home_logo, (home_x, logo_y), home_logo if home_logo.mode == 'RGBA' else None)
-        draw.text((home_x, name_y), game['home_team_name'], font=self.team_font, fill=self.text_color)
-
-        # Away team (right)
-        away_x = center_x + 100
+        # Draw away logo and name
+        away_logo_y = vs_y + vs_height + 10
         if away_logo:
-            away_logo = away_logo.resize((self.logo_size, self.logo_size))
-            image.paste(away_logo, (away_x, logo_y), away_logo if away_logo.mode == 'RGBA' else None)
-        draw.text((away_x, name_y), game['away_team_name'], font=self.team_font, fill=self.text_color)
+            away_logo = away_logo.resize(logo_size)
+            image.paste(away_logo, (x, away_logo_y), away_logo if away_logo.mode == 'RGBA' else None)
+        draw.text((x + self.logo_size + 10, away_logo_y + self.logo_size // 2 - 10), game['away_team_name'], font=self.team_font, fill=self.text_color)
 
-        # VS text (center)
-        draw.text((center_x - vs_width // 2, name_y), vs_text, font=vs_font, fill=self.text_color)
-
-        # Game time (right side, vertically centered)
-        draw.text((self.image_width - self.padding - 120, self.image_height // 2 - 10), game_time, font=self.time_font, fill=self.text_color)
+        # Draw start time below teams, left-aligned
+        draw.text((x, away_logo_y + self.logo_size + 18), game_time, font=self.time_font, fill=self.text_color)
 
         return image
 
     async def generate_schedule_image(self, games: List[Dict], user_timezone: str) -> Optional[str]:
-        """Generate an image showing the schedule of games with logos and local times."""
+        """Generate an image showing the schedule of games grouped by league, with league logo headers."""
         try:
-            # Create title image
+            from collections import defaultdict
+            # Group games by league_id
+            league_groups = defaultdict(list)
+            for game in games:
+                league_groups[game['league_id']].append(game)
+
+            # Prepare to calculate total height
             title_height = 100
+            footer_height = 60
+            league_header_height = 80
+            game_height = self.image_height
+            num_leagues = len(league_groups)
+            num_games = len(games)
+            total_height = title_height + footer_height + num_leagues * league_header_height + num_games * game_height
+
+            # Create the final image
+            final_image = Image.new('RGB', (self.image_width, total_height), self.background_color)
+            y_offset = 0
+
+            # Draw title
             title_image = Image.new('RGB', (self.image_width, title_height), self.background_color)
             title_draw = ImageDraw.Draw(title_image)
             title_text = f"Games Scheduled for {datetime.now().strftime('%Y-%m-%d')}"
             title_draw.text((self.padding, self.padding), title_text, font=self.title_font, fill=self.text_color)
+            final_image.paste(title_image, (0, y_offset))
+            y_offset += title_height
 
-            # Create footer image
-            footer_height = 60
+            # For each league, draw league logo header and games
+            for league_id, league_games in league_groups.items():
+                # Draw league logo header
+                league_logo_img = None
+                league_logo_path = None
+                league_code = league_id.upper()
+                # Try to get sport for this league
+                sport = get_sport_category_for_path(league_code)
+                if sport:
+                    league_logo_path = os.path.join(self.base_dir, "static", "logos", "leagues", sport, league_code, f"{league_code.lower()}.png")
+                if league_logo_path and os.path.exists(league_logo_path):
+                    league_logo_img = Image.open(league_logo_path).convert("RGBA").resize((60, 60))
+                # Draw header background
+                league_header_img = Image.new('RGB', (self.image_width, league_header_height), self.background_color)
+                league_header_draw = ImageDraw.Draw(league_header_img)
+                x = self.padding
+                y = self.padding // 2
+                if league_logo_img:
+                    league_header_img.paste(league_logo_img, (x, y), league_logo_img)
+                    x += 60 + 10
+                # Draw league name (from first game in group)
+                league_name = league_games[0].get('league_name', league_code)
+                league_header_draw.text((x, y + 10), league_name, font=self.team_font, fill=self.text_color)
+                final_image.paste(league_header_img, (0, y_offset))
+                y_offset += league_header_height
+                # Draw all games for this league
+                for game in league_games:
+                    # Convert start time to user's timezone (not UTC!)
+                    start_time = game['start_time']
+                    if isinstance(start_time, str):
+                        start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                    import pytz
+                    user_tz = pytz.timezone(user_timezone)
+                    if start_time.tzinfo is None:
+                        start_time = pytz.utc.localize(start_time)
+                    local_time = start_time.astimezone(user_tz)
+                    game_time = local_time.strftime('%I:%M %p')
+                    game_image = self._create_game_image(game, game_time)
+                    final_image.paste(game_image, (0, y_offset))
+                    y_offset += game_height
+
+            # Draw footer
             footer_image = Image.new('RGB', (self.image_width, footer_height), self.background_color)
             footer_draw = ImageDraw.Draw(footer_image)
             footer_text = f"Total Games: {len(games)}"
             footer_draw.text((self.padding, self.padding), footer_text, font=self.team_font, fill=self.text_color)
-
-            # Create game images
-            game_images = []
-            for game in games:
-                # Convert start time to user's timezone
-                start_time = game['start_time']
-                if isinstance(start_time, str):
-                    start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-                user_tz = pytz.timezone(user_timezone)
-                local_time = start_time.astimezone(user_tz)
-                # Format as e.g. 10:40 PM
-                game_time = local_time.strftime('%I:%M %p')
-                game_image = self._create_game_image(game, game_time)
-                game_images.append(game_image)
-
-            # Combine all images
-            total_height = title_height + (len(game_images) * self.image_height) + footer_height
-            final_image = Image.new('RGB', (self.image_width, total_height), self.background_color)
-            final_image.paste(title_image, (0, 0))
-            y_offset = title_height
-            for game_image in game_images:
-                final_image.paste(game_image, (0, y_offset))
-                y_offset += self.image_height
             final_image.paste(footer_image, (0, y_offset))
 
             # Save the image
