@@ -76,19 +76,24 @@ class ScheduleCog(commands.Cog):
             
             logger.info("Fetching upcoming games...")
             try:
-                # First, let's check what games exist in the database
-                all_games = await self.bot.db_manager.fetch_all("""
-                    SELECT COUNT(*) as count, status 
-                    FROM api_games 
-                    GROUP BY status
-                """)
-                logger.info(f"Games in database by status: {all_games}")
+                # Debug current date
+                current_date = await self.bot.db_manager.fetchval("SELECT CURDATE()")
+                logger.info(f"Current date in database: {current_date}")
 
-                # Now check games for today
+                # Debug games in database
+                all_games = await self.bot.db_manager.fetch_all("""
+                    SELECT COUNT(*) as count, status, DATE(start_time) as game_date
+                    FROM api_games 
+                    GROUP BY status, DATE(start_time)
+                """)
+                logger.info(f"Games in database by status and date: {all_games}")
+
+                # Debug games for today
                 today_games = await self.bot.db_manager.fetch_all("""
-                    SELECT COUNT(*) as count 
+                    SELECT COUNT(*) as count, DATE(start_time) as game_date
                     FROM api_games 
                     WHERE DATE(start_time) = CURDATE()
+                    GROUP BY DATE(start_time)
                 """)
                 logger.info(f"Games starting today: {today_games}")
 
