@@ -344,10 +344,7 @@ class GuildSettingsView(discord.ui.View):
             no_btn.callback = no_callback
             view.add_item(yes_btn)
             view.add_item(no_btn)
-            if not interaction.response.is_done():
-                await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
-            else:
-                await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
             return
 
         # For selection steps, defer the interaction
@@ -363,10 +360,7 @@ class GuildSettingsView(discord.ui.View):
             items = interaction.guild.roles
 
         if not items:
-            if not interaction.response.is_done():
-                await interaction.response.send_message(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
-            else:
-                await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
             return
 
         # Create a new view that inherits from the current view
@@ -394,20 +388,9 @@ class GuildSettingsView(discord.ui.View):
         skip_button = SkipButton()
         view.add_item(skip_button)
 
-        # Send the message
-        if initial:
-            response = await interaction.response.send_message(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-            view.message = await response.original_message()
-        else:
-            if self.message:
-                try:
-                    await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
-                except discord.NotFound:
-                    response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-                    view.message = await response.original_message()
-            else:
-                response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-                view.message = await response.original_message()
+        # Send the message using followup
+        response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+        view.message = await response.original_message()
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
@@ -527,14 +510,13 @@ class AdminCog(commands.Cog):
                 subscription_level=subscription_level
             )
             
-            # Send initial message and start setup
+            # Send initial message
             await interaction.response.send_message(
                 "Starting server setup...",
-                view=view,
                 ephemeral=True
             )
             
-            # Process first step
+            # Process first step using followup
             await view.process_next_selection(interaction, initial=True)
 
         except Exception as e:
