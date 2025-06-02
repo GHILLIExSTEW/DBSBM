@@ -58,7 +58,13 @@ class ScheduleImageGenerator:
         name_y = logo_y + self.logo_size + 10
         vs_text = "vs"
         vs_font = self.team_font
-        vs_width, vs_height = vs_font.getsize(vs_text)
+        try:
+            # Pillow >= 8.0.0
+            bbox = draw.textbbox((0, 0), vs_text, font=vs_font)
+            vs_width, vs_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        except AttributeError:
+            # Older Pillow
+            vs_width, vs_height = draw.textsize(vs_text, font=vs_font)
 
         # Home team (left)
         home_x = center_x - 200
