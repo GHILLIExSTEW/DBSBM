@@ -195,6 +195,7 @@ class BettingBot(commands.Bot):
             "betting.py",
             "remove_user.py",
             "setid.py",
+            "add_capper.py",  # <-- Ensure add_capper is loaded
             "stats.py",
             "load_logos.py",
         ]
