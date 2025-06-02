@@ -188,7 +188,6 @@ class PlayerPropImageGenerator:
         except Exception:
             league_logo = None
         header_text = f"{league_upper} - Player Prop"
-        # Use getbbox for more accurate text height (accounts for descenders/ascenders)
         header_bbox = font_bold.getbbox(header_text)
         header_w = header_bbox[2] - header_bbox[0]
         header_h = header_bbox[3] - header_bbox[1]
@@ -200,12 +199,12 @@ class PlayerPropImageGenerator:
         block_y = 25
         if league_logo:
             logo_y = block_y + (block_h - logo_display_size[1]) // 2
-            text_y = block_y + (block_h - header_h) // 2 - header_bbox[1]  # Adjust for font baseline
+            text_y = block_y + (block_h - header_h) // 2
             image.paste(league_logo, (block_x, logo_y), league_logo)
             text_x = block_x + logo_w + gap
         else:
             text_x = block_x
-            text_y = block_y - header_bbox[1]  # Adjust for font baseline
+            text_y = block_y
         draw.text((text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt")
 
         # Teams/Player Section
