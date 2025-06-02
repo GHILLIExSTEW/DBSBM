@@ -58,7 +58,7 @@ class ScheduleImageGenerator:
         name_y = logo_y + self.logo_size + 10
         vs_text = "vs"
         vs_font = self.team_font
-        vs_width, vs_height = draw.textsize(vs_text, font=vs_font)
+        vs_width, vs_height = vs_font.getsize(vs_text)
 
         # Home team (left)
         home_x = center_x - 200
