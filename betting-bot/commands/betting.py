@@ -260,35 +260,38 @@ class PlayerPropBetWorkflowView(View):
                 ephemeral=True
             )
 
-@app_commands.command(name="bet", description="Place a bet (straight or parlay).")
-async def bet(interaction: Interaction):
-    logger.info(f"/bet command invoked by {interaction.user} (ID: {interaction.user.id})")
-    try:
-        view = BetTypeView(interaction, interaction.client)
-        logger.debug("BetTypeView initialized successfully.")
-        # Send the initial message
-        await interaction.response.send_message(
-            "Select the type of bet you want to place:",
-            view=view,
-            ephemeral=True
-        )
-        # Retrieve and assign the message object
-        view.message = await interaction.original_response()
-        logger.info("/bet command response sent successfully.")
-    except Exception as e:
-        logger.error(f"Error in /bet command: {e}", exc_info=True)
-        await interaction.response.send_message(
-            "❌ An error occurred while processing your request.", ephemeral=True
-        )
+class BettingCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        logger.info("BettingCog initialized")
+
+    @app_commands.command(name="bet", description="Place a bet (straight or parlay).")
+    async def bet(self, interaction: Interaction):
+        logger.info(f"/bet command invoked by {interaction.user} (ID: {interaction.user.id})")
+        try:
+            view = BetTypeView(interaction, self.bot)
+            logger.debug("BetTypeView initialized successfully.")
+            # Send the initial message
+            await interaction.response.send_message(
+                "Select the type of bet you want to place:",
+                view=view,
+                ephemeral=True
+            )
+            # Retrieve and assign the message object
+            view.message = await interaction.original_response()
+            logger.info("/bet command response sent successfully.")
+        except Exception as e:
+            logger.error(f"Error in /bet command: {e}", exc_info=True)
+            await interaction.response.send_message(
+                "❌ An error occurred while processing your request.", ephemeral=True
+            )
 
 # Add the command to the bot's command tree
 async def setup(bot: commands.Bot):
     logger.info("Setting up betting commands...")
     try:
-        bot.tree.add_command(bet)
-        logger.debug("/bet command added to command tree.")
-        logger.info("Syncing commands globally...")
-        synced = await bot.tree.sync()
-        logger.info(f"Commands synced successfully: {[cmd.name for cmd in synced]}")
+        await bot.add_cog(BettingCog(bot))
+        logger.info("BettingCog loaded successfully")
     except Exception as e:
-        logger.error(f"Error during command setup or syncing: {e}", exc_info=True)
+        logger.error(f"Error during betting command setup: {e}", exc_info=True)
+        raise  # Re-raise the exception to ensure the bot knows about the failure

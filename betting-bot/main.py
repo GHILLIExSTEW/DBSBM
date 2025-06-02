@@ -221,14 +221,31 @@ class BettingBot(commands.Bot):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
-                # Clear any existing commands first
-                self.tree.clear_commands(guild=None)
+                # Verify required commands are present
+                required_commands = ["bet", "setup", "stats"]  # Add all required commands
+                current_commands = [cmd.name for cmd in self.tree.get_commands()]
+                missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
+                
+                if missing_commands:
+                    logger.error(f"Missing required commands before sync: {missing_commands}")
+                    # Try to reload extensions if commands are missing
+                    await self.load_extensions()
+                    current_commands = [cmd.name for cmd in self.tree.get_commands()]
+                    missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
+                    if missing_commands:
+                        raise Exception(f"Missing required commands after reload: {missing_commands}")
                 
                 # Sync commands globally
                 synced = await self.tree.sync()
                 logger.info("Global commands synced: %s", [cmd.name for cmd in synced])
+                
+                # Verify commands after sync
+                final_commands = [cmd.name for cmd in self.tree.get_commands()]
+                if not all(cmd in final_commands for cmd in required_commands):
+                    raise Exception("Not all required commands present after sync")
+                    
                 return True
-            except discord.HTTPException as e:
+            except Exception as e:
                 logger.error("Sync attempt %d/%d failed: %s", attempt, retries, e, exc_info=True)
                 if attempt < retries:
                     await asyncio.sleep(delay)
@@ -416,19 +433,12 @@ class BettingBot(commands.Bot):
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
         try:
-            current_commands = [cmd.name for cmd in self.tree.get_commands()]
-            logger.info("Current commands before sync: %s", current_commands)
-            if not current_commands:
-                logger.error("No commands found! Attempting to reload extensions...")
-                await self.load_extensions()
-                current_commands = [cmd.name for cmd in self.tree.get_commands()]
-                logger.info("Commands after reloading: %s", current_commands)
-            try:
-                await self.sync_commands_with_retry()
-                logger.info("Global commands synced successfully")
-            except Exception as e:
-                logger.error("Failed to sync global commands: %s", e)
+            # Single point of command syncing
+            success = await self.sync_commands_with_retry()
+            if not success:
+                logger.error("Failed to sync commands after retries")
                 return
+                
             global_commands = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Final global commands: %s", global_commands)
         except Exception as e:
