@@ -191,7 +191,7 @@ class BettingBot(commands.Bot):
     async def load_extensions(self):
         commands_dir = os.path.join(BASE_DIR, "commands")
         cog_files = [
-            "admin.py",
+            "admin.py",  # Load admin.py first since it contains setup command
             "betting.py",
             "remove_user.py",
             "setid.py",
@@ -221,19 +221,22 @@ class BettingBot(commands.Bot):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
-                # First, sync only the setup command globally
-                self.tree.clear_commands(guild=None)
+                # First, ensure all commands are loaded
+                await self.load_extensions()
                 
-                # Get the setup command and ensure it's added globally
+                # Get all commands
+                all_commands = self.tree.get_commands()
+                if not all_commands:
+                    logger.error("No commands found after loading extensions")
+                    raise Exception("No commands found")
+                
+                # Sync setup command globally
                 setup_command = self.tree.get_command("setup")
                 if not setup_command:
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
                 
-                # Add setup command globally
-                self.tree.add_command(setup_command, guild=None)
-                
-                # Sync only setup command globally
+                # Sync setup command globally
                 await self.tree.sync()
                 logger.info("Global setup command synced")
                 
@@ -250,7 +253,7 @@ class BettingBot(commands.Bot):
                     guild_obj = discord.Object(id=guild_id)
                     
                     # Copy all commands except load_logos to the guild
-                    for cmd in self.tree.get_commands():
+                    for cmd in all_commands:
                         if cmd.name != "load_logos":
                             self.tree.add_command(cmd, guild=guild_obj)
                     
@@ -266,6 +269,10 @@ class BettingBot(commands.Bot):
                         self.tree.add_command(load_logos_cmd, guild=test_guild)
                         await self.tree.sync(guild=test_guild)
                         logger.info(f"Synced load_logos command to test guild {TEST_GUILD_ID}")
+                
+                # Log all available commands
+                global_commands = [cmd.name for cmd in self.tree.get_commands()]
+                logger.info("Final global commands: %s", global_commands)
                 
                 return True
             except Exception as e:
@@ -445,6 +452,9 @@ class BettingBot(commands.Bot):
         # Only sync commands if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
             try:
+                # Load extensions first
+                await self.load_extensions()
+                
                 # Single point of command syncing
                 success = await self.sync_commands_with_retry()
                 if not success:
@@ -454,13 +464,6 @@ class BettingBot(commands.Bot):
                 global_commands = [cmd.name for cmd in self.tree.get_commands()]
                 logger.info("Final global commands: %s", global_commands)
                 
-                # Verify all required commands are present
-                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid"]
-                missing_commands = [cmd for cmd in required_commands if cmd not in global_commands]
-                if missing_commands:
-                    logger.error(f"Missing required commands after sync: {missing_commands}")
-                    return
-                    
             except Exception as e:
                 logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info("------ Bot is Ready ------")
@@ -469,15 +472,20 @@ class BettingBot(commands.Bot):
         """Handle when the bot joins a new guild."""
         logger.info("Joined new guild: %s (%s)", guild.name, guild.id)
         try:
-            # Get the setup command and ensure it's added to the new guild
+            # Ensure commands are loaded
+            await self.load_extensions()
+            
+            # Get setup command
             setup_command = self.tree.get_command("setup")
-            if setup_command:
-                guild_obj = discord.Object(id=guild.id)
-                self.tree.add_command(setup_command, guild=guild_obj)
-                await self.tree.sync(guild=guild_obj)
-                logger.info(f"Synced setup command to new guild {guild.id}")
-            else:
-                logger.error("Setup command not found when trying to sync to new guild")
+            if not setup_command:
+                logger.error("Setup command not found")
+                return
+
+            # Add and sync setup command to new guild
+            guild_obj = discord.Object(id=guild.id)
+            self.tree.add_command(setup_command, guild=guild_obj)
+            await self.tree.sync(guild=guild_obj)
+            logger.info(f"Synced setup command to new guild {guild.id}")
         except Exception as e:
             logger.error(f"Failed to sync setup command to new guild {guild.id}: {e}", exc_info=True)
 
