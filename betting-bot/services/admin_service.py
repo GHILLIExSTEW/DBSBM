@@ -31,7 +31,37 @@ class AdminService:
         """Start the AdminService and perform any necessary setup."""
         logger.info("Starting AdminService")
         try:
-            # Example: Perform initialization tasks
+            # Ensure guild_settings table exists with correct schema
+            await self.db_manager.execute(
+                """
+                CREATE TABLE IF NOT EXISTS guild_settings (
+                    guild_id INTEGER PRIMARY KEY,
+                    is_paid INTEGER DEFAULT 0,
+                    subscription_level VARCHAR(20) DEFAULT 'initial',
+                    live_game_updates INTEGER DEFAULT 0,
+                    embed_channel_1 BIGINT,
+                    embed_channel_2 BIGINT,
+                    command_channel_1 BIGINT,
+                    command_channel_2 BIGINT,
+                    admin_channel_1 BIGINT,
+                    admin_role BIGINT,
+                    authorized_role BIGINT,
+                    member_role BIGINT,
+                    voice_channel_id BIGINT,
+                    yearly_channel_id BIGINT,
+                    daily_report_time VARCHAR(5),
+                    bot_name_mask VARCHAR(100),
+                    bot_image_mask VARCHAR(100),
+                    guild_background VARCHAR(100),
+                    guild_default_image VARCHAR(100),
+                    default_parlay_image VARCHAR(100),
+                    min_units DECIMAL(10,2),
+                    max_units DECIMAL(10,2),
+                    units_display_mode VARCHAR(20),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+                """
+            )
             logger.info("AdminService started successfully")
         except Exception as e:
             logger.error(f"Failed to start AdminService: {e}", exc_info=True)
@@ -178,7 +208,7 @@ class AdminService:
                         default_parlay_image, min_units, max_units, is_paid, live_game_updates,
                         units_display_mode
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     guild_id,
@@ -213,10 +243,27 @@ class AdminService:
     async def get_guild_settings(self, guild_id: int) -> Optional[Dict[str, any]]:
         """Get guild settings."""
         try:
-            return await self.db_manager.fetch_one(
+            result = await self.db_manager.fetch_one(
                 "SELECT * FROM guild_settings WHERE guild_id = %s",
                 guild_id
             )
+            
+            if not result:
+                # Create initial entry for new guild
+                await self.db_manager.execute(
+                    """
+                    INSERT INTO guild_settings (guild_id, is_paid, subscription_level)
+                    VALUES (%s, 0, 'initial')
+                    """,
+                    guild_id
+                )
+                # Fetch the newly created entry
+                result = await self.db_manager.fetch_one(
+                    "SELECT * FROM guild_settings WHERE guild_id = %s",
+                    guild_id
+                )
+            
+            return result
         except Exception as e:
             logger.error(f"Error getting guild settings for {guild_id}: {e}")
             return None
