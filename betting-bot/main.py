@@ -223,10 +223,15 @@ class BettingBot(commands.Bot):
             try:
                 # First, sync only the setup command globally
                 self.tree.clear_commands(guild=None)
+                
+                # Get the setup command and ensure it's added globally
                 setup_command = self.tree.get_command("setup")
                 if not setup_command:
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
+                
+                # Add setup command globally
+                self.tree.add_command(setup_command, guild=None)
                 
                 # Sync only setup command globally
                 await self.tree.sync()
@@ -463,13 +468,18 @@ class BettingBot(commands.Bot):
     async def on_guild_join(self, guild: discord.Guild):
         """Handle when the bot joins a new guild."""
         logger.info("Joined new guild: %s (%s)", guild.name, guild.id)
-        # Only sync setup command for new guilds
-        guild_obj = discord.Object(id=guild.id)
-        setup_command = self.tree.get_command("setup")
-        if setup_command:
-            self.tree.add_command(setup_command, guild=guild_obj)
-            await self.tree.sync(guild=guild_obj)
-            logger.info(f"Synced setup command to new guild {guild.id}")
+        try:
+            # Get the setup command and ensure it's added to the new guild
+            setup_command = self.tree.get_command("setup")
+            if setup_command:
+                guild_obj = discord.Object(id=guild.id)
+                self.tree.add_command(setup_command, guild=guild_obj)
+                await self.tree.sync(guild=guild_obj)
+                logger.info(f"Synced setup command to new guild {guild.id}")
+            else:
+                logger.error("Setup command not found when trying to sync to new guild")
+        except Exception as e:
+            logger.error(f"Failed to sync setup command to new guild {guild.id}: {e}", exc_info=True)
 
     async def on_setup_complete(self, guild_id: int):
         """Handle when a guild completes the setup process."""
