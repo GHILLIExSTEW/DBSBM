@@ -218,7 +218,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Embed Channel',
             'select': ChannelSelect,
             'options': lambda guild: [discord.SelectOption(label=ch.name, value=str(ch.id)) for ch in guild.text_channels],
-            'setting_key': 'embed_channel_id',
+            'setting_key': 'embed_channel_1',
             'max_count': 2,  # Maximum number of embed channels allowed for premium
             'free_count': 1  # Maximum number of embed channels for free tier
         },
@@ -226,7 +226,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Command Channel',
             'select': ChannelSelect,
             'options': lambda guild: [discord.SelectOption(label=ch.name, value=str(ch.id)) for ch in guild.text_channels],
-            'setting_key': 'command_channel_id',
+            'setting_key': 'command_channel_1',
             'max_count': 2,  # Maximum number of command channels allowed for premium
             'free_count': 1  # Maximum number of command channels for free tier
         },
@@ -234,7 +234,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Admin Channel',
             'select': ChannelSelect,
             'options': lambda guild: [discord.SelectOption(label=ch.name, value=str(ch.id)) for ch in guild.text_channels],
-            'setting_key': 'admin_channel_id',
+            'setting_key': 'admin_channel_1',
             'max_count': 1,  # Only one admin channel allowed
             'free_count': 1
         },
@@ -242,7 +242,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Admin Role',
             'select': RoleSelect,
             'options': lambda guild: [discord.SelectOption(label=role.name, value=str(role.id)) for role in guild.roles],
-            'setting_key': 'admin_role_id',
+            'setting_key': 'admin_role',
             'max_count': 1,  # Only one admin role allowed
             'free_count': 1
         },
@@ -250,7 +250,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Authorized Role',
             'select': RoleSelect,
             'options': lambda guild: [discord.SelectOption(label=role.name, value=str(role.id)) for role in guild.roles],
-            'setting_key': 'authorized_role_id',
+            'setting_key': 'authorized_role',
             'max_count': 1,  # Only one authorized role allowed
             'free_count': 1
         },
@@ -258,7 +258,7 @@ class GuildSettingsView(discord.ui.View):
             'name': 'Member Role',
             'select': RoleSelect,
             'options': lambda guild: [discord.SelectOption(label=role.name, value=str(role.id)) for role in guild.roles],
-            'setting_key': 'member_role_id',
+            'setting_key': 'member_role',
             'max_count': 1,  # Only one member role allowed
             'free_count': 1
         },
@@ -292,11 +292,9 @@ class GuildSettingsView(discord.ui.View):
             'setting_key': 'units_display_mode',
             'is_premium_only': True
         }
-        # Note: User avatars are stored per user in the cappers table's image_path column
-        # and are only available for premium guild members with the authorized role
     ]
 
-    def __init__(self, bot, guild, admin_service, original_interaction, subscription_level='free'):
+    def __init__(self, bot, guild, admin_service, original_interaction, subscription_level='initial'):
         super().__init__(timeout=300)
         self.bot = bot
         self.guild = guild
@@ -308,24 +306,7 @@ class GuildSettingsView(discord.ui.View):
         self.embed_channels = []  # Track selected embed channels
         self.command_channels = []  # Track selected command channels
         self.waiting_for_url = False  # Track if we're waiting for a URL input
-        
-        # Create necessary directories for this guild
-        self._create_guild_directories()
-
-    def _create_guild_directories(self):
-        """Create necessary directories for the guild."""
-        try:
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            guild_dirs = [
-                os.path.join(base_dir, 'static', 'logos', str(self.guild.id)),  # For guild logos and assets
-                os.path.join(base_dir, 'data', 'guilds', str(self.guild.id))     # For guild-specific data
-            ]
-            
-            for dir_path in guild_dirs:
-                os.makedirs(dir_path, exist_ok=True)
-                logger.info(f"Created directory: {dir_path}")
-        except Exception as e:
-            logger.error(f"Error creating guild directories: {e}")
+        self.message = None  # Initialize message attribute
 
     async def start_selection(self):
         """Start the selection process"""
@@ -334,221 +315,108 @@ class GuildSettingsView(discord.ui.View):
         except Exception as e:
             logger.error(f"Error in start_selection: {str(e)}")
             if not self.original_interaction.response.is_done():
-                await self.original_interaction.followup.send("An error occurred during setup. Please try again.", ephemeral=True)
+                await self.original_interaction.response.send_message("An error occurred during setup. Please try again.", ephemeral=True)
             else:
                 await self.original_interaction.followup.send("An error occurred during setup. Please try again.", ephemeral=True)
 
     async def process_next_selection(self, interaction: discord.Interaction, initial: bool = False):
         """Process the next selection step"""
-        try:
-            if self.current_step >= len(self.SETUP_STEPS):
-                await self.finalize_setup(interaction)
-                return
-
-            step = self.SETUP_STEPS[self.current_step]
-            
-            # Skip premium-only steps for free tier
-            if step.get('is_premium_only', False) and self.subscription_level != 'premium':
-                self.current_step += 1
-                await self.process_next_selection(interaction)
-                return
-
-            # Handle URL input steps
-            if step['select'] is None:
-                self.waiting_for_url = True
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(
-                        f"Please upload an image for {step['name'].lower()} or type 'skip' to skip this step:",
-                        ephemeral=True
-                    )
-                else:
-                    await interaction.followup.send(
-                        f"Please upload an image for {step['name'].lower()} or type 'skip' to skip this step:",
-                        ephemeral=True
-                    )
-                return
-
-            # Handle boolean (yes/no) steps
-            if step.get('is_boolean', False):
-                view = discord.ui.View(timeout=60)
-                async def yes_callback(inner_interaction):
-                    self.settings[step['setting_key']] = 1
-                    self.current_step += 1
-                    await self.process_next_selection(inner_interaction)
-                async def no_callback(inner_interaction):
-                    self.settings[step['setting_key']] = 0
-                    self.current_step += 1
-                    await self.process_next_selection(inner_interaction)
-                yes_btn = discord.ui.Button(label="Yes", style=discord.ButtonStyle.green)
-                no_btn = discord.ui.Button(label="No", style=discord.ButtonStyle.red)
-                yes_btn.callback = yes_callback
-                no_btn.callback = no_callback
-                view.add_item(yes_btn)
-                view.add_item(no_btn)
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
-                else:
-                    await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
-                return
-
-            # For selection steps, defer the interaction
-            if not interaction.response.is_done():
-                await interaction.response.defer()
-
-            select_class = step['select']
-            
-            # Get the appropriate items based on the step type
-            if select_class == ChannelSelect:
-                items = interaction.guild.text_channels
-            else:  # RoleSelect
-                items = interaction.guild.roles
-
-            if not items:
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
-                else:
-                    await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
-                return
-
-            # Create a new view that inherits from the current view
-            view = GuildSettingsView(self.bot, interaction.guild, self.admin_service, self.original_interaction, self.subscription_level)
-            view.current_step = self.current_step
-            view.settings = self.settings.copy()
-            view.message = self.message
-
-            # Create the selection dropdown
-            select = select_class(
-                placeholder=f"Select {step['name']}",
-                options=step['options'](interaction.guild),
-                min_values=1,
-                max_values=1
-            )
-            view.add_item(select)
-
-            # Add skip button
-            skip_button = SkipButton()
-            view.add_item(skip_button)
-
-            # Send the message
-            if initial:
-                await interaction.response.send_message(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-            else:
-                if self.message:
-                    try:
-                        await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
-                    except discord.NotFound:
-                        await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-                else:
-                    await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-        except Exception as e:
-            logger.error(f"Error in process_next_selection: {str(e)}")
-            if not interaction.response.is_done():
-                await interaction.response.send_message("An error occurred during setup. Please try again.", ephemeral=True)
-            else:
-                await interaction.followup.send("An error occurred during setup. Please try again.", ephemeral=True)
-
-    async def handle_url_input(self, message: discord.Message):
-        """Handle file uploads or URL input from user"""
-        if not self.waiting_for_url:
+        if self.current_step >= len(self.SETUP_STEPS):
+            await self.finalize_setup(interaction)
             return
 
         step = self.SETUP_STEPS[self.current_step]
-        setting_key = step['setting_key']
 
-        # Check for file attachments first
-        if message.attachments:
-            attachment = message.attachments[0]  # Get the first attachment
-            if not attachment.content_type.startswith('image/'):
-                await message.channel.send(f"❌ Please upload an image file for {step['name']}.")
-                return
-
-            try:
-                # Download the attachment
-                response = requests.get(attachment.url, timeout=10, stream=True)
-                response.raise_for_status()
-                image_data = BytesIO(response.content)
-                
-                with Image.open(image_data) as img:
-                    if img.format not in ['PNG', 'JPEG', 'JPG', 'GIF', 'WEBP']:
-                        await message.channel.send(f"❌ Invalid image format for {step['name']}. Use PNG, JPG, GIF, or WEBP.")
-                        return
-                    
-                    # Save as PNG for consistency
-                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                    guild_dir = os.path.join(base_dir, 'static', 'logos', str(self.guild.id))
-                    os.makedirs(guild_dir, exist_ok=True)
-                    save_path = os.path.join(guild_dir, f"{setting_key}.png")
-                    img.save(save_path, 'PNG')
-                    # Store relative path from betting-bot root
-                    relative_path = os.path.join('static', 'logos', str(self.guild.id), f"{setting_key}.png")
-                    self.settings[setting_key] = relative_path
-                    
-            except Exception as e:
-                logger.error(f"Failed to process uploaded image for {setting_key}: {e}")
-                await message.channel.send(f"❌ Failed to process the uploaded image for {step['name']}.")
-                return
-        else:
-            # Handle URL input as before
-            content = message.content.strip()
-            if content.lower() == 'skip':
-                self.settings[setting_key] = None
-            else:
-                try:
-                    response = requests.get(content, timeout=10, stream=True)
-                    response.raise_for_status()
-                    content_type = response.headers.get('content-type', '').lower()
-                    if not content_type.startswith('image/'):
-                        await message.channel.send(f"❌ URL does not point to a valid image type for {step['name']}.")
-                        return
-                    image_data = BytesIO(response.content)
-                    with Image.open(image_data) as img:
-                        if img.format not in ['PNG', 'JPEG', 'JPG', 'GIF', 'WEBP']:
-                            await message.channel.send(f"❌ Invalid image format for {step['name']}. Use PNG, JPG, GIF, or WEBP.")
-                            return
-                        # Save as PNG for consistency
-                        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                        guild_dir = os.path.join(base_dir, 'static', 'logos', str(self.guild.id))
-                        os.makedirs(guild_dir, exist_ok=True)
-                        save_path = os.path.join(guild_dir, f"{setting_key}.png")
-                        img.save(save_path, 'PNG')
-                        # Store relative path from betting-bot root
-                        relative_path = os.path.join('static', 'logos', str(self.guild.id), f"{setting_key}.png")
-                        self.settings[setting_key] = relative_path
-                except Exception as e:
-                    logger.error(f"Failed to download/save image for {setting_key}: {e}")
-                    await message.channel.send(f"❌ Failed to download or save the image for {step['name']}.")
-                    return
-
-        self.waiting_for_url = False
-        self.current_step += 1
-
-        # Check if there are more URL steps
-        while self.current_step < len(self.SETUP_STEPS):
-            next_step = self.SETUP_STEPS[self.current_step]
-            if next_step.get('is_premium_only', False) and next_step['select'] is None:
-                await message.channel.send(
-                    f"Please upload an image for {next_step['name'].lower()} or type 'skip' to skip this step:"
-                )
-                self.waiting_for_url = True
-                return
+        # Skip premium-only steps for non-premium users
+        if step.get('is_premium_only', False) and self.subscription_level != 'premium':
             self.current_step += 1
+            await self.process_next_selection(interaction)
+            return
 
-        # If we've gone through all steps, finalize
-        await self.finalize_setup(message)
+        # Handle boolean (yes/no) steps
+        if step.get('is_boolean', False):
+            view = discord.ui.View(timeout=60)
+            async def yes_callback(inner_interaction):
+                self.settings[step['setting_key']] = 1
+                self.current_step += 1
+                await self.process_next_selection(inner_interaction)
+            async def no_callback(inner_interaction):
+                self.settings[step['setting_key']] = 0
+                self.current_step += 1
+                await self.process_next_selection(inner_interaction)
+            yes_btn = discord.ui.Button(label="Yes", style=discord.ButtonStyle.green)
+            no_btn = discord.ui.Button(label="No", style=discord.ButtonStyle.red)
+            yes_btn.callback = yes_callback
+            no_btn.callback = no_callback
+            view.add_item(yes_btn)
+            view.add_item(no_btn)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            else:
+                await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            return
 
-    async def finalize_setup(self, interaction_or_message):
+        # For selection steps, defer the interaction
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+
+        select_class = step['select']
+        
+        # Get the appropriate items based on the step type
+        if select_class == ChannelSelect:
+            items = interaction.guild.text_channels
+        else:  # RoleSelect
+            items = interaction.guild.roles
+
+        if not items:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            else:
+                await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            return
+
+        # Create a new view that inherits from the current view
+        view = GuildSettingsView(self.bot, interaction.guild, self.admin_service, self.original_interaction, self.subscription_level)
+        view.current_step = self.current_step
+        view.settings = self.settings.copy()
+        view.message = self.message  # Copy the message reference
+
+        # Create the selection dropdown
+        select = select_class(
+            placeholder=f"Select {step['name']}",
+            options=step['options'](interaction.guild),
+            min_values=1,
+            max_values=1
+        )
+        view.add_item(select)
+
+        # Add skip button
+        skip_button = SkipButton()
+        view.add_item(skip_button)
+
+        # Send the message
+        if initial:
+            response = await interaction.response.send_message(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+            view.message = await response.original_message()
+        else:
+            if self.message:
+                try:
+                    await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
+                except discord.NotFound:
+                    response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+                    view.message = await response.original_message()
+            else:
+                response = await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+                view.message = await response.original_message()
+
+    async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
         try:
-            # Ensure assets/logos/guild_id exists
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            guild_logos_dir = os.path.join(base_dir, 'assets', 'logos', str(self.guild.id))
-            os.makedirs(guild_logos_dir, exist_ok=True)
-
             # Convert selected IDs from string to int before saving
             final_settings = {}
             for k, v in self.settings.items():
                 if v and v != "none":
-                    if k in ['embed_channel_id', 'command_channel_id', 'admin_channel_id', 'admin_role_id', 'authorized_role_id', 'member_role_id']:
+                    if k in ['embed_channel_1', 'command_channel_1', 'admin_channel_1', 'admin_role', 'authorized_role', 'member_role']:
                         final_settings[k] = int(v)
                     else:
                         final_settings[k] = v
@@ -558,26 +426,16 @@ class GuildSettingsView(discord.ui.View):
 
             await self.admin_service.setup_guild(self.guild.id, final_settings)
             
-            if isinstance(interaction_or_message, discord.Interaction):
-                await interaction_or_message.edit_original_response(
-                    content="✅ Guild setup completed successfully!",
-                    view=None
-                )
+            if self.message:
+                await self.message.edit(content="✅ Guild setup completed successfully!", view=None)
             else:
-                await interaction_or_message.channel.send(
-                    "✅ Guild setup completed successfully!"
-                )
+                await interaction.edit_original_response(content="✅ Guild setup completed successfully!", view=None)
         except Exception as e:
             logger.exception(f"Error saving guild settings: {e}")
-            if isinstance(interaction_or_message, discord.Interaction):
-                await interaction_or_message.edit_original_response(
-                    content="❌ An error occurred while saving settings.",
-                    view=None
-                )
+            if self.message:
+                await self.message.edit(content="❌ An error occurred while saving settings.", view=None)
             else:
-                await interaction_or_message.channel.send(
-                    "❌ An error occurred while saving settings."
-                )
+                await interaction.edit_original_response(content="❌ An error occurred while saving settings.", view=None)
         finally:
             self.stop()
 
