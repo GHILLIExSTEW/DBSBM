@@ -44,7 +44,7 @@ class AddUserCog(commands.Cog):
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, image_path, banner_color, bet_won, bet_loss, bet_push, updated_at
-                ) VALUES ($1, $2, NULL, NULL, NULL, 0, 0, 0, NOW() AT TIME ZONE 'UTC')
+                ) VALUES (%s, %s, NULL, NULL, NULL, 0, 0, 0, NOW() AT TIME ZONE 'UTC')
                 ON CONFLICT (guild_id, user_id) DO UPDATE SET updated_at = NOW() AT TIME ZONE 'UTC'
                 """,
                 guild_id, user_id

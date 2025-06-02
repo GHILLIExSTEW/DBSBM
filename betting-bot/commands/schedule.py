@@ -40,7 +40,7 @@ class ScheduleCog(commands.Cog):
                 """
                 SELECT subscription_status 
                 FROM guild_settings 
-                WHERE guild_id = $1
+                WHERE guild_id = %s
                 """,
                 interaction.guild_id
             )
