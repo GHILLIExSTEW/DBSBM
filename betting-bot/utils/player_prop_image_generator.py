@@ -66,7 +66,7 @@ class PlayerPropImageGenerator:
             if player_team and home_team and away_team:
                 if player_team.strip().lower() == home_team.strip().lower():
                     logo_to_draw = home_logo
-                elif player_team.strip().lower() == away_team.strip().lower():
+                elif player_team.strip().lower() == away_logo.strip().lower():
                     logo_to_draw = away_logo
                 else:
                     logo_to_draw = home_logo  # fallback
@@ -246,19 +246,21 @@ class PlayerPropImageGenerator:
         sep_above_odds_y = line_y + line_h + 18
         draw.line([(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)], fill="#aaaaaa", width=1)
 
-        # Odds (displayed like game line)
+        # Odds (displayed between separator and units line)
         odds_val = None
-        try:
-            odds_val = float(line.split()[-1]) if line and (line.split()[-1].replace('+', '').replace('-', '').replace('.', '', 1).isdigit()) else None
-        except Exception:
-            odds_val = None
-        odds_text = f"{int(odds_val):+d}" if odds_val is not None and odds_val > 0 else (f"{int(odds_val):d}" if odds_val is not None else "")
+        odds_text = ""
+        if odds is not None:
+            try:
+                odds_val = float(odds)
+                odds_text = f"{int(odds_val):+d}" if odds_val > 0 else f"{int(odds_val):d}"
+            except Exception:
+                odds_text = ""
         odds_w, odds_h = font_odds.getbbox(odds_text)[2:] if odds_text else (0, 0)
         odds_y = sep_above_odds_y + 24
         if odds_text:
-            draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
+            draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="#FFD700", anchor="lt")
 
-        # Risk/Units (yellow, lock icons)
+        # Risk/Units (yellow, lock icons) - move below odds
         profit = 0.0
         if odds_val is not None:
             if odds_val < 0:
