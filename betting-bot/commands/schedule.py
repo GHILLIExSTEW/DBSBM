@@ -1,0 +1,91 @@
+"""Schedule command for viewing upcoming games."""
+
+import logging
+import discord
+from discord import app_commands
+from discord.ext import commands
+from datetime import datetime, timedelta
+import pytz
+
+from utils.schedule_image_generator import ScheduleImageGenerator
+
+logger = logging.getLogger(__name__)
+
+class ScheduleCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.image_generator = ScheduleImageGenerator()
+
+    @app_commands.command(
+        name="schedule",
+        description="View all games available to bet on"
+    )
+    async def schedule_command(self, interaction: discord.Interaction):
+        """Display a schedule of all games available to bet on."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+
+            # Get user's timezone from their locale or default to UTC
+            user_timezone = interaction.locale or 'UTC'
+            if user_timezone not in pytz.all_timezones:
+                user_timezone = 'UTC'
+
+            # Query all games from the database
+            query = """
+                SELECT 
+                    api_game_id,
+                    sport,
+                    league_id,
+                    league_name,
+                    home_team_name,
+                    away_team_name,
+                    start_time,
+                    status
+                FROM api_games
+                WHERE start_time >= NOW()
+                ORDER BY start_time ASC
+            """
+            
+            games = await self.bot.db_manager.fetch_all(query)
+            
+            if not games:
+                await interaction.followup.send(
+                    "No upcoming games found.", 
+                    ephemeral=True
+                )
+                return
+
+            # Generate the schedule image
+            image_path = await self.image_generator.generate_schedule_image(
+                games, 
+                user_timezone
+            )
+
+            if image_path:
+                await interaction.followup.send(
+                    f"Found {len(games)} upcoming games.",
+                    file=discord.File(image_path),
+                    ephemeral=True
+                )
+            else:
+                await interaction.followup.send(
+                    "Failed to generate schedule image.",
+                    ephemeral=True
+                )
+
+        except Exception as e:
+            logger.error(f"Error in schedule command: {e}", exc_info=True)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    "An error occurred while fetching the schedule.",
+                    ephemeral=True
+                )
+            else:
+                await interaction.followup.send(
+                    "An error occurred while fetching the schedule.",
+                    ephemeral=True
+                )
+
+async def setup(bot: commands.Bot):
+    await bot.add_cog(ScheduleCog(bot))
+    logger.info("ScheduleCog loaded") 

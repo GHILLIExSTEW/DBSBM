@@ -22,78 +22,48 @@ logger = logging.getLogger(__name__)
 # --- Authorization Check Function ---
 async def is_allowed_command_channel(interaction: Interaction) -> bool:
     """Checks if the command is used in a configured command channel."""
-    if not interaction.guild_id:
-        if not interaction.response.is_done():
-            await interaction.response.send_message("This command must be used in a server.", ephemeral=True)
-        else:
-            # This case is less likely for a primary command check but good for robustness
-            try: await interaction.followup.send("This command must be used in a server.", ephemeral=True)
-            except discord.HTTPException: pass # Ignore if followup fails (e.g. original interaction deleted)
-        return False
-
-    if not hasattr(interaction.client, 'db_manager') or not interaction.client.db_manager: # type: ignore
-        logger.error("Database manager not found on bot client for command channel check.")
-        msg = "Bot configuration error (DBM). Cannot verify command channel."
-        if not interaction.response.is_done(): await interaction.response.send_message(msg, ephemeral=True)
-        else: 
-            try: await interaction.followup.send(msg, ephemeral=True)
-            except discord.HTTPException: pass
-        return False
-    
-    db_manager = interaction.client.db_manager # type: ignore
-
-    settings = await db_manager.fetch_one(
-        "SELECT command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = %s",
-        (interaction.guild_id,)
-    )
-
-    if not settings:
-        msg = "Command channels are not configured for this server. Please ask an admin to set them up using `/setup` or a relevant admin command."
-        if not interaction.response.is_done(): await interaction.response.send_message(msg, ephemeral=True)
-        else: 
-            try: await interaction.followup.send(msg, ephemeral=True)
-            except discord.HTTPException: pass
-        return False
-
-    command_channel_1_id = settings.get('command_channel_1')
-    command_channel_2_id = settings.get('command_channel_2')
-
-    allowed_channel_ids = []
-    if command_channel_1_id:
-        try: allowed_channel_ids.append(int(command_channel_1_id))
-        except (ValueError, TypeError): logger.error(f"Invalid command_channel_1 ID in DB for guild {interaction.guild_id}: {command_channel_1_id}")
-    if command_channel_2_id:
-        try: allowed_channel_ids.append(int(command_channel_2_id))
-        except (ValueError, TypeError): logger.error(f"Invalid command_channel_2 ID in DB for guild {interaction.guild_id}: {command_channel_2_id}")
-
-    if not allowed_channel_ids:
-        msg = "No command channels are configured for betting. Please ask an admin to set them up."
-        if not interaction.response.is_done(): await interaction.response.send_message(msg, ephemeral=True)
-        else: 
-            try: await interaction.followup.send(msg, ephemeral=True)
-            except discord.HTTPException: pass
-        return False
-
-    if interaction.channel_id not in allowed_channel_ids:
-        channel_mentions = []
-        guild = interaction.guild # Cache guild attribute
-        if guild:
-            for ch_id in allowed_channel_ids:
-                channel = guild.get_channel(ch_id)
-                if channel: channel_mentions.append(channel.mention)
-                else: channel_mentions.append(f"`Channel ID: {ch_id}` (not found/accessible)")
-        else: # Should not happen for a guild command
-             channel_mentions = [f"`Channel ID: {ch_id}`" for ch_id in allowed_channel_ids]
-
+    try:
+        # Get guild settings
+        settings = await interaction.client.db_manager.fetch_one(
+            "SELECT command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = %s",
+            (interaction.guild_id,)
+        )
         
-        msg = f"This command can only be used in the designated command channel(s): {', '.join(channel_mentions) if channel_mentions else 'None Configured'}"
-        if not interaction.response.is_done(): await interaction.response.send_message(msg, ephemeral=True)
-        else: 
-            try: await interaction.followup.send(msg, ephemeral=True)
-            except discord.HTTPException: pass
-        return False
-    
-    return True
+        if not settings:
+            # If no settings found, allow the command (global command)
+            return True
+
+        command_channel_1_id = settings.get('command_channel_1')
+        command_channel_2_id = settings.get('command_channel_2')
+
+        # If no channels configured, allow the command (global command)
+        if not command_channel_1_id and not command_channel_2_id:
+            return True
+
+        allowed_channel_ids = []
+        if command_channel_1_id:
+            try: allowed_channel_ids.append(int(command_channel_1_id))
+            except (ValueError, TypeError): logger.error(f"Invalid command_channel_1 ID in DB for guild {interaction.guild_id}: {command_channel_1_id}")
+        if command_channel_2_id:
+            try: allowed_channel_ids.append(int(command_channel_2_id))
+            except (ValueError, TypeError): logger.error(f"Invalid command_channel_2 ID in DB for guild {interaction.guild_id}: {command_channel_2_id}")
+
+        if not allowed_channel_ids:
+            return True  # Allow if no valid channels configured
+
+        if interaction.channel_id not in allowed_channel_ids:
+            msg = "This command can only be used in designated command channels. Please ask an admin to set them up or use the correct channel."
+            if not interaction.response.is_done(): 
+                await interaction.response.send_message(msg, ephemeral=True)
+            else: 
+                try: await interaction.followup.send(msg, ephemeral=True)
+                except discord.HTTPException: pass
+            return False
+
+        return True
+    except Exception as e:
+        logger.error(f"Error checking command channel: {e}")
+        return True  # Allow command on error to prevent blocking
 
 # --- UI Component Classes ---
 class BetTypeSelect(Select):

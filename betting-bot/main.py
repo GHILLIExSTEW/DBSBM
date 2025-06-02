@@ -195,9 +195,10 @@ class BettingBot(commands.Bot):
             "betting.py",
             "remove_user.py",
             "setid.py",
-            "add_user.py",  # <-- Ensure add_user is loaded
+            "add_user.py",
             "stats.py",
             "load_logos.py",
+            "schedule.py",
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -216,9 +217,14 @@ class BettingBot(commands.Bot):
         commands_list = [cmd.name for cmd in self.tree.get_commands()]
         logger.info("Available commands after loading: %s", commands_list)
 
-    async def sync_commands_with_retry(self, guild: Optional[discord.Guild] = None, retries: int = 3, delay: int = 5):
+    async def sync_commands_with_retry(self, retries: int = 3, delay: int = 5):
+        """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
+                # Clear any existing commands first
+                self.tree.clear_commands(guild=None)
+                
+                # Sync commands globally
                 synced = await self.tree.sync()
                 logger.info("Global commands synced: %s", [cmd.name for cmd in synced])
                 return True
