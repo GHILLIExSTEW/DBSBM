@@ -148,12 +148,9 @@ class StatsView(View):
             # Use self.db (shared DatabaseManager)
             cappers = await self.db.fetch_all(
                 """
-                SELECT user_id -- Add display_name from cappers table if stored there
-                FROM cappers
-                WHERE guild_id = $1
-                -- ORDER BY display_name -- Order if display_name available
+                SELECT user_id FROM cappers WHERE guild_id = %s
                 """,
-                (self.original_interaction.guild_id,)
+                [self.original_interaction.guild_id]
             )
 
             options = []
