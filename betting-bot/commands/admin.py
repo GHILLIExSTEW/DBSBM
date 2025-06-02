@@ -97,33 +97,23 @@ class ChannelSelect(discord.ui.Select):
                 await interaction.response.send_message("This channel has already been selected as an embed channel.", ephemeral=True)
                 return
             self.view.embed_channels.append(selected_value)
-            # Store as a list in settings
             if 'embed_channel_1' not in self.view.settings:
                 self.view.settings['embed_channel_1'] = []
             self.view.settings['embed_channel_1'].append(selected_value)
-        # For command channels, track the selection
         elif self.setting_key == 'command_channel_1':
             if selected_value in self.view.command_channels:
                 await interaction.response.send_message("This channel has already been selected as a command channel.", ephemeral=True)
                 return
             self.view.command_channels.append(selected_value)
-            # Store as a list in settings
             if 'command_channel_1' not in self.view.settings:
                 self.view.settings['command_channel_1'] = []
             self.view.settings['command_channel_1'].append(selected_value)
         else:
-            # For other channels (like admin channel), store as single value
             self.view.settings[self.setting_key] = selected_value
 
         await interaction.response.defer()
-
-        # Ensure the view attribute exists and has the method
-        if hasattr(self.view, 'process_next_selection'):
-            await self.view.process_next_selection(interaction)
-        else:
-            logger.error("process_next_selection method not found in parent view.")
-            # Use followup because response was deferred
-            await interaction.followup.send("Error proceeding to next step.", ephemeral=True)
+        self.view.current_step += 1
+        await self.view.process_next_selection(interaction)
 
 
 class RoleSelect(discord.ui.Select):
@@ -162,14 +152,8 @@ class RoleSelect(discord.ui.Select):
 
         self.view.settings[self.setting_key] = selected_value
         await interaction.response.defer()
-
-        # Ensure the view attribute exists and has the method
-        if hasattr(self.view, 'process_next_selection'):
-            await self.view.process_next_selection(interaction)
-        else:
-            logger.error("process_next_selection method not found in parent view.")
-            # Use followup because response was deferred
-            await interaction.followup.send("Error proceeding to next step.", ephemeral=True)
+        self.view.current_step += 1
+        await self.view.process_next_selection(interaction)
 
 
 class SubscriptionModal(discord.ui.Modal):
@@ -370,49 +354,37 @@ class GuildSettingsView(discord.ui.View):
             await self.message.edit(content=f"Would you like to enable live game update channels?", view=view)
             return
 
-        # For selection steps, defer the interaction
         if not interaction.response.is_done():
             await interaction.response.defer()
 
         select_class = step['select']
-        
-        # Get the appropriate items based on the step type
         if select_class == ChannelSelect:
             items = interaction.guild.text_channels
-        else:  # RoleSelect
+        else:
             items = interaction.guild.roles
 
         if not items:
             await self.message.edit(content=f"No {step['name'].lower()} found. Please create one and try again.", view=None)
             return
 
-        # Create a new view that inherits from the current view
-        view = GuildSettingsView(self.bot, interaction.guild, self.admin_service, self.original_interaction, self.subscription_level)
-        view.current_step = self.current_step
-        view.settings = self.settings.copy()
-        view.message = self.message  # Copy the message reference
-
-        # Create the selection dropdown
+        # Remove all items from the current view and add the new select and skip button
+        self.clear_items()
         if select_class == ChannelSelect:
             select = select_class(
                 placeholder=f"Select {step['name']}",
                 setting_key=step['setting_key'],
                 channels=items
             )
-        else:  # RoleSelect
+        else:
             select = select_class(
                 placeholder=f"Select {step['name']}",
                 setting_key=step['setting_key'],
                 roles=items
             )
-        view.add_item(select)
-
-        # Add skip button
+        self.add_item(select)
         skip_button = SkipButton()
-        view.add_item(skip_button)
-
-        # Edit the existing message
-        await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
+        self.add_item(skip_button)
+        await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=self)
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
