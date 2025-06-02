@@ -72,11 +72,15 @@ REQUIRED_ENV_VARS = {
     "MYSQL_USER": os.getenv("MYSQL_USER"),
     "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
     "MYSQL_DB": os.getenv("MYSQL_DB"),
+    "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
 }
 missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
 if missing_vars:
     logger.critical("Missing required environment variables: %s", ", ".join(missing_vars))
     sys.exit("Missing required environment variables")
+
+# Get test guild ID
+TEST_GUILD_ID = int(REQUIRED_ENV_VARS["TEST_GUILD_ID"]) if REQUIRED_ENV_VARS["TEST_GUILD_ID"] else None
 
 # --- Path for the logo download script and flag file ---
 LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_team_logos.py")
