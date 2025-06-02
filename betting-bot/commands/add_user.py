@@ -16,12 +16,17 @@ if os.path.exists(dotenv_path):
 
 TEST_GUILD_ID = int(os.getenv('TEST_GUILD_ID', '0'))
 
-# Helper to check if a guild is paid (stub, replace with your real logic)
-def is_paid_guild(guild_id, db_manager):
-    # Example: check a subscriptions table or similar
-    # Return True if paid, False if free
-    # Replace with your actual check
-    return True
+# Helper to check if a guild is paid
+async def is_paid_guild(guild_id, db_manager):
+    try:
+        result = await db_manager.fetch_one(
+            "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+            guild_id
+        )
+        return bool(result and result.get('subscription_level') == 'premium')
+    except Exception as e:
+        logger.error(f"Error checking guild subscription: {e}")
+        return False
 
 class AddUserCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -50,7 +55,7 @@ class AddUserCog(commands.Cog):
                 guild_id, user_id
             )
             # Check if paid guild
-            if not is_paid_guild(guild_id, self.db_manager):
+            if not await is_paid_guild(guild_id, self.db_manager):
                 await interaction.response.send_message(
                     f"✅ {user.mention} added as a capper (free guild, setup complete).",
                     ephemeral=True

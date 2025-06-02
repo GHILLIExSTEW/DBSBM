@@ -67,7 +67,7 @@ class VoiceService:
             try:
                 logger.info("[VoiceService] Running periodic unit channel update check...")
                 guilds_to_update = await self.db.fetch_all("""
-                    SELECT guild_id, voice_channel_id, yearly_channel_id, is_active, is_paid
+                    SELECT guild_id, voice_channel_id, yearly_channel_id, is_active, subscription_level
                     FROM guild_settings
                     WHERE (voice_channel_id IS NOT NULL OR yearly_channel_id IS NOT NULL)
                 """)
@@ -79,8 +79,8 @@ class VoiceService:
 
                 logger.info(f"[VoiceService] Found {len(guilds_to_update)} guilds with voice channels configured")
                 for guild in guilds_to_update:
-                    logger.info(f"[VoiceService] Guild {guild['guild_id']} settings: active={guild['is_active']}, paid={guild['is_paid']}, "
-                               f"monthly_ch={guild['voice_channel_id']}, yearly_ch={guild['yearly_channel_id']}")
+                    logger.info(f"[VoiceService] Guild {guild['guild_id']} settings: active={guild['is_active']}, subscription={guild['subscription_level']}, "
+                               f"voice_channel={guild['voice_channel_id']}, yearly_channel={guild['yearly_channel_id']}")
 
                 update_tasks = [self._update_guild_unit_channels(guild_info) for guild_info in guilds_to_update]
 
@@ -132,18 +132,26 @@ class VoiceService:
         try:
             logger.info(f"Triggering unit channel update for guild {guild_id} due to bet resolution.")
             guild_settings = await self.db.fetch_one("""
-                SELECT guild_id, voice_channel_id, yearly_channel_id, is_paid
+                SELECT guild_id, voice_channel_id, yearly_channel_id, is_active, subscription_level
                 FROM guild_settings
-                WHERE guild_id = %s AND is_active = TRUE
-            """, guild_id)
+                WHERE guild_id = %s
+                """,
+                guild_id
+            )
 
-            if guild_settings and guild_settings.get('is_paid'):
-                await self._update_guild_unit_channels(guild_settings)
-            else:
-                logger.debug(
-                    f"Skipping immediate update for guild {guild_id}: "
-                    f"Not paid or no settings/channels configured."
-                )
+            if not guild_settings:
+                logger.warning(f"[VoiceService] No settings found for guild {guild_id}")
+                return
+
+            logger.info(f"[VoiceService] Guild {guild_id} settings: active={guild_settings['is_active']}, subscription={guild_settings['subscription_level']}, "
+                       f"voice_channel={guild_settings['voice_channel_id']}, yearly_channel={guild_settings['yearly_channel_id']}")
+
+            # Only proceed if guild is active and has premium subscription
+            if not guild_settings['is_active'] or guild_settings['subscription_level'] != 'premium':
+                logger.info(f"[VoiceService] Skipping guild {guild_id} - not active or not premium")
+                return
+
+            await self._update_guild_unit_channels(guild_settings)
 
         except Exception as e:
             logger.exception(f"Error updating voice channels on bet resolve for guild {guild_id}: {e}")

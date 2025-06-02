@@ -38,14 +38,14 @@ class ScheduleCog(commands.Cog):
             # Check if guild is paid
             guild_settings = await self.bot.db_manager.fetch_one(
                 """
-                SELECT subscription_status 
+                SELECT subscription_level 
                 FROM guild_settings 
                 WHERE guild_id = %s
                 """,
                 interaction.guild_id
             )
 
-            if not guild_settings or guild_settings['subscription_status'] != 'premium':
+            if not guild_settings or guild_settings['subscription_level'] != 'premium':
                 await interaction.followup.send(
                     "❌ This command is only available in premium guilds. Please contact your server administrator to upgrade.",
                     ephemeral=True

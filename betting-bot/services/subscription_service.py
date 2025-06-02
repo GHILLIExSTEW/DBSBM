@@ -25,7 +25,7 @@ class SubscriptionService:
 
             # Update guild settings to mark as paid
             await self.db_manager.execute(
-                "UPDATE guild_settings SET is_paid = TRUE WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
                 guild_id
             )
 
@@ -64,7 +64,7 @@ class SubscriptionService:
 
             # Update guild settings to mark as unpaid
             await self.db_manager.execute(
-                "UPDATE guild_settings SET is_paid = FALSE WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = %s",
                 guild_id
             )
 
@@ -73,19 +73,38 @@ class SubscriptionService:
             logger.error(f"Error canceling subscription for guild {guild_id}: {e}")
             return False
 
+    async def activate_subscription(self, guild_id: int) -> bool:
+        """Activate a subscription for a guild."""
+        try:
+            await self.db_manager.execute(
+                "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
+                guild_id
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error activating subscription for guild {guild_id}: {e}")
+            return False
+
+    async def deactivate_subscription(self, guild_id: int) -> bool:
+        """Deactivate a subscription for a guild."""
+        try:
+            await self.db_manager.execute(
+                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = %s",
+                guild_id
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error deactivating subscription for guild {guild_id}: {e}")
+            return False
+
     async def check_subscription_status(self, guild_id: int) -> bool:
         """Check if a guild has an active subscription."""
         try:
-            subscription = await self.get_subscription(guild_id)
-            if not subscription:
-                return False
-
-            # Check if subscription has expired
-            if subscription['end_date'] < datetime.utcnow():
-                await self.cancel_subscription(guild_id)
-                return False
-
-            return True
+            result = await self.db_manager.fetch_one(
+                "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+                guild_id
+            )
+            return bool(result and result.get('subscription_level') == 'premium')
         except Exception as e:
             logger.error(f"Error checking subscription status for guild {guild_id}: {e}")
             return False
