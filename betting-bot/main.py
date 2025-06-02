@@ -221,38 +221,47 @@ class BettingBot(commands.Bot):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
-                # Verify required commands are present
-                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid"]
-                current_commands = [cmd.name for cmd in self.tree.get_commands()]
-                missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
+                # First, sync only the setup command globally
+                self.tree.clear_commands(guild=None)
+                setup_command = self.tree.get_command("setup")
+                if not setup_command:
+                    logger.error("Setup command not found")
+                    raise Exception("Setup command not found")
                 
-                if missing_commands:
-                    logger.error(f"Missing required commands before sync: {missing_commands}")
-                    # Try to reload extensions if commands are missing
-                    await self.load_extensions()
-                    current_commands = [cmd.name for cmd in self.tree.get_commands()]
-                    missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
-                    if missing_commands:
-                        raise Exception(f"Missing required commands after reload: {missing_commands}")
+                # Sync only setup command globally
+                await self.tree.sync()
+                logger.info("Global setup command synced")
                 
-                # Sync commands globally without clearing first
-                synced = await self.tree.sync()
-                logger.info("Global commands synced: %s", [cmd.name for cmd in synced])
+                # Get all guilds from the table
+                guilds_query = """
+                    SELECT guild_id 
+                    FROM guild_settings
+                """
+                guilds = await self.db_manager.fetch_all(guilds_query)
                 
-                # Verify commands after sync
-                final_commands = [cmd.name for cmd in self.tree.get_commands()]
-                if not all(cmd in final_commands for cmd in required_commands):
-                    raise Exception("Not all required commands present after sync")
+                # Sync commands to each guild in the table
+                for guild in guilds:
+                    guild_id = guild['guild_id']
+                    guild_obj = discord.Object(id=guild_id)
                     
-                # Handle guild-specific commands
+                    # Copy all commands except load_logos to the guild
+                    for cmd in self.tree.get_commands():
+                        if cmd.name != "load_logos":
+                            self.tree.add_command(cmd, guild=guild_obj)
+                    
+                    # Sync commands to this guild
+                    await self.tree.sync(guild=guild_obj)
+                    logger.info(f"Synced commands to guild {guild_id}")
+                
+                # Handle load_logos command for test guild and authorized user
                 if TEST_GUILD_ID:
                     test_guild = discord.Object(id=TEST_GUILD_ID)
-                    # Copy global commands to test guild
-                    self.tree.copy_global_to(guild=test_guild)
-                    # Add guild-specific commands
-                    await self.tree.sync(guild=test_guild)
-                    logger.info(f"Successfully synced commands to test guild {TEST_GUILD_ID}")
-                    
+                    load_logos_cmd = self.tree.get_command("load_logos")
+                    if load_logos_cmd:
+                        self.tree.add_command(load_logos_cmd, guild=test_guild)
+                        await self.tree.sync(guild=test_guild)
+                        logger.info(f"Synced load_logos command to test guild {TEST_GUILD_ID}")
+                
                 return True
             except Exception as e:
                 logger.error("Sync attempt %d/%d failed: %s", attempt, retries, e, exc_info=True)
@@ -452,7 +461,31 @@ class BettingBot(commands.Bot):
         logger.info("------ Bot is Ready ------")
 
     async def on_guild_join(self, guild: discord.Guild):
+        """Handle when the bot joins a new guild."""
         logger.info("Joined new guild: %s (%s)", guild.name, guild.id)
+        # Only sync setup command for new guilds
+        guild_obj = discord.Object(id=guild.id)
+        setup_command = self.tree.get_command("setup")
+        if setup_command:
+            self.tree.add_command(setup_command, guild=guild_obj)
+            await self.tree.sync(guild=guild_obj)
+            logger.info(f"Synced setup command to new guild {guild.id}")
+
+    async def on_setup_complete(self, guild_id: int):
+        """Handle when a guild completes the setup process."""
+        try:
+            guild_obj = discord.Object(id=guild_id)
+            
+            # Add all commands except load_logos to the guild
+            for cmd in self.tree.get_commands():
+                if cmd.name != "load_logos":
+                    self.tree.add_command(cmd, guild=guild_obj)
+            
+            # Sync commands to this guild
+            await self.tree.sync(guild=guild_obj)
+            logger.info(f"Synced all commands to guild {guild_id} after setup completion")
+        except Exception as e:
+            logger.error(f"Failed to sync commands to guild {guild_id} after setup: {e}", exc_info=True)
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.user.id:
