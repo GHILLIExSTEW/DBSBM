@@ -537,11 +537,11 @@ class AdminCog(commands.Cog):
             )
             
             # Send initial message and store it
-            response = await interaction.response.send_message(
+            await interaction.response.send_message(
                 "Starting server setup...",
                 ephemeral=True
             )
-            view.message = await response.original_message()
+            view.message = await interaction.original_response()
             
             # Process first step
             await view.process_next_selection(interaction, initial=True)
