@@ -17,7 +17,7 @@ class ScheduleImageGenerator:
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.assets_dir = os.path.join(self.base_dir, "assets")
         self.fonts_dir = os.path.join(self.assets_dir, "fonts")
-        self.logos_dir = os.path.join(self.assets_dir, "logos")
+        self.logos_dir = os.path.join(self.base_dir, "static", "logos", "teams")
         
         # Load fonts
         self.title_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 36)
@@ -26,30 +26,29 @@ class ScheduleImageGenerator:
         
         # Image settings
         self.image_width = 800
-        self.image_height = 200  # Height for each game
+        self.image_height = 260  # More vertical space for each game
         self.padding = 40
         self.logo_size = 60
         self.background_color = '#1a1a1a'
         self.text_color = '#ffffff'
 
-    def _load_team_logo(self, team_name: str, league_name: str) -> Optional[Image.Image]:
-        """Load a team's logo using the same logic as betting flows."""
+    def _load_team_logo(self, team_name: str, league_code: str) -> Optional[Image.Image]:
+        """Load a team's logo using the correct sport/league folder structure for all leagues."""
         try:
-            # Get sport category
-            sport = get_sport_category_for_path(league_name.upper())
+            # league_code is e.g. 'MLB', 'NBA', etc.
+            sport = get_sport_category_for_path(league_code.upper())
             if not sport:
-                default_path = os.path.join("betting-bot/static/logos/default_logo.png")
+                default_path = os.path.join(self.base_dir, "static", "logos", "default_logo.png")
                 return Image.open(default_path).convert("RGBA")
-            # Normalize team name
             normalized = normalize_team_name_any_league(team_name).replace(".", "")
             fname = f"{normalize_team_name(normalized)}.png"
-            logo_path = os.path.join("betting-bot/static/logos/teams", sport, league_name.upper(), fname)
+            logo_path = os.path.join(self.base_dir, "static", "logos", "teams", sport, league_code.upper(), fname)
             if os.path.exists(logo_path):
                 return Image.open(logo_path).convert("RGBA")
-            default_path = os.path.join("betting-bot/static/logos/default_logo.png")
+            default_path = os.path.join(self.base_dir, "static", "logos", "default_logo.png")
             return Image.open(default_path).convert("RGBA")
         except Exception as e:
-            logger.error(f"Error loading logo for {team_name} ({league_name}): {e}")
+            logger.error(f"Error loading logo for {team_name} ({league_code}): {e}")
             return None
 
     def _create_game_image(self, game: Dict, game_time: str) -> Image.Image:
