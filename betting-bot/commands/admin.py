@@ -30,11 +30,11 @@ logger = logging.getLogger(__name__)
 
 class ChannelSelect(discord.ui.Select):
     """Select menu for choosing text channels."""
-    def __init__(self, channels: List[TextChannel], placeholder: str, setting_key: str, max_options=25):
+    def __init__(self, placeholder: str, setting_key: str, channels: List[TextChannel], max_options=25):
         # Filter out channels that have already been selected for this type
-        if setting_key == 'embed_channel_id' and hasattr(self, 'view') and hasattr(self.view, 'embed_channels'):
+        if setting_key == 'embed_channel_1' and hasattr(self, 'view') and hasattr(self.view, 'embed_channels'):
             channels = [ch for ch in channels if str(ch.id) not in self.view.embed_channels]
-        elif setting_key == 'command_channel_id' and hasattr(self, 'view') and hasattr(self.view, 'command_channels'):
+        elif setting_key == 'command_channel_1' and hasattr(self, 'view') and hasattr(self.view, 'command_channels'):
             channels = [ch for ch in channels if str(ch.id) not in self.view.command_channels]
 
         options = [
@@ -69,25 +69,25 @@ class ChannelSelect(discord.ui.Select):
              return
 
         # For embed channels, track the selection
-        if self.setting_key == 'embed_channel_id':
+        if self.setting_key == 'embed_channel_1':
             if selected_value in self.view.embed_channels:
                 await interaction.response.send_message("This channel has already been selected as an embed channel.", ephemeral=True)
                 return
             self.view.embed_channels.append(selected_value)
             # Store as a list in settings
-            if 'embed_channel_id' not in self.view.settings:
-                self.view.settings['embed_channel_id'] = []
-            self.view.settings['embed_channel_id'].append(selected_value)
+            if 'embed_channel_1' not in self.view.settings:
+                self.view.settings['embed_channel_1'] = []
+            self.view.settings['embed_channel_1'].append(selected_value)
         # For command channels, track the selection
-        elif self.setting_key == 'command_channel_id':
+        elif self.setting_key == 'command_channel_1':
             if selected_value in self.view.command_channels:
                 await interaction.response.send_message("This channel has already been selected as a command channel.", ephemeral=True)
                 return
             self.view.command_channels.append(selected_value)
             # Store as a list in settings
-            if 'command_channel_id' not in self.view.settings:
-                self.view.settings['command_channel_id'] = []
-            self.view.settings['command_channel_id'].append(selected_value)
+            if 'command_channel_1' not in self.view.settings:
+                self.view.settings['command_channel_1'] = []
+            self.view.settings['command_channel_1'].append(selected_value)
         else:
             # For other channels (like admin channel), store as single value
             self.view.settings[self.setting_key] = selected_value
@@ -105,7 +105,7 @@ class ChannelSelect(discord.ui.Select):
 
 class RoleSelect(discord.ui.Select):
     """Select menu for choosing roles."""
-    def __init__(self, roles: List[Role], placeholder: str, setting_key: str, max_options=25):
+    def __init__(self, placeholder: str, setting_key: str, roles: List[Role], max_options=25):
         options = [
             discord.SelectOption(
                 label=role.name,
@@ -384,9 +384,9 @@ class GuildSettingsView(discord.ui.View):
         # Create the selection dropdown
         select = select_class(
             placeholder=f"Select {step['name']}",
-            options=step['options'](interaction.guild),
-            min_values=1,
-            max_values=1
+            setting_key=step['setting_key'],
+            channels=items if select_class == ChannelSelect else None,
+            roles=items if select_class == RoleSelect else None
         )
         view.add_item(select)
 
