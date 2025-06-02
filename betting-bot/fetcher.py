@@ -521,23 +521,20 @@ async def fetch_games(
     # Use the reconciled season logic
     if season is None:
         season = get_season_for_league(league_name)
+    headers = {"x-apisports-key": API_KEY}
+    base_endpoint = ENDPOINTS.get(sport)
+    if not base_endpoint or not league_id:
+        logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
+        return False
+    endpoint = f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
+    params = {"league": league_id, "date": date, "season": season}
+    if end_date:
+        params["to"] = end_date
     logger.info(
         f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})"
     )
     logger.debug(f"API request endpoint: {endpoint}")
     logger.debug(f"API request params: {params}")
-    headers = {"x-apisports-key": API_KEY}
-    base_endpoint = ENDPOINTS.get(sport)
-    
-    if not base_endpoint or not league_id:
-        logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
-        return False
-
-    endpoint = f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
-    params = {"league": league_id, "date": date, "season": season}
-    if end_date:
-        params["to"] = end_date
-
     retry_count = 0
     while retry_count < max_retries:
         try:
