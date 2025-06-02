@@ -80,6 +80,14 @@ class ScheduleCog(commands.Cog):
                 current_date = await self.bot.db_manager.fetchval("SELECT CURDATE()")
                 logger.info(f"Current date in database: {current_date}")
 
+                # Check if there are any games at all
+                any_games = await self.bot.db_manager.fetch_all("""
+                    SELECT api_game_id, sport, league_name, home_team_name, away_team_name, start_time, status
+                    FROM api_games 
+                    LIMIT 5
+                """)
+                logger.info(f"Any games in database: {any_games}")
+
                 # Debug all games in database
                 all_games = await self.bot.db_manager.fetch_all("""
                     SELECT COUNT(*) as count, status, DATE(start_time) as game_date
