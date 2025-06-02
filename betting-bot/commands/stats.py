@@ -10,6 +10,7 @@ import logging
 import os
 from io import BytesIO # Needed for sending PIL image
 from typing import Optional # Add Optional type import
+from .admin import require_registered_guild
 
 # Use relative imports
 try:
@@ -294,7 +295,8 @@ class StatsCog(commands.Cog):
         # Example: self.db_manager = bot.db_manager
 
     @app_commands.command(name="stats", description="View betting statistics for cappers or the server.")
-    async def stats_command(self, interaction: Interaction):
+    @require_registered_guild()
+    async def stats(self, interaction: Interaction):
         """Displays betting statistics via an interactive view."""
         logger.info(f"Stats command initiated by {interaction.user} in guild {interaction.guild_id}")
         try:

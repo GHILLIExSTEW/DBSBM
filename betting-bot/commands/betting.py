@@ -16,6 +16,7 @@ from .parlay_betting import ParlayBetWorkflowView
 from config.leagues import LEAGUE_IDS 
 from utils.player_prop_image_generator import PlayerPropImageGenerator
 from utils.game_line_image_generator import generate_player_prop_bet_image as generate_game_line_image
+from .admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +267,7 @@ class BettingCog(commands.Cog):
         logger.info("BettingCog initialized")
 
     @app_commands.command(name="bet", description="Place a bet (straight or parlay).")
+    @require_registered_guild()
     async def bet(self, interaction: Interaction):
         logger.info(f"/bet command invoked by {interaction.user} (ID: {interaction.user.id})")
         try:

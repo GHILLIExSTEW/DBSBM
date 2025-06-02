@@ -10,6 +10,7 @@ import requests # Keep requests for URL fetching
 from io import BytesIO
 from PIL import Image # Keep Pillow for image processing
 from typing import Optional
+from .admin import require_registered_guild
 
 # Use relative imports
 try:
@@ -270,8 +271,9 @@ class SetIDCog(commands.Cog):
         # Access db_manager via self.bot assuming it's attached in main.py
         self.db_manager = bot.db_manager
 
-    @app_commands.command(name="setid", description="Set up your capper profile (authorized users only)")
-    async def setid_command(self, interaction: Interaction):
+    @app_commands.command(name="setid", description="Set your capper ID and display name.")
+    @require_registered_guild()
+    async def setid(self, interaction: Interaction):
         """Allows an authorized user to set up their capper profile."""
         user_id = interaction.user.id
         guild_id = interaction.guild_id

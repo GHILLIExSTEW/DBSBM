@@ -12,6 +12,7 @@ from typing import Optional, List
 import requests
 from PIL import Image
 from io import BytesIO
+from functools import wraps
 
 # Use relative imports (assuming commands/ is sibling to services/, utils/)
 try:
@@ -25,6 +26,28 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+def require_registered_guild():
+    """Decorator to check if the guild is registered with the bot."""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(self, interaction: Interaction, *args, **kwargs):
+            # Check if guild exists in database
+            existing_settings = await self.bot.db_manager.fetch_one(
+                "SELECT * FROM guild_settings WHERE guild_id = %s",
+                interaction.guild_id
+            )
+            
+            if not existing_settings:
+                await interaction.response.send_message(
+                    "❌ This server is not registered with the bot. Please use `/setup` to register first.",
+                    ephemeral=True
+                )
+                return
+            
+            return await func(self, interaction, *args, **kwargs)
+        return wrapper
+    return decorator
 
 # --- UI Components ---
 
@@ -344,10 +367,7 @@ class GuildSettingsView(discord.ui.View):
             no_btn.callback = no_callback
             view.add_item(yes_btn)
             view.add_item(no_btn)
-            if not interaction.response.is_done():
-                await interaction.response.send_message(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
-            else:
-                await interaction.followup.send(f"Would you like to enable live game update channels?", view=view, ephemeral=True)
+            await self.message.edit(content=f"Would you like to enable live game update channels?", view=view)
             return
 
         # For selection steps, defer the interaction
@@ -363,10 +383,7 @@ class GuildSettingsView(discord.ui.View):
             items = interaction.guild.roles
 
         if not items:
-            if not interaction.response.is_done():
-                await interaction.response.send_message(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
-            else:
-                await interaction.followup.send(f"No {step['name'].lower()} found. Please create one and try again.", ephemeral=True)
+            await self.message.edit(content=f"No {step['name'].lower()} found. Please create one and try again.", view=None)
             return
 
         # Create a new view that inherits from the current view
@@ -394,20 +411,8 @@ class GuildSettingsView(discord.ui.View):
         skip_button = SkipButton()
         view.add_item(skip_button)
 
-        # Send or edit the message
-        if initial:
-            if not interaction.response.is_done():
-                await interaction.response.send_message(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-            else:
-                await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-        else:
-            if self.message:
-                try:
-                    await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
-                except discord.NotFound:
-                    await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
-            else:
-                await interaction.followup.send(f"Please select a {step['name'].lower()}:", view=view, ephemeral=True)
+        # Edit the existing message
+        await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=view)
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
@@ -431,24 +436,15 @@ class GuildSettingsView(discord.ui.View):
             if 'live_game_updates' not in final_settings:
                 final_settings['live_game_updates'] = 0
 
+            # Save to database
             await self.admin_service.setup_guild(self.guild.id, final_settings)
             
-            if self.message:
-                try:
-                    await self.message.edit(content="✅ Guild setup completed successfully!", view=None)
-                except discord.NotFound:
-                    await interaction.followup.send("✅ Guild setup completed successfully!", ephemeral=True)
-            else:
-                await interaction.followup.send("✅ Guild setup completed successfully!", ephemeral=True)
+            # Update the message
+            await self.message.edit(content="✅ Guild setup completed successfully!", view=None)
+            
         except Exception as e:
             logger.exception(f"Error saving guild settings: {e}")
-            if self.message:
-                try:
-                    await self.message.edit(content="❌ An error occurred while saving settings.", view=None)
-                except discord.NotFound:
-                    await interaction.followup.send("❌ An error occurred while saving settings.", ephemeral=True)
-            else:
-                await interaction.followup.send("❌ An error occurred while saving settings.", ephemeral=True)
+            await self.message.edit(content="❌ An error occurred while saving settings.", view=None)
         finally:
             self.stop()
 
@@ -540,13 +536,14 @@ class AdminCog(commands.Cog):
                 subscription_level=subscription_level
             )
             
-            # Send initial message
-            await interaction.response.send_message(
+            # Send initial message and store it
+            response = await interaction.response.send_message(
                 "Starting server setup...",
                 ephemeral=True
             )
+            view.message = await response.original_message()
             
-            # Process first step using followup
+            # Process first step
             await view.process_next_selection(interaction, initial=True)
 
         except Exception as e:
@@ -564,6 +561,7 @@ class AdminCog(commands.Cog):
 
     @app_commands.command(name="setchannel", description="Set or remove voice channels for stat tracking.")
     @app_commands.checks.has_permissions(administrator=True)
+    @require_registered_guild()
     async def setchannel_command(self, interaction: Interaction):
         """Allows admins to set or remove stat tracking voice channels."""
         logger.info(f"SetChannel command initiated by {interaction.user} in guild {interaction.guild_id}")
