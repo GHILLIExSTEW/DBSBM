@@ -45,75 +45,113 @@ class ScheduleImageGenerator:
             logger.error(f"Error loading logo for {team_name}: {e}")
             return None
 
-    def _draw_game(self, draw: ImageDraw.ImageDraw, game: Dict, y_position: int, user_timezone: str) -> int:
+    async def _draw_game(
+        self,
+        draw: ImageDraw,
+        game: Dict,
+        home_logo: Optional[Image.Image],
+        away_logo: Optional[Image.Image],
+        game_time: str,
+        y_offset: int
+    ) -> None:
         """Draw a single game entry on the image."""
-        # Convert UTC time to user's timezone
-        utc_time = datetime.fromisoformat(game['start_time'].replace('Z', '+00:00'))
-        user_tz = pytz.timezone(user_timezone)
-        local_time = utc_time.astimezone(user_tz)
-        time_str = local_time.strftime("%I:%M %p %Z")
-
-        # Draw home team
-        home_logo = self._load_team_logo(game['home_team_name'], game['league_id'])
-        if home_logo:
-            draw.bitmap((self.padding, y_position), home_logo)
-        draw.text((self.padding + self.logo_size[0] + 10, y_position + 20), 
-                 game['home_team_name'], font=self.team_font, fill='white')
-
-        # Draw away team
-        away_logo = self._load_team_logo(game['away_team_name'], game['league_id'])
-        if away_logo:
-            draw.bitmap((self.padding, y_position + 50), away_logo)
-        draw.text((self.padding + self.logo_size[0] + 10, y_position + 70), 
-                 game['away_team_name'], font=self.team_font, fill='white')
-
-        # Draw time
-        draw.text((self.image_width - self.padding - 150, y_position + 35), 
-                 time_str, font=self.time_font, fill='white')
-
-        return y_position + self.game_spacing
-
-    async def generate_schedule_image(self, games: List[Dict], user_timezone: str = 'UTC') -> Optional[str]:
-        """Generate an image showing the schedule of upcoming games."""
         try:
-            # Calculate required image height based on number of games
-            required_height = (
-                self.title_height +  # Title section
-                (len(games) * self.game_spacing) +  # Games section
-                self.footer_height  # Footer section
+            # Draw team logos
+            if home_logo:
+                home_logo = home_logo.resize((self.logo_size, self.logo_size))
+                image.paste(home_logo, (self.padding, y_offset), home_logo if home_logo.mode == 'RGBA' else None)
+            
+            if away_logo:
+                away_logo = away_logo.resize((self.logo_size, self.logo_size))
+                image.paste(away_logo, (self.padding, y_offset + self.logo_size + self.padding), away_logo if away_logo.mode == 'RGBA' else None)
+            
+            # Draw team names
+            draw.text(
+                (self.padding * 2 + self.logo_size, y_offset),
+                game['home_team_name'],
+                font=self.font,
+                fill=self.text_color
             )
             
-            # Create new image with dark background
-            image = Image.new('RGB', (self.image_width, required_height), '#1a1a1a')
-            draw = ImageDraw.Draw(image)
-
-            # Draw title
-            current_time = datetime.now().strftime("%B %d, %Y %I:%M %p")
-            title = f"Games Scheduled for {current_time}"
-            title_width = draw.textlength(title, font=self.title_font)
-            draw.text(((self.image_width - title_width) // 2, self.padding), 
-                     title, font=self.title_font, fill='white')
-
-            # Draw each game
-            y_position = self.padding + 60
-            for game in games:
-                y_position = self._draw_game(draw, game, y_position, user_timezone)
-
-            # Draw footer with total games count
-            footer_text = f"Total Games: {len(games)}"
-            footer_width = draw.textlength(footer_text, font=self.time_font)
             draw.text(
-                ((self.image_width - footer_width) // 2, required_height - self.footer_height),
-                footer_text,
-                font=self.time_font,
-                fill='white'
+                (self.padding * 2 + self.logo_size, y_offset + self.logo_size + self.padding),
+                game['away_team_name'],
+                font=self.font,
+                fill=self.text_color
             )
-
-            # Save the image
-            output_path = os.path.join(self.base_dir, "generated_schedule.png")
-            image.save(output_path)
-            return output_path
-
+            
+            # Draw game time
+            draw.text(
+                (self.image_width - self.padding - 100, y_offset + self.logo_size // 2),
+                game_time,
+                font=self.time_font,
+                fill=self.text_color
+            )
+            
         except Exception as e:
-            logger.error(f"Error generating schedule image: {e}")
+            logger.error(f"Error drawing game: {e}", exc_info=True)
+            raise
+
+    async def generate_schedule_image(self, games: List[Dict], user_timezone: str) -> Optional[str]:
+        """Generate an image showing the schedule of games."""
+        try:
+            # Calculate required image height based on number of games
+            game_height = self.padding * 2 + self.logo_size + self.font_size * 2
+            total_height = self.title_height + (len(games) * game_height) + self.footer_height
+            
+            # Create new image with calculated height
+            image = Image.new('RGB', (self.image_width, total_height), self.background_color)
+            draw = ImageDraw.Draw(image)
+            
+            # Draw title
+            title_text = f"Games Scheduled for {datetime.now().strftime('%Y-%m-%d')}"
+            draw.text(
+                (self.padding, self.padding),
+                title_text,
+                font=self.title_font,
+                fill=self.text_color
+            )
+            
+            # Draw each game
+            y_offset = self.title_height
+            for game in games:
+                # Convert start time to user's timezone
+                start_time = game['start_time']
+                if isinstance(start_time, str):
+                    start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                user_tz = pytz.timezone(user_timezone)
+                local_time = start_time.astimezone(user_tz)
+                
+                # Load team logos
+                home_logo = self._load_team_logo(game['home_team_name'], str(game['league_id']))
+                away_logo = self._load_team_logo(game['away_team_name'], str(game['league_id']))
+                
+                # Draw game entry
+                await self._draw_game(
+                    draw,
+                    game,
+                    home_logo,
+                    away_logo,
+                    local_time.strftime('%I:%M %p'),
+                    y_offset
+                )
+                
+                y_offset += game_height
+            
+            # Draw footer with total games
+            footer_text = f"Total Games: {len(games)}"
+            draw.text(
+                (self.padding, total_height - self.footer_height + self.padding),
+                footer_text,
+                font=self.font,
+                fill=self.text_color
+            )
+            
+            # Save the image
+            image_path = os.path.join(self.base_dir, "generated_schedule.png")
+            image.save(image_path)
+            return image_path
+            
+        except Exception as e:
+            logger.error(f"Error generating schedule image: {e}", exc_info=True)
             return None 
