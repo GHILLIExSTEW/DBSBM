@@ -46,6 +46,55 @@ class AdminService:
             logger.error(f"Failed to stop AdminService: {e}", exc_info=True)
             raise RuntimeError(f"Could not stop AdminService: {str(e)}")
 
+    async def get_guild_subscription_level(self, guild_id: int) -> str:
+        """Get the subscription level for a guild.
+        
+        Args:
+            guild_id: The ID of the guild to check.
+            
+        Returns:
+            str: The subscription level ('initial' or 'premium').
+        """
+        try:
+            result = await self.db_manager.fetch_one(
+                """
+                SELECT is_paid, subscription_level 
+                FROM guild_settings 
+                WHERE guild_id = %s
+                """,
+                guild_id
+            )
+            
+            if not result:
+                # If guild not found, create initial entry
+                await self.db_manager.execute(
+                    """
+                    INSERT INTO guild_settings (guild_id, is_paid, subscription_level)
+                    VALUES (%s, 0, 'initial')
+                    """,
+                    guild_id
+                )
+                return 'initial'
+            
+            # If is_paid is 1, ensure subscription_level is 'premium'
+            if result.get('is_paid', 0) == 1:
+                if result.get('subscription_level') != 'premium':
+                    await self.db_manager.execute(
+                        """
+                        UPDATE guild_settings 
+                        SET subscription_level = 'premium'
+                        WHERE guild_id = %s
+                        """,
+                        guild_id
+                    )
+                return 'premium'
+            
+            return result.get('subscription_level', 'initial')
+            
+        except Exception as e:
+            logger.error(f"Error getting guild subscription level for {guild_id}: {e}")
+            return 'initial'  # Default to initial on error
+
     async def check_guild_subscription(self, guild_id: int) -> bool:
         """Check if a guild has an active paid subscription."""
         try:
