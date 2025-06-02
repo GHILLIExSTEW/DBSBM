@@ -69,7 +69,7 @@ class ScheduleCog(commands.Cog):
                     start_time,
                     status
                 FROM api_games
-                WHERE start_time >= NOW()
+                WHERE DATE(start_time) = CURDATE()
                 AND status = 'Not Started'
                 ORDER BY start_time ASC
             """
@@ -84,13 +84,13 @@ class ScheduleCog(commands.Cog):
                 """)
                 logger.info(f"Games in database by status: {all_games}")
 
-                # Now check games after NOW()
-                future_games = await self.bot.db_manager.fetch_all("""
+                # Now check games for today
+                today_games = await self.bot.db_manager.fetch_all("""
                     SELECT COUNT(*) as count 
                     FROM api_games 
-                    WHERE start_time >= NOW()
+                    WHERE DATE(start_time) = CURDATE()
                 """)
-                logger.info(f"Games with start_time >= NOW(): {future_games}")
+                logger.info(f"Games starting today: {today_games}")
 
                 # Finally, run our actual query
                 games = await self.bot.db_manager.fetch_all(query)
