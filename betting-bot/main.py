@@ -235,10 +235,7 @@ class BettingBot(commands.Bot):
                     if missing_commands:
                         raise Exception(f"Missing required commands after reload: {missing_commands}")
                 
-                # Clear existing commands first
-                self.tree.clear_commands(guild=None)
-                
-                # Sync commands globally
+                # Sync commands globally without clearing first
                 synced = await self.tree.sync()
                 logger.info("Global commands synced: %s", [cmd.name for cmd in synced])
                 
