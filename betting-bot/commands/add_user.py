@@ -13,15 +13,15 @@ def is_paid_guild(guild_id, db_manager):
     # Replace with your actual check
     return True
 
-class AddCapperCog(commands.Cog):
+class AddUserCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db_manager = bot.db_manager
 
-    @app_commands.command(name="add_capper", description="Add a user as a capper (admin only)")
+    @app_commands.command(name="add_user", description="Add a user as a capper (admin only)")
     @app_commands.describe(user="The user to add as a capper.")
     @app_commands.checks.has_permissions(administrator=True)
-    async def add_capper_command(self, interaction: Interaction, user: Member):
+    async def add_user_command(self, interaction: Interaction, user: Member):
         guild_id = interaction.guild_id
         user_id = user.id
         try:
@@ -48,11 +48,11 @@ class AddCapperCog(commands.Cog):
                 ephemeral=True
             )
         except Exception as e:
-            logger.exception(f"Error in add_capper: {e}")
+            logger.exception(f"Error in add_user: {e}")
             await interaction.response.send_message(
                 "❌ An error occurred while adding the capper.", ephemeral=True
             )
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(AddCapperCog(bot))
-    logger.info("AddCapperCog loaded")
+    await bot.add_cog(AddUserCog(bot))
+    logger.info("AddUserCog loaded")

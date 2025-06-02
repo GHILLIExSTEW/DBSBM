@@ -288,8 +288,8 @@ class SetIDCog(commands.Cog):
                 ephemeral=True
             )
             return
-        # Optionally check if paid guild (reuse is_paid_guild from add_capper)
-        from .add_capper import is_paid_guild
+        # Optionally check if paid guild (reuse is_paid_guild from add_user)
+        from .add_user import is_paid_guild
         if not is_paid_guild(guild_id, self.db_manager):
             await interaction.response.send_message(
                 "❌ This feature is only available in paid guilds.", ephemeral=True
