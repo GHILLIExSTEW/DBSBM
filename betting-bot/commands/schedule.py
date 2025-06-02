@@ -80,11 +80,12 @@ class ScheduleCog(commands.Cog):
                 current_date = await self.bot.db_manager.fetchval("SELECT CURDATE()")
                 logger.info(f"Current date in database: {current_date}")
 
-                # Debug games in database
+                # Debug all games in database
                 all_games = await self.bot.db_manager.fetch_all("""
                     SELECT COUNT(*) as count, status, DATE(start_time) as game_date
                     FROM api_games 
                     GROUP BY status, DATE(start_time)
+                    ORDER BY game_date, status
                 """)
                 logger.info(f"Games in database by status and date: {all_games}")
 
@@ -96,6 +97,15 @@ class ScheduleCog(commands.Cog):
                     GROUP BY DATE(start_time)
                 """)
                 logger.info(f"Games starting today: {today_games}")
+
+                # Debug raw data for today's games
+                raw_today_games = await self.bot.db_manager.fetch_all("""
+                    SELECT api_game_id, sport, league_name, home_team_name, away_team_name, start_time, status
+                    FROM api_games 
+                    WHERE DATE(start_time) = CURDATE()
+                    ORDER BY start_time
+                """)
+                logger.info(f"Raw data for today's games: {raw_today_games}")
 
                 # Finally, run our actual query
                 games = await self.bot.db_manager.fetch_all(query)
