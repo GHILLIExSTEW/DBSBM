@@ -25,6 +25,23 @@ class ScheduleCog(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
 
+            # Check if guild is paid
+            guild_settings = await self.bot.db_manager.fetch_one(
+                """
+                SELECT subscription_status 
+                FROM guild_settings 
+                WHERE guild_id = $1
+                """,
+                interaction.guild_id
+            )
+
+            if not guild_settings or guild_settings['subscription_status'] != 'premium':
+                await interaction.followup.send(
+                    "❌ This command is only available in premium guilds. Please contact your server administrator to upgrade.",
+                    ephemeral=True
+                )
+                return
+
             # Get user's timezone from their locale or default to UTC
             user_timezone = interaction.locale or 'UTC'
             if user_timezone not in pytz.all_timezones:
@@ -87,5 +104,12 @@ class ScheduleCog(commands.Cog):
                 )
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(ScheduleCog(bot))
-    logger.info("ScheduleCog loaded") 
+    cog = ScheduleCog(bot)
+    await bot.add_cog(cog)
+    logger.info("ScheduleCog loaded")
+    # Ensure the command is registered globally
+    try:
+        await bot.tree.sync()
+        logger.info("Successfully synced schedule command globally")
+    except Exception as e:
+        logger.error(f"Failed to sync schedule command: {e}") 

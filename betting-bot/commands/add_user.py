@@ -18,10 +18,14 @@ class AddUserCog(commands.Cog):
         self.bot = bot
         self.db_manager = bot.db_manager
 
-    @app_commands.command(name="add_user", description="Add a user as a capper (admin only)")
+    @app_commands.command(
+        name="add_user",
+        description="Add a user as a capper (admin only)"
+    )
     @app_commands.describe(user="The user to add as a capper.")
     @app_commands.checks.has_permissions(administrator=True)
     async def add_user_command(self, interaction: Interaction, user: Member):
+        """Add a user as a capper (admin only)"""
         guild_id = interaction.guild_id
         user_id = user.id
         try:
@@ -54,5 +58,12 @@ class AddUserCog(commands.Cog):
             )
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(AddUserCog(bot))
+    cog = AddUserCog(bot)
+    await bot.add_cog(cog)
     logger.info("AddUserCog loaded")
+    # Ensure the command is registered globally
+    try:
+        await bot.tree.sync()
+        logger.info("Successfully synced add_user command globally")
+    except Exception as e:
+        logger.error(f"Failed to sync add_user command: {e}")
