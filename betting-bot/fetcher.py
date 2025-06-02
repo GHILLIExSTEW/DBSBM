@@ -597,7 +597,7 @@ async def fetch_games(
 
 
 async def initial_fetch(pool: aiomysql.Pool):
-    """Perform initial fetch of all scheduled games for today and tomorrow."""
+    """Perform initial fetch of all scheduled games for today and tomorrow, with throttling to avoid API rate limits."""
     today = datetime.now(timezone.utc)
     tomorrow = today + timedelta(days=1)
     today_str = today.strftime("%Y-%m-%d")
@@ -607,32 +607,26 @@ async def initial_fetch(pool: aiomysql.Pool):
     failed_fetches = []
     try:
         async with aiohttp.ClientSession() as session:
-            tasks = []
             for league_name, league_info in LEAGUE_IDS.items():
                 sport = league_info["sport"]
                 league_id = league_info["id"]
                 season = get_current_season(league_name)
                 logger.info(f"[initial] Scheduling initial fetch for {league_name} (season: {season})")
-                # Create tasks for both today and tomorrow
-                today_task = fetch_games(pool, session, sport, league_name, league_id, today_str, season)
-                tomorrow_task = fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season)
-                tasks.append((league_name, today_task, "today"))
-                tasks.append((league_name, tomorrow_task, "tomorrow"))
-            
-            # Execute all tasks and track results
-            results = await asyncio.gather(*(task for _, task, _ in tasks), return_exceptions=True)
-            for i, result in enumerate(results):
-                league_name, _, day = tasks[i]
-                if isinstance(result, Exception):
-                    failed_fetches.append(f"{league_name} ({day})")
-                    logger.error(f"Error fetching {league_name} for {day}: {result}", exc_info=True)
+                # Fetch for today
+                result_today = await fetch_games(pool, session, sport, league_name, league_id, today_str, season)
+                await asyncio.sleep(1.2)  # Throttle to avoid rate limit
+                # Fetch for tomorrow
+                result_tomorrow = await fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season)
+                await asyncio.sleep(1.2)  # Throttle to avoid rate limit
+                if not result_today:
+                    failed_fetches.append(f"{league_name} (today)")
+                if not result_tomorrow:
+                    failed_fetches.append(f"{league_name} (tomorrow)")
 
         if failed_fetches:
             logger.warning(f"Initial fetch completed with {len(failed_fetches)} failures: {', '.join(failed_fetches)}")
         else:
             logger.info("Initial data fetch completed successfully for all leagues")
-            
-        # Return success status
         return len(failed_fetches) == 0
     except Exception as e:
         logger.error(f"Error during initial fetch: {e}", exc_info=True)
