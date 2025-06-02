@@ -12,7 +12,7 @@ import os
 import logging
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season
+from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season, LEAGUE_SEASON_YEAR, get_auto_season_year
 from api.sports_api import SportsAPI
 
 # Configure logging to file and console
@@ -503,6 +503,11 @@ async def get_active_bets(pool: aiomysql.Pool, live_game_ids: List[str]) -> List
         return []
 
 
+def get_season_for_league(league_name: str) -> int:
+    """Return the correct season year for a league using auto-detection."""
+    return get_auto_season_year(league_name)
+
+
 async def fetch_games(
     pool: aiomysql.Pool,
     session: aiohttp.ClientSession,
@@ -510,11 +515,14 @@ async def fetch_games(
     league_name: str,
     league_id: str,
     date: str,
-    season: int,
+    season: int = None,
     end_date: str = None,
     max_retries: int = 3
 ):
     """Fetch game data for a specific league and date range, saving to database and cache."""
+    # Use the reconciled season logic
+    if season is None:
+        season = get_season_for_league(league_name)
     logger.info(
         f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})"
     )

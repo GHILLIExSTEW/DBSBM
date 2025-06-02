@@ -431,6 +431,28 @@ def get_current_season(league: str) -> int:
     # If we're after the season ends
     return end_date.year
 
+def get_auto_season_year(league: str) -> int:
+    """
+    Automatically determine the correct season year for a league based on the current date
+    and the league's standard start/end dates (including playoffs).
+    Returns the year that should be sent to the API for the current date.
+    """
+    from datetime import datetime
+    current_date = datetime.now()
+    season_info = LEAGUE_SEASON_STARTS.get(league)
+    if not season_info:
+        return current_date.year
+    start = datetime.strptime(season_info["start"], "%Y-%m-%d")
+    end = datetime.strptime(season_info["end"], "%Y-%m-%d")
+    # If the current date is within the season (including playoffs), use the start year
+    if start <= current_date <= end:
+        return start.year
+    # If before the season starts, use the previous season's start year
+    if current_date < start:
+        return start.year - 1
+    # If after the season ends, use the end year (for leagues that roll over)
+    return end.year
+
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
 if not API_KEY:
