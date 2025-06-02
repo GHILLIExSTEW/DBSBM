@@ -504,57 +504,45 @@ class AdminCog(commands.Cog):
         """Starts the interactive server setup process."""
         logger.info(f"Setup command initiated by {interaction.user} in guild {interaction.guild_id}")
         try:
-            await interaction.response.defer(ephemeral=True)
+            # Check if guild exists in database
             existing_settings = await self.bot.db_manager.fetch_one(
                 "SELECT * FROM guild_settings WHERE guild_id = %s",
                 interaction.guild_id
             )
-            if existing_settings:
-                view = discord.ui.View(timeout=300)
-                # Use instance methods for callbacks, passing context
-                async def update_images_callback(inner_interaction: discord.Interaction):
-                    await self.update_images_callback(inner_interaction, existing_settings)
-                async def full_setup_callback(inner_interaction: discord.Interaction):
-                    await self.full_setup_callback(inner_interaction)
-                update_images_btn = discord.ui.Button(label="Update Images", style=discord.ButtonStyle.primary)
-                update_images_btn.callback = update_images_callback
-                view.add_item(update_images_btn)
-                full_setup_btn = discord.ui.Button(label="Full Setup", style=discord.ButtonStyle.secondary)
-                full_setup_btn.callback = full_setup_callback
-                view.add_item(full_setup_btn)
-                await interaction.followup.send(
-                    "Server is already set up. Would you like to update images or run full setup?",
-                    view=view,
-                    ephemeral=True
-                )
-                return
 
-            # Get subscription level from database
-            subscription_level = await self.bot.admin_service.get_guild_subscription_level(interaction.guild_id)
-            
-            if subscription_level == 'free':
-                modal = SubscriptionModal()
-                await interaction.followup.send_modal(modal)
-                view = SubscriptionView(self.bot, interaction)
-                await interaction.followup.send(
-                    "Choose your subscription option:",
-                    view=view,
-                    ephemeral=True
+            # If guild doesn't exist, create it with default values
+            if not existing_settings:
+                await self.bot.db_manager.execute(
+                    """
+                    INSERT INTO guild_settings 
+                    (guild_id, is_paid, subscription_level, active) 
+                    VALUES (%s, 0, 'initial', 1)
+                    """,
+                    interaction.guild_id
                 )
+                subscription_level = 'initial'
             else:
-                view = GuildSettingsView(
-                    self.bot, 
-                    interaction.guild, 
-                    self.admin_service, 
-                    interaction, 
-                    subscription_level='premium'
-                )
-                await interaction.followup.send(
-                    "Starting server setup...",
-                    view=view,
-                    ephemeral=True
-                )
-                await view.start_selection()
+                subscription_level = existing_settings.get('subscription_level', 'initial')
+
+            # Create and start the setup view
+            view = GuildSettingsView(
+                self.bot, 
+                interaction.guild, 
+                self.admin_service, 
+                interaction, 
+                subscription_level=subscription_level
+            )
+            
+            # Send initial message
+            await interaction.response.send_message(
+                "Starting server setup...",
+                view=view,
+                ephemeral=True
+            )
+            
+            # Start the selection process
+            await view.start_selection()
+
         except Exception as e:
             logger.exception(f"Error initiating setup command: {e}")
             if not interaction.response.is_done():
