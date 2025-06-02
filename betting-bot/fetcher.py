@@ -3,15 +3,13 @@ import aiohttp
 import asyncio
 import json
 import logging
+import aiomysql
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
-import aiomysql
-from dotenv import load_dotenv
-import sys
-import os
-import logging
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+import sys
+
 from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season, LEAGUE_SEASON_YEAR, get_auto_season_year
 from api.sports_api import SportsAPI
 
@@ -709,6 +707,21 @@ async def setup_db_pool() -> aiomysql.Pool:
         logger.error(f"Failed to create MySQL connection pool: {e}")
         raise
 
+async def run_daily_3am_task(pool: aiomysql.Pool):
+    """Run the full fetch at 03:00 every day, clearing api_games first."""
+    while True:
+        now = datetime.now(timezone.utc)
+        # Calculate next 3am UTC
+        next_3am = now.replace(hour=3, minute=0, second=0, microsecond=0)
+        if now >= next_3am:
+            next_3am += timedelta(days=1)
+        wait_seconds = (next_3am - now).total_seconds()
+        logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next 03:00 UTC full fetch...")
+        await asyncio.sleep(wait_seconds)
+        logger.info("Running scheduled 03:00 UTC full fetch: clearing api_games and fetching new data...")
+        await clear_api_games_table(pool)
+        await initial_fetch(pool)
+
 # Update main function to only use the 5-second update loop
 async def main():
     """Main function to run the fetcher."""
@@ -716,7 +729,11 @@ async def main():
     try:
         pool = await setup_db_pool()
         logger.info("Database pool created successfully")
-        # NEW: Perform initial fetch of all games for today and tomorrow
+        # Clear api_games on server restart
+        await clear_api_games_table(pool)
+        # Start the 3am daily fetch in the background
+        asyncio.create_task(run_daily_3am_task(pool))
+        # Perform initial fetch of all games for today and tomorrow
         await initial_fetch(pool)
         # Then run the 5-second update loop for bet games
         await update_bet_games_every_5_seconds(pool)
