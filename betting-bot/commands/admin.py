@@ -310,14 +310,8 @@ class GuildSettingsView(discord.ui.View):
 
     async def start_selection(self):
         """Start the selection process"""
-        try:
-            await self.process_next_selection(self.original_interaction, initial=True)
-        except Exception as e:
-            logger.error(f"Error in start_selection: {str(e)}")
-            if not self.original_interaction.response.is_done():
-                await self.original_interaction.response.send_message("An error occurred during setup. Please try again.", ephemeral=True)
-            else:
-                await self.original_interaction.followup.send("An error occurred during setup. Please try again.", ephemeral=True)
+        # This method is now just a placeholder since we handle the setup in setup_command
+        pass
 
     async def process_next_selection(self, interaction: discord.Interaction, initial: bool = False):
         """Process the next selection step"""
@@ -515,8 +509,8 @@ class AdminCog(commands.Cog):
                 await self.bot.db_manager.execute(
                     """
                     INSERT INTO guild_settings 
-                    (guild_id, is_paid, subscription_level, active) 
-                    VALUES (%s, 0, 'initial', 1)
+                    (guild_id, is_paid, subscription_level) 
+                    VALUES (%s, 0, 'initial')
                     """,
                     interaction.guild_id
                 )
@@ -533,15 +527,15 @@ class AdminCog(commands.Cog):
                 subscription_level=subscription_level
             )
             
-            # Send initial message
+            # Send initial message and start setup
             await interaction.response.send_message(
                 "Starting server setup...",
                 view=view,
                 ephemeral=True
             )
             
-            # Start the selection process
-            await view.start_selection()
+            # Process first step
+            await view.process_next_selection(interaction, initial=True)
 
         except Exception as e:
             logger.exception(f"Error initiating setup command: {e}")
