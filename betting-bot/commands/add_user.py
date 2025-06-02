@@ -3,8 +3,18 @@ from discord import app_commands, Interaction, Member
 from discord.ext import commands
 import logging
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+    logger.debug(f"Loaded environment variables from: {dotenv_path}")
+
+TEST_GUILD_ID = int(os.getenv('TEST_GUILD_ID', '0'))
 
 # Helper to check if a guild is paid (stub, replace with your real logic)
 def is_paid_guild(guild_id, db_manager):
@@ -61,9 +71,14 @@ async def setup(bot: commands.Bot):
     cog = AddUserCog(bot)
     await bot.add_cog(cog)
     logger.info("AddUserCog loaded")
-    # Ensure the command is registered globally
+    # Register command to specific guild for testing
     try:
-        await bot.tree.sync()
-        logger.info("Successfully synced add_user command globally")
+        if TEST_GUILD_ID:
+            test_guild = discord.Object(id=TEST_GUILD_ID)
+            bot.tree.copy_global_to(guild=test_guild)
+            await bot.tree.sync(guild=test_guild)
+            logger.info(f"Successfully synced add_user command to test guild {TEST_GUILD_ID}")
+        else:
+            logger.warning("TEST_GUILD_ID not set, command will not be synced to test guild")
     except Exception as e:
         logger.error(f"Failed to sync add_user command: {e}")

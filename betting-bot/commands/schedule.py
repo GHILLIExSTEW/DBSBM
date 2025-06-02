@@ -6,10 +6,20 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, timedelta
 import pytz
+import os
+from dotenv import load_dotenv
 
 from utils.schedule_image_generator import ScheduleImageGenerator
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+    logger.debug(f"Loaded environment variables from: {dotenv_path}")
+
+TEST_GUILD_ID = int(os.getenv('TEST_GUILD_ID', '0'))
 
 class ScheduleCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -107,9 +117,14 @@ async def setup(bot: commands.Bot):
     cog = ScheduleCog(bot)
     await bot.add_cog(cog)
     logger.info("ScheduleCog loaded")
-    # Ensure the command is registered globally
+    # Register command to specific guild for testing
     try:
-        await bot.tree.sync()
-        logger.info("Successfully synced schedule command globally")
+        if TEST_GUILD_ID:
+            test_guild = discord.Object(id=TEST_GUILD_ID)
+            bot.tree.copy_global_to(guild=test_guild)
+            await bot.tree.sync(guild=test_guild)
+            logger.info(f"Successfully synced schedule command to test guild {TEST_GUILD_ID}")
+        else:
+            logger.warning("TEST_GUILD_ID not set, command will not be synced to test guild")
     except Exception as e:
         logger.error(f"Failed to sync schedule command: {e}") 
