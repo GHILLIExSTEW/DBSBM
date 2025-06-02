@@ -147,7 +147,7 @@ class PlayerPropImageGenerator:
         return Image.open(default_path).convert("RGBA"), player_name
 
     @staticmethod
-    def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, units_display_mode='auto', display_as_risk=None):
+    def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, odds=None, units_display_mode='auto', display_as_risk=None):
         """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
         from PIL import Image, ImageDraw, ImageFont
         import os
