@@ -270,43 +270,84 @@ class SetIDCog(commands.Cog):
         # Access db_manager via self.bot assuming it's attached in main.py
         self.db_manager = bot.db_manager
 
-    @app_commands.command(name="setid", description="Set up a user as an authorized capper.")
-    @app_commands.describe(user="The user to designate as a capper.")
-    @app_commands.checks.has_permissions(administrator=True) # Only admins can run this
-    async def setid_command(self, interaction: Interaction, user: Member):
-        """Sets up a capper profile, prompting for name, color, and image."""
-        logger.info(f"SetID command initiated by {interaction.user} for {user} in guild {interaction.guild_id}")
-        try:
-            # Check if user is already a capper using shared db_manager
-            existing_capper = await self.db_manager.fetch_one(
-                """
-                SELECT user_id
-                FROM cappers
-                WHERE guild_id = $1 AND user_id = $2
-                """,
-                interaction.guild_id, user.id
+    @app_commands.command(name="setid", description="Set up your capper profile (authorized users only)")
+    async def setid_command(self, interaction: Interaction):
+        """Allows an authorized user to set up their capper profile."""
+        user_id = interaction.user.id
+        guild_id = interaction.guild_id
+        # Check if user is authorized (row exists and guild is paid)
+        capper_row = await self.db_manager.fetch_one(
+            """
+            SELECT * FROM cappers WHERE guild_id = $1 AND user_id = $2
+            """,
+            guild_id, user_id
+        )
+        if not capper_row:
+            await interaction.response.send_message(
+                "❌ You are not authorized to use this command. Ask an admin to add you as a capper.",
+                ephemeral=True
             )
+            return
+        # Optionally check if paid guild (reuse is_paid_guild from add_capper)
+        from .add_capper import is_paid_guild
+        if not is_paid_guild(guild_id, self.db_manager):
+            await interaction.response.send_message(
+                "❌ This feature is only available in paid guilds.", ephemeral=True
+            )
+            return
+        # Show modal for display name
+        modal = CapperDisplayNameModal(self.db_manager)
+        await interaction.response.send_modal(modal)
 
-            if existing_capper:
-                await interaction.response.send_message(
-                    f"❌ {user.mention} is already set up as a capper.",
-                    ephemeral=True,
-                    allowed_mentions=discord.AllowedMentions.none() # Avoid pinging
-                )
-                return
+# Modal for display name
+class CapperDisplayNameModal(Modal, title="Set Display Name"):
+    def __init__(self, db_manager):
+        super().__init__(timeout=300)
+        self.db = db_manager
+    display_name = TextInput(
+        label="Display Name",
+        placeholder="Enter your display name",
+        required=True,
+        max_length=32
+    )
+    async def on_submit(self, interaction: Interaction):
+        guild_id = interaction.guild_id
+        user_id = interaction.user.id
+        # Update display_name in DB
+        await self.db.execute(
+            """
+            UPDATE cappers SET display_name = $1, updated_at = NOW() AT TIME ZONE 'UTC' WHERE guild_id = $2 AND user_id = $3
+            """,
+            self.display_name.value, guild_id, user_id
+        )
+        # Prompt for image URL
+        modal = CapperImageURLModal(self.db)
+        await interaction.response.send_modal(modal)
 
-            # Show profile setup modal (pass target user and db_manager)
-            modal = CapperModal(target_user=user, db_manager=self.db_manager)
-            await interaction.response.send_modal(modal)
-            # The modal's on_submit will handle the DB interaction and image prompt
-
-        except Exception as e:
-            logger.exception(f"Error in setid command: {e}")
-            if not interaction.response.is_done():
-                await interaction.response.send_message("❌ An error occurred while setting up the user.", ephemeral=True)
-            # else: Cannot followup modals easily
-
-
+# Modal for image URL
+class CapperImageURLModal(Modal, title="Set Profile Image URL"):
+    def __init__(self, db_manager):
+        super().__init__(timeout=300)
+        self.db = db_manager
+    image_url = TextInput(
+        label="Profile Image URL",
+        placeholder="https://example.com/image.png",
+        required=True
+    )
+    async def on_submit(self, interaction: Interaction):
+        guild_id = interaction.guild_id
+        user_id = interaction.user.id
+        # Save image_path in DB
+        await self.db.execute(
+            """
+            UPDATE cappers SET image_path = $1, updated_at = NOW() AT TIME ZONE 'UTC' WHERE guild_id = $2 AND user_id = $3
+            """,
+            self.image_url.value, guild_id, user_id
+        )
+        await interaction.response.send_message(
+            "✅ Your profile has been updated!",
+            ephemeral=True
+        )
 # The setup function for the extension
 async def setup(bot: commands.Bot):
     await bot.add_cog(SetIDCog(bot))
