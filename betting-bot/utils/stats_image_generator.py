@@ -14,7 +14,7 @@ class StatsImageGenerator:
         os.makedirs(os.path.dirname(self.font_path), exist_ok=True)
         os.makedirs(os.path.dirname(self.background_path), exist_ok=True)
 
-    def generate_capper_stats_image(self, stats: Dict, username: str) -> Image.Image:
+    async def generate_capper_stats_image(self, stats: Dict, username: str) -> Image.Image:
         """Generate an image with capper statistics."""
         try:
             # Create a new image with a white background

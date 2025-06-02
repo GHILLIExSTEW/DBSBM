@@ -240,7 +240,7 @@ class StatsView(View):
             # Generate the stats image
             # Ensure StatsImageGenerator is async or run in executor
             image_generator = StatsImageGenerator()
-            img_buffer: Optional[BytesIO] = await image_generator.generate_stats_image(
+            img_buffer: Optional[BytesIO] = await image_generator.generate_capper_stats_image(
                  stats_data=self.stats_data,
                  is_server=self.is_server,
                  guild=interaction.guild,
