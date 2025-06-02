@@ -221,22 +221,21 @@ class BettingBot(commands.Bot):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
-                # First, ensure all commands are loaded
-                await self.load_extensions()
-                
                 # Get all commands
                 all_commands = self.tree.get_commands()
                 if not all_commands:
-                    logger.error("No commands found after loading extensions")
+                    logger.error("No commands found")
                     raise Exception("No commands found")
                 
-                # Sync setup command globally
+                # Get setup command
                 setup_command = self.tree.get_command("setup")
                 if not setup_command:
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
                 
-                # Sync setup command globally
+                # Clear all commands and add setup command globally
+                self.tree.clear_commands(guild=None)
+                self.tree.add_command(setup_command, guild=None)
                 await self.tree.sync()
                 logger.info("Global setup command synced")
                 
@@ -252,7 +251,10 @@ class BettingBot(commands.Bot):
                     guild_id = guild['guild_id']
                     guild_obj = discord.Object(id=guild_id)
                     
-                    # Copy all commands except load_logos to the guild
+                    # Clear existing commands for this guild
+                    self.tree.clear_commands(guild=guild_obj)
+                    
+                    # Add all commands except load_logos to the guild
                     for cmd in all_commands:
                         if cmd.name != "load_logos":
                             self.tree.add_command(cmd, guild=guild_obj)
@@ -266,6 +268,7 @@ class BettingBot(commands.Bot):
                     test_guild = discord.Object(id=TEST_GUILD_ID)
                     load_logos_cmd = self.tree.get_command("load_logos")
                     if load_logos_cmd:
+                        self.tree.clear_commands(guild=test_guild)
                         self.tree.add_command(load_logos_cmd, guild=test_guild)
                         await self.tree.sync(guild=test_guild)
                         logger.info(f"Synced load_logos command to test guild {TEST_GUILD_ID}")
@@ -452,9 +455,6 @@ class BettingBot(commands.Bot):
         # Only sync commands if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
             try:
-                # Load extensions first
-                await self.load_extensions()
-                
                 # Single point of command syncing
                 success = await self.sync_commands_with_retry()
                 if not success:
@@ -472,9 +472,6 @@ class BettingBot(commands.Bot):
         """Handle when the bot joins a new guild."""
         logger.info("Joined new guild: %s (%s)", guild.name, guild.id)
         try:
-            # Ensure commands are loaded
-            await self.load_extensions()
-            
             # Get setup command
             setup_command = self.tree.get_command("setup")
             if not setup_command:
@@ -483,6 +480,7 @@ class BettingBot(commands.Bot):
 
             # Add and sync setup command to new guild
             guild_obj = discord.Object(id=guild.id)
+            self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
             await self.tree.sync(guild=guild_obj)
             logger.info(f"Synced setup command to new guild {guild.id}")
