@@ -382,12 +382,18 @@ class GuildSettingsView(discord.ui.View):
         view.message = self.message  # Copy the message reference
 
         # Create the selection dropdown
-        select = select_class(
-            placeholder=f"Select {step['name']}",
-            setting_key=step['setting_key'],
-            channels=items if select_class == ChannelSelect else None,
-            roles=items if select_class == RoleSelect else None
-        )
+        if select_class == ChannelSelect:
+            select = select_class(
+                placeholder=f"Select {step['name']}",
+                setting_key=step['setting_key'],
+                channels=items
+            )
+        else:  # RoleSelect
+            select = select_class(
+                placeholder=f"Select {step['name']}",
+                setting_key=step['setting_key'],
+                roles=items
+            )
         view.add_item(select)
 
         # Add skip button
