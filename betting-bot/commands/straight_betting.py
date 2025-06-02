@@ -939,7 +939,8 @@ class StraightBetWorkflowView(View):
                     font = ImageFont.load_default()
                     font_small = ImageFont.load_default()
                 # Odds
-                odds_text = f"Odds: {odds_val:+d}" if odds_val > 0 else f"Odds: {odds_val:d}"
+                odds_val_int = int(odds_val)
+                odds_text = f"Odds: {odds_val_int:+d}" if odds_val > 0 else f"Odds: {odds_val_int:d}"
                 odds_w, odds_h = draw.textsize(odds_text, font=font)
                 draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
                 # Units
