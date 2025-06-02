@@ -524,6 +524,8 @@ async def fetch_games(
     logger.info(
         f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})"
     )
+    logger.debug(f"API request endpoint: {endpoint}")
+    logger.debug(f"API request params: {params}")
     headers = {"x-apisports-key": API_KEY}
     base_endpoint = ENDPOINTS.get(sport)
     
@@ -564,10 +566,9 @@ async def fetch_games(
                     return False
 
                 games = data.get("response", [])
-                logger.info(f"Received {len(games)} games for {league_name}")
-
                 if not games:
-                    logger.info(f"No games found for {league_name} on {date}")
+                    logger.warning(f"No games found for {league_name} on {date} (params: {params})")
+                    logger.warning(f"Raw API response: {json.dumps(data)[:1000]}")
                     return True  # Consider this a success - just no games available
 
                 # Process and save each game
