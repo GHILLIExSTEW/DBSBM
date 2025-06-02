@@ -222,7 +222,7 @@ class BettingBot(commands.Bot):
         for attempt in range(1, retries + 1):
             try:
                 # Verify required commands are present
-                required_commands = ["bet", "setup", "stats"]  # Add all required commands
+                required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid", "load_logos"]
                 current_commands = [cmd.name for cmd in self.tree.get_commands()]
                 missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
                 
@@ -234,6 +234,9 @@ class BettingBot(commands.Bot):
                     missing_commands = [cmd for cmd in required_commands if cmd not in current_commands]
                     if missing_commands:
                         raise Exception(f"Missing required commands after reload: {missing_commands}")
+                
+                # Clear existing commands first
+                self.tree.clear_commands(guild=None)
                 
                 # Sync commands globally
                 synced = await self.tree.sync()
@@ -441,6 +444,14 @@ class BettingBot(commands.Bot):
                 
             global_commands = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Final global commands: %s", global_commands)
+            
+            # Verify all required commands are present
+            required_commands = ["bet", "setup", "stats", "schedule", "add_user", "remove_user", "setid", "load_logos"]
+            missing_commands = [cmd for cmd in required_commands if cmd not in global_commands]
+            if missing_commands:
+                logger.error(f"Missing required commands after sync: {missing_commands}")
+                return
+                
         except Exception as e:
             logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info("------ Bot is Ready ------")

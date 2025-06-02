@@ -32,90 +32,38 @@ class ScheduleCog(commands.Cog):
     )
     async def schedule_command(self, interaction: discord.Interaction):
         """Display a schedule of all games available to bet on."""
+        logger.info(f"Schedule command initiated by {interaction.user} in guild {interaction.guild_id}")
         try:
             await interaction.response.defer(ephemeral=True)
-
-            # Check if guild is paid
-            guild_settings = await self.bot.db_manager.fetch_one(
-                """
-                SELECT subscription_level 
-                FROM guild_settings 
-                WHERE guild_id = %s
-                """,
-                interaction.guild_id
-            )
-
-            if not guild_settings or guild_settings['subscription_level'] != 'premium':
-                await interaction.followup.send(
-                    "❌ This command is only available in premium guilds. Please contact your server administrator to upgrade.",
-                    ephemeral=True
+            
+            # Get user's timezone from database or default to UTC
+            user_timezone = "UTC"  # Default timezone
+            try:
+                user_settings = await self.bot.db_manager.fetch_one(
+                    "SELECT timezone FROM user_settings WHERE user_id = %s",
+                    (interaction.user.id,)
                 )
-                return
+                if user_settings and user_settings.get('timezone'):
+                    user_timezone = user_settings['timezone']
+            except Exception as e:
+                logger.warning(f"Error fetching user timezone: {e}")
 
-            # Get user's timezone from their locale or default to UTC
-            user_timezone = interaction.locale or 'UTC'
-            if user_timezone not in pytz.all_timezones:
-                user_timezone = 'UTC'
-
-            # Query all games from the database
+            # Build the query for upcoming games
             query = """
                 SELECT 
-                    api_game_id,
-                    sport,
-                    league_id,
-                    league_name,
-                    home_team_name,
-                    away_team_name,
-                    start_time,
-                    status
-                FROM api_games
-                WHERE DATE(start_time) = CURDATE()
-                AND status = 'Not Started'
-                ORDER BY start_time ASC
+                    ag.api_game_id,
+                    ag.home_team_name,
+                    ag.away_team_name,
+                    ag.start_time,
+                    ag.league_id,
+                    ag.league_name
+                FROM api_games ag
+                WHERE ag.start_time > NOW()
+                ORDER BY ag.start_time ASC
+                LIMIT 10
             """
-            
-            logger.info("Fetching upcoming games...")
+
             try:
-                # Debug current date
-                current_date = await self.bot.db_manager.fetchval("SELECT CURDATE()")
-                logger.info(f"Current date in database: {current_date}")
-
-                # Check if there are any games at all
-                any_games = await self.bot.db_manager.fetch_all("""
-                    SELECT api_game_id, sport, league_name, home_team_name, away_team_name, start_time, status
-                    FROM api_games 
-                    LIMIT 5
-                """)
-                logger.info(f"Any games in database: {any_games}")
-
-                # Debug all games in database
-                all_games = await self.bot.db_manager.fetch_all("""
-                    SELECT COUNT(*) as count, status, DATE(start_time) as game_date
-                    FROM api_games 
-                    GROUP BY status, DATE(start_time)
-                    ORDER BY game_date, status
-                """)
-                logger.info(f"Games in database by status and date: {all_games}")
-
-                # Debug games for today
-                today_games = await self.bot.db_manager.fetch_all("""
-                    SELECT COUNT(*) as count, DATE(start_time) as game_date
-                    FROM api_games 
-                    WHERE DATE(start_time) = CURDATE()
-                    GROUP BY DATE(start_time)
-                """)
-                logger.info(f"Games starting today: {today_games}")
-
-                # Debug raw data for today's games
-                raw_today_games = await self.bot.db_manager.fetch_all("""
-                    SELECT api_game_id, sport, league_name, home_team_name, away_team_name, start_time, status
-                    FROM api_games 
-                    WHERE DATE(start_time) = CURDATE()
-                    ORDER BY start_time
-                """)
-                logger.info(f"Raw data for today's games: {raw_today_games}")
-
-                # Finally, run our actual query
                 games = await self.bot.db_manager.fetch_all(query)
                 logger.info(f"Found {len(games) if games else 0} upcoming games")
                 if games:
@@ -166,9 +114,26 @@ class ScheduleCog(commands.Cog):
                     ephemeral=True
                 )
 
+    async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        """Handle errors specific to this cog's commands."""
+        logger.error(f"Error in ScheduleCog command: {error}", exc_info=True)
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "An error occurred while processing the schedule command.",
+                ephemeral=True
+            )
+        else:
+            try:
+                await interaction.followup.send(
+                    "An error occurred while processing the schedule command.",
+                    ephemeral=True
+                )
+            except discord.HTTPException:
+                pass
+
 async def setup(bot: commands.Bot):
-    cog = ScheduleCog(bot)
-    await bot.add_cog(cog)
+    """Add the cog to the bot."""
+    await bot.add_cog(ScheduleCog(bot))
     logger.info("ScheduleCog loaded")
     # Register command to specific guild for testing
     try:
