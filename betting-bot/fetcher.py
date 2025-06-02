@@ -716,8 +716,9 @@ async def main():
     try:
         pool = await setup_db_pool()
         logger.info("Database pool created successfully")
-        
-        # Only run the 5-second update loop
+        # NEW: Perform initial fetch of all games for today and tomorrow
+        await initial_fetch(pool)
+        # Then run the 5-second update loop for bet games
         await update_bet_games_every_5_seconds(pool)
     except Exception as e:
         logger.error(f"Error in main: {e}")

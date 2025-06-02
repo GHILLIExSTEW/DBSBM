@@ -269,8 +269,18 @@ class GameSelect(Select):
                 )
                 self.parent_view.stop()
                 return
+
+        # Always show team selection after game selection
+        self.parent_view.clear_items()
+        home_team = self.parent_view.bet_details.get("home_team_name", "")
+        away_team = self.parent_view.bet_details.get("away_team_name", "")
+        self.parent_view.add_item(TeamSelect(self.parent_view, home_team, away_team))
+        self.parent_view.add_item(CancelButton(self.parent_view))
         await interaction.response.defer()
-        await self.parent_view.go_next(interaction)
+        await self.parent_view.edit_message(
+            content="Select which team you are betting on:",
+            view=self.parent_view
+        )
 
 
 class CancelButton(Button):
@@ -341,7 +351,7 @@ class TeamSelect(Select):
             line_type=line_type,
             selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
             bet_details_from_view=self.parent_view.bet_details,
-            is_manual=False,
+            is_manual=self.parent_view.bet_details.get('is_manual', False),
         )
         modal.view_ref = self.parent_view
         if not interaction.response.is_done():
@@ -717,11 +727,15 @@ class StraightBetWorkflowView(View):
                             player_name = line.split(' - ')[0] if ' - ' in line else line
                         team_name = home_team
                         league = self.bet_details.get("league", "N/A")
+                        odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                        line_with_odds = line
+                        if odds_str and not line.strip().endswith(odds_str):
+                            line_with_odds = f"{line} {odds_str}"
                         bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                             player_name=player_name or team_name,
                             team_name=team_name,
                             league=league,
-                            line=line,
+                            line=line_with_odds,
                             units=units,
                             output_path=None,
                             bet_id=bet_id,
@@ -852,33 +866,121 @@ class StraightBetWorkflowView(View):
             odds_val = float(details.get("odds", 0.0))
             bet_type = details.get("line_type", "straight")
             discord_file_to_send = None
-            if self.preview_image_bytes:
-                self.preview_image_bytes.seek(0)
-                discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
-            else:
-                logger.warning(f"Straight bet {bet_serial}: No preview image available at submit. Attempting to regenerate.")
-                bet_slip_gen = await self.get_bet_slip_generator()
-                bet_slip_image = await bet_slip_gen.generate_bet_slip(
-                    home_team=self.home_team if self.home_team else details.get("team", "N/A"),
-                    away_team=self.away_team if self.away_team else details.get("opponent", "N/A"),
-                    league=self.league if self.league else details.get("league", "N/A"),
-                    line=self.line if self.line else details.get("line", "N/A"),
-                    odds=odds_val,
-                    units=units_val,
-                    bet_id=str(bet_serial),
-                    timestamp=datetime.now(timezone.utc),
-                    bet_type=bet_type,
-                    selected_team=details.get("team"),
-                )
-                if bet_slip_image:
-                    if isinstance(bet_slip_image, bytes):
-                        self.preview_image_bytes = io.BytesIO(bet_slip_image)
-                    else:
-                        self.preview_image_bytes = io.BytesIO()
-                        bet_slip_image.save(self.preview_image_bytes, format='PNG')
-                    self.preview_image_bytes.seek(0)
+            from PIL import Image, ImageDraw, ImageFont
+            import io as _io
+            # Generate main slip image
+            main_image = None
+            try:
+                bet_type = self.bet_details.get("line_type", "game_line")
+                league = self.bet_details.get("league", "N/A")
+                home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+                away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+                line = self.bet_details.get("line", "N/A")
+                odds = float(self.bet_details.get("odds", 0.0))
+                bet_id = str(self.bet_details.get("bet_serial", ""))
+                timestamp = datetime.now(timezone.utc)
+                units = float(self.bet_details.get("units", 1.0))
+                if bet_type == "game_line":
+                    from utils.game_line_image_generator import GameLineImageGenerator
+                    generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                    bet_slip_image_bytes = generator.generate_bet_slip_image(
+                        league=league,
+                        home_team=home_team,
+                        away_team=away_team,
+                        line=line,
+                        odds=odds,
+                        units=units,
+                        bet_id=bet_id,
+                        timestamp=timestamp,
+                        selected_team=self.bet_details.get("team", home_team),
+                        output_path=None
+                    )
+                    if bet_slip_image_bytes:
+                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
+                elif bet_type == "player_prop":
+                    from utils.player_prop_image_generator import PlayerPropImageGenerator
+                    generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                    player_name = self.bet_details.get("player_name")
+                    if not player_name and line:
+                        player_name = line.split(' - ')[0] if ' - ' in line else line
+                    team_name = home_team
+                    league = self.bet_details.get("league", "N/A")
+                    odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                    line_with_odds = line
+                    if odds_str and not line.strip().endswith(odds_str):
+                        line_with_odds = f"{line} {odds_str}"
+                    bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                        player_name=player_name or team_name,
+                        team_name=team_name,
+                        league=league,
+                        line=line_with_odds,
+                        units=units,
+                        output_path=None,
+                        bet_id=bet_id,
+                        timestamp=timestamp,
+                        guild_id=str(self.original_interaction.guild_id)
+                    )
+                    if bet_slip_image_bytes:
+                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
+            except Exception as e:
+                logger.exception(f"Error generating main bet slip image: {e}")
+                main_image = None
+            # Generate odds/units/footer image
+            footer_image = None
+            try:
+                width = main_image.width if main_image else 800
+                height = 120
+                footer_image = Image.new("RGBA", (width, height), (35, 39, 51, 255))
+                draw = ImageDraw.Draw(footer_image)
+                # Load font
+                try:
+                    font_path = "betting-bot/assets/fonts/Roboto-Bold.ttf"
+                    font = ImageFont.truetype(font_path, 44)
+                    font_small = ImageFont.truetype(font_path, 28)
+                except Exception:
+                    font = ImageFont.load_default()
+                    font_small = ImageFont.load_default()
+                # Odds
+                odds_text = f"Odds: {odds_val:+d}" if odds_val > 0 else f"Odds: {odds_val:d}"
+                odds_w, odds_h = draw.textsize(odds_text, font=font)
+                draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
+                # Units
+                unit_label = "Unit" if units_val <= 1 else "Units"
+                units_text = f"Units: {units_val:.2f} {unit_label}"
+                units_w, units_h = draw.textsize(units_text, font=font)
+                draw.text(((width - units_w) // 2, 30 + odds_h), units_text, font=font, fill="#FFD700")
+                # Footer (bet id and timestamp)
+                bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
+                timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                draw.text((20, height - 40), bet_id_text, font=font_small, fill="#888888")
+                ts_w, _ = draw.textsize(timestamp_text, font=font_small)
+                draw.text((width - ts_w - 20, height - 40), timestamp_text, font=font_small, fill="#888888")
+            except Exception as e:
+                logger.exception(f"Error generating odds/units/footer image: {e}")
+                footer_image = None
+            # Stack images
+            combined_image = None
+            try:
+                if main_image and footer_image:
+                    combined_height = main_image.height + footer_image.height
+                    combined_image = Image.new("RGBA", (main_image.width, combined_height), (35, 39, 51, 255))
+                    combined_image.paste(main_image, (0, 0))
+                    combined_image.paste(footer_image, (0, main_image.height))
+                elif main_image:
+                    combined_image = main_image
+                elif footer_image:
+                    combined_image = footer_image
                 else:
-                    self.preview_image_bytes = None
+                    combined_image = None
+                if combined_image:
+                    buf = _io.BytesIO()
+                    combined_image.save(buf, format="PNG")
+                    buf.seek(0)
+                    self.preview_image_bytes = buf
+                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+            except Exception as e:
+                logger.exception(f"Error stacking images: {e}")
+                discord_file_to_send = None
             capper_data = await self.bot.db_manager.fetch_one(
                 "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
                 (interaction.guild_id, interaction.user.id)
@@ -998,11 +1100,15 @@ class StraightBetWorkflowView(View):
                     player_name = line.split(' - ')[0] if ' - ' in line else line
                 team_name = home_team
                 league = self.bet_details.get("league", "N/A")
+                odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                line_with_odds = line
+                if odds_str and not line.strip().endswith(odds_str):
+                    line_with_odds = f"{line} {odds_str}"
                 bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                     player_name=player_name or team_name,
                     team_name=team_name,
                     league=league,
-                    line=line,
+                    line=line_with_odds,
                     units=units,
                     output_path=None,
                     bet_id=bet_id,

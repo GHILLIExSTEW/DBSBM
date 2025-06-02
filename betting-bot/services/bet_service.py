@@ -271,7 +271,7 @@ class BetService:
             return None
         try:
             for leg in legs_data:
-                api_game_id = leg.get('game_id')
+                api_game_id = leg.get('api_game_id')
                 if api_game_id and api_game_id != 'Other':
                     game_exists = await self.db_manager.fetch_one(
                         "SELECT id FROM api_games WHERE api_game_id = %s",
