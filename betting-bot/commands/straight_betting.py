@@ -866,7 +866,10 @@ class StraightBetWorkflowView(View):
             odds_val = float(details.get("odds", 0.0))
             bet_type = details.get("line_type", "straight")
             discord_file_to_send = None
-            # Always regenerate the image with the latest details before posting
+            from PIL import Image, ImageDraw, ImageFont
+            import io as _io
+            # Generate main slip image
+            main_image = None
             try:
                 bet_type = self.bet_details.get("line_type", "game_line")
                 league = self.bet_details.get("league", "N/A")
@@ -893,9 +896,7 @@ class StraightBetWorkflowView(View):
                         output_path=None
                     )
                     if bet_slip_image_bytes:
-                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                        self.preview_image_bytes.seek(0)
-                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
                 elif bet_type == "player_prop":
                     from utils.player_prop_image_generator import PlayerPropImageGenerator
                     generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
@@ -920,11 +921,65 @@ class StraightBetWorkflowView(View):
                         guild_id=str(self.original_interaction.guild_id)
                     )
                     if bet_slip_image_bytes:
-                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                        self.preview_image_bytes.seek(0)
-                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
             except Exception as e:
-                logger.exception(f"Error generating final bet slip image: {e}")
+                logger.exception(f"Error generating main bet slip image: {e}")
+                main_image = None
+            # Generate odds/units/footer image
+            footer_image = None
+            try:
+                width = main_image.width if main_image else 800
+                height = 120
+                footer_image = Image.new("RGBA", (width, height), (35, 39, 51, 255))
+                draw = ImageDraw.Draw(footer_image)
+                # Load font
+                try:
+                    font_path = "betting-bot/assets/fonts/Roboto-Bold.ttf"
+                    font = ImageFont.truetype(font_path, 44)
+                    font_small = ImageFont.truetype(font_path, 28)
+                except Exception:
+                    font = ImageFont.load_default()
+                    font_small = ImageFont.load_default()
+                # Odds
+                odds_text = f"Odds: {odds_val:+d}" if odds_val > 0 else f"Odds: {odds_val:d}"
+                odds_w, odds_h = draw.textsize(odds_text, font=font)
+                draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
+                # Units
+                unit_label = "Unit" if units_val <= 1 else "Units"
+                units_text = f"Units: {units_val:.2f} {unit_label}"
+                units_w, units_h = draw.textsize(units_text, font=font)
+                draw.text(((width - units_w) // 2, 30 + odds_h), units_text, font=font, fill="#FFD700")
+                # Footer (bet id and timestamp)
+                bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
+                timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                draw.text((20, height - 40), bet_id_text, font=font_small, fill="#888888")
+                ts_w, _ = draw.textsize(timestamp_text, font=font_small)
+                draw.text((width - ts_w - 20, height - 40), timestamp_text, font=font_small, fill="#888888")
+            except Exception as e:
+                logger.exception(f"Error generating odds/units/footer image: {e}")
+                footer_image = None
+            # Stack images
+            combined_image = None
+            try:
+                if main_image and footer_image:
+                    combined_height = main_image.height + footer_image.height
+                    combined_image = Image.new("RGBA", (main_image.width, combined_height), (35, 39, 51, 255))
+                    combined_image.paste(main_image, (0, 0))
+                    combined_image.paste(footer_image, (0, main_image.height))
+                elif main_image:
+                    combined_image = main_image
+                elif footer_image:
+                    combined_image = footer_image
+                else:
+                    combined_image = None
+                if combined_image:
+                    buf = _io.BytesIO()
+                    combined_image.save(buf, format="PNG")
+                    buf.seek(0)
+                    self.preview_image_bytes = buf
+                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+            except Exception as e:
+                logger.exception(f"Error stacking images: {e}")
                 discord_file_to_send = None
             capper_data = await self.bot.db_manager.fetch_one(
                 "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",

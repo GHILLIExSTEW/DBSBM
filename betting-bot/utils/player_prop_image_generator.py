@@ -1,6 +1,7 @@
 # This file contains the logic for generating player prop bet images.
 from PIL import Image, ImageDraw, ImageFont
 import os
+import difflib
 
 class PlayerPropImageGenerator:
     def __init__(self, font_dir="betting-bot/assets/fonts", guild_id=None):
@@ -117,19 +118,33 @@ class PlayerPropImageGenerator:
 
     @staticmethod
     def _load_player_image(player_name: str, team_name: str, league: str, guild_id: str = None):
+        import os
+        from PIL import Image
+        import difflib
         from config.asset_paths import get_sport_category_for_path
         from data.game_utils import normalize_team_name_any_league
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA")
+            return Image.open(default_path).convert("RGBA"), player_name
         normalized_team = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
         normalized_player = normalize_team_name_any_league(player_name).replace(".", "").replace(" ", "_").lower()
-        player_img_path = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team, f"{normalized_player}.png")
+        player_dir = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team)
+        player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
         if os.path.exists(player_img_path):
-            return Image.open(player_img_path).convert("RGBA")
+            return Image.open(player_img_path).convert("RGBA"), player_name
+        # Fuzzy match if exact not found
+        if os.path.exists(player_dir):
+            candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
+            candidate_names = [os.path.splitext(f)[0] for f in candidates]
+            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.6)
+            if matches:
+                match_file = matches[0] + '.png'
+                match_path = os.path.join(player_dir, match_file)
+                display_name = matches[0].replace('_', ' ').title()
+                return Image.open(match_path).convert("RGBA"), display_name
         default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-        return Image.open(default_path).convert("RGBA")
+        return Image.open(default_path).convert("RGBA"), player_name
 
     @staticmethod
     def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, units_display_mode='auto', display_as_risk=None):
@@ -203,7 +218,7 @@ class PlayerPropImageGenerator:
             image.paste(team_logo_resized, (team_logo_x, y_base), team_logo_resized)
 
         # Player image (right)
-        player_image = PlayerPropImageGenerator._load_player_image(player_name, team_name, league, guild_id)
+        player_image, display_name = PlayerPropImageGenerator._load_player_image(player_name, team_name, league, guild_id)
         if player_image:
             player_image_resized = player_image.convert('RGBA').resize(logo_size)
             player_image_x = int(player_section_center_x - logo_size[0] // 2)
@@ -216,10 +231,10 @@ class PlayerPropImageGenerator:
         draw.text((team_name_x, team_name_y), team_name, font=font_bold_team, fill="white", anchor="lt")
 
         # Player name (right, white)
-        player_name_w, _ = font_bold_player.getbbox(player_name)[2:]
+        player_name_w, _ = font_bold_player.getbbox(display_name)[2:]
         player_name_x = player_section_center_x - player_name_w // 2
         player_name_y = y_base + logo_size[1] + 8
-        draw.text((player_name_x, player_name_y), player_name, font=font_bold_player, fill="white", anchor="lt")
+        draw.text((player_name_x, player_name_y), display_name, font=font_bold_player, fill="white", anchor="lt")
 
         # Line (centered below)
         line_text = str(line)

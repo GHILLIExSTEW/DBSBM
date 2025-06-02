@@ -328,16 +328,28 @@ class GameLineImageGenerator:
     def _load_player_image(self, player_name: str, team_name: str, league: str):
         import os
         from PIL import Image
+        import difflib
         from config.asset_paths import get_sport_category_for_path
         from data.game_utils import normalize_team_name_any_league
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if getattr(self, 'guild_id', None) else "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA")
-        normalized_team = normalize_team_name_any_league(team_name).replace(".", "")
-        normalized_player = normalize_team_name_any_league(player_name).replace(".", "")
-        player_img_path = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team, f"{normalized_player}.png")
+            return Image.open(default_path).convert("RGBA"), player_name
+        normalized_team = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
+        normalized_player = normalize_team_name_any_league(player_name).replace(".", "").replace(" ", "_").lower()
+        player_dir = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team)
+        player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
         if os.path.exists(player_img_path):
-            return Image.open(player_img_path).convert("RGBA")
+            return Image.open(player_img_path).convert("RGBA"), player_name
+        # Fuzzy match if exact not found
+        if os.path.exists(player_dir):
+            candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
+            candidate_names = [os.path.splitext(f)[0] for f in candidates]
+            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.6)
+            if matches:
+                match_file = matches[0] + '.png'
+                match_path = os.path.join(player_dir, match_file)
+                display_name = matches[0].replace('_', ' ').title()
+                return Image.open(match_path).convert("RGBA"), display_name
         default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if getattr(self, 'guild_id', None) else "betting-bot/static/logos/default_image.png"
-        return Image.open(default_path).convert("RGBA")
+        return Image.open(default_path).convert("RGBA"), player_name

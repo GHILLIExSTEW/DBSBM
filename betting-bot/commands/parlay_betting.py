@@ -23,6 +23,7 @@ from utils.formatters import format_parlay_bet_details_embed
 from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
+from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
 
@@ -399,10 +400,11 @@ class BetDetailsModal(Modal):
                 image_bytes = image_generator.generate_image(
                     legs=legs,
                     output_path=None,
-                    total_odds=total_odds,
-                    units=units,
+                    total_odds=None,
+                    units=None,
                     bet_id=bet_id,
-                    bet_datetime=bet_datetime
+                    bet_datetime=bet_datetime,
+                    finalized=True
                 )
                 if image_bytes:
                     self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
@@ -420,7 +422,10 @@ class BetDetailsModal(Modal):
             content = f"✅ Added leg {len(self.view_ref.bet_details['legs'])} to your parlay!\n\n"
             content += "**Current Parlay:**\n"
             for i, leg in enumerate(self.view_ref.bet_details['legs'], 1):
-                content += f"{i}. {leg.get('team', 'N/A')} vs {leg.get('opponent', 'N/A')} - {leg.get('line', 'N/A')}\n"
+                if leg.get('line_type') == 'player_prop':
+                    content += f"{i}. {leg.get('league', 'N/A')} - {leg.get('player_name', 'N/A')} {leg.get('line', 'N/A')}\n"
+                else:
+                    content += f"{i}. {leg.get('league', 'N/A')} - {leg.get('team', 'N/A')} vs {leg.get('opponent', 'N/A')} - {leg.get('line', 'N/A')}\n"
             content += "\nWould you like to add another leg or finalize your parlay?"
             
             # Add buttons for next action
@@ -460,7 +465,7 @@ class TotalOddsModal(Modal):
             if not odds:
                 raise ValidationError("Odds cannot be empty")
             self.view_ref.bet_details['total_odds'] = odds
-            # Regenerate image with odds and footer
+            # Generate main parlay slip image and odds/units/footer image, then stack
             try:
                 image_generator = ParlayBetImageGenerator()
                 legs = []
@@ -487,22 +492,38 @@ class TotalOddsModal(Modal):
                     total_odds=total_odds,
                     units=units,
                     bet_id=bet_id,
-                    bet_datetime=bet_datetime
+                    bet_datetime=bet_datetime,
+                    finalized=True
                 )
                 if image_bytes:
                     self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
                     self.view_ref.preview_image_bytes.seek(0)
                     preview_file = discord.File(self.view_ref.preview_image_bytes, filename=f"parlay_preview.png")
+                    # Show units dropdown with preview
+                    self.view_ref.clear_items()
+                    self.view_ref.add_item(UnitsSelect(self.view_ref))
+                    self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
+                    self.view_ref.add_item(CancelButton(self.view_ref))
+                    await interaction.response.edit_message(
+                        content="Select total units for your parlay:",
+                        view=self.view_ref,
+                        attachments=[preview_file]
+                    )
+                    return
                 else:
                     self.view_ref.preview_image_bytes = None
                     preview_file = None
+                    await interaction.response.edit_message(
+                        content="Select total units for your parlay:",
+                        view=self.view_ref
+                    )
+                    return
             except Exception as e:
                 logger.error(f"Error generating parlay preview image after odds: {e}")
                 self.view_ref.preview_image_bytes = None
                 preview_file = None
             await interaction.response.defer()
             await self.view_ref.go_next(interaction)
-            # Optionally, update the message with the new image here if needed
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
@@ -522,11 +543,9 @@ class UnitsSelect(Select):
         self.units_display_mode = units_display_mode
         options = []
         if units_display_mode == 'manual':
-            # Add To Win group
             options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
-            # Add To Risk group
             options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
@@ -559,8 +578,51 @@ class UnitsSelect(Select):
             self.parent_view.bet_details['display_as_risk'] = None
         logger.debug(f"Parlay Units selected: {value} by user {interaction.user.id}")
         self.disabled = True
-        await interaction.response.defer()
-        await self.parent_view._handle_units_selection(interaction, float(self.parent_view.bet_details['units']))
+        # Update preview image with selected units, but do not proceed to channel selection yet
+        try:
+            generator = ParlayBetImageGenerator(guild_id=self.parent_view.original_interaction.guild_id)
+            legs = []
+            for leg in self.parent_view.bet_details.get('legs', []):
+                leg_data = {
+                    'bet_type': leg.get('line_type', 'game_line'),
+                    'league': leg.get('league', ''),
+                    'home_team': leg.get('home_team_name', ''),
+                    'away_team': leg.get('away_team_name', ''),
+                    'selected_team': leg.get('team', ''),
+                    'line': leg.get('line', ''),
+                    'odds': leg.get('odds', leg.get('odds_str', '')),
+                }
+                if leg.get('line_type') == 'player_prop':
+                    leg_data['player_name'] = leg.get('player_name', '')
+                legs.append(leg_data)
+            total_odds = self.parent_view.bet_details.get('total_odds', None)
+            bet_id = str(self.parent_view.bet_details.get('bet_serial', ''))
+            bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            image_bytes = generator.generate_image(
+                legs=legs,
+                output_path=None,
+                total_odds=total_odds,
+                units=self.parent_view.bet_details['units'],
+                bet_id=bet_id,
+                bet_datetime=bet_datetime,
+                finalized=True
+            )
+            if image_bytes:
+                self.parent_view.preview_image_bytes = io.BytesIO(image_bytes)
+                self.parent_view.preview_image_bytes.seek(0)
+                file_to_send = File(self.parent_view.preview_image_bytes, filename="parlay_preview_units.png")
+            else:
+                self.parent_view.preview_image_bytes = None
+                file_to_send = None
+        except Exception as e:
+            logger.exception(f"Error generating parlay preview image: {e}")
+            self.parent_view.preview_image_bytes = None
+            file_to_send = None
+        await interaction.response.edit_message(
+            content="Confirm your units selection, then proceed.",
+            view=self.parent_view,
+            attachments=[file_to_send] if file_to_send else None
+        )
 
 class ChannelSelect(Select):
     def __init__(self, parent_view: 'ParlayBetWorkflowView', channels: List[TextChannel]):
@@ -692,6 +754,19 @@ class TeamSelect(Select):
                 view=None
             )
             self.parent_view.stop()
+
+class ConfirmUnitsButton(Button):
+    def __init__(self, parent_view: 'ParlayBetWorkflowView'):
+        super().__init__(
+            style=ButtonStyle.green,
+            label="Confirm Units",
+            custom_id=f"parlay_confirm_units_{parent_view.original_interaction.id}"
+        )
+        self.parent_view = parent_view
+
+    async def callback(self, interaction: Interaction):
+        logger.debug(f"Confirm Units button clicked by user {interaction.user.id}")
+        await self.parent_view._handle_units_selection(interaction, float(self.parent_view.bet_details['units']))
 
 # --- Main Workflow View ---
 class ParlayBetWorkflowView(View):
@@ -949,7 +1024,7 @@ class ParlayBetWorkflowView(View):
                 if leg.get('line_type') == 'player_prop':
                     leg_data['player_name'] = leg.get('player_name', '')
                 legs.append(leg_data)
-            total_odds = self.bet_details.get('total_odds', 0.0)
+            total_odds = self.bet_details.get('total_odds', None)
             bet_id = str(self.bet_details.get('bet_serial', ''))
             bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             image_bytes = generator.generate_image(
@@ -958,7 +1033,8 @@ class ParlayBetWorkflowView(View):
                 total_odds=total_odds,
                 units=units,
                 bet_id=bet_id,
-                bet_datetime=bet_datetime
+                bet_datetime=bet_datetime,
+                finalized=True
             )
             if image_bytes:
                 self.preview_image_bytes = io.BytesIO(image_bytes)
@@ -972,12 +1048,37 @@ class ParlayBetWorkflowView(View):
             self.preview_image_bytes = None
             file_to_send = None
         self.clear_items()
-        self.add_item(UnitsSelect(self))
-        self.add_item(ConfirmUnitsButton(self))
+        # Fetch allowed embed channels from guild settings (like straight betting)
+        allowed_channels = []
+        guild_settings = await self.bot.db_manager.fetch_one(
+            "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+            (str(self.original_interaction.guild_id),)
+        )
+        if guild_settings:
+            for channel_id in (guild_settings.get("embed_channel_1"), guild_settings.get("embed_channel_2")):
+                if channel_id:
+                    try:
+                        cid = int(channel_id)
+                        channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                        if isinstance(channel, TextChannel) and channel.permissions_for(interaction.guild.me).send_messages:
+                            if channel not in allowed_channels:
+                                allowed_channels.append(channel)
+                    except Exception as e:
+                        logger.error(f"Error processing channel {channel_id}: {e}")
+        if not allowed_channels:
+            await self.edit_message_for_current_leg(
+                interaction,
+                content="❌ No valid embed channels configured. Please contact an admin.",
+                view=None
+            )
+            self.stop()
+            return
+        self.add_item(ChannelSelect(self, allowed_channels))
+        self.add_item(FinalConfirmButton(self))
         self.add_item(CancelButton(self))
         await self.edit_message_for_current_leg(
             interaction,
-            content=self.get_content() if hasattr(self, 'get_content') else None,
+            content="Select the channel to post your parlay:",
             view=self,
             file=file_to_send
         )
@@ -1039,7 +1140,8 @@ class ParlayBetWorkflowView(View):
                 total_odds=total_odds,
                 units=units_val,
                 bet_id=bet_id,
-                bet_datetime=bet_datetime
+                bet_datetime=bet_datetime,
+                finalized=True
             )
             discord_file_to_send = None
             if image_bytes:

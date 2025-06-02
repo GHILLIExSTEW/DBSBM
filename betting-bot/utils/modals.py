@@ -11,6 +11,7 @@ from PIL import Image
 import glob
 from rapidfuzz import process, fuzz
 import time
+import difflib
 
 # Import your project's configurations and utilities
 # Adjust these paths if your config/utils structure is different
@@ -119,8 +120,7 @@ class PlayerPropModal(Modal):
                 })
 
             # Get player image
-            from utils.modals import get_player_image  # or import at top
-            player_image_path = get_player_image(player, team, self.league_key)
+            player_image_path, display_name = get_player_image(player, team, self.league_key)
             player_image = None
             if player_image_path:
                 from PIL import Image
@@ -393,64 +393,45 @@ class StraightBetDetailsModal(Modal):
 # class CapperImageURLModal(Modal): ...
 # class SubscriptionInfoModal(Modal): ...
 
-def get_player_image(player_name: str, team: str, league_key: str) -> Optional[str]:
-    """Get player image path using fuzzy matching."""
+def get_player_image(player_name: str, team: str, league_key: str) -> tuple[Optional[str], str]:
+    """Get player image path using fuzzy matching, and return the normalized display name."""
+    import os
+    import difflib
     try:
         # Get sport_id from mapping
         sport_id = PLAYER_PROP_SPORT_ID_MAP.get(league_key)
         if not sport_id:
             logger.warning(f"[Player Image] No sport_id mapping found for league: {league_key}")
-            return None
-            
+            return None, player_name
         # Normalize team name for directory
         team_dir_name = team.lower().replace(' ', '_')
         team_dir = os.path.join(BASE_DIR, "static", "logos", "players", sport_id, team_dir_name)
-        
-        # logger.info(f"[Player Image] sport_id: '{sport_id}' (league_key: '{league_key}')")
-        logger.info(f"[Player Image] Searching in team_dir: {team_dir}")
-        
         if not os.path.exists(team_dir):
             logger.warning(f"[Player Image] Team directory not found: {team_dir}")
-            return None
-            
+            return None, player_name
         # Get all image files in team directory
         image_files = [f for f in os.listdir(team_dir) if f.endswith('.png')]
         if not image_files:
             logger.warning(f"[Player Image] No player images found in: {team_dir}")
-            return None
-            
+            return None, player_name
         # Get full paths
         candidates = [os.path.splitext(os.path.basename(f))[0] for f in image_files]
-        logger.info(f"[Player Image] Found image files: {[os.path.join(team_dir, f) for f in candidates]}")
-        
         # Normalize search name
         search_name = player_name.lower().replace(' ', '_')
-        logger.info(f"[Player Image] Search names: {[search_name]}")
-        
-        # Get best match
-        best_match = process.extractOne(search_name, candidates, scorer=fuzz.ratio)
-        if best_match:
-            if len(best_match) == 3:
-                best_name, score, _ = best_match  # Unpack all three values, ignore index
-            else:
-                best_name, score = best_match  # Handle cases with only two values
-            logger.info(f"[Player Image] Fuzzy match: '{search_name}' vs candidates -> '{best_name}' (score {score})")
-            
-            # Use best match if it's the only strong candidate or above threshold
-            if score >= 60 or len(candidates) == 1:
-                image_path = os.path.join(team_dir, best_name + '.png')
-                logger.info(f"[Player Image] Using best match: {best_name} (score {score})")
-                return image_path
-            else:
-                logger.warning(f"[Player Image] No match above threshold. Best: {best_name} (score {score})")
-                return None
+        # Fuzzy match
+        matches = difflib.get_close_matches(search_name, candidates, n=1, cutoff=0.6)
+        if matches:
+            best_name = matches[0]
+            image_path = os.path.join(team_dir, best_name + '.png')
+            display_name = best_name.replace('_', ' ').title()
+            logger.info(f"[Player Image] Using fuzzy match: {best_name}")
+            return image_path, display_name
         else:
-            logger.warning(f"[Player Image] No match found for '{search_name}'")
-            return None
-            
+            logger.warning(f"[Player Image] No fuzzy match found for '{search_name}'")
+            return None, player_name
     except Exception as e:
         logger.error(f"[Player Image] Error getting player image: {str(e)}")
-        return None
+        return None, player_name
 
 # --- League-specific Player Prop Modals ---
 
