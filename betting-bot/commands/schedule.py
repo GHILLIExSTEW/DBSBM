@@ -70,10 +70,13 @@ class ScheduleCog(commands.Cog):
                     status
                 FROM api_games
                 WHERE start_time >= NOW()
+                AND status = 'Not Started'
                 ORDER BY start_time ASC
             """
             
+            logger.info("Fetching upcoming games...")
             games = await self.bot.db_manager.fetch_all(query)
+            logger.info(f"Found {len(games) if games else 0} upcoming games")
             
             if not games:
                 await interaction.followup.send(
