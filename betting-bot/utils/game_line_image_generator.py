@@ -167,7 +167,8 @@ class GameLineImageGenerator:
         except Exception:
             pass
         odds_text = f"{odds_val:+d}" if odds_val > 0 else f"{odds_val:d}"
-        odds_w, odds_h = font_odds.getbbox(odds_text)[2:]
+        odds_bbox = font_odds.getbbox(odds_text)
+        odds_w, odds_h = odds_bbox[2] - odds_bbox[0], odds_bbox[3] - odds_bbox[1]
         odds_y = sep_above_odds_y + 24
         draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
 
@@ -191,7 +192,8 @@ class GameLineImageGenerator:
                 payout_text = f"To Risk {units:.2f} {unit_label}"
             else:
                 payout_text = f"To Win {units:.2f} {unit_label}"
-        payout_w, payout_h = font_risk.getbbox(payout_text)[2:]
+        payout_bbox = font_risk.getbbox(payout_text)
+        payout_w, payout_h = payout_bbox[2] - payout_bbox[0], payout_bbox[3] - payout_bbox[1]
         payout_y = odds_y + odds_h + 8
         lock_icon = None
         try:
