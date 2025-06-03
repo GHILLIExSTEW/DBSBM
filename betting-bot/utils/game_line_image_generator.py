@@ -309,18 +309,35 @@ class GameLineImageGenerator:
         from config.asset_paths import get_sport_category_for_path
         from data.game_utils import normalize_team_name_any_league
         import logging
+        import difflib
         logger = logging.getLogger(__name__)
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if self.guild_id else "betting-bot/static/logos/default_image.png"
             logger.warning(f"[LOGO] No sport category for league '{league}'. Using fallback: {default_path}")
             return Image.open(default_path).convert("RGBA")
+        
+        # First try exact match
         normalized = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
         fname = f"{normalized}.png"
         logo_path = os.path.join("betting-bot/static/logos/teams", sport, league.upper(), fname)
+        
         if os.path.exists(logo_path):
-            logger.info(f"[LOGO] Found logo for '{team_name}' at: {logo_path}")
+            logger.info(f"[LOGO] Found exact logo match for '{team_name}' at: {logo_path}")
             return Image.open(logo_path).convert("RGBA")
+            
+        # If exact match fails, try fuzzy matching
+        logo_dir = os.path.join("betting-bot/static/logos/teams", sport, league.upper())
+        if os.path.exists(logo_dir):
+            candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
+            candidate_names = [os.path.splitext(f)[0] for f in candidates]
+            matches = difflib.get_close_matches(normalized, candidate_names, n=1, cutoff=0.75)
+            if matches:
+                match_file = matches[0] + '.png'
+                match_path = os.path.join(logo_dir, match_file)
+                logger.info(f"[LOGO] Found fuzzy match for '{team_name}' -> '{matches[0]}' at: {match_path}")
+                return Image.open(match_path).convert("RGBA")
+                
         default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if self.guild_id else "betting-bot/static/logos/default_image.png"
         logger.warning(f"[LOGO] Logo not found for '{team_name}' (tried: {logo_path}). Using fallback: {default_path}")
         return Image.open(default_path).convert("RGBA")

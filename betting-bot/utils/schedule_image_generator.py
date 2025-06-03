@@ -9,6 +9,7 @@ import pytz
 from config.asset_paths import get_sport_category_for_path
 from data.game_utils import normalize_team_name_any_league
 from config.team_mappings import normalize_team_name
+import difflib
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,8 @@ class ScheduleImageGenerator:
             if not sport:
                 return self._get_default_logo()
                 
-            normalized = normalize_team_name_any_league(team_name).replace(".", "")
+            # First try exact match
+            normalized = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
             fname = f"{normalize_team_name(normalized)}.png"
             logo_path = os.path.join(self.base_dir, "static", "logos", "teams", sport, league_code.upper(), fname)
             
@@ -64,6 +66,19 @@ class ScheduleImageGenerator:
                 self.logo_cache[cache_key] = logo
                 return logo
                 
+            # If exact match fails, try fuzzy matching
+            logo_dir = os.path.join(self.base_dir, "static", "logos", "teams", sport, league_code.upper())
+            if os.path.exists(logo_dir):
+                candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
+                candidate_names = [os.path.splitext(f)[0] for f in candidates]
+                matches = difflib.get_close_matches(normalized, candidate_names, n=1, cutoff=0.75)
+                if matches:
+                    match_file = matches[0] + '.png'
+                    match_path = os.path.join(logo_dir, match_file)
+                    logo = Image.open(match_path).convert("RGBA")
+                    self.logo_cache[cache_key] = logo
+                    return logo
+                    
             return self._get_default_logo()
         except Exception as e:
             logger.error(f"Error loading logo for {team_name} ({league_code}): {e}")
