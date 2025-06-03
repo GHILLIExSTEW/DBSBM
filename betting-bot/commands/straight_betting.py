@@ -618,6 +618,7 @@ class StraightBetWorkflowView(View):
             logger.exception(f"Unexpected error editing message {self.message.id}: {e}")
 
     async def go_next(self, interaction: Interaction):
+        logger.info(f"[WORKFLOW TRACE] go_next called, current_step={self.current_step}, is_processing={self.is_processing}, stopped={getattr(self, '_stopped', False)}")
         if self.is_processing or self.is_finished() or getattr(self, '_stopped', False):
             logger.debug(f"Skipping go_next (step {self.current_step}); already processing or workflow stopped.")
             if not interaction.response.is_done():
@@ -638,13 +639,12 @@ class StraightBetWorkflowView(View):
                 return
         try:
             self.current_step += 1
-            logger.info(
-                f"StraightBetWorkflow: Advancing to step {self.current_step} for user {interaction.user.id}"
-            )
+            logger.info(f"[WORKFLOW TRACE] Advancing to step {self.current_step}")
             self.clear_items()
             content = self.get_content()
             new_view_items = []
             if self.current_step == 1:
+                logger.info("[WORKFLOW TRACE] Step 1: League selection")
                 allowed_leagues = [
                     "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga",
                     "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "UFC/MMA",
@@ -653,9 +653,11 @@ class StraightBetWorkflowView(View):
                 new_view_items.append(LeagueSelect(self, allowed_leagues))
                 new_view_items.append(CancelButton(self))
             elif self.current_step == 2:
+                logger.info("[WORKFLOW TRACE] Step 2: Line type selection")
                 new_view_items.append(LineTypeSelect(self))
                 new_view_items.append(CancelButton(self))
             elif self.current_step == 3:
+                logger.info("[WORKFLOW TRACE] Step 3: Game selection")
                 league = self.bet_details.get("league")
                 if not league:
                     await self.edit_message(content="❌ League not selected. Please restart.", view=None)
@@ -682,9 +684,11 @@ class StraightBetWorkflowView(View):
                 if not self.games:
                     content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
             elif self.current_step == 4:
+                logger.info("[WORKFLOW TRACE] Step 4: Team selection/modal")
                 self.is_processing = False
                 return
             elif self.current_step == 5:
+                logger.info("[WORKFLOW TRACE] Step 5: Units selection/preview")
                 # Set default units to 1.0 if not already set
                 if "units" not in self.bet_details:
                     self.bet_details["units"] = 1.0
@@ -766,6 +770,7 @@ class StraightBetWorkflowView(View):
                 await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
                 return
             elif self.current_step == 6:
+                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm")
                 if not all(k in self.bet_details for k in ["bet_serial", "units_str"]):
                     await self.edit_message(
                         content="❌ Bet details incomplete. Please restart.", view=None
@@ -825,6 +830,7 @@ class StraightBetWorkflowView(View):
             self.is_processing = False
 
     async def submit_bet(self, interaction: Interaction):
+        logger.info("[WORKFLOW TRACE] submit_bet called!")
         details = self.bet_details
         bet_serial = details.get("bet_serial")
         bet_service = getattr(self.bot, "bet_service", None)
