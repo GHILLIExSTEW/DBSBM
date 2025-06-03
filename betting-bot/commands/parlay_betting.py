@@ -14,7 +14,6 @@ import os
 import json 
 from discord.ext import commands
 from utils.errors import BetServiceError, ValidationError, GameNotFoundError
-from utils.image_generator import BetSlipGenerator
 from config.asset_paths import get_sport_category_for_path
 from config.team_mappings import normalize_team_name
 from data.game_utils import get_normalized_games_for_dropdown
@@ -24,7 +23,6 @@ from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_image_generator import ParlayImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
 from PIL import Image, ImageDraw, ImageFont
-from utils.game_line_image_generator import GameLineImageGenerator
 
 logger = logging.getLogger(__name__)
 
