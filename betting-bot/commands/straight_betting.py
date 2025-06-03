@@ -39,9 +39,9 @@ from utils.errors import (
 from utils.modals import StraightBetDetailsModal
 from config.leagues import LEAGUE_CONFIG
 from api.sports_api import SportsAPI
-from utils.image_generator import BetSlipGenerator  # import for type hints and usage
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.player_prop_image_generator import PlayerPropImageGenerator
+from utils.parlay_image_generator import ParlayImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -540,7 +540,7 @@ class StraightBetWorkflowView(View):
         self.games: List[Dict] = []
         self.is_processing = False
         self.latest_interaction = original_interaction
-        self.bet_slip_generator: Optional[BetSlipGenerator] = None
+        self.bet_slip_generator: Optional[Union[GameLineImageGenerator, PlayerPropImageGenerator]] = None
         self.preview_image_bytes: Optional[io.BytesIO] = None
         self.home_team: Optional[str] = None
         self.away_team: Optional[str] = None
@@ -550,11 +550,14 @@ class StraightBetWorkflowView(View):
         self.bet_id: Optional[str] = None
         self._stopped = False
 
-    async def get_bet_slip_generator(self) -> BetSlipGenerator:
-        if self.bet_slip_generator is None:
-            self.bet_slip_generator = await self.bot.get_bet_slip_generator(
-                self.original_interaction.guild_id
-            )
+    async def get_bet_slip_generator(self) -> Union[GameLineImageGenerator, PlayerPropImageGenerator]:
+        bet_type = self.bet_details.get("line_type", "game_line")
+        if bet_type == "player_prop":
+            if not self.bet_slip_generator or not isinstance(self.bet_slip_generator, PlayerPropImageGenerator):
+                self.bet_slip_generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+        else:
+            if not self.bet_slip_generator or not isinstance(self.bet_slip_generator, GameLineImageGenerator):
+                self.bet_slip_generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
         return self.bet_slip_generator
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):

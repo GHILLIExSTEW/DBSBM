@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 import subprocess
 from datetime import datetime, timezone
 from discord.ext import tasks
@@ -16,6 +16,7 @@ import aiohttp
 from services.live_game_channel_service import LiveGameChannelService
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.parlay_image_generator import ParlayImageGenerator
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -189,9 +190,14 @@ class BettingBot(commands.Bot):
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
 
-    async def get_bet_slip_generator(self, guild_id: int) -> BetSlipGenerator:
+    async def get_bet_slip_generator(self, guild_id: int, bet_type: str = "game_line") -> Union[GameLineImageGenerator, ParlayImageGenerator, PlayerPropImageGenerator]:
         if guild_id not in self.bet_slip_generators:
-            self.bet_slip_generators[guild_id] = BetSlipGenerator(guild_id=guild_id)
+            if bet_type == "parlay":
+                self.bet_slip_generators[guild_id] = ParlayImageGenerator(guild_id=guild_id)
+            elif bet_type == "player_prop":
+                self.bet_slip_generators[guild_id] = PlayerPropImageGenerator(guild_id=guild_id)
+            else:
+                self.bet_slip_generators[guild_id] = GameLineImageGenerator(guild_id=guild_id)
         return self.bet_slip_generators[guild_id]
 
     async def load_extensions(self):

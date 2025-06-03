@@ -20,7 +20,6 @@ from config.leagues import LEAGUE_CONFIG
 from utils.errors import BetServiceError # Example, if used directly in modal
 from config.asset_paths import BASE_DIR
 # Import the correct version of the image generator
-from utils.image_generator import BetSlipGenerator
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.parlay_image_generator import ParlayImageGenerator
 

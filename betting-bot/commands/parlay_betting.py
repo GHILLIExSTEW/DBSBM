@@ -24,6 +24,7 @@ from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_image_generator import ParlayImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
 from PIL import Image, ImageDraw, ImageFont
+from utils.game_line_image_generator import GameLineImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -784,13 +785,13 @@ class ParlayBetWorkflowView(View):
         self.games: List[Dict] = []
         self.is_processing = False
         self.latest_interaction = original_interaction
-        self.bet_slip_generator: Optional[BetSlipGenerator] = None
+        self.bet_slip_generator: Optional[ParlayImageGenerator] = None
         self.preview_image_bytes: Optional[io.BytesIO] = None
         logger.info(f"[ParlayBetWorkflowView] Initialized for user {original_interaction.user.id}")
 
-    async def get_bet_slip_generator(self) -> BetSlipGenerator:
-        if self.bet_slip_generator is None:
-            self.bet_slip_generator = await self.bot.get_bet_slip_generator(self.original_interaction.guild_id)
+    async def get_bet_slip_generator(self) -> ParlayImageGenerator:
+        if not self.bet_slip_generator:
+            self.bet_slip_generator = ParlayImageGenerator(guild_id=self.original_interaction.guild_id)
         return self.bet_slip_generator
 
     def _format_odds_with_sign(self, odds: Optional[Union[float, int]]) -> str:
