@@ -828,10 +828,13 @@ class StraightBetWorkflowView(View):
         details = self.bet_details
         bet_serial = details.get("bet_serial")
         bet_service = getattr(self.bot, "bet_service", None)
+        logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
+        
         if not bet_serial:
             # Insert the bet now with all final values
             if bet_service:
                 try:
+                    logger.info("[submit_bet] Creating straight bet in database...")
                     bet_serial = await bet_service.create_straight_bet(
                         guild_id=self.original_interaction.guild_id,
                         user_id=self.original_interaction.user.id,
@@ -846,17 +849,24 @@ class StraightBetWorkflowView(View):
                         channel_id=details.get("channel_id"),
                         confirmed=1
                     )
+                    logger.info(f"[submit_bet] Bet creation result - bet_serial: {bet_serial}")
+                    
                     if not bet_serial:
-                        logger.error("Failed to create straight bet in DB at submit step.")
+                        logger.error("[submit_bet] Failed to create straight bet in DB - no bet_serial returned")
                         await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
                         self.stop()
                         return
                     self.bet_details["bet_serial"] = bet_serial
                 except Exception as e:
-                    logger.error(f"Failed to create straight bet in DB at submit step: {e}")
-                    await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                    logger.error(f"[submit_bet] Failed to create straight bet in DB: {str(e)}", exc_info=True)
+                    await self.edit_message(content=f"❌ Failed to create bet in database: {str(e)}", view=None)
                     self.stop()
                     return
+            else:
+                logger.error("[submit_bet] No bet_service available on bot instance")
+                await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
+                self.stop()
+                return
         logger.info(f"Submitting straight bet {bet_serial} by user {interaction.user.id}")
         await self.edit_message(content=f"Processing bet `{bet_serial}`...", view=None, file=None)
         try:
@@ -942,19 +952,32 @@ class StraightBetWorkflowView(View):
                 # Odds
                 odds_val_int = int(odds_val)
                 odds_text = f"Odds: {odds_val_int:+d}" if odds_val > 0 else f"Odds: {odds_val_int:d}"
-                odds_w, odds_h = draw.textsize(odds_text, font=font)
-                draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
+                # Calculate text sizes using textbbox instead of textsize
+                odds_bbox = draw.textbbox((0, 0), odds_text, font=font)
+                odds_w = odds_bbox[2] - odds_bbox[0]
+                odds_h = odds_bbox[3] - odds_bbox[1]
+                
                 # Units
                 unit_label = "Unit" if units_val <= 1 else "Units"
                 units_text = f"Units: {units_val:.2f} {unit_label}"
-                units_w, units_h = draw.textsize(units_text, font=font)
-                draw.text(((width - units_w) // 2, 30 + odds_h), units_text, font=font, fill="#FFD700")
+                # Calculate text sizes using textbbox instead of textsize
+                units_bbox = draw.textbbox((0, 0), units_text, font=font)
+                units_w = units_bbox[2] - units_bbox[0]
+                units_h = units_bbox[3] - units_bbox[1]
+                
                 # Footer (bet id and timestamp)
                 bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
                 timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-                draw.text((20, height - 40), bet_id_text, font=font_small, fill="#888888")
-                ts_w, _ = draw.textsize(timestamp_text, font=font_small)
-                draw.text((width - ts_w - 20, height - 40), timestamp_text, font=font_small, fill="#888888")
+                footer_text = f"{bet_id_text} {timestamp_text}"
+                # Calculate text sizes using textbbox instead of textsize
+                footer_bbox = draw.textbbox((0, 0), footer_text, font=font_small)
+                footer_w = footer_bbox[2] - footer_bbox[0]
+                footer_h = footer_bbox[3] - footer_bbox[1]
+                
+                # Draw text
+                draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
+                draw.text(((width - units_w) // 2, 30 + odds_h), units_text, font=font, fill="#FFD700")
+                draw.text((20, height - 40), footer_text, font=font_small, fill="#888888")
             except Exception as e:
                 logger.exception(f"Error generating odds/units/footer image: {e}")
                 footer_image = None

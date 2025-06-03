@@ -181,24 +181,27 @@ class BetService:
         confirmed: int = 0
     ) -> int:
         """Create a straight bet record."""
-        logger.info(f"[BET INSERT] Attempting to create straight bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, bet_type={bet_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}")
+        logger.info(f"[BET INSERT] Starting bet creation with args: guild_id={guild_id}, user_id={user_id}, league={league}, bet_type={bet_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}")
         try:
             internal_game_id = None
             if api_game_id and api_game_id != "manual":
                 try:
+                    logger.info(f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}")
                     game_exists = await self.db_manager.fetch_one(
                         "SELECT id FROM api_games WHERE api_game_id = %s",
                         (api_game_id,)
                     )
                     if not game_exists:
-                        logger.warning(f"Game with api_game_id {api_game_id} not found in api_games table")
+                        logger.warning(f"[BET INSERT] Game with api_game_id {api_game_id} not found in api_games table")
                         raise BetServiceError(f"Game with ID {api_game_id} not found")
+                    logger.info(f"[BET INSERT] Game found, getting/creating internal game record")
                     internal_game_id = await self._get_or_create_game(api_game_id)
+                    logger.info(f"[BET INSERT] Internal game_id: {internal_game_id}")
                 except BetServiceError as e:
-                    logger.warning(f"Could not get/create game for api_game_id {api_game_id}: {e}")
+                    logger.warning(f"[BET INSERT] Could not get/create game for api_game_id {api_game_id}: {e}")
                     raise
             else:
-                logger.info("Manual entry bet - setting game_id to NULL")
+                logger.info("[BET INSERT] Manual entry bet - setting game_id to NULL")
 
             internal_bet_details_dict = {
                 "api_game_id": api_game_id,
@@ -210,6 +213,8 @@ class BetService:
                 "expiration_time_iso": None,
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
+            logger.info(f"[BET INSERT] Prepared bet_details JSON: {bet_details_json}")
+            
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
@@ -247,16 +252,17 @@ class BetService:
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
             rowcount, last_id = await self.db_manager.execute(query, args)
             logger.info(f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}")
+            
             if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
-                logger.info(f"Straight bet created successfully with bet_serial: {last_id}")
+                logger.info(f"[BET INSERT] Straight bet created successfully with bet_serial: {last_id}")
                 return last_id
             else:
                 logger.error(
-                    f"Failed to create straight bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
+                    f"[BET INSERT] Failed to create straight bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
                 )
                 return None
         except IntegrityError as e:
-            logger.error(f"Database integrity error creating straight bet: {e}", exc_info=True)
+            logger.error(f"[BET INSERT] Database integrity error creating straight bet: {e}", exc_info=True)
             raise BetServiceError(f"Failed to create bet due to database error: {str(e)}")
         except Exception as e:
             logger.error(f"[BET INSERT] Exception during straight bet insert: {e}", exc_info=True)

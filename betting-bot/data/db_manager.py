@@ -125,29 +125,40 @@ class DatabaseManager:
         """Execute INSERT, UPDATE, DELETE. Returns (rowcount, lastrowid)."""
         pool = await self.connect()
         if not pool:
-            logger.error("Cannot execute: DB pool unavailable.")
+            logger.error("[DB EXECUTE] Cannot execute: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
         flat_args = tuple(args[0]) if len(args) == 1 and isinstance(args[0], (tuple, list)) else args
 
-        logger.debug("[DB EXECUTE] Query: %s Args: %s", query, flat_args)
+        logger.info("[DB EXECUTE] Starting query execution")
+        logger.debug("[DB EXECUTE] Query: %s", query)
+        logger.debug("[DB EXECUTE] Args: %s", flat_args)
+        
         last_id = None
         rowcount = None
         try:
             async with pool.acquire() as conn:
+                logger.debug("[DB EXECUTE] Acquired connection from pool")
                 async with conn.cursor() as cursor:
+                    logger.debug("[DB EXECUTE] Executing query...")
                     rowcount = await cursor.execute(query, flat_args)
-                    logger.debug("[DB EXECUTE] After execute: rowcount=%s", rowcount)
+                    logger.info("[DB EXECUTE] Query executed. Rowcount: %s", rowcount)
+                    
                     if rowcount is not None and rowcount > 0 and query.strip().upper().startswith("INSERT"):
                         last_id = cursor.lastrowid
-                        logger.debug("[DB EXECUTE] Insert lastrowid=%s", last_id)
+                        logger.info("[DB EXECUTE] Insert successful. Last ID: %s", last_id)
+                    
                     if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
+                        logger.debug("[DB EXECUTE] Committing transaction...")
                         await conn.commit()
-                        logger.debug("[DB EXECUTE] Commit successful.")
-            logger.info("[DB EXECUTE] Query executed successfully. rowcount=%s, last_id=%s", rowcount, last_id)
+                        logger.info("[DB EXECUTE] Transaction committed successfully")
+            
+            logger.info("[DB EXECUTE] Query execution completed. Rowcount: %s, Last ID: %s", rowcount, last_id)
             return rowcount, last_id
         except Exception as e:
-            logger.error("[DB EXECUTE] Error executing query: %s Args: %s. Error: %s", query, flat_args, e, exc_info=True)
+            logger.error("[DB EXECUTE] Error executing query: %s", str(e), exc_info=True)
+            logger.error("[DB EXECUTE] Query that failed: %s", query)
+            logger.error("[DB EXECUTE] Args that failed: %s", flat_args)
             return None, None
 
     async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
@@ -926,23 +937,20 @@ class DatabaseManager:
             return dropdown_games
         for row in rows:
             try:
-                if sport.lower() == "baseball" and league_key == "MLB":
-                    home_team = normalize_team_name(row['home_team_name'], sport, league_key)
-                    away_team = normalize_team_name(row['away_team_name'], sport, league_key)
-                    logger.info("[get_normalized_games_for_dropdown] MLB: Normalized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
-                else:
-                    home_team = sanitize_team_name(row['home_team_name'])
-                    away_team = sanitize_team_name(row['away_team_name'])
-                    logger.info("[get_normalized_games_for_dropdown] Non-MLB: Sanitized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
+                # Always use normalize_team_name for all leagues
+                home_team = normalize_team_name(row['home_team_name'], sport, league_key)
+                away_team = normalize_team_name(row['away_team_name'], sport, league_key)
+                logger.info("[get_normalized_games_for_dropdown] Normalized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
+                
                 game_data = {
                     'id': row['id'],
                     'api_game_id': str(row['api_game_id']),
-                    'home_team': home_team,
-                    'away_team': away_team,
+                    'home_team': home_team,  # Use normalized name for display
+                    'away_team': away_team,  # Use normalized name for display
                     'start_time': row['start_time'],
                     'status': row['status'],
-                    'home_team_name': home_team,
-                    'away_team_name': away_team,
+                    'home_team_name': home_team,  # Store normalized name
+                    'away_team_name': away_team,  # Store normalized name
                 }
                 dropdown_games.append(game_data)
                 logger.info("[get_normalized_games_for_dropdown] Added game to dropdown: %s", game_data)
