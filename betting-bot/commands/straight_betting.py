@@ -831,207 +831,212 @@ class StraightBetWorkflowView(View):
 
     async def submit_bet(self, interaction: Interaction):
         logger.info("[WORKFLOW TRACE] submit_bet called!")
-        details = self.bet_details
-        bet_serial = details.get("bet_serial")
-        bet_service = getattr(self.bot, "bet_service", None)
-        logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
-        
-        if not bet_serial:
-            # Insert the bet now with all final values
-            if bet_service:
-                try:
-                    logger.info("[submit_bet] Creating straight bet in database...")
-                    bet_serial = await bet_service.create_straight_bet(
-                        guild_id=self.original_interaction.guild_id,
-                        user_id=self.original_interaction.user.id,
-                        league=details.get("league"),
-                        bet_type=details.get("line_type", "straight"),
-                        units=float(details.get("units", 1.0)),
-                        odds=float(details.get("odds", 0.0)),
-                        team=details.get("team"),
-                        opponent=details.get("opponent"),
-                        line=details.get("line"),
-                        api_game_id=details.get("api_game_id"),
-                        channel_id=details.get("channel_id"),
-                        confirmed=1
-                    )
-                    logger.info(f"[submit_bet] Bet creation result - bet_serial: {bet_serial}")
-                    
-                    if not bet_serial:
-                        logger.error("[submit_bet] Failed to create straight bet in DB - no bet_serial returned")
-                        await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+        try:
+            details = self.bet_details
+            bet_serial = details.get("bet_serial")
+            bet_service = getattr(self.bot, "bet_service", None)
+            logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
+            
+            if not bet_serial:
+                # Insert the bet now with all final values
+                if bet_service:
+                    try:
+                        logger.info("[submit_bet] Creating straight bet in database...")
+                        bet_serial = await bet_service.create_straight_bet(
+                            guild_id=self.original_interaction.guild_id,
+                            user_id=self.original_interaction.user.id,
+                            league=details.get("league"),
+                            bet_type=details.get("line_type", "straight"),
+                            units=float(details.get("units", 1.0)),
+                            odds=float(details.get("odds", 0.0)),
+                            team=details.get("team"),
+                            opponent=details.get("opponent"),
+                            line=details.get("line"),
+                            api_game_id=details.get("api_game_id"),
+                            channel_id=details.get("channel_id"),
+                            confirmed=1
+                        )
+                        logger.info(f"[submit_bet] Bet creation result - bet_serial: {bet_serial}")
+                        
+                        if not bet_serial:
+                            logger.error("[submit_bet] Failed to create straight bet in DB - no bet_serial returned")
+                            await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                            self.stop()
+                            return
+                        self.bet_details["bet_serial"] = bet_serial
+                    except Exception as e:
+                        logger.error(f"[submit_bet] Failed to create straight bet in DB: {str(e)}", exc_info=True)
+                        await self.edit_message(content=f"❌ Failed to create bet in database: {str(e)}", view=None)
                         self.stop()
                         return
-                    self.bet_details["bet_serial"] = bet_serial
-                except Exception as e:
-                    logger.error(f"[submit_bet] Failed to create straight bet in DB: {str(e)}", exc_info=True)
-                    await self.edit_message(content=f"❌ Failed to create bet in database: {str(e)}", view=None)
+                else:
+                    logger.error("[submit_bet] No bet_service available on bot instance")
+                    await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
                     self.stop()
                     return
-            else:
-                logger.error("[submit_bet] No bet_service available on bot instance")
-                await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
-                self.stop()
-                return
-        logger.info(f"Submitting straight bet {bet_serial} by user {interaction.user.id}")
-        await self.edit_message(content=f"Processing bet `{bet_serial}`...", view=None, file=None)
-        try:
-            post_channel_id = details.get("channel_id")
-            post_channel = self.bot.get_channel(post_channel_id) if post_channel_id else None
-            if not post_channel or not isinstance(post_channel, TextChannel):
-                raise ValueError(f"Invalid channel <#{post_channel_id}> for bet posting.")
-            units_val = float(details.get("units", 1.0))
-            odds_val = float(details.get("odds", 0.0))
-            bet_type = details.get("line_type", "straight")
-            discord_file_to_send = None
-            from PIL import Image, ImageDraw, ImageFont
-            import io as _io
-            # Generate main slip image
-            main_image = None
+            logger.info(f"Submitting straight bet {bet_serial} by user {interaction.user.id}")
+            await self.edit_message(content=f"Processing bet `{bet_serial}`...", view=None, file=None)
             try:
-                bet_type = self.bet_details.get("line_type", "game_line")
-                league = self.bet_details.get("league", "N/A")
-                home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
-                away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
-                line = self.bet_details.get("line", "N/A")
-                odds = float(self.bet_details.get("odds", 0.0))
-                bet_id = str(self.bet_details.get("bet_serial", ""))
-                timestamp = datetime.now(timezone.utc)
-                units = float(self.bet_details.get("units", 1.0))
-                if bet_type == "game_line":
-                    generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
-                    bet_slip_image_bytes = generator.generate_bet_slip_image(
-                        league=league,
-                        home_team=home_team,
-                        away_team=away_team,
-                        line=line,
-                        odds=odds,
-                        units=units,
-                        bet_id=bet_id,
-                        timestamp=timestamp,
-                        selected_team=self.bet_details.get("team", home_team),
-                        output_path=None
-                    )
-                    if bet_slip_image_bytes:
-                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
-                elif bet_type == "player_prop":
-                    generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
-                    player_name = self.bet_details.get("player_name")
-                    if not player_name and line:
-                        player_name = line.split(' - ')[0] if ' - ' in line else line
-                    team_name = home_team
-                    league = self.bet_details.get("league", "N/A")
-                    odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                    # Do NOT append odds to the line for player prop straight bets
-                    bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                        player_name=player_name or team_name,
-                        team_name=team_name,
-                        league=league,
-                        line=line,  # Only the line, no odds
-                        units=units,
-                        output_path=None,
-                        bet_id=bet_id,
-                        timestamp=timestamp,
-                        guild_id=str(self.original_interaction.guild_id),
-                        odds=odds  # Pass odds if needed for payout, not for display
-                    )
-                    if bet_slip_image_bytes:
-                        main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
-            except Exception as e:
-                logger.exception(f"Error generating main bet slip image: {e}")
-                main_image = None
-            # Generate odds/units/footer image
-            footer_image = None
-            try:
-                width = main_image.width if main_image else 800
-                height = 60  # Reduce height since only footer is needed
-                footer_image = Image.new("RGBA", (width, height), (35, 39, 51, 255))
-                draw = ImageDraw.Draw(footer_image)
-                # Load font
-                try:
-                    font_path = "betting-bot/assets/fonts/Roboto-Bold.ttf"
-                    font_small = ImageFont.truetype(font_path, 28)
-                except Exception:
-                    font_small = ImageFont.load_default()
-                # Footer (bet id and timestamp)
-                bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
-                timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-                footer_text = f"{bet_id_text} {timestamp_text}"
-                # Calculate text size using textbbox
-                footer_bbox = draw.textbbox((0, 0), footer_text, font=font_small)
-                footer_w = footer_bbox[2] - footer_bbox[0]
-                footer_h = footer_bbox[3] - footer_bbox[1]
-                # Draw only the footer text, centered vertically
-                draw.text(((width - footer_w) // 2, (height - footer_h) // 2), footer_text, font=font_small, fill="#888888")
-            except Exception as e:
-                logger.exception(f"Error generating odds/units/footer image: {e}")
-                footer_image = None
-            # Stack images
-            combined_image = None
-            try:
-                if main_image and footer_image:
-                    combined_height = main_image.height + footer_image.height
-                    combined_image = Image.new("RGBA", (main_image.width, combined_height), (35, 39, 51, 255))
-                    combined_image.paste(main_image, (0, 0))
-                    combined_image.paste(footer_image, (0, main_image.height))
-                elif main_image:
-                    combined_image = main_image
-                elif footer_image:
-                    combined_image = footer_image
-                else:
-                    combined_image = None
-                if combined_image:
-                    buf = _io.BytesIO()
-                    combined_image.save(buf, format="PNG")
-                    buf.seek(0)
-                    self.preview_image_bytes = buf
-                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
-            except Exception as e:
-                logger.exception(f"Error stacking images: {e}")
+                post_channel_id = details.get("channel_id")
+                post_channel = self.bot.get_channel(post_channel_id) if post_channel_id else None
+                if not post_channel or not isinstance(post_channel, TextChannel):
+                    raise ValueError(f"Invalid channel <#{post_channel_id}> for bet posting.")
+                units_val = float(details.get("units", 1.0))
+                odds_val = float(details.get("odds", 0.0))
+                bet_type = details.get("line_type", "straight")
                 discord_file_to_send = None
-            capper_data = await self.bot.db_manager.fetch_one(
-                "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
-                (interaction.guild_id, interaction.user.id)
-            )
-            webhook_username = capper_data.get("display_name") if capper_data and capper_data.get("display_name") else interaction.user.display_name
-            webhook_avatar_url = None
-            if capper_data and capper_data.get("image_path"):
-                webhook_avatar_url = capper_data["image_path"]
-            # Fetch member_role for mention
-            member_role_id = None
-            guild_settings = await self.bot.db_manager.fetch_one(
-                "SELECT member_role FROM guild_settings WHERE guild_id = %s",
-                (str(interaction.guild_id),)
-            )
-            if guild_settings and guild_settings.get("member_role"):
-                member_role_id = guild_settings["member_role"]
-            role_mention = f"<@&{member_role_id}>" if member_role_id else None
-            webhooks = await post_channel.webhooks()
-            target_webhook = None
-            for webhook in webhooks:
-                if webhook.name == "Bet Bot":
-                    target_webhook = webhook
-                    break
-            if not target_webhook:
-                target_webhook = await post_channel.create_webhook(name="Bet Bot")
-            try:
-                webhook_content = role_mention if role_mention else None
-                await target_webhook.send(
-                    content=webhook_content,
-                    file=discord_file_to_send,
-                    username=webhook_username,
-                    avatar_url=webhook_avatar_url
+                from PIL import Image, ImageDraw, ImageFont
+                import io as _io
+                # Generate main slip image
+                main_image = None
+                try:
+                    bet_type = self.bet_details.get("line_type", "game_line")
+                    league = self.bet_details.get("league", "N/A")
+                    home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+                    away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+                    line = self.bet_details.get("line", "N/A")
+                    odds = float(self.bet_details.get("odds", 0.0))
+                    bet_id = str(self.bet_details.get("bet_serial", ""))
+                    timestamp = datetime.now(timezone.utc)
+                    units = float(self.bet_details.get("units", 1.0))
+                    if bet_type == "game_line":
+                        generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                        bet_slip_image_bytes = generator.generate_bet_slip_image(
+                            league=league,
+                            home_team=home_team,
+                            away_team=away_team,
+                            line=line,
+                            odds=odds,
+                            units=units,
+                            bet_id=bet_id,
+                            timestamp=timestamp,
+                            selected_team=self.bet_details.get("team", home_team),
+                            output_path=None
+                        )
+                        if bet_slip_image_bytes:
+                            main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
+                    elif bet_type == "player_prop":
+                        generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                        player_name = self.bet_details.get("player_name")
+                        if not player_name and line:
+                            player_name = line.split(' - ')[0] if ' - ' in line else line
+                        team_name = home_team
+                        league = self.bet_details.get("league", "N/A")
+                        odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                        # Do NOT append odds to the line for player prop straight bets
+                        bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                            player_name=player_name or team_name,
+                            team_name=team_name,
+                            league=league,
+                            line=line,  # Only the line, no odds
+                            units=units,
+                            output_path=None,
+                            bet_id=bet_id,
+                            timestamp=timestamp,
+                            guild_id=str(self.original_interaction.guild_id),
+                            odds=odds  # Pass odds if needed for payout, not for display
+                        )
+                        if bet_slip_image_bytes:
+                            main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
+                except Exception as e:
+                    logger.exception(f"Error generating main bet slip image: {e}")
+                    main_image = None
+                # Generate odds/units/footer image
+                footer_image = None
+                try:
+                    width = main_image.width if main_image else 800
+                    height = 60  # Reduce height since only footer is needed
+                    footer_image = Image.new("RGBA", (width, height), (35, 39, 51, 255))
+                    draw = ImageDraw.Draw(footer_image)
+                    # Load font
+                    try:
+                        font_path = "betting-bot/assets/fonts/Roboto-Bold.ttf"
+                        font_small = ImageFont.truetype(font_path, 28)
+                    except Exception:
+                        font_small = ImageFont.load_default()
+                    # Footer (bet id and timestamp)
+                    bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
+                    timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                    footer_text = f"{bet_id_text} {timestamp_text}"
+                    # Calculate text size using textbbox
+                    footer_bbox = draw.textbbox((0, 0), footer_text, font=font_small)
+                    footer_w = footer_bbox[2] - footer_bbox[0]
+                    footer_h = footer_bbox[3] - footer_bbox[1]
+                    # Draw only the footer text, centered vertically
+                    draw.text(((width - footer_w) // 2, (height - footer_h) // 2), footer_text, font=font_small, fill="#888888")
+                except Exception as e:
+                    logger.exception(f"Error generating odds/units/footer image: {e}")
+                    footer_image = None
+                # Stack images
+                combined_image = None
+                try:
+                    if main_image and footer_image:
+                        combined_height = main_image.height + footer_image.height
+                        combined_image = Image.new("RGBA", (main_image.width, combined_height), (35, 39, 51, 255))
+                        combined_image.paste(main_image, (0, 0))
+                        combined_image.paste(footer_image, (0, main_image.height))
+                    elif main_image:
+                        combined_image = main_image
+                    elif footer_image:
+                        combined_image = footer_image
+                    else:
+                        combined_image = None
+                    if combined_image:
+                        buf = _io.BytesIO()
+                        combined_image.save(buf, format="PNG")
+                        buf.seek(0)
+                        self.preview_image_bytes = buf
+                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+                except Exception as e:
+                    logger.exception(f"Error stacking images: {e}")
+                    discord_file_to_send = None
+                capper_data = await self.bot.db_manager.fetch_one(
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    (interaction.guild_id, interaction.user.id)
                 )
-                await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
-                self.stop()
+                webhook_username = capper_data.get("display_name") if capper_data and capper_data.get("display_name") else interaction.user.display_name
+                webhook_avatar_url = None
+                if capper_data and capper_data.get("image_path"):
+                    webhook_avatar_url = capper_data["image_path"]
+                # Fetch member_role for mention
+                member_role_id = None
+                guild_settings = await self.bot.db_manager.fetch_one(
+                    "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                    (str(interaction.guild_id),)
+                )
+                if guild_settings and guild_settings.get("member_role"):
+                    member_role_id = guild_settings["member_role"]
+                role_mention = f"<@&{member_role_id}>" if member_role_id else None
+                webhooks = await post_channel.webhooks()
+                target_webhook = None
+                for webhook in webhooks:
+                    if webhook.name == "Bet Bot":
+                        target_webhook = webhook
+                        break
+                if not target_webhook:
+                    target_webhook = await post_channel.create_webhook(name="Bet Bot")
+                try:
+                    webhook_content = role_mention if role_mention else None
+                    await target_webhook.send(
+                        content=webhook_content,
+                        file=discord_file_to_send,
+                        username=webhook_username,
+                        avatar_url=webhook_avatar_url
+                    )
+                    await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
+                    self.stop()
+                except Exception as e:
+                    logger.error(f"Error posting bet via webhook: {e}")
+                    await self.edit_message(content="Error: Failed to post bet message.", view=None)
+                    self.stop()
+                    return
             except Exception as e:
-                logger.error(f"Error posting bet via webhook: {e}")
-                await self.edit_message(content="Error: Failed to post bet message.", view=None)
+                logger.exception(f"Error in submit_bet (outer try): {e}")
+                await self.edit_message(content=f"❌ Error processing bet submission: {e}", view=None)
                 self.stop()
-                return
         except Exception as e:
-            logger.exception(f"Error in submit_bet (outer try): {e}")
-            await self.edit_message(content=f"❌ Error processing bet submission: {e}", view=None)
+            logger.exception(f"[WORKFLOW TRACE] Exception in submit_bet: {e}")
+            await self.edit_message(content=f"❌ Error in submit_bet: {e}", view=None)
             self.stop()
 
     async def on_timeout(self):
