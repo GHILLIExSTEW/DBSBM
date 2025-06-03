@@ -191,77 +191,58 @@ def sanitize_team_name(name: str, max_length: int = 30) -> str:
 
 def normalize_team_name(team_name: str, sport: str = None, league: str = None) -> str:
     """
-    Comprehensive team name normalizer that works across all leagues.
-    Handles:
-    1. League-specific team names (e.g., 'NYY' or 'Yankees' -> 'New York Yankees')
-    2. St. Louis teams (e.g., 'St Louis' or 'St. Louis' -> 'St. Louis')
-    3. Common team name patterns
-    4. Case normalization
+    Normalize a team name using the appropriate league dictionary.
+    
+    Args:
+        team_name (str): The team name to normalize
+        sport (str, optional): The sport (e.g., 'baseball', 'football')
+        league (str, optional): The league (e.g., 'MLB', 'NFL')
+        
+    Returns:
+        str: The normalized team name
     """
     if not team_name:
         return team_name
-
-    # Convert to lowercase for case-insensitive matching
-    search_name = team_name.lower().strip()
-
-    # Get the appropriate team name dictionary based on sport and league
-    team_dict = None
-    if sport and league:
-        sport = sport.lower()
-        league = league.lower()
         
-        if sport == "baseball":
-            if league == "major league baseball":
-                team_dict = MLB_TEAM_NAMES
-            elif "ncaa" in league:
-                team_dict = NCAAB_TEAM_NAMES  # Using NCAAB for college baseball
-        elif sport == "basketball":
-            if league == "national basketball association":
-                team_dict = NBA_TEAM_NAMES
-            elif "ncaa" in league:
-                team_dict = NCAAB_TEAM_NAMES
-        elif sport == "american football":
-            if league == "national football league":
-                team_dict = NFL_TEAM_NAMES
-            elif "ncaa" in league:
-                team_dict = NCAAF_TEAM_NAMES
-        elif sport == "hockey":
-            if league == "national hockey league":
-                team_dict = NHL_TEAM_NAMES
-        elif sport == "football":
-            team_dict = SOCCER_TEAM_NAMES
-        elif sport == "tennis":
-            team_dict = TENNIS_PLAYER_NAMES
-        elif sport == "darts":
-            team_dict = DARTS_PLAYER_NAMES
-
+    # Convert to lowercase for matching
+    team_name_lower = team_name.lower()
+    
+    # Get the appropriate team name dictionary based on sport and league
+    team_dict = {}
+    if sport and league:
+        if sport.lower() == 'baseball' and league.upper() == 'MLB':
+            from utils.league_dictionaries.team_mappings import MLB_TEAM_NAMES
+            team_dict = MLB_TEAM_NAMES
+        elif sport.lower() == 'football' and league.upper() == 'NFL':
+            from utils.league_dictionaries.team_mappings import NFL_TEAM_NAMES
+            team_dict = NFL_TEAM_NAMES
+        elif sport.lower() == 'basketball' and league.upper() == 'NBA':
+            from utils.league_dictionaries.team_mappings import NBA_TEAM_NAMES
+            team_dict = NBA_TEAM_NAMES
+        elif sport.lower() == 'hockey' and league.upper() == 'NHL':
+            from utils.league_dictionaries.team_mappings import NHL_TEAM_NAMES
+            team_dict = NHL_TEAM_NAMES
+        elif sport.lower() == 'soccer' and league.upper() == 'EPL':
+            from utils.league_dictionaries.team_mappings import EPL_TEAM_NAMES
+            team_dict = EPL_TEAM_NAMES
+    
     # If we have a team dictionary, try to find a match
     if team_dict:
-        # Check if it's already in the normalized format
-        for full_name in team_dict.values():
-            if search_name == full_name.lower():
-                return full_name
-
-        # Try to find a match in the mappings
-        if search_name in team_dict:
-            return team_dict[search_name]
-
-        # Try partial matches (city or nickname)
-        for full_name in team_dict.values():
-            if search_name in full_name.lower():
-                return full_name
-            # Check if search_name is a nickname (part of the full name)
-            if search_name in full_name.lower().split():
-                return full_name
-
-    # Handle St. Louis teams (case-insensitive)
-    if search_name.startswith(("st ", "st. ")):
-        # Remove all periods and extra spaces after 'St'
-        rest = search_name[search_name.find('st')+2:].lstrip(". ")
-        # Title case the rest, and always use 'St. ' as prefix
-        return f"St. {rest.title()}"
-
-    # If no specific normalization rules apply, return the title-cased version
+        # First try exact match
+        if team_name_lower in team_dict:
+            return team_dict[team_name_lower]
+            
+        # Try fuzzy matching
+        import difflib
+        matches = difflib.get_close_matches(team_name_lower, team_dict.keys(), n=1, cutoff=0.75)
+        if matches:
+            return team_dict[matches[0]]
+    
+    # If no match found or no dictionary available, handle special cases
+    if team_name_lower.startswith('st '):
+        return f"St. {team_name[3:].title()}"
+    
+    # Return title case as fallback
     return team_name.title()
 
 
