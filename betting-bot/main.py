@@ -14,6 +14,8 @@ import signal
 from api.sports_api import SportsAPI
 import aiohttp
 from services.live_game_channel_service import LiveGameChannelService
+from utils.game_line_image_generator import GameLineImageGenerator
+from utils.parlay_image_generator import ParlayImageGenerator
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()

@@ -21,6 +21,8 @@ from utils.errors import BetServiceError # Example, if used directly in modal
 from config.asset_paths import BASE_DIR
 # Import the correct version of the image generator
 from utils.image_generator import BetSlipGenerator
+from utils.game_line_image_generator import GameLineImageGenerator
+from utils.parlay_image_generator import ParlayImageGenerator
 
 # Add this mapping at the top of the file (after imports)
 PLAYER_PROP_SPORT_ID_MAP = {

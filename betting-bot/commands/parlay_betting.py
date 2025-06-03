@@ -21,7 +21,7 @@ from data.game_utils import get_normalized_games_for_dropdown
 from utils.validators import validate_units
 from utils.formatters import format_parlay_bet_details_embed
 from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
-from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+from utils.parlay_image_generator import ParlayImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
 from PIL import Image, ImageDraw, ImageFont
 
@@ -378,7 +378,7 @@ class BetDetailsModal(Modal):
             
             # Generate preview image for the entire parlay (all legs so far)
             try:
-                image_generator = ParlayBetImageGenerator()
+                image_generator = ParlayImageGenerator()
                 legs = []
                 for leg in self.view_ref.bet_details.get('legs', []):
                     leg_data = {
@@ -467,7 +467,7 @@ class TotalOddsModal(Modal):
             self.view_ref.bet_details['total_odds'] = odds
             # Generate main parlay slip image and odds/units/footer image, then stack
             try:
-                image_generator = ParlayBetImageGenerator()
+                image_generator = ParlayImageGenerator()
                 legs = []
                 for leg in self.view_ref.bet_details.get('legs', []):
                     leg_data = {
@@ -580,7 +580,7 @@ class UnitsSelect(Select):
         self.disabled = True
         # Update preview image with selected units, but do not proceed to channel selection yet
         try:
-            generator = ParlayBetImageGenerator(guild_id=self.parent_view.original_interaction.guild_id)
+            generator = ParlayImageGenerator(guild_id=self.parent_view.original_interaction.guild_id)
             legs = []
             for leg in self.parent_view.bet_details.get('legs', []):
                 leg_data = {
@@ -814,7 +814,7 @@ class ParlayBetWorkflowView(View):
             self.current_leg_construction_details = {}
             # Generate preview image for the entire parlay
             try:
-                image_generator = ParlayBetImageGenerator()
+                image_generator = ParlayImageGenerator()
                 image_bytes = await image_generator.generate_parlay_preview(self.bet_details)
                 if image_bytes:
                     self.preview_image_bytes = io.BytesIO(image_bytes)
@@ -1009,7 +1009,7 @@ class ParlayBetWorkflowView(View):
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
         try:
-            generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
+            generator = ParlayImageGenerator(guild_id=self.original_interaction.guild_id)
             legs = []
             for leg in self.bet_details.get('legs', []):
                 leg_data = {
@@ -1115,7 +1115,7 @@ class ParlayBetWorkflowView(View):
         logger.info(f"Submitting parlay bet {bet_serial} by user {interaction.user.id}")
         # Regenerate image with all details before posting
         try:
-            generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
+            generator = ParlayImageGenerator(guild_id=self.original_interaction.guild_id)
             legs = []
             for leg in details.get('legs', []):
                 leg_data = {

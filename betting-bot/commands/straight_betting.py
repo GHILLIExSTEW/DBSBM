@@ -40,6 +40,8 @@ from utils.modals import StraightBetDetailsModal
 from config.leagues import LEAGUE_CONFIG
 from api.sports_api import SportsAPI
 from utils.image_generator import BetSlipGenerator  # import for type hints and usage
+from utils.game_line_image_generator import GameLineImageGenerator
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -700,7 +702,6 @@ class StraightBetWorkflowView(View):
                     timestamp = datetime.now(timezone.utc)
                     units = 1.0
                     if bet_type == "game_line":
-                        from utils.game_line_image_generator import GameLineImageGenerator
                         generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
                         bet_slip_image_bytes = generator.generate_bet_slip_image(
                             league=league,
@@ -720,7 +721,6 @@ class StraightBetWorkflowView(View):
                         else:
                             self.preview_image_bytes = None
                     elif bet_type == "player_prop":
-                        from utils.player_prop_image_generator import PlayerPropImageGenerator
                         generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
                         player_name = self.bet_details.get("player_name")
                         if not player_name and line:
@@ -880,7 +880,6 @@ class StraightBetWorkflowView(View):
                 timestamp = datetime.now(timezone.utc)
                 units = float(self.bet_details.get("units", 1.0))
                 if bet_type == "game_line":
-                    from utils.game_line_image_generator import GameLineImageGenerator
                     generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
                     bet_slip_image_bytes = generator.generate_bet_slip_image(
                         league=league,
@@ -897,7 +896,6 @@ class StraightBetWorkflowView(View):
                     if bet_slip_image_bytes:
                         main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
                 elif bet_type == "player_prop":
-                    from utils.player_prop_image_generator import PlayerPropImageGenerator
                     generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
                     player_name = self.bet_details.get("player_name")
                     if not player_name and line:
@@ -1070,7 +1068,6 @@ class StraightBetWorkflowView(View):
                 self.preview_image_bytes.close()
                 self.preview_image_bytes = None
             if bet_type == "game_line":
-                from utils.game_line_image_generator import GameLineImageGenerator
                 generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
                 bet_slip_image_bytes = generator.generate_bet_slip_image(
                     league=league,
@@ -1092,7 +1089,6 @@ class StraightBetWorkflowView(View):
                     self.preview_image_bytes = None
                     bet_slip_image = None
             elif bet_type == "player_prop":
-                from utils.player_prop_image_generator import PlayerPropImageGenerator
                 generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
                 player_name = self.bet_details.get("player_name")
                 if not player_name and line:
