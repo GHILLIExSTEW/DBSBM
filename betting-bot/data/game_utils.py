@@ -246,6 +246,38 @@ def normalize_team_name(team_name: str, sport: str = None, league: str = None) -
     return team_name.title()
 
 
+def normalize_team_name_any_league(team_name: str) -> str:
+    """
+    Normalize a team name without requiring sport and league parameters.
+    This is a wrapper around normalize_team_name that tries common sports and leagues.
+    
+    Args:
+        team_name (str): The team name to normalize
+        
+    Returns:
+        str: The normalized team name
+    """
+    if not team_name:
+        return team_name
+        
+    # Try each major sport and league combination
+    sports_and_leagues = [
+        ('baseball', 'MLB'),
+        ('football', 'NFL'),
+        ('basketball', 'NBA'),
+        ('hockey', 'NHL'),
+        ('soccer', 'EPL')
+    ]
+    
+    for sport, league in sports_and_leagues:
+        normalized = normalize_team_name(team_name, sport, league)
+        if normalized != team_name:
+            return normalized
+            
+    # If no sport/league combination worked, return the original name
+    return team_name
+
+
 async def insert_games(
     db_manager, league_id: str, games: List[Dict[str, Any]], sport: str, league_name: str
 ) -> None:
