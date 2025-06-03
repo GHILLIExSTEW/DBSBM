@@ -184,14 +184,25 @@ class BetService:
         logger.info(f"Attempting to create straight bet for user {user_id} in guild {guild_id}")
         try:
             internal_game_id = None
-            if api_game_id:
+            if api_game_id and api_game_id != "manual":
                 try:
+                    # First check if the game exists in api_games
+                    game_exists = await self.db_manager.fetch_one(
+                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        (api_game_id,)
+                    )
+                    if not game_exists:
+                        logger.warning(f"Game with api_game_id {api_game_id} not found in api_games table")
+                        raise BetServiceError(f"Game with ID {api_game_id} not found")
+                    
+                    # Then get or create the game in the games table
                     internal_game_id = await self._get_or_create_game(api_game_id)
                 except BetServiceError as e:
                     logger.warning(f"Could not get/create game for api_game_id {api_game_id}: {e}")
-                    internal_game_id = None
+                    raise
             else:
                 logger.info("Manual entry bet - setting game_id to NULL")
+
             internal_bet_details_dict = {
                 "api_game_id": api_game_id,
                 "provided_bet_type": bet_type,
