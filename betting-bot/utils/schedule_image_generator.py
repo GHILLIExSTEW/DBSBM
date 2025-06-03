@@ -10,6 +10,7 @@ from config.asset_paths import get_sport_category_for_path
 from data.game_utils import normalize_team_name_any_league
 from config.team_mappings import normalize_team_name
 import difflib
+from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +61,13 @@ class ScheduleImageGenerator:
             # Import the appropriate league dictionary based on the league
             league_lower = league.lower()
             if league_lower == 'mlb':
-                from utils.league_dictionaries.baseball import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
             elif league_lower == 'nba':
-                from utils.league_dictionaries.basketball import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.basketball import TEAM_FULL_NAMES as league_dict
             elif league_lower == 'nfl':
-                from utils.league_dictionaries.football import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.football import TEAM_FULL_NAMES as league_dict
             elif league_lower == 'nhl':
-                from utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.hockey import TEAM_FULL_NAMES as league_dict
             else:
                 league_dict = {}
 

@@ -317,7 +317,7 @@ class GameLineImageGenerator:
             # Import the appropriate league dictionary based on the league
             league_lower = league.lower()
             if league_lower == 'mlb':
-                from utils.league_dictionaries.baseball import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
             elif league_lower == 'nba':
                 from utils.league_dictionaries.basketball import TEAM_NAMES as league_dict
             elif league_lower == 'nfl':
