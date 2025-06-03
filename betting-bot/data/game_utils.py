@@ -4,7 +4,17 @@ from datetime import datetime, timezone, timedelta
 import json
 import logging
 import pytz
+
+# Import all league dictionaries
 from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
+from utils.league_dictionaries.nba import TEAM_FULL_NAMES as NBA_TEAM_NAMES
+from utils.league_dictionaries.nfl import TEAM_FULL_NAMES as NFL_TEAM_NAMES
+from utils.league_dictionaries.nhl import TEAM_FULL_NAMES as NHL_TEAM_NAMES
+from utils.league_dictionaries.ncaaf import TEAM_FULL_NAMES as NCAAF_TEAM_NAMES
+from utils.league_dictionaries.ncaab import TEAM_FULL_NAMES as NCAAB_TEAM_NAMES
+from utils.league_dictionaries.soccer import TEAM_FULL_NAMES as SOCCER_TEAM_NAMES
+from utils.league_dictionaries.tennis import PLAYER_FULL_NAMES as TENNIS_PLAYER_NAMES
+from utils.league_dictionaries.darts import PLAYER_FULL_NAMES as DARTS_PLAYER_NAMES
 
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from config.asset_paths import get_sport_category_for_path
@@ -179,53 +189,80 @@ def sanitize_team_name(name: str, max_length: int = 30) -> str:
     return name
 
 
-def normalize_mlb_team_name(team_name: str) -> str:
+def normalize_team_name(team_name: str, sport: str = None, league: str = None) -> str:
     """
-    Convert any MLB team name format (abbreviation, nickname, or full name) to the standardized full name.
-    Example: 'NYY' or 'Yankees' -> 'New York Yankees'
-    For any team that starts with 'St.' or 'St ' (case-insensitive, with or without period), always normalize to 'St. ' + the rest (title case, period enforced).
+    Comprehensive team name normalizer that works across all leagues.
+    Handles:
+    1. League-specific team names (e.g., 'NYY' or 'Yankees' -> 'New York Yankees')
+    2. St. Louis teams (e.g., 'St Louis' or 'St. Louis' -> 'St. Louis')
+    3. Common team name patterns
+    4. Case normalization
     """
     if not team_name:
         return team_name
-
-    # Normalize any team that starts with 'St.' or 'St ' (case-insensitive, with or without period)
-    search_name = team_name.strip()
-    if search_name.lower().startswith("st. ") or search_name.lower().startswith("st "):
-        # Remove all periods and extra spaces after 'St'
-        rest = search_name[search_name.lower().find('st')+2:].lstrip(". ")
-        # Title case the rest, and always use 'St. ' as prefix
-        return f"St. {rest.title()}"
 
     # Convert to lowercase for case-insensitive matching
     search_name = team_name.lower().strip()
 
-    # Check if it's already in the normalized format
-    for full_name in MLB_TEAM_NAMES.values():
-        if search_name == full_name.lower():
-            return full_name
+    # Get the appropriate team name dictionary based on sport and league
+    team_dict = None
+    if sport and league:
+        sport = sport.lower()
+        league = league.lower()
+        
+        if sport == "baseball":
+            if league == "major league baseball":
+                team_dict = MLB_TEAM_NAMES
+            elif "ncaa" in league:
+                team_dict = NCAAB_TEAM_NAMES  # Using NCAAB for college baseball
+        elif sport == "basketball":
+            if league == "national basketball association":
+                team_dict = NBA_TEAM_NAMES
+            elif "ncaa" in league:
+                team_dict = NCAAB_TEAM_NAMES
+        elif sport == "american football":
+            if league == "national football league":
+                team_dict = NFL_TEAM_NAMES
+            elif "ncaa" in league:
+                team_dict = NCAAF_TEAM_NAMES
+        elif sport == "hockey":
+            if league == "national hockey league":
+                team_dict = NHL_TEAM_NAMES
+        elif sport == "football":
+            team_dict = SOCCER_TEAM_NAMES
+        elif sport == "tennis":
+            team_dict = TENNIS_PLAYER_NAMES
+        elif sport == "darts":
+            team_dict = DARTS_PLAYER_NAMES
 
-    # Try to find a match in our mappings
-    if search_name in MLB_TEAM_NAMES:
-        return MLB_TEAM_NAMES[search_name]
+    # If we have a team dictionary, try to find a match
+    if team_dict:
+        # Check if it's already in the normalized format
+        for full_name in team_dict.values():
+            if search_name == full_name.lower():
+                return full_name
 
-    return team_name
+        # Try to find a match in the mappings
+        if search_name in team_dict:
+            return team_dict[search_name]
 
+        # Try partial matches (city or nickname)
+        for full_name in team_dict.values():
+            if search_name in full_name.lower():
+                return full_name
+            # Check if search_name is a nickname (part of the full name)
+            if search_name in full_name.lower().split():
+                return full_name
 
-def normalize_team_name_any_league(team_name: str) -> str:
-    """
-    Normalize any team name that starts with 'St', 'St.', 'St ', or 'St.' (case-insensitive, with or without period/space) to 'St. <Rest>' in title case.
-    Otherwise, return the team name unchanged.
-    """
-    if not team_name:
-        return team_name
-    import re
-    # Match 'St', 'St.', 'St ', 'St.' (with or without space/period), case-insensitive, at the start
-    match = re.match(r"^st[\.]?\s*([a-zA-Z].*)", team_name.strip(), re.IGNORECASE)
-    if match:
-        rest = match.group(1).replace(".", " ").replace("  ", " ").strip()
+    # Handle St. Louis teams (case-insensitive)
+    if search_name.startswith(("st ", "st. ")):
+        # Remove all periods and extra spaces after 'St'
+        rest = search_name[search_name.find('st')+2:].lstrip(". ")
         # Title case the rest, and always use 'St. ' as prefix
         return f"St. {rest.title()}"
-    return team_name
+
+    # If no specific normalization rules apply, return the title-cased version
+    return team_name.title()
 
 
 async def insert_games(
@@ -337,9 +374,9 @@ async def get_normalized_games_for_dropdown(
 
     for row in rows:
         try:
-            # Normalize team names for all leagues using the new function
-            home_team = normalize_team_name_any_league(row['home_team_name'])
-            away_team = normalize_team_name_any_league(row['away_team_name'])
+            # Use the new comprehensive team name normalizer
+            home_team = normalize_team_name(row['home_team_name'], sport, league_name)
+            away_team = normalize_team_name(row['away_team_name'], sport, league_name)
             logger.info(f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
             game_data = {
                 'id': row['id'],

@@ -311,19 +311,56 @@ class GameLineImageGenerator:
         import logging
         import difflib
         logger = logging.getLogger(__name__)
+
+        # First normalize the team name using league dictionaries
+        try:
+            # Import the appropriate league dictionary based on the league
+            league_lower = league.lower()
+            if league_lower == 'mlb':
+                from utils.league_dictionaries.baseball import TEAM_NAMES as league_dict
+            elif league_lower == 'nba':
+                from utils.league_dictionaries.basketball import TEAM_NAMES as league_dict
+            elif league_lower == 'nfl':
+                from utils.league_dictionaries.football import TEAM_NAMES as league_dict
+            elif league_lower == 'nhl':
+                from utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
+            else:
+                league_dict = {}
+
+            # Try to find the team in the dictionary
+            normalized_team = None
+            team_name_lower = team_name.lower()
+            
+            # First try exact match
+            if team_name_lower in league_dict:
+                normalized_team = league_dict[team_name_lower]
+            else:
+                # Try fuzzy matching against dictionary keys
+                matches = difflib.get_close_matches(team_name_lower, league_dict.keys(), n=1, cutoff=0.75)
+                if matches:
+                    normalized_team = league_dict[matches[0]]
+                    logger.info(f"[LOGO] Fuzzy matched team name '{team_name}' to '{normalized_team}' using league dictionary")
+        except Exception as e:
+            logger.warning(f"[LOGO] Error using league dictionary for '{team_name}': {e}")
+            normalized_team = None
+
+        # If dictionary lookup failed, fall back to the original normalization
+        if not normalized_team:
+            normalized_team = normalize_team_name_any_league(team_name)
+
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png" if self.guild_id else "betting-bot/static/logos/default_image.png"
             logger.warning(f"[LOGO] No sport category for league '{league}'. Using fallback: {default_path}")
             return Image.open(default_path).convert("RGBA")
         
-        # First try exact match
-        normalized = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
+        # First try exact match with normalized name
+        normalized = normalized_team.replace(".", "").replace(" ", "_").lower()
         fname = f"{normalized}.png"
         logo_path = os.path.join("betting-bot/static/logos/teams", sport, league.upper(), fname)
         
         if os.path.exists(logo_path):
-            logger.info(f"[LOGO] Found exact logo match for '{team_name}' at: {logo_path}")
+            logger.info(f"[LOGO] Found exact logo match for '{team_name}' -> '{normalized_team}' at: {logo_path}")
             return Image.open(logo_path).convert("RGBA")
             
         # If exact match fails, try fuzzy matching
