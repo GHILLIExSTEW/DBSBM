@@ -938,46 +938,25 @@ class StraightBetWorkflowView(View):
             footer_image = None
             try:
                 width = main_image.width if main_image else 800
-                height = 120
+                height = 60  # Reduce height since only footer is needed
                 footer_image = Image.new("RGBA", (width, height), (35, 39, 51, 255))
                 draw = ImageDraw.Draw(footer_image)
                 # Load font
                 try:
                     font_path = "betting-bot/assets/fonts/Roboto-Bold.ttf"
-                    font = ImageFont.truetype(font_path, 44)
                     font_small = ImageFont.truetype(font_path, 28)
                 except Exception:
-                    font = ImageFont.load_default()
                     font_small = ImageFont.load_default()
-                # Odds
-                odds_val_int = int(odds_val)
-                odds_text = f"Odds: {odds_val_int:+d}" if odds_val > 0 else f"Odds: {odds_val_int:d}"
-                # Calculate text sizes using textbbox instead of textsize
-                odds_bbox = draw.textbbox((0, 0), odds_text, font=font)
-                odds_w = odds_bbox[2] - odds_bbox[0]
-                odds_h = odds_bbox[3] - odds_bbox[1]
-                
-                # Units
-                unit_label = "Unit" if units_val <= 1 else "Units"
-                units_text = f"Units: {units_val:.2f} {unit_label}"
-                # Calculate text sizes using textbbox instead of textsize
-                units_bbox = draw.textbbox((0, 0), units_text, font=font)
-                units_w = units_bbox[2] - units_bbox[0]
-                units_h = units_bbox[3] - units_bbox[1]
-                
                 # Footer (bet id and timestamp)
                 bet_id_text = f"Bet #{bet_serial}" if bet_serial else ""
                 timestamp_text = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
                 footer_text = f"{bet_id_text} {timestamp_text}"
-                # Calculate text sizes using textbbox instead of textsize
+                # Calculate text size using textbbox
                 footer_bbox = draw.textbbox((0, 0), footer_text, font=font_small)
                 footer_w = footer_bbox[2] - footer_bbox[0]
                 footer_h = footer_bbox[3] - footer_bbox[1]
-                
-                # Draw text
-                draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
-                draw.text(((width - units_w) // 2, 30 + odds_h), units_text, font=font, fill="#FFD700")
-                draw.text((20, height - 40), footer_text, font=font_small, fill="#888888")
+                # Draw only the footer text, centered vertically
+                draw.text(((width - footer_w) // 2, (height - footer_h) // 2), footer_text, font=font_small, fill="#888888")
             except Exception as e:
                 logger.exception(f"Error generating odds/units/footer image: {e}")
                 footer_image = None
