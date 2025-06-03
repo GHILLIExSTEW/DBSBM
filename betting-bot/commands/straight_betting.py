@@ -728,19 +728,18 @@ class StraightBetWorkflowView(View):
                         team_name = home_team
                         league = self.bet_details.get("league", "N/A")
                         odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                        line_with_odds = line
-                        if odds_str and not line.strip().endswith(odds_str):
-                            line_with_odds = f"{line} {odds_str}"
+                        # Do NOT append odds to the line for player prop straight bets
                         bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                             player_name=player_name or team_name,
                             team_name=team_name,
                             league=league,
-                            line=line_with_odds,
+                            line=line,  # Only the line, no odds
                             units=units,
                             output_path=None,
                             bet_id=bet_id,
                             timestamp=timestamp,
-                            guild_id=str(self.original_interaction.guild_id)
+                            guild_id=str(self.original_interaction.guild_id),
+                            odds=odds  # Pass odds if needed for payout, not for display
                         )
                         if bet_slip_image_bytes:
                             self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
@@ -906,19 +905,18 @@ class StraightBetWorkflowView(View):
                     team_name = home_team
                     league = self.bet_details.get("league", "N/A")
                     odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                    line_with_odds = line
-                    if odds_str and not line.strip().endswith(odds_str):
-                        line_with_odds = f"{line} {odds_str}"
+                    # Do NOT append odds to the line for player prop straight bets
                     bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                         player_name=player_name or team_name,
                         team_name=team_name,
                         league=league,
-                        line=line_with_odds,
+                        line=line,  # Only the line, no odds
                         units=units,
                         output_path=None,
                         bet_id=bet_id,
                         timestamp=timestamp,
-                        guild_id=str(self.original_interaction.guild_id)
+                        guild_id=str(self.original_interaction.guild_id),
+                        odds=odds  # Pass odds if needed for payout, not for display
                     )
                     if bet_slip_image_bytes:
                         main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
@@ -941,7 +939,8 @@ class StraightBetWorkflowView(View):
                     font = ImageFont.load_default()
                     font_small = ImageFont.load_default()
                 # Odds
-                odds_text = f"Odds: {odds_val:+d}" if odds_val > 0 else f"Odds: {odds_val:d}"
+                odds_val_int = int(odds_val)
+                odds_text = f"Odds: {odds_val_int:+d}" if odds_val > 0 else f"Odds: {odds_val_int:d}"
                 odds_w, odds_h = draw.textsize(odds_text, font=font)
                 draw.text(((width - odds_w) // 2, 10), odds_text, font=font, fill="white")
                 # Units
@@ -1101,19 +1100,18 @@ class StraightBetWorkflowView(View):
                 team_name = home_team
                 league = self.bet_details.get("league", "N/A")
                 odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                line_with_odds = line
-                if odds_str and not line.strip().endswith(odds_str):
-                    line_with_odds = f"{line} {odds_str}"
+                # Do NOT append odds to the line for player prop straight bets
                 bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                     player_name=player_name or team_name,
                     team_name=team_name,
                     league=league,
-                    line=line_with_odds,
+                    line=line,  # Only the line, no odds
                     units=units,
                     output_path=None,
                     bet_id=bet_id,
                     timestamp=timestamp,
-                    guild_id=str(self.original_interaction.guild_id)
+                    guild_id=str(self.original_interaction.guild_id),
+                    odds=odds  # Pass odds if needed for payout, not for display
                 )
                 if bet_slip_image_bytes:
                     self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)

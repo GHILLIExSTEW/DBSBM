@@ -66,7 +66,7 @@ class PlayerPropImageGenerator:
             if player_team and home_team and away_team:
                 if player_team.strip().lower() == home_team.strip().lower():
                     logo_to_draw = home_logo
-                elif player_team.strip().lower() == away_team.strip().lower():
+                elif player_team.strip().lower() == away_logo.strip().lower():
                     logo_to_draw = away_logo
                 else:
                     logo_to_draw = home_logo  # fallback
@@ -155,7 +155,7 @@ class PlayerPropImageGenerator:
         if os.path.exists(player_dir):
             candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
             candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.6)
+            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.75)  # Increased threshold to 75%
             if matches:
                 match_file = matches[0] + '.png'
                 match_path = os.path.join(player_dir, match_file)
@@ -165,7 +165,7 @@ class PlayerPropImageGenerator:
         return Image.open(default_path).convert("RGBA"), player_name
 
     @staticmethod
-    def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, units_display_mode='auto', display_as_risk=None):
+    def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, odds=None, units_display_mode='auto', display_as_risk=None):
         """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
         from PIL import Image, ImageDraw, ImageFont
         import os
@@ -206,16 +206,20 @@ class PlayerPropImageGenerator:
         except Exception:
             league_logo = None
         header_text = f"{league_upper} - Player Prop"
-        header_w, header_h = font_bold.getbbox(header_text)[2:]
+        header_bbox = font_bold.getbbox(header_text)
+        header_w = header_bbox[2] - header_bbox[0]
+        header_h = header_bbox[3] - header_bbox[1]
+        logo_w = logo_display_size[0] if league_logo else 0
+        gap = 12 if league_logo else 0
+        total_header_w = logo_w + gap + header_w
         block_h = max(logo_display_size[1], header_h)
-        block_w = logo_display_size[0] + 15 + header_w if league_logo else header_w
-        block_x = (image_width - block_w) // 2
+        block_x = (image_width - total_header_w) // 2
         block_y = 25
         if league_logo:
             logo_y = block_y + (block_h - logo_display_size[1]) // 2
             text_y = block_y + (block_h - header_h) // 2
             image.paste(league_logo, (block_x, logo_y), league_logo)
-            text_x = block_x + logo_display_size[0] + 15
+            text_x = block_x + logo_w + gap
         else:
             text_x = block_x
             text_y = block_y
@@ -264,19 +268,21 @@ class PlayerPropImageGenerator:
         sep_above_odds_y = line_y + line_h + 18
         draw.line([(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)], fill="#aaaaaa", width=1)
 
-        # Odds (displayed like game line)
+        # Odds (displayed between separator and units line)
         odds_val = None
-        try:
-            odds_val = float(line.split()[-1]) if line and (line.split()[-1].replace('+', '').replace('-', '').replace('.', '', 1).isdigit()) else None
-        except Exception:
-            odds_val = None
-        odds_text = f"{int(odds_val):+d}" if odds_val is not None and odds_val > 0 else (f"{int(odds_val):d}" if odds_val is not None else "")
+        odds_text = ""
+        if odds is not None:
+            try:
+                odds_val = float(odds)
+                odds_text = f"{int(odds_val):+d}" if odds_val > 0 else f"{int(odds_val):d}"
+            except Exception:
+                odds_text = ""
         odds_w, odds_h = font_odds.getbbox(odds_text)[2:] if odds_text else (0, 0)
         odds_y = sep_above_odds_y + 24
         if odds_text:
-            draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
+            draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="#FFD700", anchor="lt")
 
-        # Risk/Units (yellow, lock icons)
+        # Risk/Units (yellow, lock icons) - move below odds
         profit = 0.0
         if odds_val is not None:
             if odds_val < 0:
