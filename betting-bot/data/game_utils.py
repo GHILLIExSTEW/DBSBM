@@ -387,13 +387,13 @@ async def get_normalized_games_for_dropdown(
 
     for row in rows:
         try:
-            # Use the new comprehensive team name normalizer
-            home_team = normalize_team_name(row['home_team_name'], sport, league_name)
-            away_team = normalize_team_name(row['away_team_name'], sport, league_name)
+            # Always use league-specific normalization
+            home_team = normalize_team_name(row['home_team_name'], sport, league_key)
+            away_team = normalize_team_name(row['away_team_name'], sport, league_key)
             logger.info(f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
             game_data = {
                 'id': row['id'],
-                'api_game_id': str(row['api_game_id']),  # Use the actual api_game_id field
+                'api_game_id': str(row['api_game_id']),
                 'home_team': home_team,
                 'away_team': away_team,
                 'start_time': row['start_time'],

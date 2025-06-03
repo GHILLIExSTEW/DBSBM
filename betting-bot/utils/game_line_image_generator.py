@@ -332,12 +332,11 @@ class GameLineImageGenerator:
             # Try to find the team in the dictionary
             normalized_team = None
             team_name_lower = team_name.lower()
-            
             # First try exact match
             if team_name_lower in league_dict:
                 normalized_team = league_dict[team_name_lower]
             else:
-                # Try fuzzy matching against dictionary keys
+                # Try fuzzy matching against dictionary keys (within this league only)
                 matches = difflib.get_close_matches(team_name_lower, league_dict.keys(), n=1, cutoff=0.75)
                 if matches:
                     normalized_team = league_dict[matches[0]]
@@ -346,9 +345,9 @@ class GameLineImageGenerator:
             logger.warning(f"[LOGO] Error using league dictionary for '{team_name}': {e}")
             normalized_team = None
 
-        # If dictionary lookup failed, fall back to the original normalization
+        # If dictionary lookup failed, do NOT fall back to cross-league normalization
         if not normalized_team:
-            normalized_team = normalize_team_name_any_league(team_name)
+            normalized_team = team_name  # Use the original name as fallback
 
         sport = get_sport_category_for_path(league.upper())
         if not sport:
