@@ -130,20 +130,24 @@ class DatabaseManager:
 
         flat_args = tuple(args[0]) if len(args) == 1 and isinstance(args[0], (tuple, list)) else args
 
-        logger.debug("Executing DB Query: %s Args: %s", query, flat_args)
+        logger.debug("[DB EXECUTE] Query: %s Args: %s", query, flat_args)
         last_id = None
         rowcount = None
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     rowcount = await cursor.execute(query, flat_args)
+                    logger.debug("[DB EXECUTE] After execute: rowcount=%s", rowcount)
                     if rowcount is not None and rowcount > 0 and query.strip().upper().startswith("INSERT"):
                         last_id = cursor.lastrowid
+                        logger.debug("[DB EXECUTE] Insert lastrowid=%s", last_id)
                     if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
                         await conn.commit()
+                        logger.debug("[DB EXECUTE] Commit successful.")
+            logger.info("[DB EXECUTE] Query executed successfully. rowcount=%s, last_id=%s", rowcount, last_id)
             return rowcount, last_id
         except Exception as e:
-            logger.error("Error executing query: %s Args: %s. Error: %s", query, flat_args, e, exc_info=True)
+            logger.error("[DB EXECUTE] Error executing query: %s Args: %s. Error: %s", query, flat_args, e, exc_info=True)
             return None, None
 
     async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:

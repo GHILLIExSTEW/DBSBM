@@ -387,7 +387,7 @@ async def get_normalized_games_for_dropdown(
 
     for row in rows:
         try:
-            # Always use league-specific normalization
+            # Always use league-specific normalization for all leagues
             home_team = normalize_team_name(row['home_team_name'], sport, league_key)
             away_team = normalize_team_name(row['away_team_name'], sport, league_key)
             logger.info(f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
@@ -404,7 +404,7 @@ async def get_normalized_games_for_dropdown(
             dropdown_games.append(game_data)
             logger.info(f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}")
         except Exception as e:
-            logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}")
+            logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}", exc_info=True)
             continue
     
     logger.info(f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
