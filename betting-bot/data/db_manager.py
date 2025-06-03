@@ -5,7 +5,7 @@ import os
 import asyncio
 import json
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from data.game_utils import get_league_abbreviation, normalize_mlb_team_name, sanitize_team_name
+from data.game_utils import get_league_abbreviation, sanitize_team_name, normalize_team_name
 from datetime import datetime, timezone
 
 try:
@@ -923,8 +923,8 @@ class DatabaseManager:
         for row in rows:
             try:
                 if sport.lower() == "baseball" and league_key == "MLB":
-                    home_team = normalize_mlb_team_name(row['home_team_name'])
-                    away_team = normalize_mlb_team_name(row['away_team_name'])
+                    home_team = normalize_team_name(row['home_team_name'], sport, league_key)
+                    away_team = normalize_team_name(row['away_team_name'], sport, league_key)
                     logger.info("[get_normalized_games_for_dropdown] MLB: Normalized teams %s -> %s, %s -> %s", row['home_team_name'], home_team, row['away_team_name'], away_team)
                 else:
                     home_team = sanitize_team_name(row['home_team_name'])
