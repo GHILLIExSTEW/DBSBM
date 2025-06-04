@@ -302,18 +302,11 @@ class CancelButton(Button):
         bet_serial = self.parent_view.bet_details.get("bet_serial")
         if bet_serial:
             try:
-                bet_status = await self.parent_view.bot.db_manager.fetch_one(
-                    "SELECT confirmed FROM bets WHERE bet_serial = %s",
-                    (bet_serial,)
-                )
-                if bet_status and bet_status["confirmed"] == 1:
-                    await interaction.response.edit_message(
-                        content=f"Bet `{bet_serial}` is already confirmed and cannot be cancelled.", view=None
-                    )
-                else:
-                    if hasattr(self.parent_view.bot, "bet_service"):
-                        await self.parent_view.bot.bet_service.delete_bet(bet_serial)
-                    await interaction.response.edit_message(content=f"Bet `{bet_serial}` cancelled.", view=None)
+                bet_service = getattr(self.parent_view.bot, "bet_service", None)
+                if bet_service:
+                    await bet_service.delete_bet(bet_serial)
+                    logger.info(f"Deleted bet {bet_serial} after cancellation")
+                await interaction.response.edit_message(content=f"Bet `{bet_serial}` cancelled.", view=None)
             except Exception as e:
                 logger.error(f"Failed to delete bet {bet_serial}: {e}")
                 await interaction.response.edit_message(
@@ -744,6 +737,45 @@ class StraightBetWorkflowView(View):
                             self.preview_image_bytes = None
                     elif bet_type == "parlay":
                         pass
+
+                    # Record the bet in the database after generating preview
+                    bet_service = getattr(self.bot, "bet_service", None)
+                    if bet_service:
+                        try:
+                            logger.info("[WORKFLOW TRACE] Creating straight bet in database after preview...")
+                            bet_serial = await bet_service.create_straight_bet(
+                                guild_id=self.original_interaction.guild_id,
+                                user_id=self.original_interaction.user.id,
+                                league=league,
+                                bet_type=bet_type,
+                                units=float(units),
+                                odds=float(odds),
+                                team=self.bet_details.get("team"),
+                                opponent=self.bet_details.get("opponent"),
+                                line=line,
+                                api_game_id=self.bet_details.get("api_game_id"),
+                                channel_id=None,  # Will be set in final step
+                                confirmed=0  # Not confirmed until final submission
+                            )
+                            if bet_serial:
+                                self.bet_details["bet_serial"] = bet_serial
+                                logger.info(f"[WORKFLOW TRACE] Bet recorded with serial {bet_serial}")
+                            else:
+                                logger.error("[WORKFLOW TRACE] Failed to create bet in database")
+                                await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                                self.stop()
+                                return
+                        except Exception as e:
+                            logger.exception(f"[WORKFLOW TRACE] Error creating bet in database: {e}")
+                            await self.edit_message(content=f"❌ Error creating bet: {str(e)}", view=None)
+                            self.stop()
+                            return
+                    else:
+                        logger.error("[WORKFLOW TRACE] No bet_service available")
+                        await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
+                        self.stop()
+                        return
+
                 except Exception as e:
                     logger.exception(f"Error generating initial preview image for units step: {e}")
                     self.preview_image_bytes = None
@@ -800,48 +832,29 @@ class StraightBetWorkflowView(View):
         logger.info("[WORKFLOW TRACE] submit_bet called!")
         try:
             details = self.bet_details
-            # Remove any pre-set bet_serial before DB insert
-            details.pop("bet_serial", None)
             bet_service = getattr(self.bot, "bet_service", None)
             logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
             
             if not details.get("bet_serial"):
-                # Insert the bet now with all final values
-                if bet_service:
-                    try:
-                        logger.info("[submit_bet] Creating straight bet in database...")
-                        bet_serial = await bet_service.create_straight_bet(
-                            guild_id=self.original_interaction.guild_id,
-                            user_id=self.original_interaction.user.id,
-                            league=details.get("league"),
-                            bet_type=details.get("line_type", "straight"),
-                            units=float(details.get("units", 1.0)),
-                            odds=float(details.get("odds", 0.0)),
-                            team=details.get("team"),
-                            opponent=details.get("opponent"),
-                            line=details.get("line"),
-                            api_game_id=details.get("api_game_id"),
-                            channel_id=details.get("channel_id"),
-                            confirmed=1
-                        )
-                        logger.info(f"[submit_bet] Bet creation result - bet_serial: {bet_serial}")
-                        
-                        if not bet_serial:
-                            logger.error("[submit_bet] Failed to create straight bet in DB - no bet_serial returned")
-                            await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
-                            self.stop()
-                            return
-                        details["bet_serial"] = bet_serial
-                    except Exception as e:
-                        logger.error(f"[submit_bet] Failed to create straight bet in DB: {str(e)}", exc_info=True)
-                        await self.edit_message(content=f"❌ Failed to create bet in database: {str(e)}", view=None)
-                        self.stop()
-                        return
-                else:
-                    logger.error("[submit_bet] No bet_service available on bot instance")
-                    await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
+                logger.error("[submit_bet] No bet_serial found in details")
+                await self.edit_message(content="❌ Error: Bet not found. Please try again.", view=None)
+                self.stop()
+                return
+
+            # Update the bet with channel_id and confirm it
+            if bet_service:
+                try:
+                    await bet_service.update_bet(
+                        bet_serial=details["bet_serial"],
+                        channel_id=details.get("channel_id"),
+                        confirmed=1
+                    )
+                except Exception as e:
+                    logger.error(f"[submit_bet] Failed to update bet: {str(e)}", exc_info=True)
+                    await self.edit_message(content=f"❌ Failed to update bet: {str(e)}", view=None)
                     self.stop()
                     return
+
             logger.info(f"Submitting straight bet {details['bet_serial']} by user {interaction.user.id}")
             await self.edit_message(content=f"Processing bet `{details['bet_serial']}`...", view=None, file=None)
             try:
@@ -849,77 +862,13 @@ class StraightBetWorkflowView(View):
                 post_channel = self.bot.get_channel(post_channel_id) if post_channel_id else None
                 if not post_channel or not isinstance(post_channel, TextChannel):
                     raise ValueError(f"Invalid channel <#{post_channel_id}> for bet posting.")
-                units_val = float(details.get("units", 1.0))
-                odds_val = float(details.get("odds", 0.0))
-                bet_type = details.get("line_type", "straight")
+
+                # Use the preview image directly
                 discord_file_to_send = None
-                from PIL import Image, ImageDraw, ImageFont
-                import io as _io
-                # Generate main slip image
-                main_image = None
-                try:
-                    bet_type = self.bet_details.get("line_type", "game_line")
-                    league = self.bet_details.get("league", "N/A")
-                    home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
-                    away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
-                    line = self.bet_details.get("line", "N/A")
-                    odds = float(self.bet_details.get("odds", 0.0))
-                    bet_id = str(self.bet_details.get("preview_bet_serial", ""))
-                    timestamp = datetime.now(timezone.utc)
-                    units = float(self.bet_details.get("units", 1.0))
-                    if bet_type == "game_line":
-                        generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
-                        bet_slip_image_bytes = generator.generate_bet_slip_image(
-                            league=league,
-                            home_team=home_team,
-                            away_team=away_team,
-                            line=line,
-                            odds=odds,
-                            units=units,
-                            bet_id=bet_id,
-                            timestamp=timestamp,
-                            selected_team=self.bet_details.get("team", home_team),
-                            output_path=None
-                        )
-                        if bet_slip_image_bytes:
-                            main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
-                    elif bet_type == "player_prop":
-                        generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
-                        player_name = self.bet_details.get("player_name")
-                        if not player_name and line:
-                            player_name = line.split(' - ')[0] if ' - ' in line else line
-                        team_name = home_team
-                        league = self.bet_details.get("league", "N/A")
-                        odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                        bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                            player_name=player_name or team_name,
-                            team_name=team_name,
-                            league=league,
-                            line=line,
-                            units=units,
-                            output_path=None,
-                            bet_id=bet_id,
-                            timestamp=timestamp,
-                            guild_id=str(self.original_interaction.guild_id),
-                            odds=odds
-                        )
-                        if bet_slip_image_bytes:
-                            main_image = Image.open(_io.BytesIO(bet_slip_image_bytes)).convert("RGBA")
-                except Exception as e:
-                    logger.exception(f"Error generating main bet slip image: {e}")
-                    main_image = None
-                # Only send the main image, no footer stacking or extra footer image
-                discord_file_to_send = None
-                try:
-                    if main_image:
-                        buf = _io.BytesIO()
-                        main_image.save(buf, format="PNG")
-                        buf.seek(0)
-                        self.preview_image_bytes = buf
-                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{details['bet_serial']}.png")
-                except Exception as e:
-                    logger.exception(f"Error preparing bet slip image for Discord: {e}")
-                    discord_file_to_send = None
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.seek(0)
+                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{details['bet_serial']}.png")
+
                 capper_data = await self.bot.db_manager.fetch_one(
                     "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
                     (interaction.guild_id, interaction.user.id)
@@ -928,6 +877,7 @@ class StraightBetWorkflowView(View):
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
                     webhook_avatar_url = capper_data["image_path"]
+
                 # Fetch member_role for mention
                 member_role_id = None
                 guild_settings = await self.bot.db_manager.fetch_one(
@@ -937,6 +887,7 @@ class StraightBetWorkflowView(View):
                 if guild_settings and guild_settings.get("member_role"):
                     member_role_id = guild_settings["member_role"]
                 role_mention = f"<@&{member_role_id}>" if member_role_id else None
+
                 webhooks = await post_channel.webhooks()
                 target_webhook = None
                 for webhook in webhooks:
@@ -945,6 +896,7 @@ class StraightBetWorkflowView(View):
                         break
                 if not target_webhook:
                     target_webhook = await post_channel.create_webhook(name="Bet Bot")
+
                 try:
                     webhook_content = role_mention if role_mention else None
                     await target_webhook.send(
