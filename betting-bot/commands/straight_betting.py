@@ -792,19 +792,25 @@ class StraightBetWorkflowView(View):
             elif self.current_step == 6:
                 logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - starting")
                 try:
-                    # Log bet details before building channel selection
-                    logger.info(f"[WORKFLOW TRACE] Step 6: bet_details before channel selection: {json.dumps(self.bet_details, default=str)}")
-                    # Build channel selection dropdown (or whatever UI is used)
-                    # --- BEGIN CUSTOM LOGGING ---
-                    # If you have a method like self.build_channel_selection(), log before and after
-                    logger.info("[WORKFLOW TRACE] Step 6: Building channel selection UI...")
-                    # (Insert your actual channel selection code here, e.g. building a view or dropdown)
-                    # For example:
-                    # view = self.build_channel_selection()
-                    # logger.info("[WORKFLOW TRACE] Step 6: Channel selection UI built.")
-                    # await self.edit_message(content="Select a channel to post your bet:", view=view)
-                    # logger.info("[WORKFLOW TRACE] Step 6: Channel selection message sent/edited.")
-                    # --- END CUSTOM LOGGING ---
+                    # Get all text channels the user has access to
+                    channels = []
+                    for channel in interaction.guild.text_channels:
+                        if channel.permissions_for(interaction.user).send_messages:
+                            channels.append(channel)
+                    
+                    if not channels:
+                        await self.edit_message(content="❌ No channels available to post bets. Please contact an admin.", view=None)
+                        self.stop()
+                        return
+                    
+                    # Add channel selection and final confirm button
+                    new_view_items.append(ChannelSelect(self, channels))
+                    new_view_items.append(FinalConfirmButton(self))
+                    new_view_items.append(CancelButton(self))
+                    
+                    content = self.get_content()
+                    await self.edit_message(content=content, view=self)
+                    
                 except Exception as e:
                     logger.exception(f"[WORKFLOW TRACE] Exception in step 6 (channel selection): {e}")
                     await self.edit_message(content=f"❌ Error in channel selection: {e}", view=None)
@@ -1032,6 +1038,76 @@ class StraightBetWorkflowView(View):
     def stop(self):
         self._stopped = True
         super().stop()
+
+
+class StraightBetDetailsModal(Modal):
+    def __init__(self, line_type: str, selected_league_key: str, bet_details_from_view: Dict, is_manual: bool = False):
+        super().__init__(title="Enter Bet Details")
+        self.line_type = line_type
+        self.selected_league_key = selected_league_key
+        self.bet_details = bet_details_from_view
+        self.is_manual = is_manual
+        self.view_ref = None
+
+        # Add line input
+        self.line_input = TextInput(
+            label="Line (e.g., -110, +150, Over 2.5)",
+            placeholder="Enter the line",
+            required=True,
+            custom_id="line_input"
+        )
+        self.add_item(self.line_input)
+
+        # Add odds input
+        self.odds_input = TextInput(
+            label="Odds (e.g., -110, +150)",
+            placeholder="Enter the odds",
+            required=True,
+            custom_id="odds_input"
+        )
+        self.add_item(self.odds_input)
+
+        # Add player name input for player props
+        if line_type == "player_prop":
+            self.player_input = TextInput(
+                label="Player Name",
+                placeholder="Enter player name",
+                required=True,
+                custom_id="player_input"
+            )
+            self.add_item(self.player_input)
+
+    async def on_submit(self, interaction: Interaction):
+        try:
+            # Get values from inputs
+            line = self.line_input.value.strip()
+            odds_str = self.odds_input.value.strip()
+            
+            # Validate odds format
+            try:
+                odds = float(odds_str)
+            except ValueError:
+                await interaction.response.send_message("❌ Invalid odds format. Please enter a valid number (e.g., -110, +150)", ephemeral=True)
+                return
+
+            # Update bet details
+            self.bet_details["line"] = line
+            self.bet_details["odds"] = odds
+            self.bet_details["odds_str"] = odds_str
+
+            if self.line_type == "player_prop":
+                self.bet_details["player_name"] = self.player_input.value.strip()
+
+            # Advance to next step
+            if self.view_ref:
+                await self.view_ref.go_next(interaction)
+            else:
+                logger.error("No view reference found in modal")
+                await interaction.response.send_message("❌ Error: Could not process bet details. Please try again.", ephemeral=True)
+
+        except Exception as e:
+            logger.exception(f"Error in modal submission: {e}")
+            await interaction.response.send_message(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
 
 
 async def populate_api_games_on_restart(db):
