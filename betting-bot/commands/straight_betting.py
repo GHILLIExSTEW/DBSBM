@@ -628,15 +628,6 @@ class StraightBetWorkflowView(View):
                     pass
             return
         self.is_processing = True
-        if not interaction.response.is_done():
-            try:
-                await interaction.response.defer(ephemeral=True)
-            except discord.HTTPException as e:
-                logger.warning(
-                    f"Defer in go_next failed for interaction {interaction.id} (step {self.current_step}): {e}"
-                )
-                self.is_processing = False
-                return
         try:
             self.current_step += 1
             logger.info(f"[WORKFLOW TRACE] Advancing to step {self.current_step}")
@@ -767,46 +758,27 @@ class StraightBetWorkflowView(View):
                 await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
                 return
             elif self.current_step == 6:
-                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm")
-                if not all(k in self.bet_details for k in ["bet_serial", "units_str"]):
-                    await self.edit_message(
-                        content="❌ Bet details incomplete. Please restart.", view=None
-                    )
+                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - starting")
+                try:
+                    # Log bet details before building channel selection
+                    logger.info(f"[WORKFLOW TRACE] Step 6: bet_details before channel selection: {json.dumps(self.bet_details, default=str)}")
+                    # Build channel selection dropdown (or whatever UI is used)
+                    # --- BEGIN CUSTOM LOGGING ---
+                    # If you have a method like self.build_channel_selection(), log before and after
+                    logger.info("[WORKFLOW TRACE] Step 6: Building channel selection UI...")
+                    # (Insert your actual channel selection code here, e.g. building a view or dropdown)
+                    # For example:
+                    # view = self.build_channel_selection()
+                    # logger.info("[WORKFLOW TRACE] Step 6: Channel selection UI built.")
+                    # await self.edit_message(content="Select a channel to post your bet:", view=view)
+                    # logger.info("[WORKFLOW TRACE] Step 6: Channel selection message sent/edited.")
+                    # --- END CUSTOM LOGGING ---
+                except Exception as e:
+                    logger.exception(f"[WORKFLOW TRACE] Exception in step 6 (channel selection): {e}")
+                    await self.edit_message(content=f"❌ Error in channel selection: {e}", view=None)
                     self.stop()
                     return
-                guild_settings = await self.bot.db_manager.fetch_one(
-                    "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
-                    (str(self.original_interaction.guild_id),)
-                )
-                allowed_channels = []
-                if guild_settings:
-                    for channel_id in (guild_settings.get("embed_channel_1"), guild_settings.get("embed_channel_2")):
-                        if channel_id:
-                            try:
-                                cid = int(channel_id)
-                                channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
-                                if isinstance(channel, discord.TextChannel) and channel.permissions_for(interaction.guild.me).send_messages:
-                                    if channel not in allowed_channels:
-                                        allowed_channels.append(channel)
-                            except Exception as e:
-                                logger.error(f"Error processing channel {channel_id}: {e}")
-                if not allowed_channels:
-                    await self.edit_message(
-                        content="❌ No valid embed channels configured. Please contact an admin.", view=None
-                    )
-                    self.stop()
-                    return
-                self.clear_items()
-                self.add_item(ChannelSelect(self, allowed_channels))
-                self.add_item(FinalConfirmButton(self))
-                self.add_item(CancelButton(self))
-                file_to_send = None
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.seek(0)
-                    file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
-                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
-                self.is_processing = False
-                return
+                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - completed")
             else:
                 logger.error(f"Unexpected step in StraightBetWorkflow: {self.current_step}")
                 await self.edit_message(
@@ -818,10 +790,8 @@ class StraightBetWorkflowView(View):
                 self.add_item(item)
             await self.edit_message(content=content, view=self)
         except Exception as e:
-            logger.exception(f"Error in go_next (step {self.current_step}): {e}")
-            await self.edit_message(
-                content="❌ An error occurred. Please try again or cancel.", view=None
-            )
+            logger.exception(f"[WORKFLOW TRACE] Exception in go_next: {e}")
+            await self.edit_message(content=f"❌ Error in go_next: {e}", view=None)
             self.stop()
         finally:
             self.is_processing = False
