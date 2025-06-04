@@ -830,11 +830,12 @@ class StraightBetWorkflowView(View):
         logger.info("[WORKFLOW TRACE] submit_bet called!")
         try:
             details = self.bet_details
-            bet_serial = details.get("bet_serial")
+            # Remove any pre-set bet_serial before DB insert
+            details.pop("bet_serial", None)
             bet_service = getattr(self.bot, "bet_service", None)
             logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
             
-            if not bet_serial:
+            if not details.get("bet_serial"):
                 # Insert the bet now with all final values
                 if bet_service:
                     try:
@@ -860,7 +861,7 @@ class StraightBetWorkflowView(View):
                             await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
                             self.stop()
                             return
-                        self.bet_details["bet_serial"] = bet_serial
+                        details["bet_serial"] = bet_serial
                     except Exception as e:
                         logger.error(f"[submit_bet] Failed to create straight bet in DB: {str(e)}", exc_info=True)
                         await self.edit_message(content=f"❌ Failed to create bet in database: {str(e)}", view=None)
@@ -871,8 +872,8 @@ class StraightBetWorkflowView(View):
                     await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
                     self.stop()
                     return
-            logger.info(f"Submitting straight bet {bet_serial} by user {interaction.user.id}")
-            await self.edit_message(content=f"Processing bet `{bet_serial}`...", view=None, file=None)
+            logger.info(f"Submitting straight bet {details['bet_serial']} by user {interaction.user.id}")
+            await self.edit_message(content=f"Processing bet `{details['bet_serial']}`...", view=None, file=None)
             try:
                 post_channel_id = details.get("channel_id")
                 post_channel = self.bot.get_channel(post_channel_id) if post_channel_id else None
@@ -937,7 +938,7 @@ class StraightBetWorkflowView(View):
                 except Exception as e:
                     logger.exception(f"Error generating main bet slip image: {e}")
                     main_image = None
-                # Only send the main image, no footer stacking
+                # Only send the main image, no footer stacking or extra footer image
                 discord_file_to_send = None
                 try:
                     if main_image:
@@ -945,7 +946,7 @@ class StraightBetWorkflowView(View):
                         main_image.save(buf, format="PNG")
                         buf.seek(0)
                         self.preview_image_bytes = buf
-                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png")
+                        discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{details['bet_serial']}.png")
                 except Exception as e:
                     logger.exception(f"Error preparing bet slip image for Discord: {e}")
                     discord_file_to_send = None
@@ -982,7 +983,7 @@ class StraightBetWorkflowView(View):
                         username=webhook_username,
                         avatar_url=webhook_avatar_url
                     )
-                    await self.edit_message(content=f"✅ Bet #{bet_serial} successfully posted!", view=None)
+                    await self.edit_message(content=f"✅ Bet #{details['bet_serial']} successfully posted!", view=None)
                     self.stop()
                 except Exception as e:
                     logger.error(f"Error posting bet via webhook: {e}")
