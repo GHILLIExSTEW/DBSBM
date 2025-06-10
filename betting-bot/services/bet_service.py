@@ -409,6 +409,41 @@ class BetService:
         except Exception as e:
             logger.error(f"Failed to update channel/message for bet {bet_serial}: {e}", exc_info=True)
 
+    async def update_bet(self, bet_serial: int, **kwargs):
+        """Update a bet's details.
+        
+        Args:
+            bet_serial: The serial number of the bet to update
+            **kwargs: The fields to update and their new values
+        """
+        logger.info(f"Updating bet {bet_serial} with fields: {kwargs}")
+        try:
+            if not kwargs:
+                logger.warning("No fields provided to update for bet {bet_serial}")
+                return False
+
+            # Build the SET clause dynamically
+            set_clause = ", ".join(f"{field} = %s" for field in kwargs.keys())
+            query = f"""
+                UPDATE bets
+                SET {set_clause}
+                WHERE bet_serial = %s
+            """
+            
+            # Add bet_serial to the end of the values tuple
+            values = tuple(kwargs.values()) + (bet_serial,)
+            
+            rowcount, _ = await self.db_manager.execute(query, values)
+            if rowcount is not None and rowcount > 0:
+                logger.info(f"Successfully updated bet {bet_serial}")
+                return True
+            else:
+                logger.warning(f"No rows updated for bet {bet_serial}. Rowcount: {rowcount}")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to update bet {bet_serial}: {e}", exc_info=True)
+            raise BetServiceError(f"Could not update bet {bet_serial}: {str(e)}")
+
     async def update_parlay_bet_channel(self, bet_serial: int, channel_id: int, message_id: int):
         """Update the channel ID and message ID for a parlay bet and mark as confirmed."""
         logger.debug(f"Updating channel_id to {channel_id} and message_id to {message_id} for parlay bet {bet_serial}")

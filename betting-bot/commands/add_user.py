@@ -72,6 +72,20 @@ class AddUserCog(commands.Cog):
                 "❌ An error occurred while adding the capper.", ephemeral=True
             )
 
+    @add_user_command.error
+    async def add_user_error(self, interaction: Interaction, error: app_commands.AppCommandError):
+        """Handle errors for the add_user command."""
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "❌ You need Administrator permissions to add cappers. Please ask a server administrator for help.",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "❌ An error occurred while processing the command.",
+                ephemeral=True
+            )
+
 async def setup(bot: commands.Bot):
     cog = AddUserCog(bot)
     await bot.add_cog(cog)
