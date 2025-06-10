@@ -366,7 +366,7 @@ class BetDetailsModal(Modal):
                 if not player_name:
                     raise ValidationError("Player name cannot be empty")
                 self.view_ref.current_leg_construction_details['player_name'] = player_name
-                # For player props, we need to set both team and opponent to the player's team
+                # For player props, keep the home team as the selected team
                 self.view_ref.current_leg_construction_details['team'] = player_name
                 self.view_ref.current_leg_construction_details['opponent'] = player_name
 
@@ -394,22 +394,20 @@ class BetDetailsModal(Modal):
                     }
                     if leg.get('line_type') == 'player_prop':
                         leg_data['player_name'] = leg.get('player_name', '')
-                        # For player props, ensure we have both team and opponent set
-                        leg_data['selected_team'] = leg.get('player_name', '')
-                        leg_data['opponent'] = leg.get('player_name', '')
+                        # For player props, keep the home team as the selected team
+                        leg_data['home_team'] = leg.get('team', '')
+                        leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
+                        leg_data['selected_team'] = leg.get('team', '')  # Keep the team as selected
                     legs.append(leg_data)
-                total_odds = self.view_ref.bet_details.get('total_odds', 0.0)
-                units = float(self.view_ref.bet_details.get('units', 1.0))
-                bet_id = str(self.view_ref.bet_details.get('bet_serial', ''))
-                bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                # Don't show odds/units in preview until odds are set
                 image_bytes = image_generator.generate_image(
                     legs=legs,
                     output_path=None,
-                    total_odds=total_odds,
-                    units=units,
-                    bet_id=bet_id,
-                    bet_datetime=bet_datetime,
-                    finalized=True
+                    total_odds=None,
+                    units=None,
+                    bet_id=None,
+                    bet_datetime=None,
+                    finalized=False
                 )
                 if image_bytes:
                     self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
@@ -631,22 +629,100 @@ class AddAnotherLegButton(Button):
 
 class FinalizeParlayButton(Button):
     def __init__(self, parent_view: 'ParlayBetWorkflowView'):
-        super().__init__(
-            style=ButtonStyle.green,
-            label="Finalize Parlay",
-            custom_id=f"parlay_finalize_{parent_view.original_interaction.id}_{uuid.uuid4()}"
-        )
+        super().__init__(label="Finalize Parlay", style=ButtonStyle.green)
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
         try:
-            # Show modal for total odds input
-            modal = TotalOddsModal(self.parent_view.original_interaction.id)
-            modal.view_ref = self.parent_view
-            await interaction.response.send_modal(modal)
+            # Show odds modal first
+            odds_modal = OddsModal(self.parent_view)
+            await interaction.response.send_modal(odds_modal)
         except Exception as e:
-            logger.exception(f"Error in FinalizeParlayButton callback: {e}")
-            await interaction.response.send_message("❌ Error finalizing parlay. Please try again.", ephemeral=True)
+            logger.exception(f"Error in FinalizeParlayButton.callback: {e}")
+            await interaction.response.send_message("❌ An error occurred while finalizing your parlay. Please try again.", ephemeral=True)
+
+class OddsModal(Modal):
+    def __init__(self, parent_view: 'ParlayBetWorkflowView'):
+        super().__init__(title="Set Parlay Odds")
+        self.parent_view = parent_view
+        self.odds_input = TextInput(
+            label="Enter total parlay odds (e.g. +150)",
+            placeholder="+150",
+            required=True
+        )
+        self.add_item(self.odds_input)
+
+    async def on_submit(self, interaction: Interaction):
+        try:
+            odds_str = self.odds_input.value.strip()
+            if not odds_str:
+                raise ValidationError("Odds cannot be empty")
+            
+            # Store the odds and default units
+            self.parent_view.bet_details['total_odds'] = odds_str
+            self.parent_view.bet_details['units'] = 1.0
+            self.parent_view.bet_details['units_str'] = '1.0'
+            
+            # Generate preview with odds and default units
+            try:
+                image_generator = ParlayBetImageGenerator(guild_id=self.parent_view.original_interaction.guild_id)
+                legs = []
+                for leg in self.parent_view.bet_details.get('legs', []):
+                    leg_data = {
+                        'bet_type': leg.get('line_type', 'game_line'),
+                        'league': leg.get('league', ''),
+                        'home_team': leg.get('home_team_name', ''),
+                        'away_team': leg.get('away_team_name', ''),
+                        'selected_team': leg.get('team', ''),
+                        'line': leg.get('line', ''),
+                        'odds': leg.get('odds', leg.get('odds_str', '')),
+                    }
+                    if leg.get('line_type') == 'player_prop':
+                        leg_data['player_name'] = leg.get('player_name', '')
+                        leg_data['home_team'] = leg.get('team', '')
+                        leg_data['away_team'] = leg.get('player_name', '')
+                        leg_data['selected_team'] = leg.get('team', '')
+                    legs.append(leg_data)
+                
+                # Show preview with odds and default units (1.0)
+                image_bytes = image_generator.generate_image(
+                    legs=legs,
+                    output_path=None,
+                    total_odds=odds_str,
+                    units=1.0,
+                    bet_id=None,
+                    bet_datetime=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+                    finalized=True
+                )
+                
+                if image_bytes:
+                    self.parent_view.preview_image_bytes = io.BytesIO(image_bytes)
+                    self.parent_view.preview_image_bytes.seek(0)
+                    preview_file = discord.File(self.parent_view.preview_image_bytes, filename="parlay_preview.png")
+                else:
+                    self.parent_view.preview_image_bytes = None
+                    preview_file = None
+            except Exception as e:
+                logger.error(f"Error generating parlay preview image: {e}")
+                self.parent_view.preview_image_bytes = None
+                preview_file = None
+
+            # Show units selection with default of 1 unit
+            content = "✅ Odds set! Select your units:"
+            self.parent_view.clear_items()
+            self.parent_view.add_item(UnitsSelect(self.parent_view))
+            self.parent_view.add_item(CancelButton(self.parent_view))
+            
+            if preview_file:
+                await interaction.response.edit_message(content=content, view=self.parent_view, attachments=[preview_file])
+            else:
+                await interaction.response.edit_message(content=content, view=self.parent_view)
+            
+        except ValidationError as e:
+            await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
+        except Exception as e:
+            logger.exception(f"Error in OddsModal.on_submit: {e}")
+            await interaction.response.send_message("❌ An error occurred while setting odds. Please try again.", ephemeral=True)
 
 class LegDecisionView(View):
     def __init__(self, parent_view: 'ParlayBetWorkflowView'):
@@ -974,6 +1050,10 @@ class ParlayBetWorkflowView(View):
                 }
                 if leg.get('line_type') == 'player_prop':
                     leg_data['player_name'] = leg.get('player_name', '')
+                    # For player props, keep the home team as the selected team
+                    leg_data['home_team'] = leg.get('team', '')
+                    leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
+                    leg_data['selected_team'] = leg.get('team', '')  # Keep the team as selected
                 legs.append(leg_data)
             total_odds = self.bet_details.get('total_odds', None)
             bet_id = str(self.bet_details.get('bet_serial', ''))
