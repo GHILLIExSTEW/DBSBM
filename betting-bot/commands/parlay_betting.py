@@ -366,6 +366,9 @@ class BetDetailsModal(Modal):
                 if not player_name:
                     raise ValidationError("Player name cannot be empty")
                 self.view_ref.current_leg_construction_details['player_name'] = player_name
+                # For player props, we need to set both team and opponent to the player's team
+                self.view_ref.current_leg_construction_details['team'] = player_name
+                self.view_ref.current_leg_construction_details['opponent'] = player_name
 
             # Add the leg to the parlay
             if 'legs' not in self.view_ref.bet_details:
@@ -391,6 +394,9 @@ class BetDetailsModal(Modal):
                     }
                     if leg.get('line_type') == 'player_prop':
                         leg_data['player_name'] = leg.get('player_name', '')
+                        # For player props, ensure we have both team and opponent set
+                        leg_data['selected_team'] = leg.get('player_name', '')
+                        leg_data['opponent'] = leg.get('player_name', '')
                     legs.append(leg_data)
                 total_odds = self.view_ref.bet_details.get('total_odds', 0.0)
                 units = float(self.view_ref.bet_details.get('units', 1.0))
