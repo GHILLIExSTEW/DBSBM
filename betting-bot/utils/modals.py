@@ -355,14 +355,17 @@ class StraightBetDetailsModal(Modal):
                 self.view_ref.preview_image_bytes = buf
             else:
                 self.view_ref.preview_image_bytes = None
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error generating preview image: {e}")
             self.view_ref.preview_image_bytes = None
             
         # Advance workflow to units selection
         if hasattr(self.view_ref, 'current_step'):
-            self.view_ref.current_step = 4  # Set to step 4 so go_next will make it step 5
-        if hasattr(self.view_ref, 'go_next'):
+            self.view_ref.current_step = 5  # Set directly to step 5 (units selection)
             await self.view_ref.go_next(interaction)
+        else:
+            logger.error("View reference missing current_step attribute")
+            await interaction.response.send_message("Error: Could not advance workflow", ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
