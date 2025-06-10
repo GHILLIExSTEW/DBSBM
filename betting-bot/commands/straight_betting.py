@@ -797,20 +797,18 @@ class StraightBetWorkflowView(View):
                     for channel in interaction.guild.text_channels:
                         if channel.permissions_for(interaction.user).send_messages:
                             channels.append(channel)
-                    
+                    logger.debug(f"[WORKFLOW TRACE] Step 6: Found {len(channels)} available channels: {[c.name for c in channels]}")
                     if not channels:
                         await self.edit_message(content="❌ No channels available to post bets. Please contact an admin.", view=None)
                         self.stop()
                         return
-                    
                     # Add channel selection and final confirm button
                     new_view_items.append(ChannelSelect(self, channels))
                     new_view_items.append(FinalConfirmButton(self))
                     new_view_items.append(CancelButton(self))
-                    
                     content = self.get_content()
+                    logger.info("[WORKFLOW TRACE] Step 6: Sending channel selection dropdown and buttons.")
                     await self.edit_message(content=content, view=self)
-                    
                 except Exception as e:
                     logger.exception(f"[WORKFLOW TRACE] Exception in step 6 (channel selection): {e}")
                     await self.edit_message(content=f"❌ Error in channel selection: {e}", view=None)
@@ -1079,6 +1077,9 @@ class StraightBetDetailsModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         try:
+            # Always defer the interaction so the modal closes
+            if not interaction.response.is_done():
+                await interaction.response.defer()
             # Get values from inputs
             line = self.line_input.value.strip()
             odds_str = self.odds_input.value.strip()
@@ -1087,7 +1088,7 @@ class StraightBetDetailsModal(Modal):
             try:
                 odds = float(odds_str)
             except ValueError:
-                await interaction.response.send_message("❌ Invalid odds format. Please enter a valid number (e.g., -110, +150)", ephemeral=True)
+                await interaction.followup.send("❌ Invalid odds format. Please enter a valid number (e.g., -110, +150)", ephemeral=True)
                 return
 
             # Update bet details
@@ -1103,11 +1104,11 @@ class StraightBetDetailsModal(Modal):
                 await self.view_ref.go_next(interaction)
             else:
                 logger.error("No view reference found in modal")
-                await interaction.response.send_message("❌ Error: Could not process bet details. Please try again.", ephemeral=True)
+                await interaction.followup.send("❌ Error: Could not process bet details. Please try again.", ephemeral=True)
 
         except Exception as e:
             logger.exception(f"Error in modal submission: {e}")
-            await interaction.response.send_message(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
+            await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
 
 
 async def populate_api_games_on_restart(db):
