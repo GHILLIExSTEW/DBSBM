@@ -382,7 +382,7 @@ class BetDetailsModal(Modal):
             try:
                 image_generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
                 legs = []
-                for leg in self.view_ref.bet_details.get('legs', []):
+                for leg in self.view_ref.bet_details.get('legs', []) or []:
                     leg_data = {
                         'bet_type': leg.get('line_type', 'game_line'),
                         'league': leg.get('league', ''),
@@ -399,6 +399,9 @@ class BetDetailsModal(Modal):
                         leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
                         leg_data['selected_team'] = leg.get('team', '')  # Keep the team as selected
                     legs.append(leg_data)
+                # Defensive: ensure legs is a list
+                if legs is None:
+                    legs = []
                 # Don't show odds/units in preview until odds are set
                 image_bytes = image_generator.generate_image(
                     legs=legs,
@@ -545,6 +548,9 @@ class UnitsSelect(Select):
                 if leg.get('line_type') == 'player_prop':
                     leg_data['player_name'] = leg.get('player_name', '')
                 legs.append(leg_data)
+            # Defensive: ensure legs is a list
+            if legs is None:
+                legs = []
             total_odds = self.parent_view.bet_details.get('total_odds', None)
             bet_id = str(self.parent_view.bet_details.get('bet_serial', ''))
             bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -683,6 +689,9 @@ class OddsModal(Modal):
                         leg_data['away_team'] = leg.get('player_name', '')
                         leg_data['selected_team'] = leg.get('team', '')
                     legs.append(leg_data)
+                # Defensive: ensure legs is a list
+                if legs is None:
+                    legs = []
                 
                 # Show preview with odds and default units (1.0)
                 image_bytes = image_generator.generate_image(
@@ -1038,7 +1047,7 @@ class ParlayBetWorkflowView(View):
         try:
             generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
             legs = []
-            for leg in self.bet_details.get('legs', []):
+            for leg in self.bet_details.get('legs', []) or []:
                 leg_data = {
                     'bet_type': leg.get('line_type', 'game_line'),
                     'league': leg.get('league', ''),
@@ -1055,6 +1064,9 @@ class ParlayBetWorkflowView(View):
                     leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
                     leg_data['selected_team'] = leg.get('team', '')  # Keep the team as selected
                 legs.append(leg_data)
+            # Defensive: ensure legs is a list
+            if legs is None:
+                legs = []
             total_odds = self.bet_details.get('total_odds', None)
             bet_id = str(self.bet_details.get('bet_serial', ''))
             bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -1161,6 +1173,9 @@ class ParlayBetWorkflowView(View):
                 if leg.get('line_type') == 'player_prop':
                     leg_data['player_name'] = leg.get('player_name', '')
                 legs.append(leg_data)
+            # Defensive: ensure legs is a list
+            if legs is None:
+                legs = []
             total_odds = details.get('total_odds', 0.0)
             units_val = float(details.get("units", 1.0))
             bet_id = str(bet_serial)

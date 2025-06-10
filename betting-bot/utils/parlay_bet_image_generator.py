@@ -26,6 +26,10 @@ class ParlayBetImageGenerator:
         """
         from PIL import Image
         import os
+        # Defensive: ensure legs is a list, not None
+        if legs is None:
+            logging.error("[ParlayBetImageGenerator] 'legs' argument is None. Returning blank image.")
+            legs = []
         n_legs = len(legs)
         image_width = 800
         leg_height = 170
