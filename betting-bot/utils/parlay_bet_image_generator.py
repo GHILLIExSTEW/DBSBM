@@ -86,13 +86,13 @@ class ParlayBetImageGenerator:
 
     def _draw_leg(self, draw, image, leg, y, image_width):
         from PIL import Image
-        bet_type = leg.get('bet_type', 'game_line')
-        league = leg.get('league', '')
-        home_team = leg.get('home_team', '')
-        away_team = leg.get('away_team', '')
-        selected = leg.get('selected_team', '')
-        line = leg.get('line', '')
-        player_name = leg.get('player_name', '')
+        bet_type = str(leg.get('bet_type', 'game_line') or '')
+        league = str(leg.get('league', '') or '')
+        home_team = str(leg.get('home_team', '') or '')
+        away_team = str(leg.get('away_team', '') or '')
+        selected = str(leg.get('selected_team', '') or '')
+        line = str(leg.get('line', '') or '')
+        player_name = str(leg.get('player_name', '') or '')
 
         logo_size = (112, 112)
         team_font = self.font_small
@@ -168,6 +168,9 @@ class ParlayBetImageGenerator:
                 image.paste(team_logo_resized, (logo_x, logo_y), team_logo_resized)
             # Player name 22px after team name
             player_img, display_player_name = self._load_player_image(player_name, home_team, league)
+            if not display_player_name:
+                display_player_name = player_name or ""
+            display_player_name = str(display_player_name)
             player_name_w, player_name_h = team_font.getbbox(display_player_name)[2:]
             player_name_x = int(home_name_x + home_name_w + 42)
             player_name_y = int(name_y)
@@ -355,9 +358,25 @@ class ParlayBetImageGenerator:
             sport_dir,
             normalized_team
         )
-        player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
-        if os.path.exists(player_img_path):
-            return Image.open(player_img_path).convert("RGBA"), None
+        # Try multiple filename patterns for player images
+        player_name_variants = [
+            player_name,
+            player_name.replace(".", "").replace(",", ""),
+            player_name.replace(".", "").replace(",", "").replace(" Jr", "_jr").replace(" Sr", "_sr"),
+            player_name.replace(".", "").replace(",", "").replace(" Jr.", "_jr").replace(" Sr.", "_sr"),
+            player_name.replace(".", "").replace(",", "").replace(" Jr", "_jr").replace(" Sr", "_sr").replace(" ", "_"),
+            player_name.replace(".", "").replace(",", "").replace(" Jr.", "_jr").replace(" Sr.", "_sr").replace(" ", "_"),
+            player_name.lower().replace(".", "").replace(",", "").replace(" ", "_"),
+            normalized_player,
+        ]
+        # Remove duplicate variants
+        seen = set()
+        player_name_variants = [x for x in player_name_variants if not (x in seen or seen.add(x))]
+        for variant in player_name_variants:
+            variant = variant.strip('_').lower()
+            img_path = os.path.join(player_dir, f"{variant}.png")
+            if os.path.exists(img_path):
+                return Image.open(img_path).convert("RGBA"), None
         # Fuzzy match if exact not found
         if os.path.exists(player_dir):
             candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
