@@ -153,12 +153,12 @@ class ParlayBetImageGenerator:
         elif bet_type == 'player_prop':
             margin_left = 40
             name_y = int(y + 80)
-            # Team name
+            # Team name (left)
             home_name_w, home_name_h = team_font.getbbox(home_team)[2:]
             home_name_x = margin_left
             home_name_y = name_y
             draw.text((int(home_name_x), int(home_name_y)), home_team, font=team_font, fill="#ffffff")
-            # Team logo centered above name
+            # Team logo (left, above team name)
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert('RGBA')
@@ -166,31 +166,33 @@ class ParlayBetImageGenerator:
                 logo_x = int(home_name_x + home_name_w//2 - logo_size[0]//2)
                 logo_y = int(name_y - logo_size[1] - 8)
                 image.paste(team_logo_resized, (logo_x, logo_y), team_logo_resized)
-            # Player name 22px after team name
+            # Player name (right)
             player_img, display_player_name = self._load_player_image(player_name, home_team, league)
             if not display_player_name:
                 display_player_name = player_name or ""
             display_player_name = str(display_player_name)
             player_name_w, player_name_h = team_font.getbbox(display_player_name)[2:]
-            player_name_x = int(home_name_x + home_name_w + 42)
+            # Place player name and image on the right side
+            player_name_x = int(image_width - margin_left - player_name_w)
             player_name_y = int(name_y)
             draw.text((player_name_x, player_name_y), display_player_name, font=team_font, fill="#ffffff")
-            # Player photo centered above player name
+            # Player photo (right, above player name)
             if player_img:
                 player_img = player_img.convert('RGBA')
                 player_img_resized = player_img.resize(logo_size)
                 logo_x = int(player_name_x + player_name_w//2 - logo_size[0]//2)
                 logo_y = int(name_y - logo_size[1] - 8)
                 image.paste(player_img_resized, (logo_x, logo_y), player_img_resized)
-            # Line (right-aligned, word-wrap if too close)
+            # Line (centered between team and player)
             line_text = line
             line_w, line_h = line_font.getbbox(line_text)[2:]
-            line_x = int(image_width - 40 - line_w)
-            names_end_x = player_name_x + player_name_w
-            if line_x < names_end_x + 40:
-                # Word-wrap to new line below names
-                line_y = int(name_y + player_name_h + 8)
-                line_x = int(image_width - 40 - line_w)
+            # Center line between left and right
+            center_x = int((home_name_x + home_name_w + player_name_x) / 2)
+            line_x = max(center_x, home_name_x + home_name_w + 42)
+            if line_x + line_w > player_name_x:
+                # If not enough space, move line below
+                line_y = int(name_y + max(home_name_h, player_name_h) + 8)
+                line_x = int(image_width//2 - line_w//2)
             else:
                 line_y = int(y + 25)
             draw.text((line_x, line_y), line_text, font=line_font, fill="#ffffff")
