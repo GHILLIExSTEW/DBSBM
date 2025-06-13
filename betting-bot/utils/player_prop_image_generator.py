@@ -190,18 +190,29 @@ class PlayerPropImageGenerator:
         normalized_player = normalize_team_name_any_league(player_name).replace(".", "").replace(" ", "_").lower()
         player_dir = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team)
         player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
+
+        # DEBUG LOGGING: Show exactly what is being checked
+        logger = logging.getLogger(__name__)
+        logger.info(f"[PLAYER_IMAGE] Looking for player image. Inputs: player_name='{player_name}', team_name='{team_name}', league='{league}', guild_id='{guild_id}'")
+        logger.info(f"[PLAYER_IMAGE] Normalized team: '{normalized_team}', Normalized player: '{normalized_player}'")
+        logger.info(f"[PLAYER_IMAGE] Player dir: '{player_dir}', Player image path: '{player_img_path}'")
+
         if os.path.exists(player_img_path):
+            logger.info(f"[PLAYER_IMAGE] Found exact player image: {player_img_path}")
             return Image.open(player_img_path).convert("RGBA"), player_name
         # Fuzzy match if exact not found
         if os.path.exists(player_dir):
             candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
             candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.75)  # Increased threshold to 75%
+            logger.info(f"[PLAYER_IMAGE] Candidates in dir: {candidate_names}")
+            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.75)
             if matches:
                 match_file = matches[0] + '.png'
                 match_path = os.path.join(player_dir, match_file)
                 display_name = matches[0].replace('_', ' ').title()
+                logger.info(f"[PLAYER_IMAGE] Fuzzy matched player image: {match_path}")
                 return Image.open(match_path).convert("RGBA"), display_name
+        logger.warning(f"[PLAYER_IMAGE] No player image found for '{player_name}' (team: '{team_name}', league: '{league}'). Returning fallback.")
         default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
         return Image.open(default_path).convert("RGBA"), player_name
 
