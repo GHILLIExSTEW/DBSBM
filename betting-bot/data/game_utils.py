@@ -352,9 +352,32 @@ async def get_normalized_games_for_dropdown(
         logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
         return dropdown_games  # Return just manual entry option
     
+    # Build possible league names (abbreviation, full name, and common aliases)
+    league_names = set()
+    league_names.add(league_name)
     league_abbr = get_league_abbreviation(league_name)
-    logger.info(f"[get_normalized_games_for_dropdown] Looking up games for {sport}/{league_name} (abbreviation: {league_abbr}, key: {league_key})")
-    
+    if league_abbr != league_name:
+        league_names.add(league_abbr)
+    normalized_full = normalize_league_name(league_abbr)
+    if normalized_full != league_name:
+        league_names.add(normalized_full)
+    # Add more common aliases for major leagues
+    aliases = {
+        'NBA': ['NBA', 'National Basketball Association'],
+        'NHL': ['NHL', 'National Hockey League'],
+        'NFL': ['NFL', 'National Football League'],
+        'MLB': ['MLB', 'Major League Baseball'],
+        'WNBA': ['WNBA', "Women's National Basketball Association"],
+        'EPL': ['EPL', 'English Premier League'],
+        'MLS': ['MLS', 'Major League Soccer'],
+        'NCAAF': ['NCAA Football', 'NCAAF'],
+        'NCAAB': ['NCAA Basketball', 'NCAAB'],
+    }
+    for key, names in aliases.items():
+        if league_abbr == key or league_name == key or normalized_full == key:
+            league_names.update(names)
+    league_names = list(league_names)
+
     # Define finished statuses based on sport
     if sport.lower() == "baseball":
         finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
@@ -362,23 +385,24 @@ async def get_normalized_games_for_dropdown(
         finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
     logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
 
-    # Query by league_id, sport, and league_name with case-insensitive matching, but DO NOT filter by start_time
-    query = """
+    # Dynamically build the correct number of %s for the NOT IN and IN clauses
+    status_placeholders = ', '.join(['%s'] * len(finished_statuses))
+    league_name_placeholders = ', '.join(['%s'] * len(league_names))
+    query = f"""
         SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
         FROM api_games
         WHERE sport = %s 
         AND league_id = %s 
-        AND UPPER(league_name) = UPPER(%s)
-        AND status NOT IN (%s, %s, %s, %s, %s)
+        AND (UPPER(league_name) IN ({league_name_placeholders}))
+        AND status NOT IN ({status_placeholders})
         ORDER BY start_time ASC LIMIT 100
     """
     
-    # Get league_id from LEAGUE_ID_MAP
     league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
-    
-    logger.info(f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name}")
-    rows = await db_manager.fetch_all(query, (sport, league_id, league_name) + tuple(finished_statuses))
+    logger.info(f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name} (league_names={league_names})")
+    params = (sport, league_id) + tuple([name.upper() for name in league_names]) + tuple(finished_statuses)
+    rows = await db_manager.fetch_all(query, params)
     logger.info(f"[get_normalized_games_for_dropdown] Found {len(rows) if rows else 0} games")
     
     if not rows:
