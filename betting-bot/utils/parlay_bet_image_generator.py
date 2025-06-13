@@ -172,7 +172,6 @@ class ParlayBetImageGenerator:
                 display_player_name = player_name or ""
             display_player_name = str(display_player_name)
             player_name_w, player_name_h = team_font.getbbox(display_player_name)[2:]
-            # Place player name and image on the right side
             player_name_x = int(image_width - margin_left - player_name_w)
             player_name_y = int(name_y)
             draw.text((player_name_x, player_name_y), display_player_name, font=team_font, fill="#ffffff")
