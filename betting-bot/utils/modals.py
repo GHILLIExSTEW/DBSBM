@@ -362,6 +362,7 @@ class StraightBetDetailsModal(Modal):
         # Advance workflow to units selection
         if hasattr(self.view_ref, 'current_step'):
             self.view_ref.current_step = 5  # Set directly to step 5 (units selection)
+            logger.info(f"[MODAL SUBMIT] Calling go_next for step 5.")
             await self.view_ref.go_next(interaction)
         else:
             logger.error("View reference missing current_step attribute")
