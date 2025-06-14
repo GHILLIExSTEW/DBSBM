@@ -1082,11 +1082,6 @@ class StraightBetDetailsModal(Modal):
         # Set skip increment flag so go_next does not double-increment
         if self.view_ref:
             self.view_ref._skip_increment = True
-            await self.view_ref.go_next(interaction)
-        else:
-            # Defensive: fallback if view_ref is not set
-            await interaction.response.defer(ephemeral=True)
-
         try:
             # Always defer the interaction so the modal closes
             if not interaction.response.is_done():
@@ -1094,29 +1089,32 @@ class StraightBetDetailsModal(Modal):
             # Get values from inputs
             line = self.line_input.value.strip()
             odds_str = self.odds_input.value.strip()
-            
             # Validate odds format
             try:
                 odds = float(odds_str)
             except ValueError:
                 await interaction.followup.send("❌ Invalid odds format. Please enter a valid number (e.g., -110, +150)", ephemeral=True)
                 return
-
             # Update bet details
             self.bet_details["line"] = line
             self.bet_details["odds"] = odds
             self.bet_details["odds_str"] = odds_str
-
             if self.line_type == "player_prop":
                 self.bet_details["player_name"] = self.player_input.value.strip()
-
-            # Advance to next step
+            # Immediately advance to units selection (step 5)
             if self.view_ref:
-                await self.view_ref.go_next(interaction)
+                self.view_ref.current_step = 5
+                self.view_ref.clear_items()
+                self.view_ref.add_item(UnitsSelect(self.view_ref))
+                self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
+                self.view_ref.add_item(CancelButton(self.view_ref))
+                await interaction.response.edit_message(
+                    content="Select units for your bet:",
+                    view=self.view_ref
+                )
             else:
                 logger.error("No view reference found in modal")
                 await interaction.followup.send("❌ Error: Could not process bet details. Please try again.", ephemeral=True)
-
         except Exception as e:
             logger.exception(f"Error in modal submission: {e}")
             await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)

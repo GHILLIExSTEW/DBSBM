@@ -380,6 +380,7 @@ class BetDetailsModal(Modal):
             self.view_ref.current_leg_construction_details = {}
             # Generate preview image for the entire parlay (all legs so far)
             try:
+                import io, discord
                 image_generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
                 legs = []
                 for leg in self.view_ref.bet_details.get('legs', []) or []:
@@ -393,16 +394,13 @@ class BetDetailsModal(Modal):
                         'odds': leg.get('odds', leg.get('odds_str', '')),
                     }
                     if leg.get('line_type') == 'player_prop':
-                        leg_data['player_name'] = leg.get('team', '')
-                        # For player props, keep the home team as the selected team
+                        leg_data['player_name'] = leg.get('player_name', '')
                         leg_data['home_team'] = leg.get('team', '')
-                        leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
-                        leg_data['selected_team'] = leg.get('team', '')  # Keep the team as selected
+                        leg_data['away_team'] = leg.get('player_name', '')
+                        leg_data['selected_team'] = leg.get('team', '')
                     legs.append(leg_data)
-                # Defensive: ensure legs is a list
                 if legs is None:
                     legs = []
-                # Don't show odds/units in preview until odds are set
                 image_bytes = image_generator.generate_image(
                     legs=legs,
                     output_path=None,
@@ -413,7 +411,6 @@ class BetDetailsModal(Modal):
                     finalized=False
                 )
                 if image_bytes:
-                    import io, discord
                     self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
                     self.view_ref.preview_image_bytes.seek(0)
                     preview_file = discord.File(self.view_ref.preview_image_bytes, filename=f"parlay_preview.png")
@@ -424,24 +421,17 @@ class BetDetailsModal(Modal):
                 logger.error(f"Error generating parlay preview image: {e}")
                 self.view_ref.preview_image_bytes = None
                 preview_file = None
-            # Update the message to show the added leg and preview image
-            content = f"✅ Added leg {len(self.view_ref.bet_details['legs'])} to your parlay!\n\n"
-            content += "**Current Parlay:**\n"
-            for i, leg in enumerate(self.view_ref.bet_details['legs'], 1):
-                if leg.get('line_type') == 'player_prop':
-                    content += f"{i}. {leg.get('league', 'N/A')} - {leg.get('player_name', 'N/A')} {leg.get('line', 'N/A')}\n"
-                else:
-                    content += f"{i}. {leg.get('league', 'N/A')} - {leg.get('team', 'N/A')} vs {leg.get('opponent', 'N/A')} - {leg.get('line', 'N/A')}\n"
-            content += "\nWould you like to add another leg or finalize your parlay?"
-            # Add buttons for next action
+            # Immediately advance to units selection (step 7)
+            self.view_ref.current_step = 7
             self.view_ref.clear_items()
-            self.view_ref.add_item(AddAnotherLegButton(self.view_ref))
-            self.view_ref.add_item(FinalizeParlayButton(self.view_ref))
+            self.view_ref.add_item(UnitsSelect(self.view_ref))
+            self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
             self.view_ref.add_item(CancelButton(self.view_ref))
-            if preview_file:
-                await interaction.response.edit_message(content=content, view=self.view_ref, attachments=[preview_file])
-            else:
-                await interaction.response.edit_message(content=content, view=self.view_ref)
+            await interaction.response.edit_message(
+                content="Select units for your parlay:",
+                view=self.view_ref,
+                attachments=[preview_file] if preview_file else None
+            )
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
@@ -995,8 +985,7 @@ class ParlayBetWorkflowView(View):
                 decision_view = LegDecisionView(self)
                 await self.edit_message_for_current_leg(
                     interaction,
-                    content=f"Current Parlay:
-{summary_text}",
+content=f"Current Parlay:\n{summary_text}",
                     view=decision_view
                 )
                 self.current_step += 1
@@ -1094,6 +1083,10 @@ class ParlayBetWorkflowView(View):
             logger.exception(f"Error generating parlay preview image: {e}")
             self.preview_image_bytes = None
             file_to_send = None
+        except Exception as e:
+            logger.exception(f"Error generating parlay preview image: {e}")
+            self.preview_image_bytes = None
+            file_to_send = None
         self.clear_items()
         # Fetch allowed embed channels from guild settings (like straight betting)
         allowed_channels = []
@@ -1175,7 +1168,7 @@ class ParlayBetWorkflowView(View):
                     'odds': leg.get('odds', leg.get('odds_str', '')),
                 }
                 if leg.get('line_type') == 'player_prop':
-                    leg_data['player_name'] = leg.get('player_name', '')
+                    leg_data['player_name'] = leg.get('team', '')
                 legs.append(leg_data)
             # Defensive: ensure legs is a list
             if legs is None:
