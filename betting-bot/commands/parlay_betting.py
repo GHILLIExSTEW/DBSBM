@@ -348,6 +348,15 @@ class BetDetailsModal(Modal):
             )
             self.add_item(self.player_name_input)
             self.add_item(self.line_input)
+        # Add odds input for every leg
+        self.odds_input = TextInput(
+            label="Leg Odds",
+            placeholder="e.g. -110",
+            required=True,
+            max_length=10,
+            default=bet_details_from_view.get('odds', '') if bet_details_from_view else ''
+        )
+        self.add_item(self.odds_input)
 
     async def on_submit(self, interaction: Interaction):
         # Set skip increment flag so go_next does not double-increment
@@ -364,6 +373,11 @@ class BetDetailsModal(Modal):
             self.view_ref.current_leg_construction_details['line'] = line
             if self.line_type == "player_prop":
                 self.view_ref.current_leg_construction_details['player_name'] = self.player_name_input.value.strip()
+            # Store odds for this leg
+            odds = self.odds_input.value.strip()
+            if not odds:
+                raise ValidationError("Leg odds cannot be empty.")
+            self.view_ref.current_leg_construction_details['odds'] = odds
             # Add the leg to the parlay
             if 'legs' not in self.view_ref.bet_details:
                 self.view_ref.bet_details['legs'] = []

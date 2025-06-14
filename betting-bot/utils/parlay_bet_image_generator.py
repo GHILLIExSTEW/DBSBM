@@ -85,7 +85,7 @@ class ParlayBetImageGenerator:
             return buffer.getvalue()
 
     def _draw_leg(self, draw, image, leg, y, image_width):
-        from PIL import Image
+        from PIL import Image, ImageDraw
         bet_type = str(leg.get('bet_type', 'game_line') or '')
         league = str(leg.get('league', '') or '')
         home_team = str(leg.get('home_team', '') or '')
@@ -93,114 +93,83 @@ class ParlayBetImageGenerator:
         selected = str(leg.get('selected_team', '') or '')
         line = str(leg.get('line', '') or '')
         player_name = str(leg.get('player_name', '') or '')
+        odds = str(leg.get('odds', ''))
 
-        logo_size = (112, 112)
+        logo_size = (64, 64)
         team_font = self.font_small
         line_font = self.font_bold
-        # Game Line Leg
+        odds_font = self.font_bold
+        badge_color = "#222b3a"
+        badge_text_color = "#00d8ff"
+        card_radius = 28
+        card_margin_x = 24
+        card_margin_y = 10
+        card_height = 150
+        card_y = y + card_margin_y
+        card_x0 = card_margin_x
+        card_x1 = image_width - card_margin_x
+        card_y1 = card_y + card_height
+        # Draw rounded rectangle background for the leg
+        draw.rounded_rectangle([(card_x0, card_y), (card_x1, card_y1)], radius=card_radius, fill="#181c24")
+
+        # Draw team logos and names
         if bet_type == 'game_line':
-            margin_left = 40
-            name_y = int(y + 80)
-            # Team name
-            home_name_w, home_name_h = team_font.getbbox(home_team)[2:]
-            home_name_x = margin_left
-            home_name_y = name_y
-            home_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
-            draw.text((int(home_name_x), int(home_name_y)), home_team, font=team_font, fill=home_color)
-            # Team logo centered above name
+            margin_left = card_x0 + 24
+            name_y = card_y + 32
+            # Home team
             home_logo = self._load_team_logo(home_team, league)
             if home_logo:
-                home_logo = home_logo.convert('RGBA')
-                home_logo_resized = home_logo.resize(logo_size)
-                logo_x = int(home_name_x + home_name_w//2 - logo_size[0]//2)
-                logo_y = int(name_y - logo_size[1] - 8)
-                image.paste(home_logo_resized, (logo_x, logo_y), home_logo_resized)
-            # VS. 5px after team name
-            vs_text = "VS."
+                home_logo = home_logo.convert('RGBA').resize(logo_size)
+                image.paste(home_logo, (margin_left, name_y - 8), home_logo)
+            home_name_x = margin_left + logo_size[0] + 12
+            home_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
+            draw.text((home_name_x, name_y), home_team, font=team_font, fill=home_color)
+            # VS and away team
+            vs_text = "VS"
             vs_font = self.font_vs_small
-            vs_w, vs_h = vs_font.getbbox(vs_text)[2:]
-            vs_x = int(home_name_x + home_name_w + 5)
-            vs_y = int(name_y)
-            draw.text((vs_x, vs_y), vs_text, font=vs_font, fill="#ffffff")
-            # Opponent name 5px after VS.
-            away_name_w, away_name_h = team_font.getbbox(away_team)[2:]
-            away_name_x = int(vs_x + vs_w + 5)
-            away_name_y = int(name_y)
+            vs_x = home_name_x + draw.textlength(home_team, font=team_font) + 16
+            draw.text((vs_x, name_y), vs_text, font=vs_font, fill="#888888")
+            away_name_x = vs_x + draw.textlength(vs_text, font=vs_font) + 16
             away_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
-            draw.text((away_name_x, away_name_y), away_team, font=team_font, fill=away_color)
-            # Opponent logo centered above opponent name
+            draw.text((away_name_x, name_y), away_team, font=team_font, fill=away_color)
             away_logo = self._load_team_logo(away_team, league)
             if away_logo:
-                away_logo = away_logo.convert('RGBA')
-                away_logo_resized = away_logo.resize(logo_size)
-                logo_x = int(away_name_x + away_name_w//2 - logo_size[0]//2)
-                logo_y = int(name_y - logo_size[1] - 8)
-                image.paste(away_logo_resized, (logo_x, logo_y), away_logo_resized)
-            # Line (right-aligned, word-wrap if too close)
-            line_text = line
-            line_w, line_h = line_font.getbbox(line_text)[2:]
-            line_x = int(image_width - 40 - line_w)
-            # Find the rightmost end of the names
-            names_end_x = max(home_name_x + home_name_w, away_name_x + away_name_w)
-            if line_x < names_end_x + 40:
-                # Word-wrap to new line below names
-                line_y = int(name_y + home_name_h + 8)
-                line_x = int(image_width - 40 - line_w)
-            else:
-                line_y = int(y + 25)
-            draw.text((line_x, line_y), line_text, font=line_font, fill="#ffffff")
-        # Player Prop Leg
+                away_logo = away_logo.convert('RGBA').resize(logo_size)
+                image.paste(away_logo, (card_x1 - logo_size[0] - 24, name_y - 8), away_logo)
+            # Line (below names)
+            line_y = name_y + 38
+            draw.text((home_name_x, line_y), line, font=line_font, fill="#ffffff")
         elif bet_type == 'player_prop':
-            margin_left = 40
-            name_y = int(y + 80)
-            # Debug logging for player prop leg
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info(f"[DRAW_LEG] Player prop: home_team='{home_team}', player_name='{player_name}', league='{league}'")
-            # Team name (left)
-            home_name_w, home_name_h = team_font.getbbox(home_team)[2:]
-            home_name_x = margin_left
-            home_name_y = name_y
-            draw.text((int(home_name_x), int(home_name_y)), home_team, font=team_font, fill="#ffffff")
-            logger.info(f"[DRAW_LEG] Calling _load_team_logo with home_team='{home_team}', league='{league}'")
-            # Team logo (left, above team name)
+            margin_left = card_x0 + 24
+            name_y = card_y + 32
+            # Team logo
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
-                team_logo = team_logo.convert('RGBA')
-                team_logo_resized = team_logo.resize(logo_size)
-                logo_x = int(home_name_x + home_name_w//2 - logo_size[0]//2)
-                logo_y = int(name_y - logo_size[1] - 8)
-                image.paste(team_logo_resized, (logo_x, logo_y), team_logo_resized)
-            # Player name (right)
-            logger.info(f"[DRAW_LEG] Calling _load_player_image with player_name='{player_name}', home_team='{home_team}', league='{league}'")
-            player_img, display_player_name = self._load_player_image(player_name, home_team, league)
-            if not display_player_name:
-                display_player_name = player_name or ""
-            display_player_name = str(display_player_name)
-            player_name_w, player_name_h = team_font.getbbox(display_player_name)[2:]
-            player_name_x = int(image_width - margin_left - player_name_w)
-            player_name_y = int(name_y)
-            draw.text((player_name_x, player_name_y), display_player_name, font=team_font, fill="#ffffff")
-            # Player photo (right, above player name)
-            if player_img:
-                player_img = player_img.convert('RGBA')
-                player_img_resized = player_img.resize(logo_size)
-                logo_x = int(player_name_x + player_name_w//2 - logo_size[0]//2)
-                logo_y = int(name_y - logo_size[1] - 8)
-                image.paste(player_img_resized, (logo_x, logo_y), player_img_resized)
-            # Line (centered between team and player)
-            line_text = line
-            line_w, line_h = line_font.getbbox(line_text)[2:]
-            # Center line between left and right
-            center_x = int((home_name_x + home_name_w + player_name_x) / 2)
-            line_x = max(center_x, home_name_x + home_name_w + 42)
-            if line_x + line_w > player_name_x:
-                # If not enough space, move line below
-                line_y = int(name_y + max(home_name_h, player_name_h) + 8)
-                line_x = int(image_width//2 - line_w//2)
-            else:
-                line_y = int(y + 25)
-            draw.text((line_x, line_y), line_text, font=line_font, fill="#ffffff")
+                team_logo = team_logo.convert('RGBA').resize(logo_size)
+                image.paste(team_logo, (margin_left, name_y - 8), team_logo)
+            # Player name
+            player_name_x = margin_left + logo_size[0] + 12
+            draw.text((player_name_x, name_y), player_name, font=team_font, fill="#ffffff")
+            # Line (below player name)
+            line_y = name_y + 38
+            draw.text((player_name_x, line_y), line, font=line_font, fill="#ffffff")
+        # Odds badge (right side, vertically centered)
+        badge_w = 90
+        badge_h = 48
+        badge_x = card_x1 - badge_w - 32
+        badge_y = card_y + card_height//2 - badge_h//2
+        draw.rounded_rectangle([(badge_x, badge_y), (badge_x+badge_w, badge_y+badge_h)], radius=18, fill=badge_color)
+        odds_text = odds if odds else "-"
+        # Format odds with sign
+        try:
+            odds_val = int(float(odds_text))
+            odds_text = f"+{odds_val}" if odds_val > 0 else str(odds_val)
+        except Exception:
+            pass
+        odds_text_w = draw.textlength(odds_text, font=odds_font)
+        odds_text_x = badge_x + badge_w//2 - odds_text_w//2
+        odds_text_y = badge_y + badge_h//2 - self.font_bold.size//2 + 4
+        draw.text((odds_text_x, odds_text_y), odds_text, font=odds_font, fill=badge_text_color)
 
     def _draw_odds_and_units(self, draw, image, total_odds, units, y, image_width, units_display_mode='auto', display_as_risk=None):
         # Format odds with sign, as whole number, or 'X' if not set
