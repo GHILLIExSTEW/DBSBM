@@ -153,11 +153,16 @@ class ParlayBetImageGenerator:
         elif bet_type == 'player_prop':
             margin_left = 40
             name_y = int(y + 80)
+            # Debug logging for player prop leg
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"[DRAW_LEG] Player prop: home_team='{home_team}', player_name='{player_name}', league='{league}'")
             # Team name (left)
             home_name_w, home_name_h = team_font.getbbox(home_team)[2:]
             home_name_x = margin_left
             home_name_y = name_y
             draw.text((int(home_name_x), int(home_name_y)), home_team, font=team_font, fill="#ffffff")
+            logger.info(f"[DRAW_LEG] Calling _load_team_logo with home_team='{home_team}', league='{league}'")
             # Team logo (left, above team name)
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
@@ -167,6 +172,7 @@ class ParlayBetImageGenerator:
                 logo_y = int(name_y - logo_size[1] - 8)
                 image.paste(team_logo_resized, (logo_x, logo_y), team_logo_resized)
             # Player name (right)
+            logger.info(f"[DRAW_LEG] Calling _load_player_image with player_name='{player_name}', home_team='{home_team}', league='{league}'")
             player_img, display_player_name = self._load_player_image(player_name, home_team, league)
             if not display_player_name:
                 display_player_name = player_name or ""

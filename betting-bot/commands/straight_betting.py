@@ -351,9 +351,7 @@ class TeamSelect(Select):
         modal.view_ref = self.parent_view
         if not interaction.response.is_done():
             await interaction.response.send_modal(modal)
-            await self.parent_view.edit_message(
-                content="Please fill in the bet details in the popup form.", view=self.parent_view
-            )
+            return  # Prevent double modal or extra message update
         else:
             logger.error("Tried to send modal, but interaction already responded to.")
             await self.parent_view.edit_message(
