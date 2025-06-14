@@ -1084,8 +1084,8 @@ class StraightBetDetailsModal(Modal):
             self.view_ref._skip_increment = True
         try:
             # Always defer the interaction so the modal closes
-            if not interaction.response.is_done():
-                await interaction.response.defer()
+            # if not interaction.response.is_done():
+            #     await interaction.response.defer()
             # Get values from inputs
             line = self.line_input.value.strip()
             odds_str = self.odds_input.value.strip()
@@ -1108,8 +1108,9 @@ class StraightBetDetailsModal(Modal):
                 self.view_ref.add_item(UnitsSelect(self.view_ref))
                 self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
                 self.view_ref.add_item(CancelButton(self.view_ref))
+                # Do NOT call defer() before edit_message!
                 await interaction.response.edit_message(
-                    content="Select units for your bet:",
+                    content="Select units for your straight bet:",
                     view=self.view_ref
                 )
             else:
