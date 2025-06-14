@@ -92,6 +92,9 @@ class PlayerPropModal(Modal):
         self.add_item(self.odds_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        # Set skip increment flag so go_next does not double-increment
+        if hasattr(self, 'view_ref') and self.view_ref:
+            self.view_ref._skip_increment = True
         try:
             player = self.player_input.value.strip()
             player_prop_line = self.player_prop_input.value.strip()
@@ -99,7 +102,6 @@ class PlayerPropModal(Modal):
             units = 1.0  # Default, or fetch from view_ref if you support custom units
             bet_id = getattr(self.view_ref, 'bet_id', 'N/A') if hasattr(self, 'view_ref') else 'N/A'
             league = getattr(self.view_ref, 'league', 'N/A') if hasattr(self, 'view_ref') else 'N/A'
-            timestamp = datetime.now(timezone.utc)
             team = self.league_conf.get('team_name', '') or getattr(self.view_ref, 'team', '') or ''
             if not team:
                 team = self.league_key  # fallback to league key if no team
@@ -143,7 +145,7 @@ class PlayerPropModal(Modal):
                     odds=float(odds_str.replace('+', '')) if odds_str.replace('+', '').replace('.', '', 1).isdigit() else odds_str,
                     units=units,
                     bet_id=bet_id,
-                    timestamp=timestamp,
+                    timestamp=datetime.now(timezone.utc),
                     bet_type="player_prop",
                     player_name=player,
                     player_image=player_image,

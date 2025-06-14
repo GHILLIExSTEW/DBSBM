@@ -350,6 +350,9 @@ class BetDetailsModal(Modal):
             self.add_item(self.line_input)
 
     async def on_submit(self, interaction: Interaction):
+        # Set skip increment flag so go_next does not double-increment
+        if self.view_ref:
+            self.view_ref._skip_increment = True
         try:
             # For manual game line, get team/opponent
             if self.is_manual and self.line_type == "game_line":
@@ -369,15 +372,12 @@ class BetDetailsModal(Modal):
                 # For player props, keep the home team as the selected team
                 self.view_ref.current_leg_construction_details['team'] = player_name
                 self.view_ref.current_leg_construction_details['opponent'] = player_name
-
             # Add the leg to the parlay
             if 'legs' not in self.view_ref.bet_details:
                 self.view_ref.bet_details['legs'] = []
             self.view_ref.bet_details['legs'].append(self.view_ref.current_leg_construction_details.copy())
-            
             # Reset current leg construction details
             self.view_ref.current_leg_construction_details = {}
-
             # Generate preview image for the entire parlay (all legs so far)
             try:
                 image_generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
@@ -393,7 +393,7 @@ class BetDetailsModal(Modal):
                         'odds': leg.get('odds', leg.get('odds_str', '')),
                     }
                     if leg.get('line_type') == 'player_prop':
-                        leg_data['player_name'] = leg.get('player_name', '')
+                        leg_data['player_name'] = leg.get('team', '')
                         # For player props, keep the home team as the selected team
                         leg_data['home_team'] = leg.get('team', '')
                         leg_data['away_team'] = leg.get('player_name', '')  # This will be replaced with player image
@@ -413,6 +413,7 @@ class BetDetailsModal(Modal):
                     finalized=False
                 )
                 if image_bytes:
+                    import io, discord
                     self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
                     self.view_ref.preview_image_bytes.seek(0)
                     preview_file = discord.File(self.view_ref.preview_image_bytes, filename=f"parlay_preview.png")
@@ -423,7 +424,6 @@ class BetDetailsModal(Modal):
                 logger.error(f"Error generating parlay preview image: {e}")
                 self.view_ref.preview_image_bytes = None
                 preview_file = None
-
             # Update the message to show the added leg and preview image
             content = f"✅ Added leg {len(self.view_ref.bet_details['legs'])} to your parlay!\n\n"
             content += "**Current Parlay:**\n"
@@ -433,18 +433,15 @@ class BetDetailsModal(Modal):
                 else:
                     content += f"{i}. {leg.get('league', 'N/A')} - {leg.get('team', 'N/A')} vs {leg.get('opponent', 'N/A')} - {leg.get('line', 'N/A')}\n"
             content += "\nWould you like to add another leg or finalize your parlay?"
-            
             # Add buttons for next action
             self.view_ref.clear_items()
             self.view_ref.add_item(AddAnotherLegButton(self.view_ref))
             self.view_ref.add_item(FinalizeParlayButton(self.view_ref))
             self.view_ref.add_item(CancelButton(self.view_ref))
-            
             if preview_file:
                 await interaction.response.edit_message(content=content, view=self.view_ref, attachments=[preview_file])
             else:
                 await interaction.response.edit_message(content=content, view=self.view_ref)
-            
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
@@ -684,7 +681,7 @@ class OddsModal(Modal):
                         'odds': leg.get('odds', leg.get('odds_str', '')),
                     }
                     if leg.get('line_type') == 'player_prop':
-                        leg_data['player_name'] = leg.get('player_name', '')
+                        leg_data['player_name'] = leg.get('team', '')
                         leg_data['home_team'] = leg.get('team', '')
                         leg_data['away_team'] = leg.get('player_name', '')
                         leg_data['selected_team'] = leg.get('team', '')
@@ -954,10 +951,6 @@ class ParlayBetWorkflowView(View):
                 return
             elif self.current_step == 2:
                 league = self.current_leg_construction_details.get('league')
-                if not league:
-                    await self.edit_message_for_current_leg(interaction, content="❌ League not set for current leg. Cancelling.", view=None)
-                    self.stop()
-                    return
                 self.games = []
                 if league != "Other":
                     league_key = league  # Use league name as key
@@ -980,16 +973,12 @@ class ParlayBetWorkflowView(View):
                         self.games = filtered_games
                         logger.debug(f"Games after filtering: {self.games}")
                 self.add_item(ParlayGameSelect(self, self.games))
-                self.add_item(ConfirmButton(self))
                 self.add_item(CancelButton(self))
-                if not self.games:
-                    content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
-                else:
-                    content = f"Select a game for your {league} parlay leg or choose Manual Entry:"
-                await self.edit_message_for_current_leg(interaction, content=content, view=self)
+                await self.edit_message_for_current_leg(interaction, content="Select a game for this leg:", view=self)
                 self.current_step += 1
                 return
             elif self.current_step == 3:
+                # Show team select for the chosen game
                 home_team = self.current_leg_construction_details.get('home_team_name', '')
                 away_team = self.current_leg_construction_details.get('away_team_name', '')
                 self.add_item(TeamSelect(self, home_team, away_team))
@@ -998,24 +987,39 @@ class ParlayBetWorkflowView(View):
                 self.current_step += 1
                 return
             elif self.current_step == 4:
-                self.is_processing = False
+                # Show bet details modal (handled by modal, so just return)
                 return
             elif self.current_step == 5:
+                # Show summary and decision view
+                summary_text = self._generate_parlay_summary_text()
+                decision_view = LegDecisionView(self)
+                await self.edit_message_for_current_leg(
+                    interaction,
+                    content=f"Current Parlay:
+{summary_text}",
+                    view=decision_view
+                )
+                self.current_step += 1
+                return
+            elif self.current_step == 6:
+                # Show total odds modal
+                modal = TotalOddsModal(view_custom_id_suffix=self.original_interaction.id)
+                modal.view_ref = self
+                await interaction.response.send_modal(modal)
+                return
+            elif self.current_step == 7:
+                # Show units select
                 self.add_item(UnitsSelect(self))
                 self.add_item(ConfirmUnitsButton(self))
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(interaction, content="Select units for your parlay:", view=self)
-            elif self.current_step == 6:
-                self.add_item(TotalOddsModal(self.original_interaction.id))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Enter total odds for your parlay:", view=self)
-            elif self.current_step == 7:
-                self.add_item(ConfirmParlayButton(self))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Confirm your parlay:", view=self)
+                self.current_step += 1
+                return
             elif self.current_step == 8:
-                await self.submit_bet(interaction)
-                self.stop()
+                # Show final confirm button
+                self.add_item(FinalConfirmButton(self))
+                self.add_item(CancelButton(self))
+                await self.edit_message_for_current_leg(interaction, content="Confirm and post your parlay:", view=self)
                 return
         except Exception as e:
             logger.exception(f"Error in go_next: {e}")

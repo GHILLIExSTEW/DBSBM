@@ -620,7 +620,12 @@ class StraightBetWorkflowView(View):
             return
         self.is_processing = True
         try:
-            self.current_step += 1
+            # Only increment current_step if not set by modal (i.e., if called from a user action, not modal submit)
+            if hasattr(self, '_skip_increment') and self._skip_increment:
+                logger.debug(f"[WORKFLOW TRACE] Skipping current_step increment (set by modal)")
+                self._skip_increment = False
+            else:
+                self.current_step += 1
             logger.info(f"[WORKFLOW TRACE] Advancing to step {self.current_step}")
             self.clear_items()
             content = self.get_content()
@@ -1074,6 +1079,14 @@ class StraightBetDetailsModal(Modal):
             self.add_item(self.player_input)
 
     async def on_submit(self, interaction: Interaction):
+        # Set skip increment flag so go_next does not double-increment
+        if self.view_ref:
+            self.view_ref._skip_increment = True
+            await self.view_ref.go_next(interaction)
+        else:
+            # Defensive: fallback if view_ref is not set
+            await interaction.response.defer(ephemeral=True)
+
         try:
             # Always defer the interaction so the modal closes
             if not interaction.response.is_done():
