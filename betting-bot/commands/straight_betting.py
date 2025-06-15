@@ -1101,37 +1101,54 @@ class StraightBetDetailsModal(Modal):
             self.bet_details["odds_str"] = odds_str
             if self.line_type == "player_prop":
                 self.bet_details["player_name"] = self.player_input.value.strip()
-            # Immediately advance to units selection (step 5)
-            if self.view_ref:
-                self.view_ref.current_step = 5
-                self.view_ref.clear_items()
-                self.view_ref.add_item(UnitsSelect(self.view_ref))
-                self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
-                self.view_ref.add_item(CancelButton(self.view_ref))
-                # Do NOT call defer() before edit_message!
-                await interaction.response.edit_message(
-                    content="Select units for your straight bet:",
-                    view=self.view_ref
+
+            # Always generate preview image with units=1.0 for the first units selection
+            preview_file = None
+            try:
+                generator = StraightBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                leg = {
+                    'bet_type': self.line_type,
+                    'league': self.view_ref.bet_details.get('league', ''),
+                    'home_team': self.view_ref.bet_details.get('home_team_name', ''),
+                    'away_team': self.view_ref.bet_details.get('away_team_name', ''),
+                    'selected_team': self.view_ref.bet_details.get('team', ''),
+                    'line': self.view_ref.bet_details.get('line', ''),
+                    'odds': self.view_ref.bet_details.get('odds', ''),
+                }
+                if self.line_type == 'player_prop':
+                    leg['player_name'] = self.view_ref.bet_details.get('player_name', '')
+                image_bytes = generator.generate_image(
+                    leg=leg,
+                    output_path=None,
+                    units=1.0,
+                    bet_id=self.view_ref.bet_details.get('bet_serial', ''),
+                    bet_datetime=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+                    finalized=True
                 )
-            else:
-                logger.error("No view reference found in modal")
-                await interaction.followup.send("❌ Error: Could not process bet details. Please try again.", ephemeral=True)
+                if image_bytes:
+                    self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
+                    self.view_ref.preview_image_bytes.seek(0)
+                    preview_file = File(self.view_ref.preview_image_bytes, filename="straight_preview_units.png")
+                else:
+                    self.view_ref.preview_image_bytes = None
+                    preview_file = None
+            except Exception as e:
+                logger.exception(f"Error generating straight bet preview image: {e}")
+                self.view_ref.preview_image_bytes = None
+                preview_file = None
+            # Advance to units selection step and show preview
+            self.view_ref.current_step = 5
+            self.view_ref.clear_items()
+            self.view_ref.add_item(UnitsSelect(self.view_ref))
+            self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
+            self.view_ref.add_item(CancelButton(self.view_ref))
+            await interaction.response.edit_message(
+                content="Select units for your straight bet:",
+                view=self.view_ref,
+                attachments=[preview_file] if preview_file else None
+            )
+        except ValidationError as e:
+            await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
-            logger.exception(f"Error in modal submission: {e}")
-            await interaction.followup.send(f"❌ Error processing bet details: {str(e)}", ephemeral=True)
-
-
-async def populate_api_games_on_restart(db):
-    async with SportsAPI(db_manager=db) as api:
-        await api.fetch_and_save_daily_games()
-
-async def populate_all_leagues_on_restart(db):
-    async with SportsAPI(db_manager=db) as api:
-        leagues = ["NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "UFC/MMA", "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"]
-        for league in leagues:
-            await api.fetch_and_save_daily_games(league)
-
-# Example usage during server startup
-async def on_server_startup():
-    db = await get_database_connection()
-    await populate_all_leagues_on_restart(db)
+            logger.exception(f"Error in StraightBetDetailsModal.on_submit: {e}")
+            await interaction.response.send_message("❌ An error occurred while processing your bet details. Please try again.", ephemeral=True)

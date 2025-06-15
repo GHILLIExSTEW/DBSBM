@@ -384,7 +384,7 @@ class BetDetailsModal(Modal):
             self.view_ref.bet_details['legs'].append(self.view_ref.current_leg_construction_details.copy())
             # Reset current leg construction details
             self.view_ref.current_leg_construction_details = {}
-            # Generate preview image for the entire parlay (all legs so far)
+            # Generate preview image for the entire parlay (all legs so far) with default units=1.0
             preview_file = None
             try:
                 generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
@@ -407,11 +407,12 @@ class BetDetailsModal(Modal):
                 total_odds = self.view_ref.bet_details.get('total_odds', None)
                 bet_id = str(self.view_ref.bet_details.get('bet_serial', ''))
                 bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                # Always use units=1.0 for the first units selection preview
                 image_bytes = generator.generate_image(
                     legs=legs,
                     output_path=None,
                     total_odds=total_odds,
-                    units=self.view_ref.bet_details.get('units', 1.0),
+                    units=1.0,
                     bet_id=bet_id,
                     bet_datetime=bet_datetime,
                     finalized=True
@@ -1198,47 +1199,6 @@ content=f"Current Parlay:\n{summary_text}",
         except Exception as e:
             logger.exception(f"Error generating final parlay image: {e}")
             discord_file_to_send = None
-        # ... rest of submit_bet logic unchanged ...
-
-def load_normalized_games(league_name):
-    cache_dir = os.path.join(os.path.dirname(__file__), "..", "data", "cache")
-    file_key = get_league_file_key(league_name)
-    file_path = os.path.join(cache_dir, f"league_{file_key}_normalized.json")
-    if not os.path.exists(file_path):
-        return []
-    with open(file_path, "r") as f:
-        games = json.load(f)
-    # Only games with status 'Not Started'
-    return [g for g in games if g.get("status", "").strip().lower() == "not started"]
-
-def get_league_id_by_name(league_name):
-    mapping = {
-        "EPL": "39",
-        "LaLiga": "140",
-        "Bundesliga": "78",
-        "SerieA": "135",
-        "Ligue1": "61",
-        "MLS": "253",
-        "ChampionsLeague": "2",
-        "EuropaLeague": "3",
-        "WorldCup": "1",
-        "NBA": "12",
-        "WNBA": "13",
-        "EuroLeague": "1",
-        "MLB": "1",
-        "NPB": "2",
-        "KBO": "3",
-        "NHL": "57",
-        "KHL": "1",
-        "NFL": "1",
-        "NCAA": "2",
-        "SuperRugby": "1",
-        "SixNations": "2",
-        "FIVB": "1",
-        "EHF": "1",
-        "AFL": "1",
-        "Formula-1": "1",
-        "MMA": "1",
-        "Bellator": "2"
-    }
-    return mapping.get(league_name)
+        # If there is a PlayerPropBetDetailsModal or similar, ensure its on_submit does the same as parlay/straight:
+        # Always generate preview image with units=1.0 for the first units selection, attach to edit_message.
+        # If not present, this is a placeholder for future consistency.
