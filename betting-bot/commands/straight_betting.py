@@ -1083,9 +1083,6 @@ class StraightBetDetailsModal(Modal):
         if self.view_ref:
             self.view_ref._skip_increment = True
         try:
-            # Always defer the interaction so the modal closes
-            # if not interaction.response.is_done():
-            #     await interaction.response.defer()
             # Get values from inputs
             line = self.line_input.value.strip()
             odds_str = self.odds_input.value.strip()
@@ -1105,50 +1102,40 @@ class StraightBetDetailsModal(Modal):
             # Always generate preview image with units=1.0 for the first units selection
             preview_file = None
             try:
-                generator = StraightBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                generator = GameLineImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
                 leg = {
                     'bet_type': self.line_type,
                     'league': self.view_ref.bet_details.get('league', ''),
-                    'home_team': self.view_ref.bet_details.get('home_team_name', ''),
-                    'away_team': self.view_ref.bet_details.get('away_team_name', ''),
-                    'selected_team': self.view_ref.bet_details.get('team', ''),
-                    'line': self.view_ref.bet_details.get('line', ''),
-                    'odds': self.view_ref.bet_details.get('odds', ''),
+                    'home_team': self.view_ref.bet_details.get('home_team', ''),
+                    'away_team': self.view_ref.bet_details.get('away_team', ''),
+                    'selected_team': self.view_ref.bet_details.get('selected_team', ''),
+                    'line': line,
+                    'odds': odds_str,
+                    'player_name': self.bet_details.get('player_name', '')
                 }
-                if self.line_type == 'player_prop':
-                    leg['player_name'] = self.view_ref.bet_details.get('player_name', '')
-                image_bytes = generator.generate_image(
-                    leg=leg,
-                    output_path=None,
+                # For straight bets, use the generator to create a preview image (units=1.0)
+                image_bytes = generator.generate_bet_slip_image(
+                    league=leg['league'],
+                    home_team=leg['home_team'],
+                    away_team=leg['away_team'],
+                    line=leg['line'],
+                    odds=leg['odds'],
                     units=1.0,
-                    bet_id=self.view_ref.bet_details.get('bet_serial', ''),
-                    bet_datetime=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-                    finalized=True
+                    selected_team=leg['selected_team'],
+                    output_path=None
                 )
-                if image_bytes:
-                    self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
-                    self.view_ref.preview_image_bytes.seek(0)
-                    preview_file = File(self.view_ref.preview_image_bytes, filename="straight_preview_units.png")
-                else:
-                    self.view_ref.preview_image_bytes = None
-                    preview_file = None
+                preview_file = File(io.BytesIO(image_bytes), filename="bet_preview.png")
             except Exception as e:
-                logger.exception(f"Error generating straight bet preview image: {e}")
-                self.view_ref.preview_image_bytes = None
+                logging.error(f"[StraightBetDetailsModal] Failed to generate preview image: {e}\n{traceback.format_exc()}")
                 preview_file = None
-            # Advance to units selection step and show preview
-            self.view_ref.current_step = 5
-            self.view_ref.clear_items()
-            self.view_ref.add_item(UnitsSelect(self.view_ref))
-            self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
-            self.view_ref.add_item(CancelButton(self.view_ref))
-            await interaction.response.edit_message(
-                content="Select units for your straight bet:",
-                view=self.view_ref,
-                attachments=[preview_file] if preview_file else None
-            )
-        except ValidationError as e:
-            await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
+
+            # Advance to units selection step (step 5) and show preview
+            if self.view_ref:
+                await self.view_ref.go_next(
+                    interaction,
+                    step=5,
+                    attachments=[preview_file] if preview_file else None
+                )
         except Exception as e:
-            logger.exception(f"Error in StraightBetDetailsModal.on_submit: {e}")
-            await interaction.response.send_message("❌ An error occurred while processing your bet details. Please try again.", ephemeral=True)
+            logging.error(f"[StraightBetDetailsModal] on_submit error: {e}\n{traceback.format_exc()}")
+            await interaction.followup.send("❌ An error occurred while processing your bet. Please try again.", ephemeral=True)
