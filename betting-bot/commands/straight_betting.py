@@ -1101,6 +1101,7 @@ class StraightBetDetailsModal(Modal):
 
             # Always generate preview image with units=1.0 for the first units selection
             preview_file = None
+            preview_bytes = None
             try:
                 generator = GameLineImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
                 leg = {
@@ -1113,7 +1114,6 @@ class StraightBetDetailsModal(Modal):
                     'odds': odds_str,
                     'player_name': self.bet_details.get('player_name', '')
                 }
-                # For straight bets, use the generator to create a preview image (units=1.0)
                 image_bytes = generator.generate_bet_slip_image(
                     league=leg['league'],
                     home_team=leg['home_team'],
@@ -1124,18 +1124,21 @@ class StraightBetDetailsModal(Modal):
                     selected_team=leg['selected_team'],
                     output_path=None
                 )
+                preview_bytes = image_bytes
                 preview_file = File(io.BytesIO(image_bytes), filename="bet_preview.png")
             except Exception as e:
                 logging.error(f"[StraightBetDetailsModal] Failed to generate preview image: {e}\n{traceback.format_exc()}")
                 preview_file = None
+                preview_bytes = None
 
-            # Advance to units selection step (step 5) and show preview
+            # Set preview image bytes on the view for use in go_next
             if self.view_ref:
-                await self.view_ref.go_next(
-                    interaction,
-                    step=5,
-                    attachments=[preview_file] if preview_file else None
-                )
+                if preview_bytes:
+                    self.view_ref.preview_image_bytes = io.BytesIO(preview_bytes)
+                    self.view_ref.preview_image_bytes.seek(0)
+                else:
+                    self.view_ref.preview_image_bytes = None
+                await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(f"[StraightBetDetailsModal] on_submit error: {e}\n{traceback.format_exc()}")
             await interaction.followup.send("❌ An error occurred while processing your bet. Please try again.", ephemeral=True)
