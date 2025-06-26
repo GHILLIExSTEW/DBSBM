@@ -1074,6 +1074,32 @@ class StraightBetDetailsModal(Modal):
         self.is_manual = is_manual
         self.view_ref = None
 
+        # Add team/opponent fields for manual entry
+        if is_manual:
+            self.team_input = TextInput(
+                label="Team",
+                placeholder="Enter your team (e.g., Yankees)",
+                required=True,
+                custom_id="team_input"
+            )
+            self.add_item(self.team_input)
+            if line_type == "game_line":
+                self.opponent_input = TextInput(
+                    label="Opponent",
+                    placeholder="Enter opponent team (e.g., Red Sox)",
+                    required=True,
+                    custom_id="opponent_input"
+                )
+                self.add_item(self.opponent_input)
+            elif line_type == "player_prop":
+                self.player_input = TextInput(
+                    label="Player Name",
+                    placeholder="Enter player name",
+                    required=True,
+                    custom_id="player_input"
+                )
+                self.add_item(self.player_input)
+
         # Add line input
         self.line_input = TextInput(
             label="Line (e.g., -110, +150, Over 2.5)",
@@ -1092,22 +1118,20 @@ class StraightBetDetailsModal(Modal):
         )
         self.add_item(self.odds_input)
 
-        # Add player name input for player props
-        if line_type == "player_prop":
-            self.player_input = TextInput(
-                label="Player Name",
-                placeholder="Enter player name",
-                required=True,
-                custom_id="player_input"
-            )
-            self.add_item(self.player_input)
-
     async def on_submit(self, interaction: Interaction):
         # Set skip increment flag so go_next does not double-increment
         if self.view_ref:
             self.view_ref._skip_increment = True
         try:
             # Get values from inputs
+            if self.is_manual:
+                self.bet_details["team"] = self.team_input.value.strip()
+                self.bet_details["home_team_name"] = self.team_input.value.strip()
+                if self.line_type == "game_line":
+                    self.bet_details["opponent"] = self.opponent_input.value.strip()
+                    self.bet_details["away_team_name"] = self.opponent_input.value.strip()
+                elif self.line_type == "player_prop":
+                    self.bet_details["player_name"] = self.player_input.value.strip()
             line = self.line_input.value.strip()
             odds_str = self.odds_input.value.strip()
             # Validate odds format
@@ -1120,8 +1144,6 @@ class StraightBetDetailsModal(Modal):
             self.bet_details["line"] = line
             self.bet_details["odds"] = odds
             self.bet_details["odds_str"] = odds_str
-            if self.line_type == "player_prop":
-                self.bet_details["player_name"] = self.player_input.value.strip()
             # Ensure all required fields are set for preview
             if 'home_team_name' not in self.bet_details:
                 self.bet_details['home_team_name'] = self.view_ref.bet_details.get('home_team', self.view_ref.bet_details.get('team', ''))
