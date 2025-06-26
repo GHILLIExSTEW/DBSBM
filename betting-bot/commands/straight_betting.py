@@ -1125,15 +1125,15 @@ class StraightBetDetailsModal(Modal):
         try:
             # Get values from inputs
             if self.is_manual:
-                self.bet_details["team"] = self.team_input.value.strip()
-                self.bet_details["home_team_name"] = self.team_input.value.strip()
+                self.bet_details["team"] = self.team_input.value.strip()[:100] or "Team"
+                self.bet_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
                 if self.line_type == "game_line":
-                    self.bet_details["opponent"] = self.opponent_input.value.strip()
-                    self.bet_details["away_team_name"] = self.opponent_input.value.strip()
+                    self.bet_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                    self.bet_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
                 elif self.line_type == "player_prop":
-                    self.bet_details["player_name"] = self.player_input.value.strip()
-            line = self.line_input.value.strip()
-            odds_str = self.odds_input.value.strip()
+                    self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
+            line = self.line_input.value.strip()[:100] or "Line"
+            odds_str = self.odds_input.value.strip()[:100] or "0"
             # Validate odds format
             try:
                 odds = float(odds_str)
@@ -1146,11 +1146,11 @@ class StraightBetDetailsModal(Modal):
             self.bet_details["odds_str"] = odds_str
             # Ensure all required fields are set for preview
             if 'home_team_name' not in self.bet_details:
-                self.bet_details['home_team_name'] = self.view_ref.bet_details.get('home_team', self.view_ref.bet_details.get('team', ''))
+                self.bet_details['home_team_name'] = self.view_ref.bet_details.get('home_team', self.view_ref.bet_details.get('team', 'Team'))[:100]
             if 'away_team_name' not in self.bet_details:
-                self.bet_details['away_team_name'] = self.view_ref.bet_details.get('away_team', self.view_ref.bet_details.get('opponent', ''))
+                self.bet_details['away_team_name'] = self.view_ref.bet_details.get('away_team', self.view_ref.bet_details.get('opponent', 'Opponent'))[:100]
             if 'team' not in self.bet_details:
-                self.bet_details['team'] = self.view_ref.bet_details.get('team', self.bet_details.get('home_team_name', ''))
+                self.bet_details['team'] = self.view_ref.bet_details.get('team', self.bet_details.get('home_team_name', 'Team'))[:100]
             if 'league' not in self.bet_details:
                 self.bet_details['league'] = self.view_ref.bet_details.get('league', '')
             # Always generate preview image with units=1.0 for the first units selection
@@ -1192,6 +1192,8 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
+                if not interaction.response.is_done():
+                    await interaction.response.defer()
                 self.view_ref.current_step = 4  # Ensure next step is units selection
                 await self.view_ref.go_next(interaction)
         except Exception as e:
