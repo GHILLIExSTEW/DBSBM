@@ -161,15 +161,26 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
-        import pytz
         from datetime import datetime
+        import pytz
         game_options = []
         seen_values = set()
         manual_value = "manual_entry"
         seen_values.add(manual_value)  # Prevent accidental duplicate manual_entry
         eastern = pytz.timezone("US/Eastern")
+        # --- Filter out finished games here as well ---
+        finished_statuses = [
+            "Match Finished", "Finished", "FT", "Game Finished", "Final"
+        ]
+        filtered_games = []
+        for game in games:
+            status = (game.get('status') or '').strip()
+            if status not in finished_statuses:
+                filtered_games.append(game)
+            else:
+                logger.debug(f"[GameSelect] Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}")
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
-        for game in games[:24]:
+        for game in filtered_games[:24]:
             home_team = game.get('home_team_name', '').strip() or 'N/A'
             away_team = game.get('away_team_name', '').strip() or 'N/A'
             if home_team.lower() == 'manual entry' and away_team.lower() == 'manual entry':
@@ -192,7 +203,6 @@ class GameSelect(Select):
             if start_time:
                 # Format start_time as EST string
                 try:
-                    import pytz
                     eastern = pytz.timezone('US/Eastern')
                     if start_time.tzinfo is None:
                         start_time = start_time.replace(tzinfo=timezone.utc)
@@ -227,7 +237,7 @@ class GameSelect(Select):
             max_values=1,
         )
         self.parent_view = parent_view
-        self.games = games
+        self.games = filtered_games
         logger.debug(f"Created GameSelect with {len(game_options)} unique options (including manual entry)")
 
     async def callback(self, interaction: Interaction):
