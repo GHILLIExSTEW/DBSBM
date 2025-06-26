@@ -914,12 +914,25 @@ class StraightBetWorkflowView(View):
 
                 try:
                     webhook_content = role_mention if role_mention else None
-                    await target_webhook.send(
+                    # --- Capture the message returned by webhook.send ---
+                    webhook_message = await target_webhook.send(
                         content=webhook_content,
                         file=discord_file_to_send,
                         username=webhook_username,
-                        avatar_url=webhook_avatar_url
+                        avatar_url=webhook_avatar_url,
+                        wait=True  # Ensure we get the Message object back
                     )
+                    # --- Update bet with message_id and channel_id ---
+                    if bet_service and webhook_message:
+                        try:
+                            await bet_service.update_straight_bet_channel(
+                                bet_serial=details["bet_serial"],
+                                message_id=webhook_message.id,
+                                channel_id=webhook_message.channel.id
+                            )
+                            logger.info(f"Updated bet {details['bet_serial']} with message_id {webhook_message.id} and channel_id {webhook_message.channel.id}")
+                        except Exception as e:
+                            logger.error(f"Failed to update bet with message_id: {e}")
                     await self.edit_message(content=f"✅ Bet #{details['bet_serial']} successfully posted!", view=None)
                     self.stop()
                 except Exception as e:
