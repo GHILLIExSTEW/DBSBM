@@ -591,12 +591,10 @@ class BetService:
                 status_query = """
                     UPDATE bets 
                     SET status = %s, 
-                        result = %s, 
-                        result_description = %s, 
+                        result_value = %s, 
                         bet_won = CASE WHEN %s = 'won' THEN 1 ELSE 0 END,
                         bet_loss = CASE WHEN %s = 'lost' THEN 1 ELSE 0 END,
-                        updated_at = %s,
-                        result_value = %s
+                        updated_at = %s
                     WHERE bet_serial = %s
                 """
 
@@ -616,12 +614,10 @@ class BetService:
                     status_query,
                     (
                         new_status,
-                        new_status,
-                        new_result_description,
+                        calculated_result_value,
                         new_status,
                         new_status,
                         update_time,
-                        calculated_result_value,
                         bet_serial,
                     ),
                 )
