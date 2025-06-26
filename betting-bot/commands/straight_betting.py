@@ -927,8 +927,8 @@ class StraightBetWorkflowView(View):
                         try:
                             await bet_service.update_straight_bet_channel(
                                 bet_serial=details["bet_serial"],
-                                message_id=webhook_message.id,
-                                channel_id=webhook_message.channel.id
+                                channel_id=webhook_message.channel.id,
+                                message_id=webhook_message.id
                             )
                             logger.info(f"Updated bet {details['bet_serial']} with message_id {webhook_message.id} and channel_id {webhook_message.channel.id}")
                         except Exception as e:
