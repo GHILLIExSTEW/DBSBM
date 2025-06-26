@@ -255,6 +255,32 @@ class BetService:
             
             if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
                 logger.info(f"[BET INSERT] Straight bet created successfully with bet_serial: {last_id}")
+                # --- Insert into unit_records table ---
+                now = datetime.now(timezone.utc)
+                year = now.year
+                month = now.month
+                unit_query = """
+                    INSERT INTO unit_records (
+                        bet_serial, guild_id, user_id, year, month, units, odds, monthly_result_value, total_result_value, created_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """
+                unit_params = (
+                    last_id,
+                    guild_id,
+                    user_id,
+                    year,
+                    month,
+                    units,
+                    odds,
+                    0.0,  # monthly_result_value
+                    0.0,  # total_result_value
+                    now,
+                )
+                try:
+                    await self.db_manager.execute(unit_query, unit_params)
+                    logger.info(f"[BET INSERT] Unit record created for bet_serial: {last_id}")
+                except Exception as e:
+                    logger.error(f"[BET INSERT] Failed to create unit record for bet_serial {last_id}: {e}")
                 return last_id
             else:
                 logger.error(

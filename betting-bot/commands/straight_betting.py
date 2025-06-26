@@ -267,7 +267,7 @@ class GameSelect(Select):
                     'api_game_id': selected_game.get('api_game_id'),
                     'game_id': selected_game.get('id'),
                     'home_team_name': selected_game.get('home_team_name'),
-                    'away_team': selected_game.get('away_team_name'),
+                    'away_team_name': selected_game.get('away_team_name'),  # <-- FIXED KEY
                     'is_manual': False
                 })
                 logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
