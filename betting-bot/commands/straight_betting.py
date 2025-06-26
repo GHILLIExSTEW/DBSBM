@@ -866,12 +866,13 @@ class StraightBetWorkflowView(View):
                 self.stop()
                 return
 
-            # Update the bet with channel_id and confirm it
+            # Update the bet with channel_id, units, and confirm it
             if bet_service:
                 try:
                     await bet_service.update_bet(
                         bet_serial=details["bet_serial"],
                         channel_id=details.get("channel_id"),
+                        units=details.get("units"),
                         confirmed=1
                     )
                 except Exception as e:
