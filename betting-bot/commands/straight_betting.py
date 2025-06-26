@@ -152,8 +152,12 @@ class LineTypeSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        self.parent_view.bet_details["line_type"] = self.values[0]
-        logger.debug(f"Line Type selected: {self.values[0]} by user {interaction.user.id}")
+        # Force update line_type to ensure correct preview for player prop
+        if self.values[0] == "player_prop":
+            self.parent_view.bet_details["line_type"] = "player_prop"
+        else:
+            self.parent_view.bet_details["line_type"] = self.values[0]
+        logger.debug(f"Line Type selected: {self.parent_view.bet_details['line_type']} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
