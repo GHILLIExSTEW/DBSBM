@@ -1137,6 +1137,9 @@ class StraightBetDetailsModal(Modal):
         if self.view_ref:
             self.view_ref._skip_increment = True
         try:
+            # --- FORCE line_type for player prop modal ---
+            if self.line_type == "player_prop":
+                self.bet_details["line_type"] = "player_prop"
             # Get values from inputs
             if self.is_manual:
                 self.bet_details["team"] = self.team_input.value.strip()[:100] or "Team"
@@ -1171,27 +1174,33 @@ class StraightBetDetailsModal(Modal):
             preview_file = None
             preview_bytes = None
             try:
-                generator = GameLineImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
-                leg = {
-                    'bet_type': self.line_type,
-                    'league': self.bet_details.get('league', ''),
-                    'home_team': self.bet_details.get('home_team_name', ''),
-                    'away_team': self.bet_details.get('away_team_name', ''),
-                    'selected_team': self.bet_details.get('team', ''),
-                    'line': line,
-                    'odds': odds_str,
-                    'player_name': self.bet_details.get('player_name', '')
-                }
-                image_bytes = generator.generate_bet_slip_image(
-                    league=leg['league'],
-                    home_team=leg['home_team'],
-                    away_team=leg['away_team'],
-                    line=leg['line'],
-                    odds=leg['odds'],
-                    units=1.0,
-                    selected_team=leg['selected_team'],
-                    output_path=None
-                )
+                # --- Use correct generator based on line_type ---
+                if self.bet_details.get("line_type") == "player_prop":
+                    generator = PlayerPropImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                    image_bytes = generator.generate_player_prop_bet_image(
+                        player_name=self.bet_details.get("player_name", self.bet_details.get("team", "")),
+                        team_name=self.bet_details.get("team", ""),
+                        league=self.bet_details.get("league", ""),
+                        line=line,
+                        units=1.0,
+                        output_path=None,
+                        bet_id=None,
+                        timestamp=None,
+                        guild_id=str(self.view_ref.original_interaction.guild_id),
+                        odds=odds
+                    )
+                else:
+                    generator = GameLineImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                    image_bytes = generator.generate_bet_slip_image(
+                        league=self.bet_details.get('league', ''),
+                        home_team=self.bet_details.get('home_team_name', ''),
+                        away_team=self.bet_details.get('away_team_name', ''),
+                        line=line,
+                        odds=odds_str,
+                        units=1.0,
+                        selected_team=self.bet_details.get('team', ''),
+                        output_path=None
+                    )
                 preview_bytes = image_bytes
                 preview_file = File(io.BytesIO(image_bytes), filename="bet_preview.png")
             except Exception as e:
