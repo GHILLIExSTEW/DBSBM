@@ -533,11 +533,7 @@ class BettingBot(commands.Bot):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.user.id:
             return
-        if (
-            hasattr(self, "bet_service")
-            and hasattr(self.bet_service, "pending_reactions")
-            and payload.message_id in self.bet_service.pending_reactions
-        ):
+        if hasattr(self, "bet_service"):
             logger.debug(
                 "Processing reaction add: %s by %s on bot message %s",
                 payload.emoji,
