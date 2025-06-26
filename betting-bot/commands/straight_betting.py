@@ -162,7 +162,9 @@ class LineTypeSelect(Select):
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         game_options = []
-        seen_values = set()  # Track used values
+        seen_values = set()
+        manual_value = "manual_entry"
+        seen_values.add(manual_value)  # Prevent accidental duplicate manual_entry
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in games[:24]:
             # Skip games where both teams are 'Manual Entry' (prevents duplicate manual entry option)
@@ -177,7 +179,7 @@ class GameSelect(Select):
                 value = f"dbid_{game['id']}"
             else:
                 continue  # skip if neither id present
-            if value in seen_values or value == "manual_entry":
+            if value in seen_values or value == manual_value:
                 continue
             seen_values.add(value)
             
@@ -222,8 +224,7 @@ class GameSelect(Select):
                 )
             )
         # Always add manual entry as the last option, only if not already present
-        manual_value = "manual_entry"
-        if manual_value not in seen_values:
+        if manual_value not in [opt.value for opt in game_options]:
             game_options.append(
                 SelectOption(
                     label="Manual Entry",
@@ -264,7 +265,7 @@ class GameSelect(Select):
                     'api_game_id': selected_game.get('api_game_id'),
                     'game_id': selected_game.get('id'),
                     'home_team_name': selected_game.get('home_team_name'),
-                    'away_team_name': selected_game.get('away_team_name'),
+                    'away_team': selected_game.get('away_team_name'),
                     'is_manual': False
                 })
                 logger.debug(f"Updated bet details: {self.parent_view.bet_details}")
@@ -792,6 +793,19 @@ class StraightBetWorkflowView(View):
                     except Exception as e:
                         logger.exception(f"Error generating initial preview image for units step: {e}")
                         self.preview_image_bytes = None
+                self.clear_items()
+                self.add_item(UnitsSelect(self))
+                self.add_item(ConfirmUnitsButton(self))
+                self.add_item(CancelButton(self))
+                file_to_send = None
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.seek(0)
+                    file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
+                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+                return
+            elif self.current_step == 5:
+                logger.info("[WORKFLOW TRACE] Step 5: Units selection/preview")
+                # Show units selection and preview image
                 self.clear_items()
                 self.add_item(UnitsSelect(self))
                 self.add_item(ConfirmUnitsButton(self))
