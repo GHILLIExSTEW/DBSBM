@@ -345,29 +345,25 @@ class TeamSelect(Select):
         self.parent_view.bet_details["opponent"] = opponent
         line_type = self.parent_view.bet_details.get("line_type", "game_line")
         is_manual = self.parent_view.bet_details.get('is_manual', False)
-        if is_manual:
-            modal = StraightBetDetailsModal(
-                line_type=line_type,
-                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
-                bet_details_from_view=self.parent_view.bet_details,
-                is_manual=True,
-            )
-            modal.view_ref = self.parent_view
-            if not interaction.response.is_done():
-                await interaction.response.send_modal(modal)
-                return  # Prevent double modal or extra message update
-            else:
-                logger.error("Tried to send modal, but interaction already responded to.")
-                await self.parent_view.edit_message(
-                    content="❌ Error: Could not open modal. Please try again or cancel.",
-                    view=None
-                )
-                self.parent_view.stop()
-                return
+        # Always show modal for line/odds after team selection
+        modal = StraightBetDetailsModal(
+            line_type=line_type,
+            selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+            bet_details_from_view=self.parent_view.bet_details,
+            is_manual=is_manual,
+        )
+        modal.view_ref = self.parent_view
+        if not interaction.response.is_done():
+            await interaction.response.send_modal(modal)
+            return  # Prevent double modal or extra message update
         else:
-            # For non-manual, immediately advance to units/preview step
-            self.parent_view.current_step = 4  # Ensure next step is units selection
-            await self.parent_view.go_next(interaction)
+            logger.error("Tried to send modal, but interaction already responded to.")
+            await self.parent_view.edit_message(
+                content="❌ Error: Could not open modal. Please try again or cancel.",
+                view=None
+            )
+            self.parent_view.stop()
+            return
 
 
 class UnitsSelect(Select):
