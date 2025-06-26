@@ -194,32 +194,34 @@ class GameSelect(Select):
             
             # Truncate team names if needed
             if len(home_team) > max_team_length:
-                home_team = home_team[:max_team_length-3] + "..."
+                home_team = home_team[:max_team_length]
             if len(away_team) > max_team_length:
-                away_team = away_team[:max_team_length-3] + "..."
-                
+                away_team = away_team[:max_team_length]
             label = f"{home_team} vs {away_team}{status_suffix}"
-            
+            # Ensure label is at least 1 character and at most 100
+            label = label[:100] if label else "N/A"
             # Get start time for description
             start_time = game.get('start_time')
             if start_time:
-                if isinstance(start_time, str):
-                    try:
-                        from dateutil.parser import parse as dtparse
-                        start_time = dtparse(start_time)
-                    except Exception:
-                        start_time = None
-                if start_time:
-                    desc = f"Start: {start_time.strftime('%Y-%m-%d %H:%M')}"
-                else:
-                    desc = ""
+                desc = str(start_time)
             else:
-                desc = ""
-                
+                desc = "No start time"
+            # Prefer api_game_id if present, else use internal id
+            if game.get('api_game_id'):
+                value = f"api_{game['api_game_id']}"
+            elif game.get('id'):
+                value = f"dbid_{game['id']}"
+            else:
+                value = f"manual_entry_{len(game_options)}"
+            # Ensure value is at least 1 character and at most 100
+            value = value[:100] if value else "N/A"
+            if value in seen_values or value == manual_value:
+                continue
+            seen_values.add(value)
             game_options.append(
                 SelectOption(
-                    label=label[:100],
-                    value=value[:100],
+                    label=label,
+                    value=value,
                     description=desc[:100]
                 )
             )
@@ -1192,6 +1194,39 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
+                # --- Assign bet serial for manual bets after modal submit/preview ---
+                if self.is_manual and not self.bet_details.get("bet_serial"):
+                    try:
+                        bet_service = getattr(self.view_ref.bot, "bet_service", None)
+                        if bet_service:
+                            from utils.bet_utils import fetch_next_bet_serial
+                            league = self.bet_details.get("league", "")
+                            bet_type = self.line_type
+                            units = 1.0
+                            odds = float(self.bet_details.get("odds", 0.0))
+                            team = self.bet_details.get("team")
+                            opponent = self.bet_details.get("opponent")
+                            line = self.bet_details.get("line")
+                            api_game_id = self.bet_details.get("api_game_id")
+                            bet_serial = await bet_service.create_straight_bet(
+                                guild_id=self.view_ref.original_interaction.guild_id,
+                                user_id=self.view_ref.original_interaction.user.id,
+                                league=league,
+                                bet_type=bet_type,
+                                units=units,
+                                odds=odds,
+                                team=team,
+                                opponent=opponent,
+                                line=line,
+                                api_game_id=api_game_id,
+                                channel_id=None,
+                                confirmed=0
+                            )
+                            if bet_serial:
+                                self.bet_details["bet_serial"] = bet_serial
+                                self.view_ref.bet_details["bet_serial"] = bet_serial
+                    except Exception as e:
+                        logging.error(f"[StraightBetDetailsModal] Failed to assign bet_serial after modal submit: {e}\n{traceback.format_exc()}")
                 if not interaction.response.is_done():
                     await interaction.response.defer()
                 self.view_ref.current_step = 4  # Ensure next step is units selection
