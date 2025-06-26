@@ -1149,6 +1149,12 @@ class StraightBetDetailsModal(Modal):
                     self.bet_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
                 elif self.line_type == "player_prop":
                     self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
+                    # For player props, also set away_team_name to player name for right-side label
+                    self.bet_details["away_team_name"] = self.bet_details["player_name"]
+            elif self.line_type == "player_prop":
+                # For non-manual, ensure player_name is set and used as away_team_name
+                self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
+                self.bet_details["away_team_name"] = self.bet_details["player_name"]
             line = self.line_input.value.strip()[:100] or "Line"
             odds_str = self.odds_input.value.strip()[:100] or "0"
             # Validate odds format
@@ -1165,7 +1171,11 @@ class StraightBetDetailsModal(Modal):
             if 'home_team_name' not in self.bet_details:
                 self.bet_details['home_team_name'] = self.view_ref.bet_details.get('home_team', self.view_ref.bet_details.get('team', 'Team'))[:100]
             if 'away_team_name' not in self.bet_details:
-                self.bet_details['away_team_name'] = self.view_ref.bet_details.get('away_team', self.view_ref.bet_details.get('opponent', 'Opponent'))[:100]
+                # For player props, away_team_name should be player_name
+                if self.bet_details.get("line_type") == "player_prop":
+                    self.bet_details['away_team_name'] = self.bet_details.get('player_name', 'Player')[:100]
+                else:
+                    self.bet_details['away_team_name'] = self.view_ref.bet_details.get('away_team', self.view_ref.bet_details.get('opponent', 'Opponent'))[:100]
             if 'team' not in self.bet_details:
                 self.bet_details['team'] = self.view_ref.bet_details.get('team', self.bet_details.get('home_team_name', 'Team'))[:100]
             if 'league' not in self.bet_details:
