@@ -161,39 +161,33 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
+        import pytz
+        from datetime import datetime
         game_options = []
         seen_values = set()
         manual_value = "manual_entry"
         seen_values.add(manual_value)  # Prevent accidental duplicate manual_entry
+        eastern = pytz.timezone("US/Eastern")
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in games[:24]:
-            home_team = game.get('home_team_name', '').strip()
-            away_team = game.get('away_team_name', '').strip()
+            home_team = game.get('home_team_name', '').strip() or 'N/A'
+            away_team = game.get('away_team_name', '').strip() or 'N/A'
             if home_team.lower() == 'manual entry' and away_team.lower() == 'manual entry':
-                logger.debug(f"Skipping manual entry game: {game}")
                 continue
-            api_game_id = game.get('api_game_id')
-            if api_game_id is not None and str(api_game_id).strip() != '':
-                value = f"api_{api_game_id}"
+            # Prefer api_game_id if present, else use internal id
+            if game.get('api_game_id'):
+                value = f"api_{game['api_game_id']}"
             elif game.get('id'):
                 value = f"dbid_{game['id']}"
             else:
-                logger.debug(f"Skipping game with no api_game_id or id: {game}")
                 continue  # skip if neither id present
             if value in seen_values or value == manual_value:
-                logger.debug(f"Skipping duplicate or manual value: {value} for game: {game}")
                 continue
             seen_values.add(value)
-            
             # Format the label with team names and status
-            home_team = game.get('home_team_name', 'N/A')
-            away_team = game.get('away_team_name', 'N/A')
             status = game.get('status', '')
-            # Calculate max length for team names based on status length
             status_suffix = f" ({status})" if status else ""
-            max_team_length = (90 - len(status_suffix)) // 2  # Divide remaining space between teams
-            
-            # Truncate team names if needed
+            max_team_length = (90 - len(status_suffix)) // 2
             if len(home_team) > max_team_length:
                 home_team = home_team[:max_team_length]
             if len(away_team) > max_team_length:
@@ -203,31 +197,20 @@ class GameSelect(Select):
             # Get start time for description
             start_time = game.get('start_time')
             if start_time:
-                # Convert to EST if it's a datetime
-                if hasattr(start_time, 'astimezone'):
-                    from zoneinfo import ZoneInfo
-                    est = ZoneInfo("America/New_York")
-                    start_time_est = start_time.astimezone(est)
-                    formatted_start = start_time_est.strftime('%a, %b %d %I:%M %p EST')
-                elif hasattr(start_time, 'strftime'):
-                    formatted_start = start_time.strftime('%a, %b %d %I:%M %p EST')
-                else:
-                    formatted_start = str(start_time) + ' EST'
-                desc = f"Estimated Start Time: {formatted_start}"
+                # Format start_time as EST string
+                try:
+                    import pytz
+                    eastern = pytz.timezone('US/Eastern')
+                    if start_time.tzinfo is None:
+                        start_time = start_time.replace(tzinfo=timezone.utc)
+                    est_time = start_time.astimezone(eastern)
+                    desc = f"Estimated Start Time: {est_time.strftime('%a %b %d, %I:%M %p')} EST"
+                except Exception:
+                    desc = f"Estimated Start Time: {str(start_time)}"
             else:
                 desc = "No start time"
-            # Prefer api_game_id if present, else use internal id
-            if game.get('api_game_id'):
-                value = f"api_{game['api_game_id']}"
-            elif game.get('id'):
-                value = f"dbid_{game['id']}"
-            else:
-                value = f"manual_entry_{len(game_options)}"
             # Ensure value is at least 1 character and at most 100
             value = value[:100] if value else "N/A"
-            if value in seen_values or value == manual_value:
-                continue
-            seen_values.add(value)
             game_options.append(
                 SelectOption(
                     label=label,
