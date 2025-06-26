@@ -165,6 +165,11 @@ class GameSelect(Select):
         seen_values = set()  # Track used values
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in games[:24]:
+            # Skip games where both teams are 'Manual Entry' (prevents duplicate manual entry option)
+            home_team = game.get('home_team_name', '').strip()
+            away_team = game.get('away_team_name', '').strip()
+            if home_team.lower() == 'manual entry' and away_team.lower() == 'manual entry':
+                continue
             # Prefer api_game_id if present, else use internal id
             if game.get('api_game_id'):
                 value = f"api_{game['api_game_id']}"
@@ -172,7 +177,7 @@ class GameSelect(Select):
                 value = f"dbid_{game['id']}"
             else:
                 continue  # skip if neither id present
-            if value in seen_values:
+            if value in seen_values or value == "manual_entry":
                 continue
             seen_values.add(value)
             
@@ -216,15 +221,16 @@ class GameSelect(Select):
                     description=desc[:100]
                 )
             )
-        # Always add manual entry as the last option
+        # Always add manual entry as the last option, only if not already present
         manual_value = "manual_entry"
-        game_options.append(
-            SelectOption(
-                label="Manual Entry",
-                value=manual_value[:100],
-                description="Enter game details manually"
+        if manual_value not in seen_values:
+            game_options.append(
+                SelectOption(
+                    label="Manual Entry",
+                    value=manual_value[:100],
+                    description="Enter game details manually"
+                )
             )
-        )
         super().__init__(
             placeholder="Select a game or choose Manual Entry",
             options=game_options,
@@ -342,24 +348,30 @@ class TeamSelect(Select):
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent
         line_type = self.parent_view.bet_details.get("line_type", "game_line")
-        modal = StraightBetDetailsModal(
-            line_type=line_type,
-            selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
-            bet_details_from_view=self.parent_view.bet_details,
-            is_manual=self.parent_view.bet_details.get('is_manual', False),
-        )
-        modal.view_ref = self.parent_view
-        if not interaction.response.is_done():
-            await interaction.response.send_modal(modal)
-            return  # Prevent double modal or extra message update
-        else:
-            logger.error("Tried to send modal, but interaction already responded to.")
-            await self.parent_view.edit_message(
-                content="❌ Error: Could not open modal. Please try again or cancel.",
-                view=None
+        is_manual = self.parent_view.bet_details.get('is_manual', False)
+        if is_manual:
+            modal = StraightBetDetailsModal(
+                line_type=line_type,
+                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=True,
             )
-            self.parent_view.stop()
-            return
+            modal.view_ref = self.parent_view
+            if not interaction.response.is_done():
+                await interaction.response.send_modal(modal)
+                return  # Prevent double modal or extra message update
+            else:
+                logger.error("Tried to send modal, but interaction already responded to.")
+                await self.parent_view.edit_message(
+                    content="❌ Error: Could not open modal. Please try again or cancel.",
+                    view=None
+                )
+                self.parent_view.stop()
+                return
+        else:
+            # For non-manual, immediately advance to units/preview step
+            self.parent_view.current_step = 4  # Ensure next step is units selection
+            await self.parent_view.go_next(interaction)
 
 
 class UnitsSelect(Select):
@@ -369,28 +381,19 @@ class UnitsSelect(Select):
         options = []
         if units_display_mode == 'manual':
             # Add To Win group
-            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_win'):
-                options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
+            options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
             # Add To Risk group
-            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_risk'):
-                options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
+            options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
         else:
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'{u:.1f} Unit' + ('' if u == 1.0 else 's'), value=str(u)))
-        # Ensure all option values are unique
-        seen = set()
-        unique_options = []
-        for opt in options:
-            if getattr(opt, 'value', None) not in seen:
-                unique_options.append(opt)
-                seen.add(getattr(opt, 'value', None))
         super().__init__(
             placeholder="Select Units for Bet...",
-            options=unique_options,
+            options=options,
             min_values=1,
             max_values=1,
         )
@@ -414,60 +417,6 @@ class UnitsSelect(Select):
         logger.debug(f"Units selected: {value} by user {interaction.user.id}")
         await interaction.response.defer(ephemeral=True)
         await self.parent_view._handle_units_selection(interaction, float(self.parent_view.bet_details['units']))
-
-
-class ParlayUnitsSelect(Select):
-    def __init__(self, parent_view: View, units_display_mode='auto'):
-        self.parent_view = parent_view
-        self.units_display_mode = units_display_mode
-        options = []
-        if units_display_mode == 'manual':
-            # Add To Win group
-            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_win'):
-                options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
-            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
-                options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
-            # Add To Risk group
-            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_risk'):
-                options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
-            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
-                options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
-        else:
-            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
-                options.append(SelectOption(label=f'{u:.1f} Unit' + ('' if u == 1.0 else 's'), value=str(u)))
-        # Ensure all option values are unique
-        seen = set()
-        unique_options = []
-        for opt in options:
-            if getattr(opt, 'value', None) not in seen:
-                unique_options.append(opt)
-                seen.add(getattr(opt, 'value', None))
-        super().__init__(
-            placeholder="Select Units for Parlay...",
-            options=unique_options,
-            min_values=1,
-            max_values=1,
-        )
-
-    async def callback(self, interaction: Interaction):
-        value = self.values[0]
-        if self.units_display_mode == 'manual':
-            if value.startswith('separator'):
-                await interaction.response.defer(ephemeral=True)
-                return
-            units_str, mode = value.split('|')
-            units = float(units_str)
-            display_as_risk = (mode == 'risk')
-            self.parent_view.bet_details['units_str'] = units_str
-            self.parent_view.bet_details['units'] = units
-            self.parent_view.bet_details['display_as_risk'] = display_as_risk
-        else:
-            self.parent_view.bet_details['units_str'] = value
-            self.parent_view.bet_details['units'] = float(value)
-            self.parent_view.bet_details['display_as_risk'] = None
-        logger.debug(f"Parlay units selected: {value} by user {interaction.user.id}")
-        await interaction.response.defer(ephemeral=True)
-        await self.parent_view._handle_parlay_units_selection(interaction, float(self.parent_view.bet_details['units']))
 
 
 class ChannelSelect(Select):
@@ -518,9 +467,9 @@ class ConfirmButton(Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
-        selected_api_game_id = self.parent_view.bet_details.get("api_game_id")
+        # Check if manual entry is selected
+        is_manual = self.parent_view.bet_details.get("is_manual", False)
         line_type = self.parent_view.bet_details.get("line_type", "game_line")
-        is_manual = selected_api_game_id == "Other"
         if is_manual:
             modal = StraightBetDetailsModal(
                 line_type=line_type,
