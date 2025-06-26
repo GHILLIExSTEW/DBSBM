@@ -369,19 +369,28 @@ class UnitsSelect(Select):
         options = []
         if units_display_mode == 'manual':
             # Add To Win group
-            options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
+            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_win'):
+                options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
             # Add To Risk group
-            options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
+            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_risk'):
+                options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
         else:
             for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
                 options.append(SelectOption(label=f'{u:.1f} Unit' + ('' if u == 1.0 else 's'), value=str(u)))
+        # Ensure all option values are unique
+        seen = set()
+        unique_options = []
+        for opt in options:
+            if getattr(opt, 'value', None) not in seen:
+                unique_options.append(opt)
+                seen.add(getattr(opt, 'value', None))
         super().__init__(
             placeholder="Select Units for Bet...",
-            options=options,
+            options=unique_options,
             min_values=1,
             max_values=1,
         )
@@ -405,6 +414,60 @@ class UnitsSelect(Select):
         logger.debug(f"Units selected: {value} by user {interaction.user.id}")
         await interaction.response.defer(ephemeral=True)
         await self.parent_view._handle_units_selection(interaction, float(self.parent_view.bet_details['units']))
+
+
+class ParlayUnitsSelect(Select):
+    def __init__(self, parent_view: View, units_display_mode='auto'):
+        self.parent_view = parent_view
+        self.units_display_mode = units_display_mode
+        options = []
+        if units_display_mode == 'manual':
+            # Add To Win group
+            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_win'):
+                options.append(SelectOption(label='--- To Win ---', value='separator_win', default=False, description=None, emoji=None))
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'To Win {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|win'))
+            # Add To Risk group
+            if not any(opt for opt in options if getattr(opt, 'value', None) == 'separator_risk'):
+                options.append(SelectOption(label='--- To Risk ---', value='separator_risk', default=False, description=None, emoji=None))
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'Risk {u:.1f} Unit' + ('' if u == 1.0 else 's'), value=f'{u}|risk'))
+        else:
+            for u in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+                options.append(SelectOption(label=f'{u:.1f} Unit' + ('' if u == 1.0 else 's'), value=str(u)))
+        # Ensure all option values are unique
+        seen = set()
+        unique_options = []
+        for opt in options:
+            if getattr(opt, 'value', None) not in seen:
+                unique_options.append(opt)
+                seen.add(getattr(opt, 'value', None))
+        super().__init__(
+            placeholder="Select Units for Parlay...",
+            options=unique_options,
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: Interaction):
+        value = self.values[0]
+        if self.units_display_mode == 'manual':
+            if value.startswith('separator'):
+                await interaction.response.defer(ephemeral=True)
+                return
+            units_str, mode = value.split('|')
+            units = float(units_str)
+            display_as_risk = (mode == 'risk')
+            self.parent_view.bet_details['units_str'] = units_str
+            self.parent_view.bet_details['units'] = units
+            self.parent_view.bet_details['display_as_risk'] = display_as_risk
+        else:
+            self.parent_view.bet_details['units_str'] = value
+            self.parent_view.bet_details['units'] = float(value)
+            self.parent_view.bet_details['display_as_risk'] = None
+        logger.debug(f"Parlay units selected: {value} by user {interaction.user.id}")
+        await interaction.response.defer(ephemeral=True)
+        await self.parent_view._handle_parlay_units_selection(interaction, float(self.parent_view.bet_details['units']))
 
 
 class ChannelSelect(Select):
@@ -671,117 +734,115 @@ class StraightBetWorkflowView(View):
                 if not self.games:
                     content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
             elif self.current_step == 4:
-                logger.info("[WORKFLOW TRACE] Step 4: Team selection/modal")
-                self.is_processing = False
-                return
-            elif self.current_step == 5:
-                logger.info("[WORKFLOW TRACE] Step 5: Units selection/preview")
+                logger.info("[WORKFLOW TRACE] Step 4: Team selection/modal (auto-advance to units selection)")
+                # Immediately advance to step 5 (units selection/preview)
+                self.current_step = 5
                 # Set default units to 1.0 if not already set
                 if "units" not in self.bet_details:
                     self.bet_details["units"] = 1.0
                     self.bet_details["units_str"] = "1.0"
-                # Assign a preview serial for the image only (do NOT use for DB insert)
                 from utils.bet_utils import fetch_next_bet_serial
                 self.bet_details["preview_bet_serial"] = await fetch_next_bet_serial(self.bot)
-                # Always generate preview for 1.0 units before showing the ephemeral message
-                try:
-                    bet_type = self.bet_details.get("line_type", "game_line")
-                    league = self.bet_details.get("league", "N/A")
-                    home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
-                    away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
-                    line = self.bet_details.get("line", "N/A")
-                    odds = float(self.bet_details.get("odds", 0.0))
-                    bet_id = str(self.bet_details.get("preview_bet_serial", ""))
-                    timestamp = datetime.now(timezone.utc)
-                    units = 1.0
-                    if bet_type == "game_line":
-                        generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
-                        bet_slip_image_bytes = generator.generate_bet_slip_image(
-                            league=league,
-                            home_team=home_team,
-                            away_team=away_team,
-                            line=line,
-                            odds=odds,
-                            units=units,
-                            bet_id=bet_id,
-                            timestamp=timestamp,
-                            selected_team=self.bet_details.get("team", home_team),
-                            output_path=None
-                        )
-                        if bet_slip_image_bytes:
-                            self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                            self.preview_image_bytes.seek(0)
-                        else:
-                            self.preview_image_bytes = None
-                    elif bet_type == "player_prop":
-                        generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
-                        player_name = self.bet_details.get("player_name")
-                        if not player_name and line:
-                            player_name = line.split(' - ')[0] if ' - ' in line else line
-                        team_name = home_team
+                # Only regenerate preview if not already set
+                if not self.preview_image_bytes:
+                    try:
+                        bet_type = self.bet_details.get("line_type", "game_line")
                         league = self.bet_details.get("league", "N/A")
-                        odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                        bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                            player_name=player_name or team_name,
-                            team_name=team_name,
-                            league=league,
-                            line=line,
-                            units=units,
-                            output_path=None,
-                            bet_id=bet_id,
-                            timestamp=timestamp,
-                            guild_id=str(self.original_interaction.guild_id),
-                            odds=odds
-                        )
-                        if bet_slip_image_bytes:
-                            self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                            self.preview_image_bytes.seek(0)
-                        else:
-                            self.preview_image_bytes = None
-                    elif bet_type == "parlay":
-                        pass
-
-                    # Record the bet in the database after generating preview
-                    bet_service = getattr(self.bot, "bet_service", None)
-                    if bet_service:
-                        try:
-                            logger.info("[WORKFLOW TRACE] Creating straight bet in database after preview...")
-                            bet_serial = await bet_service.create_straight_bet(
-                                guild_id=self.original_interaction.guild_id,
-                                user_id=self.original_interaction.user.id,
+                        home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+                        away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+                        line = self.bet_details.get("line", "N/A")
+                        odds = float(self.bet_details.get("odds", 0.0))
+                        bet_id = str(self.bet_details.get("preview_bet_serial", ""))
+                        timestamp = datetime.now(timezone.utc)
+                        units = 1.0
+                        if bet_type == "game_line":
+                            generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                            bet_slip_image_bytes = generator.generate_bet_slip_image(
                                 league=league,
-                                bet_type=bet_type,
-                                units=float(units),
-                                odds=float(odds),
-                                team=self.bet_details.get("team"),
-                                opponent=self.bet_details.get("opponent"),
+                                home_team=home_team,
+                                away_team=away_team,
                                 line=line,
-                                api_game_id=self.bet_details.get("api_game_id"),
-                                channel_id=None,  # Will be set in final step
-                                confirmed=0  # Not confirmed until final submission
+                                odds=odds,
+                                units=units,
+                                bet_id=bet_id,
+                                timestamp=timestamp,
+                                selected_team=self.bet_details.get("team", home_team),
+                                output_path=None
                             )
-                            if bet_serial:
-                                self.bet_details["bet_serial"] = bet_serial
-                                logger.info(f"[WORKFLOW TRACE] Bet recorded with serial {bet_serial}")
+                            if bet_slip_image_bytes:
+                                self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                                self.preview_image_bytes.seek(0)
                             else:
-                                logger.error("[WORKFLOW TRACE] Failed to create bet in database")
-                                await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                                self.preview_image_bytes = None
+                        elif bet_type == "player_prop":
+                            generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                            player_name = self.bet_details.get("player_name")
+                            if not player_name and line:
+                                player_name = line.split(' - ')[0] if ' - ' in line else line
+                            team_name = home_team
+                            league = self.bet_details.get("league", "N/A")
+                            odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                            bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                                player_name=player_name or team_name,
+                                team_name=team_name,
+                                league=league,
+                                line=line,
+                                units=units,
+                                output_path=None,
+                                bet_id=bet_id,
+                                timestamp=timestamp,
+                                guild_id=str(self.original_interaction.guild_id),
+                                odds=odds
+                            )
+                            if bet_slip_image_bytes:
+                                self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                                self.preview_image_bytes.seek(0)
+                            else:
+                                self.preview_image_bytes = None
+                        elif bet_type == "parlay":
+                            pass
+
+                        # Record the bet in the database after generating preview
+                        bet_service = getattr(self.bot, "bet_service", None)
+                        if bet_service:
+                            try:
+                                logger.info("[WORKFLOW TRACE] Creating straight bet in database after preview...")
+                                bet_serial = await bet_service.create_straight_bet(
+                                    guild_id=self.original_interaction.guild_id,
+                                    user_id=self.original_interaction.user.id,
+                                    league=league,
+                                    bet_type=bet_type,
+                                    units=float(units),
+                                    odds=float(odds),
+                                    team=self.bet_details.get("team"),
+                                    opponent=self.bet_details.get("opponent"),
+                                    line=line,
+                                    api_game_id=self.bet_details.get("api_game_id"),
+                                    channel_id=None,  # Will be set in final step
+                                    confirmed=0  # Not confirmed until final submission
+                                )
+                                if bet_serial:
+                                    self.bet_details["bet_serial"] = bet_serial
+                                    logger.info(f"[WORKFLOW TRACE] Bet recorded with serial {bet_serial}")
+                                else:
+                                    logger.error("[WORKFLOW TRACE] Failed to create bet in database")
+                                    await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
+                                    self.stop()
+                                    return
+                            except Exception as e:
+                                logger.exception(f"[WORKFLOW TRACE] Error creating bet in database: {e}")
+                                await self.edit_message(content=f"❌ Error creating bet: {str(e)}", view=None)
                                 self.stop()
                                 return
-                        except Exception as e:
-                            logger.exception(f"[WORKFLOW TRACE] Error creating bet in database: {e}")
-                            await self.edit_message(content=f"❌ Error creating bet: {str(e)}", view=None)
+                        else:
+                            logger.error("[WORKFLOW TRACE] No bet_service available")
+                            await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
                             self.stop()
                             return
-                    else:
-                        logger.error("[WORKFLOW TRACE] No bet_service available")
-                        await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
-                        self.stop()
-                        return
 
-                except Exception as e:
-                    logger.exception(f"Error generating initial preview image for units step: {e}")
-                    self.preview_image_bytes = None
+                    except Exception as e:
+                        logger.exception(f"Error generating initial preview image for units step: {e}")
+                        self.preview_image_bytes = None
                 self.clear_items()
                 self.add_item(UnitsSelect(self))
                 self.add_item(ConfirmUnitsButton(self))
@@ -1098,7 +1159,15 @@ class StraightBetDetailsModal(Modal):
             self.bet_details["odds_str"] = odds_str
             if self.line_type == "player_prop":
                 self.bet_details["player_name"] = self.player_input.value.strip()
-
+            # Ensure all required fields are set for preview
+            if 'home_team_name' not in self.bet_details:
+                self.bet_details['home_team_name'] = self.view_ref.bet_details.get('home_team', self.view_ref.bet_details.get('team', ''))
+            if 'away_team_name' not in self.bet_details:
+                self.bet_details['away_team_name'] = self.view_ref.bet_details.get('away_team', self.view_ref.bet_details.get('opponent', ''))
+            if 'team' not in self.bet_details:
+                self.bet_details['team'] = self.view_ref.bet_details.get('team', self.bet_details.get('home_team_name', ''))
+            if 'league' not in self.bet_details:
+                self.bet_details['league'] = self.view_ref.bet_details.get('league', '')
             # Always generate preview image with units=1.0 for the first units selection
             preview_file = None
             preview_bytes = None
@@ -1106,10 +1175,10 @@ class StraightBetDetailsModal(Modal):
                 generator = GameLineImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
                 leg = {
                     'bet_type': self.line_type,
-                    'league': self.view_ref.bet_details.get('league', ''),
-                    'home_team': self.view_ref.bet_details.get('home_team', ''),
-                    'away_team': self.view_ref.bet_details.get('away_team', ''),
-                    'selected_team': self.view_ref.bet_details.get('selected_team', ''),
+                    'league': self.bet_details.get('league', ''),
+                    'home_team': self.bet_details.get('home_team_name', ''),
+                    'away_team': self.bet_details.get('away_team_name', ''),
+                    'selected_team': self.bet_details.get('team', ''),
                     'line': line,
                     'odds': odds_str,
                     'player_name': self.bet_details.get('player_name', '')
@@ -1138,6 +1207,7 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
+                self.view_ref.current_step = 4  # Ensure next step is units selection
                 await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(f"[StraightBetDetailsModal] on_submit error: {e}\n{traceback.format_exc()}")
