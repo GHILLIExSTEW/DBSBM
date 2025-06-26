@@ -167,19 +167,21 @@ class GameSelect(Select):
         seen_values.add(manual_value)  # Prevent accidental duplicate manual_entry
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in games[:24]:
-            # Skip games where both teams are 'Manual Entry' (prevents duplicate manual entry option)
             home_team = game.get('home_team_name', '').strip()
             away_team = game.get('away_team_name', '').strip()
             if home_team.lower() == 'manual entry' and away_team.lower() == 'manual entry':
+                logger.debug(f"Skipping manual entry game: {game}")
                 continue
-            # Prefer api_game_id if present, else use internal id
-            if game.get('api_game_id'):
-                value = f"api_{game['api_game_id']}"
+            api_game_id = game.get('api_game_id')
+            if api_game_id is not None and str(api_game_id).strip() != '':
+                value = f"api_{api_game_id}"
             elif game.get('id'):
                 value = f"dbid_{game['id']}"
             else:
+                logger.debug(f"Skipping game with no api_game_id or id: {game}")
                 continue  # skip if neither id present
             if value in seen_values or value == manual_value:
+                logger.debug(f"Skipping duplicate or manual value: {value} for game: {game}")
                 continue
             seen_values.add(value)
             
@@ -187,7 +189,6 @@ class GameSelect(Select):
             home_team = game.get('home_team_name', 'N/A')
             away_team = game.get('away_team_name', 'N/A')
             status = game.get('status', '')
-            
             # Calculate max length for team names based on status length
             status_suffix = f" ({status})" if status else ""
             max_team_length = (90 - len(status_suffix)) // 2  # Divide remaining space between teams
@@ -198,12 +199,21 @@ class GameSelect(Select):
             if len(away_team) > max_team_length:
                 away_team = away_team[:max_team_length]
             label = f"{home_team} vs {away_team}{status_suffix}"
-            # Ensure label is at least 1 character and at most 100
             label = label[:100] if label else "N/A"
             # Get start time for description
             start_time = game.get('start_time')
             if start_time:
-                desc = str(start_time)
+                # Convert to EST if it's a datetime
+                if hasattr(start_time, 'astimezone'):
+                    from zoneinfo import ZoneInfo
+                    est = ZoneInfo("America/New_York")
+                    start_time_est = start_time.astimezone(est)
+                    formatted_start = start_time_est.strftime('%a, %b %d %I:%M %p EST')
+                elif hasattr(start_time, 'strftime'):
+                    formatted_start = start_time.strftime('%a, %b %d %I:%M %p EST')
+                else:
+                    formatted_start = str(start_time) + ' EST'
+                desc = f"Estimated Start Time: {formatted_start}"
             else:
                 desc = "No start time"
             # Prefer api_game_id if present, else use internal id
