@@ -184,15 +184,8 @@ class GameSelect(Select):
             if value in seen_values or value == manual_value:
                 continue
             seen_values.add(value)
-            # Format the label with team names and status
-            status = game.get('status', '')
-            status_suffix = f" ({status})" if status else ""
-            max_team_length = (90 - len(status_suffix)) // 2
-            if len(home_team) > max_team_length:
-                home_team = home_team[:max_team_length]
-            if len(away_team) > max_team_length:
-                away_team = away_team[:max_team_length]
-            label = f"{home_team} vs {away_team}{status_suffix}"
+            # Format the label with team names (no status)
+            label = f"{home_team} vs {away_team}"
             label = label[:100] if label else "N/A"
             # Get start time for description
             start_time = game.get('start_time')
@@ -355,7 +348,7 @@ class TeamSelect(Select):
         modal.view_ref = self.parent_view
         if not interaction.response.is_done():
             await interaction.response.send_modal(modal)
-            return  # Prevent double modal or extra message update
+            return
         else:
             logger.error("Tried to send modal, but interaction already responded to.")
             await self.parent_view.edit_message(
@@ -1183,39 +1176,27 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
-                # --- Assign bet serial for manual bets after modal submit/preview ---
-                if self.is_manual and not self.bet_details.get("bet_serial"):
-                    try:
-                        bet_service = getattr(self.view_ref.bot, "bet_service", None)
-                        if bet_service:
-                            from utils.bet_utils import fetch_next_bet_serial
-                            league = self.bet_details.get("league", "")
-                            bet_type = self.line_type
-                            units = 1.0
-                            odds = float(self.bet_details.get("odds", 0.0))
-                            team = self.bet_details.get("team")
-                            opponent = self.bet_details.get("opponent")
-                            line = self.bet_details.get("line")
-                            api_game_id = self.bet_details.get("api_game_id")
-                            bet_serial = await bet_service.create_straight_bet(
-                                guild_id=self.view_ref.original_interaction.guild_id,
-                                user_id=self.view_ref.original_interaction.user.id,
-                                league=league,
-                                bet_type=bet_type,
-                                units=units,
-                                odds=odds,
-                                team=team,
-                                opponent=opponent,
-                                line=line,
-                                api_game_id=api_game_id,
-                                channel_id=None,
-                                confirmed=0
-                            )
-                            if bet_serial:
-                                self.bet_details["bet_serial"] = bet_serial
-                                self.view_ref.bet_details["bet_serial"] = bet_serial
-                    except Exception as e:
-                        logging.error(f"[StraightBetDetailsModal] Failed to assign bet_serial after modal submit: {e}\n{traceback.format_exc()}")
+                # --- Assign bet serial for all bets after modal submit/preview ---
+                if not self.bet_details.get("bet_serial"):
+                    bet_service = getattr(self.view_ref.bot, "bet_service", None)
+                    if bet_service:
+                        bet_serial = await bet_service.create_straight_bet(
+                            guild_id=self.view_ref.original_interaction.guild_id,
+                            user_id=self.view_ref.original_interaction.user.id,
+                            league=self.bet_details.get("league", "N/A"),
+                            bet_type=self.line_type,
+                            units=float(self.bet_details.get("units", 1.0)),
+                            odds=float(self.bet_details.get("odds", 0.0)),
+                            team=self.bet_details.get("team"),
+                            opponent=self.bet_details.get("opponent"),
+                            line=self.bet_details.get("line"),
+                            api_game_id=self.bet_details.get("api_game_id"),
+                            channel_id=None,
+                            confirmed=0
+                        )
+                        if bet_serial:
+                            self.bet_details["bet_serial"] = bet_serial
+                            self.view_ref.bet_details["bet_serial"] = bet_serial
                 if not interaction.response.is_done():
                     await interaction.response.defer()
                 self.view_ref.current_step = 4  # Ensure next step is units selection
