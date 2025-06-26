@@ -1082,6 +1082,16 @@ class StraightBetDetailsModal(Modal):
         self.is_manual = is_manual
         self.view_ref = None
 
+        # Always add player name input for player props
+        if line_type == "player_prop":
+            self.player_input = TextInput(
+                label="Player Name",
+                placeholder="Enter player name",
+                required=True,
+                custom_id="player_input"
+            )
+            self.add_item(self.player_input)
+
         # Add team/opponent fields for manual entry
         if is_manual:
             self.team_input = TextInput(
@@ -1099,14 +1109,6 @@ class StraightBetDetailsModal(Modal):
                     custom_id="opponent_input"
                 )
                 self.add_item(self.opponent_input)
-            elif line_type == "player_prop":
-                self.player_input = TextInput(
-                    label="Player Name",
-                    placeholder="Enter player name",
-                    required=True,
-                    custom_id="player_input"
-                )
-                self.add_item(self.player_input)
 
         # Add line input
         self.line_input = TextInput(
