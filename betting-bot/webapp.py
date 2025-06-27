@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Flask, render_template, redirect, url_for, request
+from flask_cors import CORS
 from dotenv import load_dotenv
 import sys
 from datetime import datetime, timedelta
@@ -16,30 +17,9 @@ load_dotenv()
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data", "cache")
 
 app = Flask(__name__, template_folder="templates")
+CORS(app, origins=["https://www.betting-server-manager.com", "http://www.betting-server-manager.com"]) # Allow your website to connect
+
 db = DatabaseManager()
-
-# Dummy data for demonstration
-SERVERS = [
-    {'id': '1', 'name': 'Guild One', 'owner': 'Alice'},
-    {'id': '2', 'name': 'Guild Two', 'owner': 'Bob'},
-]
-
-# Dummy league scores for demonstration
-DUMMY_LEAGUE_SCORES = [
-    {
-        'league': 'MLB',
-        'games': [
-            {'home_team': 'Yankees', 'away_team': 'Red Sox', 'score': {'home': 5, 'away': 3}, 'status': 'Final'},
-            {'home_team': 'Dodgers', 'away_team': 'Giants', 'score': {'home': 2, 'away': 2}, 'status': 'In Progress'},
-        ]
-    },
-    {
-        'league': 'NBA',
-        'games': [
-            {'home_team': 'Lakers', 'away_team': 'Warriors', 'score': {'home': 110, 'away': 112}, 'status': 'Final'},
-        ]
-    }
-]
 
 API_SPORTS_KEY = os.getenv("API_SPORTS_KEY", "YOUR_API_KEY")
 
@@ -144,12 +124,17 @@ def landing():
 
 @app.route("/servers")
 def server_list():
-    sorted_servers = sorted(SERVERS, key=lambda g: g['name'].lower())
-    return render_template("server_list.html", servers=sorted_servers, guild_id=None)
+    guilds_data = asyncio.run(db.fetch_all("SELECT guild_id, guild_name FROM guilds ORDER BY guild_name"))
+    servers = [{'id': str(g['guild_id']), 'name': g['guild_name']} for g in guilds_data]
+    return render_template("server_list.html", servers=servers, guild_id=None)
 
 @app.route("/guild/<guild_id>")
 def guild_home(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}', 'owner': 'Unknown'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    if guild_data:
+        guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']}
+    else:
+        guild = {'id': guild_id, 'name': f'Guild {guild_id}'}
     return render_template("guild_home.html", guild=guild, guild_id=guild_id)
 
 @app.route("/live-scores")
@@ -199,17 +184,20 @@ def live_scores():
 
 @app.route("/guild/<guild_id>/player-stats")
 def player_stats(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data else {'id': guild_id, 'name': f'Guild {guild_id}'}
     return render_template("player_stats.html", guild=guild, guild_id=guild_id)
 
 @app.route("/guild/<guild_id>/odds-buster")
 def odds_buster(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data else {'id': guild_id, 'name': f'Guild {guild_id}'}
     return render_template("odds_buster.html", guild=guild, guild_id=guild_id)
 
 @app.route("/guild/<guild_id>/playmaker-stats")
 def playmaker_stats(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data else {'id': guild_id, 'name': f'Guild {guild_id}'}
     
     # Fetch cappers and their stats
     cappers = asyncio.run(db.fetch_all("""
@@ -276,7 +264,8 @@ def playmaker_stats(guild_id):
 
 @app.route("/guild/<guild_id>/settings")
 def guild_settings(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data else {'id': guild_id, 'name': f'Guild {guild_id}'}
     
     # Fetch guild settings
     settings = asyncio.run(db.fetch_one("""
@@ -325,28 +314,11 @@ def guild_settings(guild_id):
 
 @app.route("/guild/<guild_id>/subscriptions")
 def guild_subscriptions(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data else {'id': guild_id, 'name': f'Guild {guild_id}'}
     return render_template("subscriptions.html", guild=guild, guild_id=guild_id)
 
 @app.route("/guild/<guild_id>/public")
 def guild_public(guild_id):
-    guild = next((g for g in SERVERS if g['id'] == guild_id), {'id': guild_id, 'name': f'Guild {guild_id}'})
-    return render_template("guild_public.html", guild=guild, guild_id=guild_id)
-
-@app.route("/live-scores/<league_id>")
-def live_scores_league(league_id):
-    try:
-        league_name = get_league_name_by_id(league_id)
-        return render_template("live_scores_league.html", league_id=league_id, league_name=league_name, api_key=API_SPORTS_KEY)
-    except Exception as e:
-        return f"Error loading live scores for league {league_id}: {e}", 500
-
-@app.route("/subscriptions")
-def subscriptions():
-    try:
-        return render_template("subscriptions.html")
-    except Exception as e:
-        return f"Error loading subscriptions page: {e}", 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=25594, debug=True) 
+    guild_data = asyncio.run(db.fetch_one("SELECT guild_id, guild_name FROM guilds WHERE guild_id = %s", (guild_id,)))
+    guild = {'id': str(guild_data['guild_id']), 'name': guild_data['guild_name']} if guild_data
