@@ -553,6 +553,16 @@ class AdminCog(commands.Cog):
                  await interaction.response.send_message("❌ An error occurred.", ephemeral=True)
             # Cannot easily followup here if initial response failed
 
+    @app_commands.command(name="subscribe", description="Get the link to subscribe your server to premium features.")
+    async def subscribe_command(self, interaction: Interaction):
+        """Sends the subscription webpage link for premium services."""
+        # Replace this URL with your actual subscription page
+        subscription_url = "https://yourdomain.com/subscribe"
+        await interaction.response.send_message(
+            f"To subscribe your server to premium features, visit: {subscription_url}",
+            ephemeral=True
+        )
+
     # Cog specific error handler
     async def cog_app_command_error(self, interaction: Interaction, error: app_commands.AppCommandError):
          if isinstance(error, app_commands.MissingPermissions):

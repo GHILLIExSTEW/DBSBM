@@ -183,16 +183,25 @@ class PlayerPropImageGenerator:
         from config.asset_paths import get_sport_category_for_path
         from data.game_utils import normalize_team_name_any_league
         sport = get_sport_category_for_path(league.upper())
+        logger = logging.getLogger(__name__)
         if not sport:
-            default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA"), player_name
+            # Fallback logic for missing sport
+            fallback_paths = []
+            if guild_id:
+                fallback_paths.append(f"betting-bot/static/guilds/{guild_id}/default_image.png")
+            fallback_paths.append("betting-bot/static/logos/players/default_image.png")
+            fallback_paths.append("betting-bot/static/logos/default_image.png")
+            for path in fallback_paths:
+                if os.path.exists(path):
+                    logger.warning(f"[PLAYER_IMAGE] Using fallback image: {path}")
+                    return Image.open(path).convert("RGBA"), player_name
+            logger.error(f"[PLAYER_IMAGE] No fallback image found for player '{player_name}'. Returning blank image.")
+            return Image.new("RGBA", (90, 90), (0, 0, 0, 0)), player_name
         normalized_team = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
         normalized_player = normalize_team_name_any_league(player_name).replace(".", "").replace(" ", "_").lower()
         player_dir = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team)
         player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
 
-        # DEBUG LOGGING: Show exactly what is being checked
-        logger = logging.getLogger(__name__)
         logger.info(f"[PLAYER_IMAGE] Looking for player image. Inputs: player_name='{player_name}', team_name='{team_name}', league='{league}', guild_id='{guild_id}'")
         logger.info(f"[PLAYER_IMAGE] Normalized team: '{normalized_team}', Normalized player: '{normalized_player}'")
         logger.info(f"[PLAYER_IMAGE] Player dir: '{player_dir}', Player image path: '{player_img_path}'")
@@ -212,9 +221,18 @@ class PlayerPropImageGenerator:
                 display_name = matches[0].replace('_', ' ').title()
                 logger.info(f"[PLAYER_IMAGE] Fuzzy matched player image: {match_path}")
                 return Image.open(match_path).convert("RGBA"), display_name
-        logger.warning(f"[PLAYER_IMAGE] No player image found for '{player_name}' (team: '{team_name}', league: '{league}'). Returning fallback.")
-        default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-        return Image.open(default_path).convert("RGBA"), player_name
+        logger.warning(f"[PLAYER_IMAGE] No player image found for '{player_name}' (team: '{team_name}', league: '{league}'). Trying fallback images.")
+        fallback_paths = []
+        if guild_id:
+            fallback_paths.append(f"betting-bot/static/guilds/{guild_id}/default_image.png")
+        fallback_paths.append("betting-bot/static/logos/players/default_image.png")
+        fallback_paths.append("betting-bot/static/logos/default_image.png")
+        for path in fallback_paths:
+            if os.path.exists(path):
+                logger.warning(f"[PLAYER_IMAGE] Using fallback image: {path}")
+                return Image.open(path).convert("RGBA"), player_name
+        logger.error(f"[PLAYER_IMAGE] No fallback image found for player '{player_name}'. Returning blank image.")
+        return Image.new("RGBA", (90, 90), (0, 0, 0, 0)), player_name
 
     @staticmethod
     def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, odds=None, units_display_mode='auto', display_as_risk=None):

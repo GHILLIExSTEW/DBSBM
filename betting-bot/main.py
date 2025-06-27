@@ -279,9 +279,9 @@ class BettingBot(commands.Bot):
                     # Clear existing commands for this guild
                     self.tree.clear_commands(guild=guild_obj)
                     
-                    # Add all commands except load_logos to the guild
+                    # Add all commands except setup and load_logos to the guild
                     for cmd in all_commands:
-                        if cmd.name != "load_logos":
+                        if cmd.name not in ("setup", "load_logos"):
                             self.tree.add_command(cmd, guild=guild_obj)
                     
                     # Sync commands to this guild

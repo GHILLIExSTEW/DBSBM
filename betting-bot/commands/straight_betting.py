@@ -817,12 +817,24 @@ class StraightBetWorkflowView(View):
             elif self.current_step == 6:
                 logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - starting")
                 try:
-                    # Get all text channels the user has access to
+                    # Fetch allowed channel IDs from guild_settings
+                    guild_settings = await self.bot.db_manager.fetch_one(
+                        "SELECT embed_channel_1, embed_channel_2, command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = %s",
+                        (str(interaction.guild_id),)
+                    )
+                    allowed_channel_ids = set()
+                    for key in ["embed_channel_1", "embed_channel_2", "command_channel_1", "command_channel_2"]:
+                        val = guild_settings.get(key) if guild_settings else None
+                        if isinstance(val, list):
+                            allowed_channel_ids.update(int(v) for v in val if v)
+                        elif val:
+                            allowed_channel_ids.add(int(val))
+                    # Get all text channels the user has access to and are allowed
                     channels = []
                     for channel in interaction.guild.text_channels:
-                        if channel.permissions_for(interaction.user).send_messages:
+                        if channel.permissions_for(interaction.user).send_messages and channel.id in allowed_channel_ids:
                             channels.append(channel)
-                    logger.debug(f"[WORKFLOW TRACE] Step 6: Found {len(channels)} available channels: {[c.name for c in channels]}")
+                    logger.debug(f"[WORKFLOW TRACE] Step 6: Found {len(channels)} allowed channels: {[c.name for c in channels]}")
                     if not channels:
                         await self.edit_message(content="❌ No channels available to post bets. Please contact an admin.", view=None)
                         self.stop()
@@ -930,15 +942,26 @@ class StraightBetWorkflowView(View):
                 try:
                     webhook_content = role_mention if role_mention else None
                     # --- Capture the message returned by webhook.send ---
-                    webhook_message = await target_webhook.send(
-                        content=webhook_content,
-                        file=discord_file_to_send,
-                        username=webhook_username,
-                        avatar_url=webhook_avatar_url,
-                        wait=True  # Ensure we get the Message object back
-                    )
+                    try:
+                        webhook_message = await target_webhook.send(
+                            content=webhook_content,
+                            file=discord_file_to_send,
+                            username=webhook_username,
+                            avatar_url=webhook_avatar_url,
+                            wait=True  # Ensure we get the Message object back
+                        )
+                    except Exception as e:
+                        logger.error(f"Exception during webhook.send: {e}")
+                        await self.edit_message(content="Error: Failed to post bet message via webhook (send failed).", view=None)
+                        self.stop()
+                        return
+                    if not webhook_message:
+                        logger.error("webhook.send returned None (no message object). Possible permission or Discord API error.")
+                        await self.edit_message(content="Error: Bet message could not be posted (no message returned from webhook).", view=None)
+                        self.stop()
+                        return
                     # --- Update bet with message_id and channel_id ---
-                    if bet_service and webhook_message:
+                    if bet_service:
                         try:
                             await bet_service.update_straight_bet_channel(
                                 bet_serial=details["bet_serial"],
