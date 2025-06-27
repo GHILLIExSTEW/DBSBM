@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscribe to Premium - Betting Server Manager</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0e1a2b;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #182c47;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+            padding: 32px 24px 24px 24px;
+        }
+        h1 {
+            color: #4fc3f7;
+            margin-bottom: 0.5em;
+        }
+        .desc {
+            font-size: 1.1em;
+            margin-bottom: 1.5em;
+            color: #cbe7ff;
+        }
+        .features {
+            margin-bottom: 2em;
+        }
+        .features li {
+            margin-bottom: 0.7em;
+            line-height: 1.5;
+        }
+        .price {
+            font-size: 1.3em;
+            color: #ffd700;
+            margin-bottom: 1.5em;
+            font-weight: bold;
+        }
+        #paypal-button-container-P-9E957728334833547NBPMBWA {
+            margin: 0 auto;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 16px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Unlock Premium</h1>
+        <div class="desc">
+            Power up your Discord betting server! Premium gives you more channels, custom backgrounds, daily reports, advanced unit tracking, avatar masks, unlimited bets, and priority features.
+        </div>
+        <ul class="features">
+            <li>Up to 2 embed and 2 command channels</li>
+            <li>Custom backgrounds for bet slips</li>
+            <li>Automated daily reports</li>
+            <li>Advanced monthly & yearly unit tracking</li>
+            <li>Custom bot & user avatar masks</li>
+            <li>Unlimited active bets</li>
+            <li>Priority access to new features</li>
+        </ul>
+        <div class="price">$19.99/month</div>
+        <div id="paypal-button-container-P-9E957728334833547NBPMBWA"></div>
+    </div>
+    <script src="https://www.paypal.com/sdk/js?client-id=AWDkbFMoDthBymkG_x8EyvZgFTneRdf8bRVBUpBa19HMpvwxZSnK4YBIFYhyh3sVmn5OuR4wACCIJL4q&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+    <script>
+      paypal.Buttons({
+          style: {
+              shape: 'pill',
+              color: 'blue',
+              layout: 'vertical',
+              label: 'subscribe'
+          },
+          createSubscription: function(data, actions) {
+            return actions.subscription.create({
+              /* Creates the subscription */
+              plan_id: 'P-9E957728334833547NBPMBWA'
+            });
+          },
+          onApprove: function(data, actions) {
+            alert('Thank you for subscribing! Your subscription ID: ' + data.subscriptionID);
+          }
+      }).render('#paypal-button-container-P-9E957728334833547NBPMBWA');
+    </script>
+</body>
+</html>
