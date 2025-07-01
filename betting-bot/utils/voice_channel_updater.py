@@ -8,6 +8,24 @@ from discord import VoiceChannel, Client
 logger = logging.getLogger(__name__)
 
 class VoiceChannelUpdater:
+    async def reinitialize_pending_bets(self):
+        """Check the bets table for any rows with status 'pending' and reinitialize them for reaction monitoring."""
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                async with db.execute(
+                    """
+                    SELECT bet_serial, guild_id, user_id
+                    FROM bets
+                    WHERE status = 'pending'
+                    """
+                ) as cursor:
+                    pending_bets = await cursor.fetchall()
+                for bet in pending_bets:
+                    # TODO: Replace this with your actual reinitialization logic
+                    # Example: self.monitor_reactions_for_bet(bet)
+                    logger.info(f"Reinitializing reaction monitoring for pending bet: {bet}")
+        except Exception as e:
+            logger.error(f"Error reinitializing pending bets: {str(e)}")
     def __init__(self, bot: Client, db_path: str):
         self.bot = bot
         self.db_path = db_path
@@ -17,6 +35,7 @@ class VoiceChannelUpdater:
     async def start(self):
         """Start the voice channel update service."""
         self.running = True
+        await self.reinitialize_pending_bets()
         self._update_task = asyncio.create_task(self._update_loop())
         logger.info("Voice channel updater started")
 
