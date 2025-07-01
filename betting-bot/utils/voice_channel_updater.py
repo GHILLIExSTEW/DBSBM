@@ -81,7 +81,7 @@ class VoiceChannelUpdater:
                     """
                     SELECT voice_channel_id, yearly_channel_id, is_paid
                     FROM guild_settings
-                    WHERE guild_id = %s
+                    WHERE guild_id = ?
                     """,
                     (guild_id,)
                 ) as cursor:
@@ -115,7 +115,7 @@ class VoiceChannelUpdater:
                 """
                 SELECT COALESCE(SUM(result_value), 0.0) as total
                 FROM unit_records
-                WHERE guild_id = %s AND year = %s AND month = %s
+                WHERE guild_id = ? AND year = ? AND month = ?
                 """,
                 (guild_id, now.year, now.month)
             ) as cursor:
@@ -134,7 +134,7 @@ class VoiceChannelUpdater:
                 """
                 SELECT COALESCE(SUM(result_value), 0.0) as total
                 FROM unit_records
-                WHERE guild_id = %s AND year = %s
+                WHERE guild_id = ? AND year = ?
                 """,
                 (guild_id, now.year)
             ) as cursor:
@@ -177,7 +177,7 @@ class VoiceChannelUpdater:
                         """
                         UPDATE unit_records
                         SET monthly_result_value = 0
-                        WHERE guild_id = %s
+                        WHERE guild_id = ?
                         """,
                         (guild_id,)
                     )
@@ -216,9 +216,9 @@ class VoiceChannelUpdater:
                     await db.execute(
                         """
                         UPDATE subscribers
-                        SET year_total = %s,
-                            lifetime_units = lifetime_units + %s
-                        WHERE guild_id = %s
+                        SET year_total = ?,
+                            lifetime_units = lifetime_units + ?
+                        WHERE guild_id = ?
                         """,
                         (yearly_total, yearly_total, guild_id)
                     )
@@ -228,7 +228,7 @@ class VoiceChannelUpdater:
                         """
                         UPDATE unit_records
                         SET total_result_value = 0
-                        WHERE guild_id = %s
+                        WHERE guild_id = ?
                         """,
                         (guild_id,)
                     )
