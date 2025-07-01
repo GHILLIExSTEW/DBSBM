@@ -109,17 +109,18 @@ class VoiceChannelUpdater:
         """Get the total units for the current month."""
         try:
             now = datetime.utcnow()
-            start_of_month = datetime(now.year, now.month, 1)
-            
+            # Debug logging for monthly total calculation
+            logger.info(f"Calculating monthly total for guild_id={guild_id}, year={now.year}, month={now.month}")
             async with db.execute(
                 """
-                SELECT COALESCE(SUM(result_value), 0.0) as total
+                SELECT COALESCE(SUM(monthly_result_value), 0.0) as total
                 FROM unit_records
                 WHERE guild_id = ? AND year = ? AND month = ?
                 """,
                 (guild_id, now.year, now.month)
             ) as cursor:
                 result = await cursor.fetchone()
+                logger.info(f"Monthly total query result for guild_id={guild_id}: {result}")
                 return result['total'] if result and result['total'] is not None else 0.0
         except Exception as e:
             logger.error(f"Error getting monthly total: {str(e)}")
