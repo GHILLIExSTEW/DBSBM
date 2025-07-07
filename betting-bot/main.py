@@ -210,6 +210,7 @@ class BettingBot(commands.Bot):
             "stats.py",
             "load_logos.py",
             "schedule.py",
+            "maintenance.py",
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -279,24 +280,32 @@ class BettingBot(commands.Bot):
                     # Clear existing commands for this guild
                     self.tree.clear_commands(guild=guild_obj)
                     
-                    # Add all commands except setup and load_logos to the guild
+                    # Add all commands except setup, load_logos, and maintenance commands to the guild
                     for cmd in all_commands:
-                        if cmd.name not in ("setup", "load_logos"):
+                        if cmd.name not in ("setup", "load_logos", "down", "up"):
                             self.tree.add_command(cmd, guild=guild_obj)
                     
                     # Sync commands to this guild
                     await self.tree.sync(guild=guild_obj)
                     logger.info(f"Synced commands to guild {guild_id} (subscription: {subscription_level})")
                 
-                # Handle load_logos command for test guild and authorized user
+                # Handle restricted commands for test guild and authorized user
                 if TEST_GUILD_ID:
                     test_guild = discord.Object(id=TEST_GUILD_ID)
-                    load_logos_cmd = self.tree.get_command("load_logos")
-                    if load_logos_cmd:
+                    restricted_commands = ["load_logos", "down", "up"]
+                    available_commands = []
+                    
+                    for cmd_name in restricted_commands:
+                        cmd = self.tree.get_command(cmd_name)
+                        if cmd:
+                            available_commands.append(cmd)
+                    
+                    if available_commands:
                         self.tree.clear_commands(guild=test_guild)
-                        self.tree.add_command(load_logos_cmd, guild=test_guild)
+                        for cmd in available_commands:
+                            self.tree.add_command(cmd, guild=test_guild)
                         await self.tree.sync(guild=test_guild)
-                        logger.info(f"Synced load_logos command to test guild {TEST_GUILD_ID}")
+                        logger.info(f"Synced restricted commands {[cmd.name for cmd in available_commands]} to test guild {TEST_GUILD_ID}")
                 
                 # Log all available commands
                 global_commands = [cmd.name for cmd in self.tree.get_commands()]
