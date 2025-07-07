@@ -83,6 +83,7 @@ if missing_vars:
 
 # Get test guild ID
 TEST_GUILD_ID = int(REQUIRED_ENV_VARS["TEST_GUILD_ID"]) if REQUIRED_ENV_VARS["TEST_GUILD_ID"] else None
+logger.info(f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
 
 # --- Path for the logo download script and flag file ---
 LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_team_logos.py")
@@ -263,6 +264,7 @@ class BettingBot(commands.Bot):
                     guild_id = guild['guild_id']
                     is_paid = guild['is_paid']
                     subscription_level = 'premium' if is_paid else 'initial'
+                    logger.debug(f"Processing guild {guild_id} (type: {type(guild_id)}) with subscription {subscription_level}")
                     
                     # Update subscription level if needed
                     if is_paid and subscription_level != 'premium':
@@ -280,32 +282,26 @@ class BettingBot(commands.Bot):
                     # Clear existing commands for this guild
                     self.tree.clear_commands(guild=guild_obj)
                     
-                    # Add all commands except setup, load_logos, and maintenance commands to the guild
-                    for cmd in all_commands:
-                        if cmd.name not in ("setup", "load_logos", "down", "up"):
-                            self.tree.add_command(cmd, guild=guild_obj)
+                    # Special handling for test guild - only add restricted commands
+                    logger.debug(f"Checking guild {guild_id} against TEST_GUILD_ID {TEST_GUILD_ID} (types: {type(guild_id)} vs {type(TEST_GUILD_ID)})")
+                    if guild_id == TEST_GUILD_ID:
+                        restricted_commands = ["load_logos", "down", "up"]
+                        for cmd_name in restricted_commands:
+                            cmd = self.tree.get_command(cmd_name)
+                            if cmd:
+                                self.tree.add_command(cmd, guild=guild_obj)
+                        logger.info(f"Synced restricted commands to test guild {guild_id}")
+                    else:
+                        # Add all commands except setup, load_logos, and maintenance commands to the guild
+                        for cmd in all_commands:
+                            if cmd.name not in ("setup", "load_logos", "down", "up"):
+                                self.tree.add_command(cmd, guild=guild_obj)
+                        logger.info(f"Synced commands to guild {guild_id} (subscription: {subscription_level})")
                     
                     # Sync commands to this guild
                     await self.tree.sync(guild=guild_obj)
-                    logger.info(f"Synced commands to guild {guild_id} (subscription: {subscription_level})")
                 
-                # Handle restricted commands for test guild and authorized user
-                if TEST_GUILD_ID:
-                    test_guild = discord.Object(id=TEST_GUILD_ID)
-                    restricted_commands = ["load_logos", "down", "up"]
-                    available_commands = []
-                    
-                    for cmd_name in restricted_commands:
-                        cmd = self.tree.get_command(cmd_name)
-                        if cmd:
-                            available_commands.append(cmd)
-                    
-                    if available_commands:
-                        self.tree.clear_commands(guild=test_guild)
-                        for cmd in available_commands:
-                            self.tree.add_command(cmd, guild=test_guild)
-                        await self.tree.sync(guild=test_guild)
-                        logger.info(f"Synced restricted commands {[cmd.name for cmd in available_commands]} to test guild {TEST_GUILD_ID}")
+
                 
                 # Log all available commands
                 global_commands = [cmd.name for cmd in self.tree.get_commands()]
