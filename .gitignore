@@ -45,7 +45,7 @@ logs/
 *.sqlite3
 
 # Assets and media
-
+betting-bot/static
 
 # OS generated files
 .DS_Store
