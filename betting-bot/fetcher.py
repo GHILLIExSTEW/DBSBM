@@ -106,6 +106,7 @@ LEAGUE_CONFIG = {
     "american-football": {
         "NFL": {"id": 1, "name": "National Football League"},
         "NCAA": {"id": 2, "name": "NCAA Football"},
+        "CFL": {"id": 3, "name": "CFL"},
     },
     "rugby": {
         "SuperRugby": {"id": 1, "name": "Super Rugby"},
@@ -125,6 +126,11 @@ LEAGUE_CONFIG = {
     },
     "mma": {
         "MMA": {"id": 1, "name": "Mixed Martial Arts"},
+    },
+    "tennis": {
+        "Tennis": {"id": 1, "name": "Tennis"},
+        "ATP": {"id": 2, "name": "ATP Tour"},
+        "WTA": {"id": 3, "name": "WTA Tour"},
     },
 }
 

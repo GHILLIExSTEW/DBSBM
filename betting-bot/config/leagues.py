@@ -103,6 +103,15 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., Moneyline, Spread -7.5, Total O/U 48.5",
         "line_placeholder_player": "e.g., Passing Yards Over 250.5, First TD Scorer"
     },
+    "CFL": {
+        "sport": "American Football",
+        "name": "CFL",
+        "sport_type": "Team Sport",
+        "participant_label": "Team",
+        "team_placeholder": "e.g., Toronto Argonauts",
+        "line_placeholder_game": "e.g., Moneyline, Spread -7.5, Total O/U 48.5",
+        "line_placeholder_player": "e.g., Passing Yards Over 250.5, First TD Scorer"
+    },
     
     # Soccer
     "EPL": {
@@ -399,6 +408,7 @@ LEAGUE_SEASON_STARTS = {
     # American Football
     "NFL": {"start": "2024-09-05", "end": "2025-02-09"},
     "NCAA": {"start": "2024-08-24", "end": "2025-01-13"},
+    "CFL": {"start": "2024-06-06", "end": "2024-10-20"},
     
     # Hockey
     "NHL": {"start": "2023-10-10", "end": "2024-04-18"},
@@ -434,6 +444,11 @@ LEAGUE_SEASON_STARTS = {
     # MMA
     "MMA": {"start": "2024-01-20", "end": "2024-12-14"},
     "Bellator": {"start": "2024-02-24", "end": "2024-12-14"},
+    
+    # Tennis
+    "Tennis": {"start": "2024-01-01", "end": "2024-12-31"},
+    "ATP": {"start": "2024-01-01", "end": "2024-12-31"},
+    "WTA": {"start": "2024-01-01", "end": "2024-12-31"},
     
     # Darts
     "PDC": {"start": "2024-01-01", "end": "2024-12-31"},
@@ -479,6 +494,7 @@ LEAGUE_IDS = {
     # American Football
     "NFL": {"id": 1, "sport": "american-football", "name": "NFL"},
     "NCAA": {"id": 2, "sport": "american-football", "name": "NCAA Football"},
+    "CFL": {"id": 3, "sport": "american-football", "name": "CFL"},
     
     # Rugby
     "SuperRugby": {"id": 1, "sport": "rugby", "name": "Super Rugby"},
@@ -499,6 +515,11 @@ LEAGUE_IDS = {
     # MMA
     "MMA": {"id": 1, "sport": "mma", "name": "UFC"},
     "Bellator": {"id": 2, "sport": "mma", "name": "Bellator MMA"},
+    
+    # Tennis
+    "Tennis": {"id": 1, "sport": "tennis", "name": "Tennis"},
+    "ATP": {"id": 2, "sport": "tennis", "name": "ATP Tour"},
+    "WTA": {"id": 3, "sport": "tennis", "name": "WTA Tour"},
     
     # Darts
     "PDC": {"id": 1, "sport": "darts", "name": "Professional Darts Corporation"},
@@ -528,6 +549,8 @@ ENDPOINTS = {
     "formula-1": "https://v1.formula-1.api-sports.io",
     "mma": "https://v1.mma.api-sports.io",
     "darts": "https://v1.darts.api-sports.io",
+    "tennis": "https://v1.tennis.api-sports.io",
+    "cfl": "https://v1.american-football.api-sports.io",  # CFL uses american-football endpoint
 }
 
 def get_current_season(league: str) -> int:

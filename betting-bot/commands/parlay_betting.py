@@ -525,7 +525,7 @@ class UnitsSelect(Select):
         await interaction.response.edit_message(
             content="Confirm your units selection, then proceed.",
             view=self.parent_view,
-            attachments=[file_to_send] if file_to_send else None
+            attachments=[file_to_send] if file_to_send else []
         )
 
 class ChannelSelect(Select):
@@ -670,10 +670,11 @@ class OddsModal(Modal):
             self.parent_view.add_item(UnitsSelect(self.parent_view))
             self.parent_view.add_item(CancelButton(self.parent_view))
             
-            if preview_file:
-                await interaction.response.edit_message(content=content, view=self.parent_view, attachments=[preview_file])
-            else:
-                await interaction.response.edit_message(content=content, view=self.parent_view)
+            await interaction.response.edit_message(
+                content=content, 
+                view=self.parent_view, 
+                attachments=[preview_file] if preview_file else []
+            )
             
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
@@ -800,7 +801,21 @@ class ParlayBetWorkflowView(View):
             # Generate preview image for the entire parlay
             try:
                 image_generator = ParlayBetImageGenerator()
-                image_bytes = await image_generator.generate_parlay_preview(self.bet_details)
+                legs = []
+                for leg in self.bet_details.get('legs', []):
+                    leg_data = {
+                        'bet_type': leg.get('line_type', 'game_line'),
+                        'league': leg.get('league', ''),
+                        'home_team': leg.get('home_team_name', ''),
+                        'away_team': leg.get('away_team_name', ''),
+                        'selected_team': leg.get('team', ''),
+                        'line': leg.get('line', ''),
+                        'odds': leg.get('odds', leg.get('odds_str', '')),
+                    }
+                    if leg.get('line_type') == 'player_prop':
+                        leg_data['player_name'] = leg.get('player_name', '')
+                    legs.append(leg_data)
+                image_bytes = image_generator.generate_parlay_preview(legs)
                 if image_bytes:
                     self.preview_image_bytes = io.BytesIO(image_bytes)
                     self.preview_image_bytes.seek(0)

@@ -195,7 +195,7 @@ class AssetLoader:
     def _normalize_team_name(self, team_name: str, league: str) -> Optional[str]:
         """Normalize team name using league dictionaries."""
         try:
-            # Import appropriate league dictionary
+            # Import appropriate league dictionary based on the league
             league_lower = league.lower()
             if league_lower == 'mlb':
                 from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
@@ -205,8 +205,10 @@ class AssetLoader:
                 from utils.league_dictionaries.football import TEAM_NAMES as league_dict
             elif league_lower == 'nhl':
                 from utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
+            elif league_lower == 'cfl':
+                from utils.league_dictionaries.cfl import TEAM_NAMES as league_dict
             else:
-                return None
+                league_dict = {}
             
             team_name_lower = team_name.lower()
             
@@ -214,13 +216,15 @@ class AssetLoader:
             if team_name_lower in league_dict:
                 return league_dict[team_name_lower]
             
-            # Try fuzzy matching
+            # Try fuzzy matching against dictionary keys (within this league only)
             matches = difflib.get_close_matches(team_name_lower, league_dict.keys(), n=1, cutoff=0.75)
             if matches:
-                return league_dict[matches[0]]
+                normalized_team = league_dict[matches[0]]
+                logger.info(f"[LOGO] Fuzzy matched team name '{team_name}' to '{normalized_team}' using league dictionary")
+                return normalized_team
                 
         except Exception as e:
-            logger.warning(f"Error normalizing team name '{team_name}' for league '{league}': {e}")
+            logger.warning(f"[LOGO] Error using league dictionary for '{team_name}': {e}")
         
         return None
     

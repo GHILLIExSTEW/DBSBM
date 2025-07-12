@@ -3,6 +3,8 @@ import os
 import difflib
 import logging
 
+logger = logging.getLogger(__name__)
+
 class ParlayBetImageGenerator:
     """
     A class to generate parlay bet slip images styled like the provided example.
@@ -17,6 +19,20 @@ class ParlayBetImageGenerator:
         self.font_mini = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 18)
         self.font_huge = ImageFont.truetype(os.path.join(font_dir, "Roboto-Bold.ttf"), 48)
         self.font_vs_small = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 21)  # 3/4 of 28
+
+    def generate_parlay_preview(self, legs, total_odds=None, units=None):
+        """
+        Generates a preview image for a parlay bet (before finalization).
+        """
+        return self.generate_image(
+            legs=legs,
+            output_path=None,
+            total_odds=total_odds,
+            units=units,
+            bet_id=None,
+            bet_datetime=None,
+            finalized=False
+        )
 
     def generate_image(self, legs, output_path, total_odds, units, bet_id, bet_datetime, finalized=False, units_display_mode='auto', display_as_risk=None):
         """
@@ -340,6 +356,7 @@ class ParlayBetImageGenerator:
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
         import os
+        import difflib
         from PIL import Image
         from config.asset_paths import get_sport_category_for_path
         from data.game_utils import normalize_team_name_any_league
