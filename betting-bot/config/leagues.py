@@ -271,6 +271,107 @@ LEAGUE_CONFIG = {
         "line_placeholder_player": "e.g., Fight to go the Distance - Yes/No, Round Betting"
     },
     
+    # Darts
+    "PDC": {
+        "sport": "Darts",
+        "name": "Professional Darts Corporation",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Michael van Gerwen",
+        "line_placeholder_game": "e.g., To Win Match, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 2.5, Average Over 95.5, Checkout % Over 40%"
+    },
+    "BDO": {
+        "sport": "Darts",
+        "name": "British Darts Organisation",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Martin Adams",
+        "line_placeholder_game": "e.g., To Win Match, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 2.5, Average Over 85.5, Checkout % Over 35%"
+    },
+    "WDF": {
+        "sport": "Darts",
+        "name": "World Darts Federation",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Beau Greaves",
+        "line_placeholder_game": "e.g., To Win Match, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 2.5, Average Over 80.5, Checkout % Over 30%"
+    },
+    "PremierLeagueDarts": {
+        "sport": "Darts",
+        "name": "Premier League Darts",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Luke Humphries",
+        "line_placeholder_game": "e.g., To Win Night, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 3.5, Average Over 100.5, Checkout % Over 45%"
+    },
+    "WorldMatchplay": {
+        "sport": "Darts",
+        "name": "World Matchplay",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Gerwyn Price",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 4.5, Average Over 98.5, Checkout % Over 42%"
+    },
+    "WorldGrandPrix": {
+        "sport": "Darts",
+        "name": "World Grand Prix",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Peter Wright",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 3.5, Average Over 95.5, Checkout % Over 40%"
+    },
+    "UKOpen": {
+        "sport": "Darts",
+        "name": "UK Open",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Nathan Aspinall",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 4.5, Average Over 96.5, Checkout % Over 41%"
+    },
+    "GrandSlam": {
+        "sport": "Darts",
+        "name": "Grand Slam of Darts",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Rob Cross",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 4.5, Average Over 97.5, Checkout % Over 43%"
+    },
+    "PlayersChampionship": {
+        "sport": "Darts",
+        "name": "Players Championship",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Dave Chisnall",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 3.5, Average Over 94.5, Checkout % Over 39%"
+    },
+    "EuropeanChampionship": {
+        "sport": "Darts",
+        "name": "European Championship",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Joe Cullen",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 4.5, Average Over 96.5, Checkout % Over 41%"
+    },
+    "Masters": {
+        "sport": "Darts",
+        "name": "Masters",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Chris Dobey",
+        "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 3.5, Average Over 95.5, Checkout % Over 40%"
+    },
+    
     # Generic fallback
     "OTHER": {
         "sport": "Unknown",
@@ -332,7 +433,20 @@ LEAGUE_SEASON_STARTS = {
     
     # MMA
     "MMA": {"start": "2024-01-20", "end": "2024-12-14"},
-    "Bellator": {"start": "2024-02-24", "end": "2024-12-14"}
+    "Bellator": {"start": "2024-02-24", "end": "2024-12-14"},
+    
+    # Darts
+    "PDC": {"start": "2024-01-01", "end": "2024-12-31"},
+    "BDO": {"start": "2024-01-01", "end": "2024-12-31"},
+    "WDF": {"start": "2024-01-01", "end": "2024-12-31"},
+    "PremierLeagueDarts": {"start": "2024-02-01", "end": "2024-05-23"},
+    "WorldMatchplay": {"start": "2024-07-13", "end": "2024-07-21"},
+    "WorldGrandPrix": {"start": "2024-10-02", "end": "2024-10-08"},
+    "UKOpen": {"start": "2024-03-01", "end": "2024-03-03"},
+    "GrandSlam": {"start": "2024-11-09", "end": "2024-11-17"},
+    "PlayersChampionship": {"start": "2024-11-22", "end": "2024-11-24"},
+    "EuropeanChampionship": {"start": "2024-10-24", "end": "2024-10-30"},
+    "Masters": {"start": "2024-01-26", "end": "2024-01-28"}
 }
 
 # League mappings with API-Sports IDs
@@ -384,7 +498,20 @@ LEAGUE_IDS = {
     
     # MMA
     "MMA": {"id": 1, "sport": "mma", "name": "UFC"},
-    "Bellator": {"id": 2, "sport": "mma", "name": "Bellator MMA"}
+    "Bellator": {"id": 2, "sport": "mma", "name": "Bellator MMA"},
+    
+    # Darts
+    "PDC": {"id": 1, "sport": "darts", "name": "Professional Darts Corporation"},
+    "BDO": {"id": 2, "sport": "darts", "name": "British Darts Organisation"},
+    "WDF": {"id": 3, "sport": "darts", "name": "World Darts Federation"},
+    "PremierLeagueDarts": {"id": 4, "sport": "darts", "name": "Premier League Darts"},
+    "WorldMatchplay": {"id": 5, "sport": "darts", "name": "World Matchplay"},
+    "WorldGrandPrix": {"id": 6, "sport": "darts", "name": "World Grand Prix"},
+    "UKOpen": {"id": 7, "sport": "darts", "name": "UK Open"},
+    "GrandSlam": {"id": 8, "sport": "darts", "name": "Grand Slam of Darts"},
+    "PlayersChampionship": {"id": 9, "sport": "darts", "name": "Players Championship"},
+    "EuropeanChampionship": {"id": 10, "sport": "darts", "name": "European Championship"},
+    "Masters": {"id": 11, "sport": "darts", "name": "Masters"}
 }
 
 # API endpoints
@@ -400,6 +527,7 @@ ENDPOINTS = {
     "afl": "https://v1.afl.api-sports.io",
     "formula-1": "https://v1.formula-1.api-sports.io",
     "mma": "https://v1.mma.api-sports.io",
+    "darts": "https://v1.darts.api-sports.io",
 }
 
 def get_current_season(league: str) -> int:

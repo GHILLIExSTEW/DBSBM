@@ -73,6 +73,7 @@ LEAGUE_FILE_KEY_MAP = {
     "NPB": "NPB",
     "KBO": "KBO",
     "KHL": "KHL",
+    "MMA": "MMA",
     "PDC": "PDC",
     "BDO": "BDO",
     "WDF": "WDF",
@@ -645,8 +646,11 @@ class StraightBetWorkflowView(View):
                 logger.info("[WORKFLOW TRACE] Step 1: League selection")
                 allowed_leagues = [
                     "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga",
-                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "UFC/MMA",
-                    "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"
+                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "MMA",
+                    "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts",
+                    "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam",
+                    "Players Championship", "European Championship", "Masters", "EuroLeague",
+                    "NPB", "KBO", "KHL"
                 ]
                 new_view_items.append(LeagueSelect(self, allowed_leagues))
                 new_view_items.append(CancelButton(self))

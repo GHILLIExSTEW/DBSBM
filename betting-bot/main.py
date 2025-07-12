@@ -259,6 +259,9 @@ class BettingBot(commands.Bot):
                 """
                 guilds = await self.db_manager.fetch_all(guilds_query)
                 
+                # Get all guild IDs that are in the database
+                db_guild_ids = {guild['guild_id'] for guild in guilds}
+                
                 # Sync commands to each guild in the table
                 for guild in guilds:
                     guild_id = guild['guild_id']
@@ -300,6 +303,21 @@ class BettingBot(commands.Bot):
                     
                     # Sync commands to this guild
                     await self.tree.sync(guild=guild_obj)
+                
+                # Handle test guild if it's not in the database
+                if TEST_GUILD_ID and TEST_GUILD_ID not in db_guild_ids:
+                    logger.info(f"Test guild {TEST_GUILD_ID} not in database, syncing restricted commands")
+                    test_guild_obj = discord.Object(id=TEST_GUILD_ID)
+                    self.tree.clear_commands(guild=test_guild_obj)
+                    
+                    restricted_commands = ["load_logos", "down", "up"]
+                    for cmd_name in restricted_commands:
+                        cmd = self.tree.get_command(cmd_name)
+                        if cmd:
+                            self.tree.add_command(cmd, guild=test_guild_obj)
+                    
+                    await self.tree.sync(guild=test_guild_obj)
+                    logger.info(f"Synced restricted commands to test guild {TEST_GUILD_ID} (not in database)")
                 
 
                 

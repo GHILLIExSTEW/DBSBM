@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 # Add this near the top, after logger definition
 ALLOWED_LEAGUES = [
     "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
-    "Formula 1", "Tennis", "UFC/MMA", "WNBA", "CFL", "AFL", "Darts", "EuroLeague", "NPB", "KBO", "KHL"
+    "Formula 1", "Tennis", "MMA", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+    "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
+    "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL"
 ]
 
 # Add league name normalization mapping
@@ -49,6 +51,7 @@ LEAGUE_FILE_KEY_MAP = {
     'NPB': 'NPB',
     'KBO': 'KBO',
     'KHL': 'KHL',
+    'MMA': 'MMA',
     'PDC': 'PDC',
     'BDO': 'BDO',
     'WDF': 'WDF',
