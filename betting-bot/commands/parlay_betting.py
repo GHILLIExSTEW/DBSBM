@@ -381,67 +381,8 @@ class BetDetailsModal(Modal):
             if not odds:
                 raise ValidationError("Leg odds cannot be empty.")
             self.view_ref.current_leg_construction_details['odds'] = odds
-            # Add the leg to the parlay
-            if 'legs' not in self.view_ref.bet_details:
-                self.view_ref.bet_details['legs'] = []
-            self.view_ref.bet_details['legs'].append(self.view_ref.current_leg_construction_details.copy())
-            # Reset current leg construction details
-            self.view_ref.current_leg_construction_details = {}
-            # Generate preview image for the entire parlay (all legs so far) with default units=1.0
-            preview_file = None
-            try:
-                generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
-                legs = []
-                for leg in self.view_ref.bet_details.get('legs', []):
-                    leg_data = {
-                        'bet_type': leg.get('line_type', 'game_line'),
-                        'league': leg.get('league', ''),
-                        'home_team': leg.get('home_team_name', ''),
-                        'away_team': leg.get('away_team_name', ''),
-                        'selected_team': leg.get('team', ''),
-                        'line': leg.get('line', ''),
-                        'odds': leg.get('odds', leg.get('odds_str', '')),
-                    }
-                    if leg.get('line_type') == 'player_prop':
-                        leg_data['player_name'] = leg.get('player_name', '')
-                    legs.append(leg_data)
-                if legs is None:
-                    legs = []
-                total_odds = self.view_ref.bet_details.get('total_odds', None)
-                bet_id = str(self.view_ref.bet_details.get('bet_serial', ''))
-                bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-                # Always use units=1.0 for the first units selection preview
-                image_bytes = generator.generate_image(
-                    legs=legs,
-                    output_path=None,
-                    total_odds=total_odds,
-                    units=1.0,
-                    bet_id=bet_id,
-                    bet_datetime=bet_datetime,
-                    finalized=True
-                )
-                if image_bytes:
-                    self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
-                    self.view_ref.preview_image_bytes.seek(0)
-                    preview_file = File(self.view_ref.preview_image_bytes, filename="parlay_preview_units.png")
-                else:
-                    self.view_ref.preview_image_bytes = None
-                    preview_file = None
-            except Exception as e:
-                logger.exception(f"Error generating parlay preview image: {e}")
-                self.view_ref.preview_image_bytes = None
-                preview_file = None
-            # Immediately advance to units selection (step 7)
-            self.view_ref.current_step = 7
-            self.view_ref.clear_items()
-            self.view_ref.add_item(UnitsSelect(self.view_ref))
-            self.view_ref.add_item(ConfirmUnitsButton(self.view_ref))
-            self.view_ref.add_item(CancelButton(self.view_ref))
-            await interaction.response.edit_message(
-                content="Select units for your parlay:",
-                view=self.view_ref,
-                attachments=[preview_file] if preview_file else None
-            )
+            # Add the leg to the parlay and show LegDecisionView
+            await self.view_ref.add_leg(interaction, self.view_ref.current_leg_construction_details)
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
@@ -632,17 +573,17 @@ class AddAnotherLegButton(Button):
 
 class FinalizeParlayButton(Button):
     def __init__(self, parent_view: 'ParlayBetWorkflowView'):
-        super().__init__(label="Finalize Parlay", style=ButtonStyle.green)
+        super().__init__(
+            style=ButtonStyle.green,
+            label="Finalize Parlay",
+            custom_id=f"parlay_finalize_{parent_view.original_interaction.id}_{len(parent_view.bet_details.get('legs', []))}"
+        )
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
-        try:
-            # Show odds modal first
-            odds_modal = OddsModal(self.parent_view)
-            await interaction.response.send_modal(odds_modal)
-        except Exception as e:
-            logger.exception(f"Error in FinalizeParlayButton.callback: {e}")
-            await interaction.response.send_message("❌ An error occurred while finalizing your parlay. Please try again.", ephemeral=True)
+        # Proceed to odds and units selection
+        self.parent_view.current_step = 6  # Step for odds modal
+        await self.parent_view.go_next(interaction)
 
 class OddsModal(Modal):
     def __init__(self, parent_view: 'ParlayBetWorkflowView'):
@@ -854,13 +795,17 @@ class ParlayBetWorkflowView(View):
                     self.preview_image_bytes = io.BytesIO(image_bytes)
                     self.preview_image_bytes.seek(0)
                     preview_file = discord.File(self.preview_image_bytes, filename=f"parlay_preview.png")
+                    embed = discord.Embed(title=f"{len(self.bet_details['legs'])}-Leg Parlay Bet")
+                    embed.set_image(url="attachment://parlay_preview.png")
                 else:
                     self.preview_image_bytes = None
                     preview_file = None
+                    embed = None
             except Exception as e:
                 logger.error(f"Error generating parlay preview image: {e}")
                 self.preview_image_bytes = None
                 preview_file = None
+                embed = None
             # Show decision view for adding another leg or finalizing
             leg_count = len(self.bet_details['legs'])
             summary_text = self._generate_parlay_summary_text()
@@ -869,6 +814,7 @@ class ParlayBetWorkflowView(View):
                 modal_interaction,
                 content=f"✅ Line added for Leg {leg_count}\n\n{summary_text}\n\nAdd another leg or finalize?",
                 view=decision_view,
+                embed=embed,
                 file=preview_file
             )
         except Exception as e:
