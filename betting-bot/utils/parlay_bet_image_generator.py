@@ -18,7 +18,7 @@ class ParlayBetImageGenerator:
         self.font_huge = ImageFont.truetype(os.path.join(font_dir, "Roboto-Bold.ttf"), 48)
         self.font_vs_small = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 21)  # 3/4 of 28
 
-    def generate_image(self, legs, output_path, total_odds, units, bet_id, bet_datetime, finalized=False):
+    def generate_image(self, legs, output_path, total_odds, units, bet_id, bet_datetime, finalized=False, units_display_mode='auto', display_as_risk=None):
         """
         Generates a parlay bet slip image.
         Each leg in `legs` should be a dict with keys:
@@ -61,7 +61,7 @@ class ParlayBetImageGenerator:
             # Odds and units
             if units is None:
                 units = 1.00
-            self._draw_odds_and_units(draw, image, total_odds, units, int(y), int(image_width))
+            self._draw_odds_and_units(draw, image, total_odds, units, int(y), int(image_width), units_display_mode, display_as_risk)
             # Footer (bet id and timestamp)
             footer_padding = 12
             footer_y = int(image_height - footer_padding - self.font_mini.size)
@@ -214,11 +214,20 @@ class ParlayBetImageGenerator:
         if not units:
             payout_text = "Units: X"
         else:
+            from utils.bet_utils import determine_risk_win_display_auto, calculate_profit_from_odds, format_units_display
+            
             unit_label = "Unit" if units <= 1.0 else "Units"
+            
             if units_display_mode == 'manual' and display_as_risk is not None:
-                payout_text = f"To Risk {units:.2f} {unit_label}" if display_as_risk else f"To Win {units:.2f} {unit_label}"
+                payout_text = format_units_display(units, display_as_risk, unit_label)
             else:
-                payout_text = f"To Risk {units:.2f} {unit_label}" if profit < 1.0 else f"To Win {units:.2f} {unit_label}"
+                # Auto mode: intelligent determination based on odds and profit ratio
+                if units_display_mode == 'auto':
+                    display_as_risk_auto = determine_risk_win_display_auto(odds_val, units, profit)
+                    payout_text = format_units_display(units, display_as_risk_auto, unit_label)
+                else:
+                    # Fallback to old logic for backward compatibility
+                    payout_text = f"To Risk {units:.2f} {unit_label}" if profit < 1.0 else f"To Win {units:.2f} {unit_label}"
             
         risk_width = draw.textlength(payout_text, font=self.font_bold)
         

@@ -173,25 +173,24 @@ class GameLineImageGenerator:
         draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="white", anchor="lt")
 
         # Risk/Units (yellow, lock icons)
-        profit = 0.0
-        try:
-            odds_val = float(odds)
-            if odds_val < 0:
-                profit = units * (100.0 / abs(odds_val))
-            elif odds_val > 0:
-                profit = units * (odds_val / 100.0)
-            else:
-                profit = 0.0
-        except Exception:
-            profit = 0.0
+        from utils.bet_utils import determine_risk_win_display_auto, calculate_profit_from_odds, format_units_display
+        
+        profit = calculate_profit_from_odds(odds_val, units)
         unit_label = "Unit" if units <= 1 else "Units"
+        
         if units_display_mode == 'manual' and display_as_risk is not None:
-            payout_text = f"To Risk {units:.2f} {unit_label}" if display_as_risk else f"To Win {units:.2f} {unit_label}"
+            payout_text = format_units_display(units, display_as_risk, unit_label)
         else:
-            if profit < 1.0:
-                payout_text = f"To Risk {units:.2f} {unit_label}"
+            # Auto mode: intelligent determination based on odds and profit ratio
+            if units_display_mode == 'auto':
+                display_as_risk_auto = determine_risk_win_display_auto(odds_val, units, profit)
+                payout_text = format_units_display(units, display_as_risk_auto, unit_label)
             else:
-                payout_text = f"To Win {units:.2f} {unit_label}"
+                # Fallback to old logic for backward compatibility
+                if profit < 1.0:
+                    payout_text = f"To Risk {units:.2f} {unit_label}"
+                else:
+                    payout_text = f"To Win {units:.2f} {unit_label}"
         payout_bbox = font_risk.getbbox(payout_text)
         payout_w, payout_h = payout_bbox[2] - payout_bbox[0], payout_bbox[3] - payout_bbox[1]
         payout_y = odds_y + odds_h + 8

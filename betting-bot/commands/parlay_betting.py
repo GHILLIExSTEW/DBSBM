@@ -471,6 +471,14 @@ class UnitsSelect(Select):
         self.disabled = True
         # Update preview image with selected units, but do not proceed to channel selection yet
         try:
+            # Get guild settings for units display mode
+            guild_settings = await self.parent_view.bot.db_manager.fetch_one(
+                "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+                (str(self.parent_view.original_interaction.guild_id),)
+            )
+            units_display_mode = guild_settings.get('units_display_mode', 'auto') if guild_settings else 'auto'
+            display_as_risk = self.parent_view.bet_details.get('display_as_risk')
+            
             generator = ParlayBetImageGenerator(guild_id=self.parent_view.original_interaction.guild_id)
             legs = []
             for leg in self.parent_view.bet_details.get('legs', []):
@@ -499,7 +507,9 @@ class UnitsSelect(Select):
                 units=self.parent_view.bet_details['units'],
                 bet_id=bet_id,
                 bet_datetime=bet_datetime,
-                finalized=True
+                finalized=True,
+                units_display_mode=units_display_mode,
+                display_as_risk=display_as_risk
             )
             if image_bytes:
                 self.parent_view.preview_image_bytes = io.BytesIO(image_bytes)
@@ -993,6 +1003,15 @@ content=f"Current Parlay:\n{summary_text}",
     async def _handle_units_selection(self, interaction: Interaction, units: float):
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
+        
+        # Get guild settings for units display mode
+        guild_settings = await self.bot.db_manager.fetch_one(
+            "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+            (str(self.original_interaction.guild_id),)
+        )
+        units_display_mode = guild_settings.get('units_display_mode', 'auto') if guild_settings else 'auto'
+        display_as_risk = self.bet_details.get('display_as_risk')
+        
         try:
             generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
             legs = []
@@ -1026,7 +1045,9 @@ content=f"Current Parlay:\n{summary_text}",
                 units=units,
                 bet_id=bet_id,
                 bet_datetime=bet_datetime,
-                finalized=True
+                finalized=True,
+                units_display_mode=units_display_mode,
+                display_as_risk=display_as_risk
             )
             if image_bytes:
                 self.preview_image_bytes = io.BytesIO(image_bytes)
@@ -1107,6 +1128,14 @@ content=f"Current Parlay:\n{summary_text}",
         logger.info(f"Submitting parlay bet {bet_serial} by user {interaction.user.id}")
         # Regenerate image with all details before posting
         try:
+            # Get guild settings for units display mode
+            guild_settings = await self.bot.db_manager.fetch_one(
+                "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+                (str(self.original_interaction.guild_id),)
+            )
+            units_display_mode = guild_settings.get('units_display_mode', 'auto') if guild_settings else 'auto'
+            display_as_risk = details.get('display_as_risk')
+            
             generator = ParlayBetImageGenerator(guild_id=self.original_interaction.guild_id)
             legs = []
             for leg in details.get('legs', []):
@@ -1136,7 +1165,9 @@ content=f"Current Parlay:\n{summary_text}",
                 units=units_val,
                 bet_id=bet_id,
                 bet_datetime=bet_datetime,
-                finalized=True
+                finalized=True,
+                units_display_mode=units_display_mode,
+                display_as_risk=display_as_risk
             )
             discord_file_to_send = None
             if image_bytes:

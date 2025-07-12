@@ -722,7 +722,9 @@ class StraightBetWorkflowView(View):
                                 bet_id=bet_id,
                                 timestamp=timestamp,
                                 selected_team=self.bet_details.get("team", home_team),
-                                output_path=None
+                                output_path=None,
+                                units_display_mode='auto',  # Default to auto for preview
+                                display_as_risk=None
                             )
                             if bet_slip_image_bytes:
                                 self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
@@ -747,7 +749,9 @@ class StraightBetWorkflowView(View):
                                 bet_id=bet_id,
                                 timestamp=timestamp,
                                 guild_id=str(self.original_interaction.guild_id),
-                                odds=odds
+                                odds=odds,
+                                units_display_mode='auto',  # Default to auto for preview
+                                display_as_risk=None
                             )
                             if bet_slip_image_bytes:
                                 self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
@@ -1026,6 +1030,15 @@ class StraightBetWorkflowView(View):
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
         bet_slip_image = None  # Always define this
+        
+        # Get guild settings for units display mode
+        guild_settings = await self.bot.db_manager.fetch_one(
+            "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+            (str(self.original_interaction.guild_id),)
+        )
+        units_display_mode = guild_settings.get('units_display_mode', 'auto') if guild_settings else 'auto'
+        display_as_risk = self.bet_details.get('display_as_risk')
+        
         try:
             bet_type = self.bet_details.get("line_type", "game_line")
             league = self.bet_details.get("league", "N/A")
@@ -1050,7 +1063,9 @@ class StraightBetWorkflowView(View):
                     bet_id=bet_id,
                     timestamp=timestamp,
                     selected_team=self.bet_details.get("team", home_team),
-                    output_path=None
+                    output_path=None,
+                    units_display_mode=units_display_mode,
+                    display_as_risk=display_as_risk
                 )
                 if bet_slip_image_bytes:
                     self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
@@ -1078,7 +1093,9 @@ class StraightBetWorkflowView(View):
                     bet_id=bet_id,
                     timestamp=timestamp,
                     guild_id=str(self.original_interaction.guild_id),
-                    odds=odds  # Pass odds if needed for payout, not for display
+                    odds=odds,  # Pass odds if needed for payout, not for display
+                    units_display_mode=units_display_mode,
+                    display_as_risk=display_as_risk
                 )
                 if bet_slip_image_bytes:
                     self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
