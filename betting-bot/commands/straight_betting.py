@@ -331,8 +331,8 @@ class TeamSelect(Select):
     def __init__(self, parent_view: View, home_team: str, away_team: str):
         self.parent_view = parent_view
         options = [
-            SelectOption(label=home_team[:100], value=home_team[:100]),
-            SelectOption(label=away_team[:100], value=away_team[:100]),
+            SelectOption(label=home_team[:100], value=(home_team[:96] + "_home") if home_team else "home"),
+            SelectOption(label=away_team[:100], value=(away_team[:96] + "_away") if away_team else "away"),
         ]
         super().__init__(
             placeholder="Which team are you selecting?",
@@ -342,12 +342,15 @@ class TeamSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        selected_team = self.values[0]
+        selected_value = self.values[0]
+        # Map back to team names
         home_team = self.parent_view.bet_details.get("home_team_name", "")
         away_team = self.parent_view.bet_details.get("away_team_name", "")
-        if selected_team == home_team:
+        if selected_value.endswith("_home"):
+            selected_team = home_team
             opponent = away_team
         else:
+            selected_team = away_team
             opponent = home_team
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent

@@ -112,33 +112,48 @@ class ParlayBetImageGenerator:
         # Draw rounded rectangle background for the leg
         draw.rounded_rectangle([(card_x0, card_y), (card_x1, card_y1)], radius=card_radius, fill="#181c24")
 
-        # Draw team logos and names
         if bet_type == 'game_line':
-            margin_left = card_x0 + 24
-            name_y = card_y + 32
-            # Home team
+            # Centered layout: [Home Logo+Name]   VS   [Away Logo+Name]
+            center_x = (card_x0 + card_x1) // 2
+            team_col_width = 180
+            vs_width = draw.textlength("VS", font=self.font_vs_small)
+            spacing = 32
+            # Home team position
+            home_col_x = center_x - team_col_width//2 - spacing//2 - vs_width//2
+            away_col_x = center_x + spacing//2 + vs_width//2
+            logo_y = card_y + 20
+            name_y = logo_y + logo_size[1] + 6
+            # Home logo and name
             home_logo = self._load_team_logo(home_team, league)
             if home_logo:
                 home_logo = home_logo.convert('RGBA').resize(logo_size)
-                image.paste(home_logo, (margin_left, name_y - 8), home_logo)
-            home_name_x = margin_left + logo_size[0] + 12
+                logo_x = home_col_x + team_col_width//2 - logo_size[0]//2
+                image.paste(home_logo, (int(logo_x), int(logo_y)), home_logo)
+            home_name_w = draw.textlength(home_team, font=team_font)
+            home_name_x = home_col_x + team_col_width//2 - home_name_w//2
             home_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
-            draw.text((home_name_x, name_y), home_team, font=team_font, fill=home_color)
-            # VS and away team
-            vs_text = "VS"
-            vs_font = self.font_vs_small
-            vs_x = home_name_x + draw.textlength(home_team, font=team_font) + 16
-            draw.text((vs_x, name_y), vs_text, font=vs_font, fill="#888888")
-            away_name_x = vs_x + draw.textlength(vs_text, font=vs_font) + 16
-            away_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
-            draw.text((away_name_x, name_y), away_team, font=team_font, fill=away_color)
+            draw.text((int(home_name_x), int(name_y)), home_team, font=team_font, fill=home_color)
+            # Away logo and name
             away_logo = self._load_team_logo(away_team, league)
             if away_logo:
                 away_logo = away_logo.convert('RGBA').resize(logo_size)
-                image.paste(away_logo, (card_x1 - logo_size[0] - 24, name_y - 8), away_logo)
-            # Line (below names)
+                logo_x = away_col_x + team_col_width//2 - logo_size[0]//2
+                image.paste(away_logo, (int(logo_x), int(logo_y)), away_logo)
+            away_name_w = draw.textlength(away_team, font=team_font)
+            away_name_x = away_col_x + team_col_width//2 - away_name_w//2
+            away_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
+            draw.text((int(away_name_x), int(name_y)), away_team, font=team_font, fill=away_color)
+            # VS
+            vs_text = "VS"
+            vs_font = self.font_vs_small
+            vs_x = center_x - vs_width//2
+            vs_y = logo_y + logo_size[1]//2 - self.font_vs_small.size//2
+            draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
+            # Line (below names, centered)
             line_y = name_y + 38
-            draw.text((home_name_x, line_y), line, font=line_font, fill="#ffffff")
+            line_w = draw.textlength(line, font=line_font)
+            line_x = center_x - line_w//2
+            draw.text((int(line_x), int(line_y)), line, font=line_font, fill="#ffffff")
         elif bet_type == 'player_prop':
             margin_left = card_x0 + 24
             name_y = card_y + 32
