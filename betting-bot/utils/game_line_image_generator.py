@@ -60,18 +60,23 @@ class GameLineImageGenerator:
         from datetime import datetime, timezone
         import os
         from config.asset_paths import get_sport_category_for_path
+        from config.image_settings import (
+            IMAGE_WIDTH, IMAGE_HEIGHT, BACKGROUND_COLOR, DEFAULT_PADDING, LOGO_SIZE,
+            HEADER_FONT_SIZE, TEAM_FONT_SIZE, VS_FONT_SIZE, LINE_FONT_SIZE, 
+            ODDS_FONT_SIZE, RISK_FONT_SIZE, FOOTER_FONT_SIZE, TEXT_COLOR, ODDS_COLOR
+        )
 
-        image_width, image_height = 600, 400
-        bg_color = "#232733"
-        padding = 24
-        logo_size = (120, 120)
-        header_font_size = 36
-        team_font_size = 24
-        vs_font_size = 28
-        line_font_size = 24
-        odds_font_size = 28
-        risk_font_size = 24
-        footer_font_size = 18
+        image_width, image_height = IMAGE_WIDTH, IMAGE_HEIGHT
+        bg_color = BACKGROUND_COLOR
+        padding = DEFAULT_PADDING
+        logo_size = LOGO_SIZE
+        header_font_size = HEADER_FONT_SIZE
+        team_font_size = TEAM_FONT_SIZE
+        vs_font_size = VS_FONT_SIZE
+        line_font_size = LINE_FONT_SIZE
+        odds_font_size = ODDS_FONT_SIZE
+        risk_font_size = RISK_FONT_SIZE
+        footer_font_size = FOOTER_FONT_SIZE
         lock_icon_path = "betting-bot/static/lock_icon.png"
 
         font_dir = "betting-bot/assets/fonts"

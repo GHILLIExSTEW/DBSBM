@@ -79,7 +79,7 @@ class PlayerPropImageGenerator:
                     home_logo_x = home_section_center_x - logo_size[0] // 2
                     img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)), home_logo_resized)
                 except Exception as e:
-                    print(f"Error pasting team logo: {e}")
+                    logger.error(f"Error pasting team logo: {e}")
 
         # Draw player image on the right (never opponent logo)
         if player_image:
@@ -91,7 +91,7 @@ class PlayerPropImageGenerator:
                 player_image_y = int(y_base_images + (logo_size[1] - player_img_h) // 2)
                 img.paste(player_image_copy, (int(player_image_x), int(player_image_y)), player_image_copy)
             except Exception as e:
-                print(f"Error pasting player image: {e}")
+                logger.error(f"Error pasting player image: {e}")
 
         # Draw player name below the images (centered)
         player_name_w, player_name_h = draw.textsize(player_name, font=player_name_font)

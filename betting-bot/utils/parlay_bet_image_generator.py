@@ -57,7 +57,7 @@ class ParlayBetImageGenerator:
             y += leg_height
 
         if finalized:
-            print(f"[DEBUG] Rendering finalized parlay image: odds={total_odds}, units={units}, bet_id={bet_id}, bet_datetime={bet_datetime}")
+            logger.debug(f"Rendering finalized parlay image: odds={total_odds}, units={units}, bet_id={bet_id}, bet_datetime={bet_datetime}")
             # Odds and units
             if units is None:
                 units = 1.00

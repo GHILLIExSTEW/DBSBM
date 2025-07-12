@@ -20,7 +20,9 @@ except ImportError:
     )
 
 if not MYSQL_DB:
-    print("CRITICAL ERROR: MYSQL_DB environment variable is not set.")
+    logger.critical("CRITICAL ERROR: MYSQL_DB environment variable is not set.")
+    logger.critical("Please set MYSQL_DB in your .env file or environment variables.")
+    logger.critical("Example: MYSQL_DB=betting_bot")
 
 logger = logging.getLogger(__name__)
 logging.getLogger("aiomysql").setLevel(logging.WARNING)
@@ -32,23 +34,33 @@ class DatabaseManager:
         """Initializes the DatabaseManager."""
         self._pool: Optional[aiomysql.Pool] = None
         self.db_name = MYSQL_DB
-        logger.info("MySQL DatabaseManager initialized.")
-        if not all([MYSQL_HOST, MYSQL_USER, self.db_name, MYSQL_PASSWORD is not None]):
-            logger.critical(
-                "Missing one or more MySQL environment variables "
-                "(HOST, USER, PASSWORD, DB). DatabaseManager cannot connect."
-            )
+        
+        # Validate environment variables on initialization
+        missing_vars = []
+        if not MYSQL_HOST:
+            missing_vars.append("MYSQL_HOST")
+        if not MYSQL_USER:
+            missing_vars.append("MYSQL_USER")
+        if not MYSQL_PASSWORD:
+            missing_vars.append("MYSQL_PASSWORD")
+        if not self.db_name:
+            missing_vars.append("MYSQL_DB")
+            
+        if missing_vars:
+            logger.critical(f"Missing required MySQL environment variables: {', '.join(missing_vars)}")
+            logger.critical("Please set all required variables in your .env file:")
+            logger.critical("MYSQL_HOST=localhost")
+            logger.critical("MYSQL_USER=your_username")
+            logger.critical("MYSQL_PASSWORD=your_password")
+            logger.critical("MYSQL_DB=your_database_name")
+            raise ValueError(f"Missing required MySQL environment variables: {', '.join(missing_vars)}")
+        
+        logger.info("MySQL DatabaseManager initialized successfully.")
+        logger.debug(f"Database configuration: Host={MYSQL_HOST}, Port={MYSQL_PORT}, DB={self.db_name}, User={MYSQL_USER}")
 
     async def connect(self) -> Optional[aiomysql.Pool]:
         """Create or return existing MySQL connection pool."""
         if self._pool is None:
-            if not all([MYSQL_HOST, MYSQL_USER, self.db_name, MYSQL_PASSWORD is not None]):
-                logger.critical(
-                    "Cannot connect: MySQL environment variables are not "
-                    "configured."
-                )
-                return None
-
             logger.info("Attempting to create MySQL connection pool...")
             max_retries = 3
             retry_delay = 5  # seconds

@@ -523,9 +523,104 @@ class NHLPlayerPropModal(BasePlayerPropModal):
 #     },
 # }
 
-# --- Parlay Modal (Stub for future expansion) ---
+# --- Parlay Modal ---
 class ParlayBetDetailsModal(Modal):
     def __init__(self, bet_details_from_view: Dict[str, Any]):
-        super().__init__(title="Parlay Bet Details (Coming Soon)")
-        # Add fields as needed for parlay legs, odds, etc.
-        pass
+        super().__init__(title="Parlay Bet Details")
+        self.view_ref = bet_details_from_view.get('view_ref')
+        self.bet_details = bet_details_from_view
+
+        # Total Odds (calculated from legs, but user can override)
+        self.total_odds_input = TextInput(
+            label="Total Odds",
+            required=True,
+            max_length=10,
+            placeholder="e.g., +500 or -150",
+            default=bet_details_from_view.get('total_odds_str', '')
+        )
+        self.add_item(self.total_odds_input)
+
+        # Units
+        self.units_input = TextInput(
+            label="Units",
+            required=True,
+            max_length=10,
+            placeholder="e.g., 1.0 or 2.5",
+            default=bet_details_from_view.get('units_str', '1.0')
+        )
+        self.add_item(self.units_input)
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        try:
+            # Validate and store total odds
+            total_odds_str = self.total_odds_input.value.strip()
+            try:
+                total_odds = float(total_odds_str)
+                self.view_ref.bet_details['total_odds'] = total_odds
+                self.view_ref.bet_details['total_odds_str'] = total_odds_str
+            except ValueError:
+                await interaction.response.send_message("❌ Invalid total odds format. Please use numbers like +500 or -150.", ephemeral=True)
+                return
+
+            # Validate and store units
+            units_str = self.units_input.value.strip()
+            try:
+                units = float(units_str)
+                if units <= 0:
+                    await interaction.response.send_message("❌ Units must be greater than 0.", ephemeral=True)
+                    return
+                self.view_ref.bet_details['units'] = units
+                self.view_ref.bet_details['units_str'] = units_str
+            except ValueError:
+                await interaction.response.send_message("❌ Invalid units format. Please use numbers like 1.0 or 2.5.", ephemeral=True)
+                return
+
+            # Generate preview image
+            try:
+                from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+                generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                
+                # Get legs from bet details
+                legs = self.view_ref.bet_details.get('legs', [])
+                
+                # Generate the parlay image
+                image_bytes = generator.generate_image(
+                    legs=legs,
+                    output_path=None,
+                    total_odds=total_odds,
+                    units=units,
+                    bet_id=str(self.view_ref.bet_details.get('bet_serial', '')),
+                    bet_datetime=datetime.now(timezone.utc),
+                    finalized=True,
+                    units_display_mode=self.view_ref.bet_details.get('units_display_mode', 'auto'),
+                    display_as_risk=self.view_ref.bet_details.get('display_as_risk')
+                )
+                
+                if image_bytes:
+                    self.view_ref.preview_image_bytes = image_bytes
+                else:
+                    self.view_ref.preview_image_bytes = None
+                    
+            except Exception as e:
+                logger.error(f"Error generating parlay preview image: {e}")
+                self.view_ref.preview_image_bytes = None
+
+            # Advance workflow
+            if hasattr(self.view_ref, 'current_step'):
+                self.view_ref.current_step += 1
+                logger.info(f"[PARLAY MODAL] Advancing to step {self.view_ref.current_step}")
+                await self.view_ref.go_next(interaction)
+            else:
+                logger.error("View reference missing current_step attribute")
+                await interaction.response.send_message("Error: Could not advance workflow", ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Error in ParlayBetDetailsModal: {e}", exc_info=True)
+            await interaction.response.send_message("❌ Error processing parlay details. Please try again.", ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        logger.error(f"Error in ParlayBetDetailsModal: {error}", exc_info=True)
+        try:
+            await interaction.response.send_message("❌ Error processing parlay details. Please try again.", ephemeral=True)
+        except discord.HTTPException:
+            pass
