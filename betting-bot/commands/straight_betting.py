@@ -664,10 +664,10 @@ class StraightBetWorkflowView(View):
             # Step 1: League selection
             leagues = [
                 "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
-                "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+                "ChampionsLeague", "EuropaLeague", "WorldCup", "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
                 "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
                 "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
-                "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
+                "SuperRugby", "SixNations", "FIVB", "EHF"
             ]
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
