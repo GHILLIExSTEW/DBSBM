@@ -140,7 +140,7 @@ async def setup(bot: commands.Bot):
         if TEST_GUILD_ID:
             test_guild = discord.Object(id=TEST_GUILD_ID)
             bot.tree.copy_global_to(guild=test_guild)
-            await bot.tree.sync(guild=test_guild)
+            # await bot.tree.sync(guild=test_guild)  # DISABLED: Prevent rate limit
             logger.info(f"Successfully synced schedule command to test guild {TEST_GUILD_ID}")
         else:
             logger.warning("TEST_GUILD_ID not set, command will not be synced to test guild")

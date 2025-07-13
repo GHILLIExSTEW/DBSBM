@@ -28,8 +28,8 @@ class SyncCog(commands.Cog):
 
             # Clear existing commands and sync globally
             self.bot.tree.clear_commands(guild=None)
-            synced = await self.bot.tree.sync()
-            logger.info("Global commands synced: %s", [cmd.name for cmd in synced])
+            # synced = await self.bot.tree.sync()  # DISABLED: Prevent rate limit
+            logger.info("Global commands synced: %s", [cmd.name for cmd in self.bot.tree.get_commands()])
             
             # Log final command list for verification
             global_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
