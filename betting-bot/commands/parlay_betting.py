@@ -760,7 +760,7 @@ class FinalizeParlayButton(Button):
 
     async def callback(self, interaction: Interaction):
         # Proceed to odds and units selection
-        self.parent_view.current_step = 6  # Step for odds modal
+        self.parent_view.current_step = 7  # Step for odds modal
         await self.parent_view.go_next(interaction)
 
 class OddsModal(Modal):
@@ -1100,7 +1100,40 @@ class ParlayBetWorkflowView(View):
             await self.edit_message_for_current_leg(interaction, content="Select the type of bet for this leg:", view=self)
             return
         elif self.current_step == 3:
-            # Step 3: Game selection or modal (depending on manual entry and sport type)
+            # Step 3: Game selection
+            league = self.current_leg_construction_details.get("league", "N/A")
+            line_type = self.current_leg_construction_details.get("line_type", "game_line")
+            logger.info(f"[PARLAY WORKFLOW] Fetching games for league: {league}, line_type: {line_type}")
+            
+            try:
+                # Fetch games using the correct method
+                games = await get_normalized_games_for_dropdown(self.bot.db_manager, league)
+                
+                if not games:
+                    await self.edit_message_for_current_leg(
+                        interaction,
+                        content=f"No games found for {league}. Please try a different league or check back later.",
+                        view=None
+                    )
+                    self.stop()
+                    return
+                
+                self.clear_items()
+                self.add_item(ParlayGameSelect(self, games))
+                self.add_item(CancelButton(self))
+                await self.edit_message_for_current_leg(interaction, content="Select a game for this leg:", view=self)
+                
+            except Exception as e:
+                logger.error(f"Error fetching games: {e}")
+                await self.edit_message_for_current_leg(
+                    interaction,
+                    content=f"Error fetching games for {league}. Please try again or contact support.",
+                    view=None
+                )
+                self.stop()
+                return
+        elif self.current_step == 4:
+            # Step 4: Team selection or modal (depending on manual entry and sport type)
             league = self.current_leg_construction_details.get("league", "N/A")
             line_type = self.current_leg_construction_details.get("line_type", "game_line")
             is_manual = self.current_leg_construction_details.get('is_manual', False)
@@ -1154,10 +1187,10 @@ class ParlayBetWorkflowView(View):
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(interaction, content="Select which team you are betting on:", view=self)
                 return
-        elif self.current_step == 4:
+        elif self.current_step == 5:
             # Show bet details modal (handled by modal, so just return)
             return
-        elif self.current_step == 5:
+        elif self.current_step == 6:
             # Show summary and decision view
             summary_text = self._generate_parlay_summary_text()
             decision_view = LegDecisionView(self)
@@ -1168,13 +1201,13 @@ class ParlayBetWorkflowView(View):
             )
             self.current_step += 1
             return
-        elif self.current_step == 6:
+        elif self.current_step == 7:
             # Show total odds modal
             modal = TotalOddsModal(view_custom_id_suffix=self.original_interaction.id)
             modal.view_ref = self
             await interaction.response.send_modal(modal)
             return
-        elif self.current_step == 7:
+        elif self.current_step == 8:
             # Show units select
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
@@ -1182,7 +1215,7 @@ class ParlayBetWorkflowView(View):
             await self.edit_message_for_current_leg(interaction, content="Select units for your parlay:", view=self)
             self.current_step += 1
             return
-        elif self.current_step == 8:
+        elif self.current_step == 9:
             # Show channel selection
             try:
                 # Get available channels for the user
@@ -1217,7 +1250,7 @@ class ParlayBetWorkflowView(View):
                 return
                 
             except Exception as e:
-                logger.error(f"Error in step 8: {e}")
+                logger.error(f"Error in step 9: {e}")
                 await self.edit_message_for_current_leg(interaction, content=f"❌ Error: {e}", view=None)
                 self.stop()
                 return

@@ -684,13 +684,9 @@ class StraightBetWorkflowView(View):
             logger.info(f"[WORKFLOW TRACE] Fetching games for league: {league}, line_type: {line_type}")
             
             try:
-                # Fetch games based on line type
-                if line_type == "game_line":
-                    games = await self.bot.get_cog('GameFetcher').fetch_games_for_league(league)
-                elif line_type == "player_prop":
-                    games = await self.bot.get_cog('GameFetcher').fetch_games_for_league(league)
-                else:
-                    games = []
+                # Fetch games using the correct method
+                from data.game_utils import get_normalized_games_for_dropdown
+                games = await get_normalized_games_for_dropdown(self.bot.db_manager, league)
                 
                 if not games:
                     await self.edit_message(
