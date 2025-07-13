@@ -40,7 +40,6 @@ class OddsDropdown(discord.ui.Select):
         else:
             idx = int(value)
             game = self.parent_view.all_games[idx]
-            # Fetch odds and show embed
             embed = await self.parent_view.cog.create_odds_embed_for_game(game)
             await interaction.response.edit_message(embed=embed, view=None)
 
@@ -57,6 +56,10 @@ class OddsDropdownView(discord.ui.View):
         start = self.page * self.page_size
         end = min(start + self.page_size, len(self.all_games))
         games = self.all_games[start:end]
+        # Log the games being displayed for debugging
+        logger.info(f"Dropdown page {self.page}: displaying games {start} to {end}:")
+        for i, g in enumerate(games, start):
+            logger.info(f"  {i}: {g['home_team_name']} vs {g['away_team_name']}")
         self.clear_items()
         self.add_item(OddsDropdown(games, self.page, self.page_size, len(self.all_games), self))
 
@@ -235,6 +238,9 @@ class Odds(commands.Cog):
             return
         await interaction.response.defer(ephemeral=True)
         games = await self.get_upcoming_games(hours)
+        logger.info(f"Games fetched from DB for dropdown: {len(games)} games")
+        for i, g in enumerate(games):
+            logger.info(f"  {i}: {g['home_team_name']} vs {g['away_team_name']}")
         if not games:
             await interaction.followup.send("No games found.", ephemeral=True)
             return
