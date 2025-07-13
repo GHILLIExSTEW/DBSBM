@@ -914,14 +914,47 @@ class StraightBetWorkflowView(View):
             bet_service = getattr(self.bot, "bet_service", None)
             logger.info(f"[submit_bet] Starting bet submission with details: {json.dumps(details, default=str)}")
             
+            # Create the bet if it doesn't exist
             if not details.get("bet_serial"):
-                logger.error("[submit_bet] No bet_serial found in details")
-                await self.edit_message(content="❌ Error: Bet not found. Please try again.", view=None)
-                self.stop()
-                return
+                logger.info("[submit_bet] No bet_serial found, creating new bet")
+                if bet_service:
+                    try:
+                        bet_serial = await bet_service.create_straight_bet(
+                            guild_id=self.original_interaction.guild_id,
+                            user_id=self.original_interaction.user.id,
+                            league=details.get("league", "N/A"),
+                            bet_type=details.get("line_type", "game_line"),
+                            units=float(details.get("units", 1.0)),
+                            odds=float(details.get("odds", 0.0)),
+                            team=details.get("team"),
+                            opponent=details.get("opponent"),
+                            line=details.get("line"),
+                            api_game_id=details.get("api_game_id"),
+                            channel_id=details.get("channel_id"),
+                            confirmed=1  # Mark as confirmed immediately
+                        )
+                        if bet_serial:
+                            details["bet_serial"] = bet_serial
+                            self.bet_details["bet_serial"] = bet_serial
+                            logger.info(f"[submit_bet] Created bet with serial: {bet_serial}")
+                        else:
+                            logger.error("[submit_bet] Failed to create bet - no serial returned")
+                            await self.edit_message(content="❌ Error: Failed to create bet. Please try again.", view=None)
+                            self.stop()
+                            return
+                    except Exception as e:
+                        logger.error(f"[submit_bet] Failed to create bet: {str(e)}", exc_info=True)
+                        await self.edit_message(content=f"❌ Failed to create bet: {str(e)}", view=None)
+                        self.stop()
+                        return
+                else:
+                    logger.error("[submit_bet] No bet_service available")
+                    await self.edit_message(content="❌ Error: Bet service not available. Please try again.", view=None)
+                    self.stop()
+                    return
 
             # Update the bet with channel_id, units, and confirm it
-            if bet_service:
+            if bet_service and details.get("bet_serial"):
                 try:
                     await bet_service.update_bet(
                         bet_serial=details["bet_serial"],
@@ -1374,27 +1407,8 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
-                # --- Assign bet serial for all bets after modal submit/preview ---
-                if not self.bet_details.get("bet_serial"):
-                    bet_service = getattr(self.view_ref.bot, "bet_service", None)
-                    if bet_service:
-                        bet_serial = await bet_service.create_straight_bet(
-                            guild_id=self.view_ref.original_interaction.guild_id,
-                            user_id=self.view_ref.original_interaction.user.id,
-                            league=self.bet_details.get("league", "N/A"),
-                            bet_type=self.line_type,
-                            units=float(self.bet_details.get("units", 1.0)),
-                            odds=float(self.bet_details.get("odds", 0.0)),
-                            team=self.bet_details.get("team"),
-                            opponent=self.bet_details.get("opponent"),
-                            line=self.bet_details.get("line"),
-                            api_game_id=self.bet_details.get("api_game_id"),
-                            channel_id=None,
-                            confirmed=0
-                        )
-                        if bet_serial:
-                            self.bet_details["bet_serial"] = bet_serial
-                            self.view_ref.bet_details["bet_serial"] = bet_serial
+                # Update the view's bet_details with the modal data
+                self.view_ref.bet_details.update(self.bet_details)
                 if not interaction.response.is_done():
                     await interaction.response.defer()
                 self.view_ref.current_step = 4  # Ensure next step is units selection
