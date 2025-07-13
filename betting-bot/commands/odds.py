@@ -69,7 +69,7 @@ class OddsDropdownView(discord.ui.View):
 class Odds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.api_sports_key = os.getenv("API_SPORTS_KEY")
+        self.api_sports_key = os.getenv("API_KEY")
         if not self.api_sports_key:
             logger.warning("API-Sports key not found in environment variables")
 
