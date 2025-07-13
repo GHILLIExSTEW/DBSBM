@@ -393,7 +393,6 @@ async def get_normalized_games_for_dropdown(
     """Fetch and normalize games for a league from the api_games table for use in a bet dropdown."""
     logger.info(f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}")
     
-    # Initialize dropdown_games with manual entry option
     dropdown_games = [{
         'id': 'manual',
         'api_game_id': 'manual',
@@ -405,34 +404,32 @@ async def get_normalized_games_for_dropdown(
         'away_team_name': 'Manual Entry',
     }]
     
-    # Get sport and league name from LEAGUE_IDS
     sport = None
     league_key = None
     for key, league_info in LEAGUE_IDS.items():
         if key == league_name:
             sport = league_info.get('sport', '').capitalize()
             league_key = key
-            # Use the full league name from LEAGUE_CONFIG
-            league_name = LEAGUE_CONFIG.get(league_info.get('sport', ''), {}).get(key, {}).get('name', key)
-            # Convert MLB to full name
-            if league_name == "MLB":
-                league_name = "Major League Baseball"
-            logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name}")
+            league_name_db = LEAGUE_CONFIG.get(league_info.get('sport', ''), {}).get(key, {}).get('name', key)
+            if league_name_db == "MLB":
+                league_name_db = "Major League Baseball"
+            logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name_db}")
             break
     
     if not sport or not league_name:
         logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
-        return dropdown_games  # Return just manual entry option
+        return dropdown_games
     
     # Build possible league names (abbreviation, full name, and common aliases)
     league_names = set()
-    league_names.add(league_name)
     league_abbr = get_league_abbreviation(league_name)
-    if league_abbr != league_name:
-        league_names.add(league_abbr)
+    league_names.add(league_name)
+    league_names.add(league_abbr)
     normalized_full = normalize_league_name(league_abbr)
-    if normalized_full != league_name:
-        league_names.add(normalized_full)
+    league_names.add(normalized_full)
+    # Add all known aliases for WorldCup
+    if league_key == "WorldCup":
+        league_names.update(["WorldCup", "FIFA World Cup", "FIFA Club World Cup"])
     # Add more common aliases for major leagues
     aliases = {
         'NBA': ['NBA', 'National Basketball Association'],
