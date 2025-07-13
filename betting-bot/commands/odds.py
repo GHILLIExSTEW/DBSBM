@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 import logging
 from typing import List, Dict, Optional
+import difflib
 
 logger = logging.getLogger(__name__)
 
