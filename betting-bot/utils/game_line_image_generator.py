@@ -19,24 +19,37 @@ def generate_player_prop_bet_image(player_name, player_picture_path, team_name, 
     import os
     # Determine if this is a non-team-based league (individual sport)
     from config.leagues import LEAGUE_CONFIG
-    league_key = team_name.upper() if team_name.upper() in LEAGUE_CONFIG else None
+    # Always use the league for sport_type lookup, not team_name
+    league_key = None
+    if team_logo_path:
+        # Try to extract league from the path, e.g. .../DARTS/PDC/...
+        parts = team_logo_path.split(os.sep)
+        for part in parts:
+            if part.upper() in LEAGUE_CONFIG:
+                league_key = part.upper()
+                break
+    if not league_key and team_name.upper() in LEAGUE_CONFIG:
+        league_key = team_name.upper()
     sport_type = None
     if league_key:
         sport_type = LEAGUE_CONFIG[league_key].get('sport_type', None)
-    # Fallback: try to infer from team_logo_path
-    sport = 'darts'
-    if team_logo_path and 'darts' in team_logo_path.lower():
+        sport = LEAGUE_CONFIG[league_key].get('sport', 'darts').lower()
+    else:
+        # fallback to guessing from path
         sport = 'darts'
-    elif team_logo_path and 'tennis' in team_logo_path.lower():
-        sport = 'tennis'
-    elif team_logo_path and 'golf' in team_logo_path.lower():
-        sport = 'golf'
-    elif team_logo_path and 'mma' in team_logo_path.lower():
-        sport = 'mma'
-    elif team_logo_path and 'f1' in team_logo_path.lower():
-        sport = 'f1'
-    # Only use this logic for non-team-based leagues
-    if sport_type == 'Individual Player' or sport in ['darts', 'tennis', 'golf', 'mma', 'f1']:
+        if team_logo_path and 'darts' in team_logo_path.lower():
+            sport = 'darts'
+        elif team_logo_path and 'tennis' in team_logo_path.lower():
+            sport = 'tennis'
+        elif team_logo_path and 'golf' in team_logo_path.lower():
+            sport = 'golf'
+        elif team_logo_path and 'mma' in team_logo_path.lower():
+            sport = 'mma'
+        elif team_logo_path and 'f1' in team_logo_path.lower():
+            sport = 'f1'
+
+    # Only use this logic for non-team-based leagues (player props for individual sports)
+    if sport_type == 'Individual Player':
         player_img = Image.open(player_picture_path).resize((100, 100))
         image.paste(player_img, (50, 100))
         default_sport_path = f"betting-bot/static/logos/default_{sport}.png"
