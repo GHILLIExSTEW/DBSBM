@@ -291,6 +291,7 @@ class GameSelect(Select):
                 selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
                 bet_details_from_view=self.parent_view.bet_details,
                 is_manual=True,
+                view_custom_id_suffix=str(interaction.id)
             )
             modal.view_ref = self.parent_view
             if not interaction.response.is_done():
@@ -387,6 +388,7 @@ class TeamSelect(Select):
             selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
             bet_details_from_view=self.parent_view.bet_details,
             is_manual=is_manual,
+            view_custom_id_suffix=str(interaction.id)
         )
         modal.view_ref = self.parent_view
         if not interaction.response.is_done():
@@ -504,6 +506,7 @@ class ConfirmButton(Button):
                 selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
                 bet_details_from_view=self.parent_view.bet_details,
                 is_manual=True,
+                view_custom_id_suffix=str(interaction.id)
             )
             modal.view_ref = self.parent_view
             if not interaction.response.is_done():
