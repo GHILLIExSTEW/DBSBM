@@ -76,6 +76,11 @@ REQUIRED_ENV_VARS = {
     "MYSQL_DB": os.getenv("MYSQL_DB"),
     "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
 }
+
+# Optional environment variables
+OPTIONAL_ENV_VARS = {
+    "ODDS_API_KEY": os.getenv("ODDS_API_KEY"),  # For The Odds API integration
+}
 missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
 if missing_vars:
     logger.critical("Missing required environment variables: %s", ", ".join(missing_vars))
@@ -212,6 +217,7 @@ class BettingBot(commands.Bot):
             "load_logos.py",
             "schedule.py",
             "maintenance.py",
+            "odds.py",  # New odds command
         ]
         loaded_commands = []
         for filename in cog_files:

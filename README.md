@@ -9,6 +9,7 @@ A Discord bot for managing sports betting and capper statistics.
 - Manage cappers and their profiles
 - Admin commands for server setup
 - Team and league logo management
+- Get current odds for upcoming games (requires Odds API key)
 
 ## Commands
 
@@ -18,6 +19,8 @@ A Discord bot for managing sports betting and capper statistics.
 - `/setid` - Set up a user as a capper
 - `/remove_user` - Remove a user from the server
 - `/load_logos` - Load team and league logos (Admin only)
+- `/odds` - Get current odds for upcoming games from your database
+- `/sports` - List all available sports and leagues for odds
 
 ## Setup
 
@@ -30,6 +33,7 @@ A Discord bot for managing sports betting and capper statistics.
    ```
    DISCORD_TOKEN=your_bot_token
    TEST_GUILD_ID=your_test_guild_id
+   ODDS_API_KEY=your_odds_api_key  # Optional: For /odds command
    ```
 4. Run the bot:
    ```bash
