@@ -1,0 +1,202 @@
+[
+    {
+        "id": 1,
+        "name": "MMA LAB"
+    },
+    {
+        "id": 2,
+        "name": "Fortis MMA"
+    },
+    {
+        "id": 3,
+        "name": "Alliance MMA"
+    },
+    {
+        "id": 4,
+        "name": "BMF Ranch"
+    },
+    {
+        "id": 5,
+        "name": "Nunes"
+    },
+    {
+        "id": 6,
+        "name": "Five Rounds"
+    },
+    {
+        "id": 7,
+        "name": "Treigning Lab"
+    },
+    {
+        "id": 8,
+        "name": "Rubao Carioca BJJ"
+    },
+    {
+        "id": 9,
+        "name": "Hakuilua"
+    },
+    {
+        "id": 10,
+        "name": "Combat Sports Academy"
+    },
+    {
+        "id": 11,
+        "name": "Jesus is Lord"
+    },
+    {
+        "id": 12,
+        "name": "Glory MMA & Fitness"
+    },
+    {
+        "id": 13,
+        "name": "Long Island MMA"
+    },
+    {
+        "id": 14,
+        "name": "Roufusport"
+    },
+    {
+        "id": 15,
+        "name": "Arizona Combat Sports"
+    },
+    {
+        "id": 16,
+        "name": "FactoryX Muay Thai"
+    },
+    {
+        "id": 17,
+        "name": "Syndicate MMA"
+    },
+    {
+        "id": 18,
+        "name": "Saekson Muay Thai"
+    },
+    {
+        "id": 19,
+        "name": "Elevation Fight"
+    },
+    {
+        "id": 20,
+        "name": "Fight Ready"
+    },
+    {
+        "id": 21,
+        "name": "American Top"
+    },
+    {
+        "id": 22,
+        "name": "Bellmore Kickboxing Academy"
+    },
+    {
+        "id": 23,
+        "name": "Alpha Male"
+    },
+    {
+        "id": 24,
+        "name": "Gracie Barra Portland"
+    },
+    {
+        "id": 25,
+        "name": "Teixeira MMA & Fitness"
+    },
+    {
+        "id": 26,
+        "name": "Viscardi Andrade"
+    },
+    {
+        "id": 27,
+        "name": "MMAGold Fight"
+    },
+    {
+        "id": 28,
+        "name": "Taila Santos"
+    },
+    {
+        "id": 29,
+        "name": "Nova Uniao"
+    },
+    {
+        "id": 30,
+        "name": "Nogueira"
+    },
+    {
+        "id": 31,
+        "name": "Xtreme Couture"
+    },
+    {
+        "id": 32,
+        "name": "Gile Ribeiro / Noguchi"
+    },
+    {
+        "id": 33,
+        "name": "Akhmat Fight"
+    },
+    {
+        "id": 34,
+        "name": "Ascension MMA"
+    },
+    {
+        "id": 35,
+        "name": "Tiger Muay Thai"
+    },
+    {
+        "id": 36,
+        "name": "Tiger Schulman"
+    },
+    {
+        "id": 37,
+        "name": "Demian Maia Jiu-Jitsu"
+    },
+    {
+        "id": 38,
+        "name": "Chute Boxe"
+    },
+    {
+        "id": 39,
+        "name": "Allstars Training Center"
+    },
+    {
+        "id": 40,
+        "name": "SBG Ireland"
+    },
+    {
+        "id": 41,
+        "name": "Gracie Barra Katy"
+    },
+    {
+        "id": 42,
+        "name": "Maximo"
+    },
+    {
+        "id": 43,
+        "name": "Astra Fight"
+    },
+    {
+        "id": 44,
+        "name": "Jackson's MMA Acoma"
+    },
+    {
+        "id": 45,
+        "name": "Killer Bees"
+    },
+    {
+        "id": 46,
+        "name": "Australian Top"
+    },
+    {
+        "id": 47,
+        "name": "Carlson Gracie Riverside"
+    },
+    {
+        "id": 48,
+        "name": "City Kickboxing"
+    },
+    {
+        "id": 49,
+        "name": "Sikjitsu"
+    },
+    {
+        "id": 50,
+        "name": "Busan M.A.D."
+    }
+]

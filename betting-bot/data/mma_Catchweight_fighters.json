@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1183,
+    "name": "Brock Larson",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1183.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "71'",
+    "stance": "Southpaw",
+    "category": "Catchweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:02:03+00:00"
+  },
+  {
+    "id": 2312,
+    "name": "Sean Lally",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2312.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catchweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:26:32+00:00"
+  },
+  {
+    "id": 1773,
+    "name": "Todd Brown",
+    "nickname": "Bulldog",
+    "photo": "https://media.api-sports.io/mma/fighters/1773.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catchweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T03:57:02+00:00"
+  }
+]

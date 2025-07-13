@@ -1,0 +1,40 @@
+[
+  {
+    "id": 2237,
+    "name": "Cindy Dandois",
+    "nickname": "Battlecat",
+    "photo": "https://media.api-sports.io/mma/fighters/2237.png",
+    "gender": "W",
+    "birth_date": "1984-10-26",
+    "age": 36,
+    "height": "5' 7'",
+    "weight": "155 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Women's Lightweight",
+    "team": {
+      "id": 544,
+      "name": "Perfect"
+    },
+    "last_update": "2025-06-05T07:49:02+00:00"
+  },
+  {
+    "id": 2100,
+    "name": "Larissa Pacheco",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2100.png",
+    "gender": "W",
+    "birth_date": "1994-09-07",
+    "age": 26,
+    "height": "5' 6'",
+    "weight": "155 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Women's Lightweight",
+    "team": {
+      "id": 204,
+      "name": "Tata Fight"
+    },
+    "last_update": "2025-06-05T06:40:35+00:00"
+  }
+]

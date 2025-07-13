@@ -1,0 +1,5360 @@
+[
+  {
+    "id": 536,
+    "name": "Aalon Cruz",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/536.png",
+    "gender": "M",
+    "birth_date": "1989-09-20",
+    "age": 32,
+    "height": "6' 0'",
+    "weight": "155 lbs",
+    "reach": "78'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-04T17:38:34+00:00"
+  },
+  {
+    "id": 2277,
+    "name": "Adrian Diaz",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2277.png",
+    "gender": "M",
+    "birth_date": "1988-04-26",
+    "age": 32,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-05T08:09:02+00:00"
+  },
+  {
+    "id": 1943,
+    "name": "Akira Corassani",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1943.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 131,
+      "name": "Renzo Gracie Jiu-Jitsu"
+    },
+    "last_update": "2025-06-05T05:22:03+00:00"
+  },
+  {
+    "id": 2766,
+    "name": "Alberto Montes",
+    "nickname": "The Promise",
+    "photo": "https://media.api-sports.io/mma/fighters/2766.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 114,
+      "name": "The Goat Shed"
+    },
+    "last_update": "2025-06-05T12:13:33+00:00"
+  },
+  {
+    "id": 796,
+    "name": "Alejandro Flores",
+    "nickname": "El Gallito",
+    "photo": "https://media.api-sports.io/mma/fighters/796.png",
+    "gender": "M",
+    "birth_date": "1991-08-06",
+    "age": 29,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 352,
+      "name": "VFS Academy"
+    },
+    "last_update": "2025-06-04T19:48:32+00:00"
+  },
+  {
+    "id": 97,
+    "name": "Alex Caceres",
+    "nickname": "Bruce Leeroy",
+    "photo": "https://media.api-sports.io/mma/fighters/97.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73.5'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 1,
+      "name": "MMA LAB"
+    },
+    "last_update": "2025-06-04T13:59:03+00:00"
+  },
+  {
+    "id": 2349,
+    "name": "Alex Gilpin",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2349.png",
+    "gender": "M",
+    "birth_date": "1992-03-26",
+    "age": 29,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 259,
+      "name": "Chosen Few Gym"
+    },
+    "last_update": "2025-06-05T08:45:03+00:00"
+  },
+  {
+    "id": 2137,
+    "name": "Alex Torres",
+    "nickname": "Rolo",
+    "photo": "https://media.api-sports.io/mma/fighters/2137.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:59:03+00:00"
+  },
+  {
+    "id": 361,
+    "name": "Alexander Volkanovski",
+    "nickname": "The Great",
+    "photo": "https://media.api-sports.io/mma/fighters/361.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "71.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 48,
+      "name": "City Kickboxing"
+    },
+    "last_update": "2025-06-04T16:11:03+00:00"
+  },
+  {
+    "id": 84,
+    "name": "Aljamain Sterling",
+    "nickname": "Funk Master",
+    "photo": "https://media.api-sports.io/mma/fighters/84.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 58,
+      "name": "Serra-Longo Fight"
+    },
+    "last_update": "2025-06-04T13:52:33+00:00"
+  },
+  {
+    "id": 453,
+    "name": "Anderson Dos Santos",
+    "nickname": "Berinja",
+    "photo": "https://media.api-sports.io/mma/fighters/453.png",
+    "gender": "M",
+    "birth_date": "1985-07-24",
+    "age": 36,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 214,
+      "name": "Babuino Gold"
+    },
+    "last_update": "2025-06-04T16:57:04+00:00"
+  },
+  {
+    "id": 102,
+    "name": "Andre Fili",
+    "nickname": "Touchy",
+    "photo": "https://media.api-sports.io/mma/fighters/102.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T14:01:33+00:00"
+  },
+  {
+    "id": 1942,
+    "name": "Andy Ogle",
+    "nickname": "The Little Axe",
+    "photo": "https://media.api-sports.io/mma/fighters/1942.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T05:21:32+00:00"
+  },
+  {
+    "id": 2669,
+    "name": "Angel Pacheco",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2669.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 196,
+      "name": "New England Cartel"
+    },
+    "last_update": "2025-06-05T11:25:10+00:00"
+  },
+  {
+    "id": 1882,
+    "name": "Antonio Carvalho",
+    "nickname": "Pato",
+    "photo": "https://media.api-sports.io/mma/fighters/1882.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 539,
+      "name": "Bruckmann MMA"
+    },
+    "last_update": "2025-06-05T04:51:33+00:00"
+  },
+  {
+    "id": 225,
+    "name": "Arnold Allen",
+    "nickname": "Almighty",
+    "photo": "https://media.api-sports.io/mma/fighters/225.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 124,
+      "name": "BKK Fighters"
+    },
+    "last_update": "2025-06-04T15:03:04+00:00"
+  },
+  {
+    "id": 2187,
+    "name": "Artem Lobov",
+    "nickname": "The Russian Hammer",
+    "photo": "https://media.api-sports.io/mma/fighters/2187.png",
+    "gender": "M",
+    "birth_date": "1986-08-11",
+    "age": 34,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "65'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 40,
+      "name": "SBG Ireland"
+    },
+    "last_update": "2025-06-05T07:24:07+00:00"
+  },
+  {
+    "id": 60,
+    "name": "Austin Arnett",
+    "nickname": "Golden Boy",
+    "photo": "https://media.api-sports.io/mma/fighters/60.png",
+    "gender": "M",
+    "birth_date": "1991-10-22",
+    "age": 29,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 49,
+      "name": "Sikjitsu"
+    },
+    "last_update": "2025-06-04T13:40:32+00:00"
+  },
+  {
+    "id": 2746,
+    "name": "Austin Bashi",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2746.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 796,
+      "name": "Warrior Way Martial Arts"
+    },
+    "last_update": "2025-06-05T12:03:39+00:00"
+  },
+  {
+    "id": 703,
+    "name": "Austin Lingo",
+    "nickname": "Lights Out",
+    "photo": "https://media.api-sports.io/mma/fighters/703.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 2,
+      "name": "Fortis MMA"
+    },
+    "last_update": "2025-06-04T19:02:11+00:00"
+  },
+  {
+    "id": 820,
+    "name": "Austin Springer",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/820.png",
+    "gender": "M",
+    "birth_date": "1987-05-12",
+    "age": 33,
+    "height": "5' 8'",
+    "weight": "151 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 24,
+      "name": "Gracie Barra Portland"
+    },
+    "last_update": "2025-06-04T20:00:40+00:00"
+  },
+  {
+    "id": 1237,
+    "name": "Bart Palaszewski",
+    "nickname": "Bartimus",
+    "photo": "https://media.api-sports.io/mma/fighters/1237.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:29:03+00:00"
+  },
+  {
+    "id": 447,
+    "name": "Bill Algeo",
+    "nickname": "SeÃ±or Perfecto",
+    "photo": "https://media.api-sports.io/mma/fighters/447.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "146 lbs",
+    "reach": "73'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 211,
+      "name": "Algeo MMA and Kickboxing"
+    },
+    "last_update": "2025-06-04T16:54:04+00:00"
+  },
+  {
+    "id": 527,
+    "name": "Billy Quarantillo",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/527.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 243,
+      "name": "Gracie Tampa South"
+    },
+    "last_update": "2025-06-04T17:34:02+00:00"
+  },
+  {
+    "id": 403,
+    "name": "BJ Penn",
+    "nickname": "The Prodigy",
+    "photo": "https://media.api-sports.io/mma/fighters/403.png",
+    "gender": "M",
+    "birth_date": "1978-12-13",
+    "age": 42,
+    "height": "5' 9'",
+    "weight": "155 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 191,
+      "name": "BJ Penn MMA"
+    },
+    "last_update": "2025-06-04T16:32:03+00:00"
+  },
+  {
+    "id": 295,
+    "name": "Bobby Moffett",
+    "nickname": "The Wolfman",
+    "photo": "https://media.api-sports.io/mma/fighters/295.png",
+    "gender": "M",
+    "birth_date": "1990-06-01",
+    "age": 30,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 1,
+      "name": "MMA LAB"
+    },
+    "last_update": "2025-06-04T15:38:05+00:00"
+  },
+  {
+    "id": 2753,
+    "name": "Bogdan Grad",
+    "nickname": "The Unleashed",
+    "photo": "https://media.api-sports.io/mma/fighters/2753.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 797,
+      "name": "ETTL Bros MMA"
+    },
+    "last_update": "2025-06-28T12:06:44+00:00"
+  },
+  {
+    "id": 768,
+    "name": "Brady Huang",
+    "nickname": "The Kung Fu Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/768.png",
+    "gender": "M",
+    "birth_date": "1992-12-16",
+    "age": 28,
+    "height": "5' 9'",
+    "weight": "135 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 339,
+      "name": "Dragon House MMA"
+    },
+    "last_update": "2025-06-04T19:34:33+00:00"
+  },
+  {
+    "id": 321,
+    "name": "Brandon Davis",
+    "nickname": "Killer B",
+    "photo": "https://media.api-sports.io/mma/fighters/321.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "135 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 158,
+      "name": "American Top  D'Iberville"
+    },
+    "last_update": "2025-06-04T15:51:04+00:00"
+  },
+  {
+    "id": 446,
+    "name": "Brendan Loughnane",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/446.png",
+    "gender": "M",
+    "birth_date": "1989-12-05",
+    "age": 31,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 210,
+      "name": "Mosside Ground and Pound"
+    },
+    "last_update": "2025-06-04T16:53:32+00:00"
+  },
+  {
+    "id": 2634,
+    "name": "Brendon Marotte",
+    "nickname": "The Kid",
+    "photo": "https://media.api-sports.io/mma/fighters/2634.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 196,
+      "name": "New England Cartel"
+    },
+    "last_update": "2025-06-05T11:07:32+00:00"
+  },
+  {
+    "id": 840,
+    "name": "Brian Ortega",
+    "nickname": "T-City",
+    "photo": "https://media.api-sports.io/mma/fighters/840.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 372,
+      "name": "Huntington Beach Ultimate Training Center"
+    },
+    "last_update": "2025-06-04T20:10:35+00:00"
+  },
+  {
+    "id": 2469,
+    "name": "Bruno Souza",
+    "nickname": "The Tiger",
+    "photo": "https://media.api-sports.io/mma/fighters/2469.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "144 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 677,
+      "name": "Machida Karate Academy"
+    },
+    "last_update": "2025-06-05T09:45:02+00:00"
+  },
+  {
+    "id": 296,
+    "name": "Bryce Mitchell",
+    "nickname": "Thug Nasty",
+    "photo": "https://media.api-sports.io/mma/fighters/296.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 151,
+      "name": "Barata MMA"
+    },
+    "last_update": "2025-06-04T15:38:32+00:00"
+  },
+  {
+    "id": 415,
+    "name": "Calvin Kattar",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/415.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 196,
+      "name": "New England Cartel"
+    },
+    "last_update": "2025-07-13T12:10:08+00:00"
+  },
+  {
+    "id": 2342,
+    "name": "Canaan Kawaihae",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2342.png",
+    "gender": "M",
+    "birth_date": "1997-08-26",
+    "age": 23,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:41:33+00:00"
+  },
+  {
+    "id": 1137,
+    "name": "Caol Uno",
+    "nickname": "Uno Shoten",
+    "photo": "https://media.api-sports.io/mma/fighters/1137.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 409,
+      "name": "Freelance"
+    },
+    "last_update": "2025-06-04T22:39:02+00:00"
+  },
+  {
+    "id": 1812,
+    "name": "Chad Mendes",
+    "nickname": "Money",
+    "photo": "https://media.api-sports.io/mma/fighters/1812.png",
+    "gender": "M",
+    "birth_date": "1985-05-01",
+    "age": 35,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-05T04:16:32+00:00"
+  },
+  {
+    "id": 455,
+    "name": "Chan Sung Jung",
+    "nickname": "The Korean Zombie",
+    "photo": "https://media.api-sports.io/mma/fighters/455.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 20,
+      "name": "Fight Ready"
+    },
+    "last_update": "2025-06-04T16:58:03+00:00"
+  },
+  {
+    "id": 676,
+    "name": "Charles Rosa",
+    "nickname": "Boston Strong",
+    "photo": "https://media.api-sports.io/mma/fighters/676.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 301,
+      "name": "American Combat Gym"
+    },
+    "last_update": "2025-06-04T18:48:33+00:00"
+  },
+  {
+    "id": 597,
+    "name": "Chas Skelly",
+    "nickname": "The Scrapper",
+    "photo": "https://media.api-sports.io/mma/fighters/597.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 270,
+      "name": "Takedown"
+    },
+    "last_update": "2025-06-04T18:09:03+00:00"
+  },
+  {
+    "id": 2539,
+    "name": "Chepe Mariscal",
+    "nickname": "Machine Gun",
+    "photo": "https://media.api-sports.io/mma/fighters/2539.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 19,
+      "name": "Elevation Fight"
+    },
+    "last_update": "2025-06-05T10:20:04+00:00"
+  },
+  {
+    "id": 2217,
+    "name": "Chris Avila",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2217.png",
+    "gender": "M",
+    "birth_date": "1993-01-16",
+    "age": 28,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:39:02+00:00"
+  },
+  {
+    "id": 116,
+    "name": "Chris Fishgold",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/116.png",
+    "gender": "M",
+    "birth_date": "1992-06-06",
+    "age": 28,
+    "height": "5' 8'",
+    "weight": "149 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 77,
+      "name": "Next Generation UK"
+    },
+    "last_update": "2025-06-04T14:08:32+00:00"
+  },
+  {
+    "id": 299,
+    "name": "Chris Gutierrez",
+    "nickname": "El Guapo",
+    "photo": "https://media.api-sports.io/mma/fighters/299.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "144 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-04T15:40:03+00:00"
+  },
+  {
+    "id": 1302,
+    "name": "Chris Wade",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1302.png",
+    "gender": "M",
+    "birth_date": "1987-09-30",
+    "age": 33,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 13,
+      "name": "Long Island MMA"
+    },
+    "last_update": "2025-06-05T00:01:36+00:00"
+  },
+  {
+    "id": 2453,
+    "name": "Christian Rodriguez",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2453.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "71.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 14,
+      "name": "Roufusport"
+    },
+    "last_update": "2025-06-05T09:37:02+00:00"
+  },
+  {
+    "id": 1205,
+    "name": "Cole Miller",
+    "nickname": "Magrinho",
+    "photo": "https://media.api-sports.io/mma/fighters/1205.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T23:13:03+00:00"
+  },
+  {
+    "id": 789,
+    "name": "Collin Anglin",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/789.png",
+    "gender": "M",
+    "birth_date": "1993-02-20",
+    "age": 28,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-04T19:45:06+00:00"
+  },
+  {
+    "id": 2682,
+    "name": "Connor Matthews",
+    "nickname": "The Controller",
+    "photo": "https://media.api-sports.io/mma/fighters/2682.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 196,
+      "name": "New England Cartel"
+    },
+    "last_update": "2025-06-05T11:31:35+00:00"
+  },
+  {
+    "id": 349,
+    "name": "Cub Swanson",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/349.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 759,
+      "name": "Bloodline Combat"
+    },
+    "last_update": "2025-06-04T16:05:03+00:00"
+  },
+  {
+    "id": 230,
+    "name": "Dan Ige",
+    "nickname": "50K",
+    "photo": "https://media.api-sports.io/mma/fighters/230.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-04T15:05:33+00:00"
+  },
+  {
+    "id": 795,
+    "name": "Daniel Pineda",
+    "nickname": "The Pit",
+    "photo": "https://media.api-sports.io/mma/fighters/795.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 89,
+      "name": "4oz Fight Club"
+    },
+    "last_update": "2025-06-04T19:48:02+00:00"
+  },
+  {
+    "id": 772,
+    "name": "Daniel Swain",
+    "nickname": "Agent Orange",
+    "photo": "https://media.api-sports.io/mma/fighters/772.png",
+    "gender": "M",
+    "birth_date": "1991-01-30",
+    "age": 30,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 238,
+      "name": "Warrior Camp MMA"
+    },
+    "last_update": "2025-06-04T19:36:32+00:00"
+  },
+  {
+    "id": 115,
+    "name": "Daniel Teymur",
+    "nickname": "Kid Dynamite",
+    "photo": "https://media.api-sports.io/mma/fighters/115.png",
+    "gender": "M",
+    "birth_date": "1988-02-03",
+    "age": 33,
+    "height": "5' 5'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 39,
+      "name": "Allstars Training Center"
+    },
+    "last_update": "2025-06-04T14:08:02+00:00"
+  },
+  {
+    "id": 792,
+    "name": "Danny Chavez",
+    "nickname": "The Colombian Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/792.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 98,
+      "name": "MMA Masters"
+    },
+    "last_update": "2025-06-04T19:46:32+00:00"
+  },
+  {
+    "id": 229,
+    "name": "Danny Henry",
+    "nickname": "The Hatchet",
+    "photo": "https://media.api-sports.io/mma/fighters/229.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 109,
+      "name": "Higher Level Martial Arts"
+    },
+    "last_update": "2025-06-04T15:05:03+00:00"
+  },
+  {
+    "id": 2671,
+    "name": "Danny Silva",
+    "nickname": "El Puma",
+    "photo": "https://media.api-sports.io/mma/fighters/2671.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 759,
+      "name": "Bloodline Combat"
+    },
+    "last_update": "2025-06-05T11:26:03+00:00"
+  },
+  {
+    "id": 495,
+    "name": "Darren Elkins",
+    "nickname": "The Damage",
+    "photo": "https://media.api-sports.io/mma/fighters/495.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T17:18:03+00:00"
+  },
+  {
+    "id": 2098,
+    "name": "Dashon Johnson",
+    "nickname": "Fly Boy",
+    "photo": "https://media.api-sports.io/mma/fighters/2098.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 528,
+      "name": "Xplode MMA"
+    },
+    "last_update": "2025-06-05T06:39:33+00:00"
+  },
+  {
+    "id": 2478,
+    "name": "David Onama",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2478.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-05T09:49:33+00:00"
+  },
+  {
+    "id": 14,
+    "name": "Dennis Bermudez",
+    "nickname": "The Menace",
+    "photo": "https://media.api-sports.io/mma/fighters/14.png",
+    "gender": "M",
+    "birth_date": "1986-12-13",
+    "age": 34,
+    "height": "5' 6'",
+    "weight": "155 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 13,
+      "name": "Long Island MMA"
+    },
+    "last_update": "2025-06-04T13:17:33+00:00"
+  },
+  {
+    "id": 814,
+    "name": "Dennis Buzukja",
+    "nickname": "The Great",
+    "photo": "https://media.api-sports.io/mma/fighters/814.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "155 lbs",
+    "reach": "70.5'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 58,
+      "name": "Serra-Longo Fight"
+    },
+    "last_update": "2025-06-04T19:57:32+00:00"
+  },
+  {
+    "id": 1403,
+    "name": "Dennis Siver",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1403.png",
+    "gender": "M",
+    "birth_date": "1979-01-13",
+    "age": 42,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 402,
+      "name": "Kiboju"
+    },
+    "last_update": "2025-06-05T00:52:03+00:00"
+  },
+  {
+    "id": 1282,
+    "name": "Diego Brandao",
+    "nickname": "DB",
+    "photo": "https://media.api-sports.io/mma/fighters/1282.png",
+    "gender": "M",
+    "birth_date": "1987-05-27",
+    "age": 33,
+    "height": "5' 7'",
+    "weight": "155 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-04T23:51:33+00:00"
+  },
+  {
+    "id": 2417,
+    "name": "Diego Lopes",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2417.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "72.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 110,
+      "name": "Lobo Gym MMA"
+    },
+    "last_update": "2025-06-05T09:19:02+00:00"
+  },
+  {
+    "id": 1206,
+    "name": "Diego Nunes",
+    "nickname": "The Gun",
+    "photo": "https://media.api-sports.io/mma/fighters/1206.png",
+    "gender": "M",
+    "birth_date": "1982-11-30",
+    "age": 38,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 117,
+      "name": "Evolucao Thai"
+    },
+    "last_update": "2025-06-04T23:13:33+00:00"
+  },
+  {
+    "id": 1136,
+    "name": "Din Thomas",
+    "nickname": "Dinyero",
+    "photo": "https://media.api-sports.io/mma/fighters/1136.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T22:38:32+00:00"
+  },
+  {
+    "id": 838,
+    "name": "Dinis Paiva",
+    "nickname": "Sweetbread",
+    "photo": "https://media.api-sports.io/mma/fighters/838.png",
+    "gender": "M",
+    "birth_date": "1988-05-26",
+    "age": 32,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 370,
+      "name": "Juniko"
+    },
+    "last_update": "2025-06-04T20:09:33+00:00"
+  },
+  {
+    "id": 2483,
+    "name": "Don Shainis",
+    "nickname": "Shameless",
+    "photo": "https://media.api-sports.io/mma/fighters/2483.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "146 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 693,
+      "name": "Citadel Martial Arts"
+    },
+    "last_update": "2025-06-05T09:52:04+00:00"
+  },
+  {
+    "id": 690,
+    "name": "Dooho Choi",
+    "nickname": "The Korean Superboy",
+    "photo": "https://media.api-sports.io/mma/fighters/690.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 50,
+      "name": "Busan  M.A.D."
+    },
+    "last_update": "2025-06-04T18:55:33+00:00"
+  },
+  {
+    "id": 1876,
+    "name": "Dustin Neace",
+    "nickname": "The Beast",
+    "photo": "https://media.api-sports.io/mma/fighters/1876.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": 536,
+      "name": "Damage Inc."
+    },
+    "last_update": "2025-06-05T04:48:32+00:00"
+  },
+  {
+    "id": 646,
+    "name": "Dylan Lockard",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/646.png",
+    "gender": "M",
+    "birth_date": "1992-05-19",
+    "age": 28,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T18:33:32+00:00"
+  },
+  {
+    "id": 1857,
+    "name": "Eddie Yagin",
+    "nickname": "The Filipino Phenom",
+    "photo": "https://media.api-sports.io/mma/fighters/1857.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 3,
+      "name": "Alliance MMA"
+    },
+    "last_update": "2025-06-05T04:39:03+00:00"
+  },
+  {
+    "id": 1995,
+    "name": "Edimilson Souza",
+    "nickname": "Kevin",
+    "photo": "https://media.api-sports.io/mma/fighters/1995.png",
+    "gender": "M",
+    "birth_date": "1984-10-17",
+    "age": 36,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T05:48:04+00:00"
+  },
+  {
+    "id": 193,
+    "name": "Edson Barboza",
+    "nickname": "Junior",
+    "photo": "https://media.api-sports.io/mma/fighters/193.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "75'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T14:47:03+00:00"
+  },
+  {
+    "id": 570,
+    "name": "Eduardo Garagorri",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/570.png",
+    "gender": "M",
+    "birth_date": "1989-05-28",
+    "age": 31,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 257,
+      "name": "CT Fronteira Fight"
+    },
+    "last_update": "2025-06-04T17:55:33+00:00"
+  },
+  {
+    "id": 1896,
+    "name": "Eiji Mitsuoka",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1896.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 409,
+      "name": "Freelance"
+    },
+    "last_update": "2025-06-05T04:58:32+00:00"
+  },
+  {
+    "id": 308,
+    "name": "Enrique Barzola",
+    "nickname": "El Fuerte",
+    "photo": "https://media.api-sports.io/mma/fighters/308.png",
+    "gender": "M",
+    "birth_date": "1989-04-28",
+    "age": 31,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-04T15:44:33+00:00"
+  },
+  {
+    "id": 2486,
+    "name": "Erik Silva",
+    "nickname": "The King",
+    "photo": "https://media.api-sports.io/mma/fighters/2486.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 695,
+      "name": "Antonio Silva Martial Arts School"
+    },
+    "last_update": "2025-06-05T09:53:34+00:00"
+  },
+  {
+    "id": 1981,
+    "name": "Estevan Payan",
+    "nickname": "El Terrible",
+    "photo": "https://media.api-sports.io/mma/fighters/1981.png",
+    "gender": "M",
+    "birth_date": "1982-04-03",
+    "age": 39,
+    "height": "5' 10'",
+    "weight": "155 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 15,
+      "name": "Arizona Combat Sports"
+    },
+    "last_update": "2025-06-05T05:41:03+00:00"
+  },
+  {
+    "id": 2548,
+    "name": "Farid Basharat",
+    "nickname": "Ferocious",
+    "photo": "https://media.api-sports.io/mma/fighters/2548.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "137 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T10:24:34+00:00"
+  },
+  {
+    "id": 2705,
+    "name": "Felipe Lima",
+    "nickname": "Jungle Boy",
+    "photo": "https://media.api-sports.io/mma/fighters/2705.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 39,
+      "name": "Allstars Training Center"
+    },
+    "last_update": "2025-07-06T00:04:32+00:00"
+  },
+  {
+    "id": 2169,
+    "name": "Fernando Bruno",
+    "nickname": "Acougueiro",
+    "photo": "https://media.api-sports.io/mma/fighters/2169.png",
+    "gender": "M",
+    "birth_date": "1982-02-24",
+    "age": 39,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:15:04+00:00"
+  },
+  {
+    "id": 2549,
+    "name": "Fernando Padilla",
+    "nickname": "El Valiente",
+    "photo": "https://media.api-sports.io/mma/fighters/2549.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 1'",
+    "weight": "145 lbs",
+    "reach": "76'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 119,
+      "name": "Oyama"
+    },
+    "last_update": "2025-06-05T10:25:05+00:00"
+  },
+  {
+    "id": 2488,
+    "name": "Francis Marshall",
+    "nickname": "Fire",
+    "photo": "https://media.api-sports.io/mma/fighters/2488.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-05T09:54:32+00:00"
+  },
+  {
+    "id": 1802,
+    "name": "Fredson Paixao",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1802.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T04:11:33+00:00"
+  },
+  {
+    "id": 547,
+    "name": "Gabriel Benitez",
+    "nickname": "Moggly",
+    "photo": "https://media.api-sports.io/mma/fighters/547.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "155 lbs",
+    "reach": "71'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-04T17:44:04+00:00"
+  },
+  {
+    "id": 2489,
+    "name": "Gabriel Miranda",
+    "nickname": "Fly",
+    "photo": "https://media.api-sports.io/mma/fighters/2489.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 43,
+      "name": "Astra Fight"
+    },
+    "last_update": "2025-06-05T09:55:04+00:00"
+  },
+  {
+    "id": 2552,
+    "name": "Gabriel Santos",
+    "nickname": "Mosquitinho",
+    "photo": "https://media.api-sports.io/mma/fighters/2552.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 117,
+      "name": "Evolucao Thai"
+    },
+    "last_update": "2025-06-05T10:26:32+00:00"
+  },
+  {
+    "id": 902,
+    "name": "Gaetano Pirrello",
+    "nickname": "El Tigre",
+    "photo": "https://media.api-sports.io/mma/fighters/902.png",
+    "gender": "M",
+    "birth_date": "1992-04-29",
+    "age": 29,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 393,
+      "name": "Osman Gym"
+    },
+    "last_update": "2025-06-04T20:41:32+00:00"
+  },
+  {
+    "id": 530,
+    "name": "Gavin Tucker",
+    "nickname": "Guv&#x27;Nor",
+    "photo": "https://media.api-sports.io/mma/fighters/530.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "66'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 245,
+      "name": "Titans MMA"
+    },
+    "last_update": "2025-06-04T17:35:33+00:00"
+  },
+  {
+    "id": 1685,
+    "name": "George Roop",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1685.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 215,
+      "name": "APEX MMA"
+    },
+    "last_update": "2025-06-05T03:13:04+00:00"
+  },
+  {
+    "id": 649,
+    "name": "Giga Chikadze",
+    "nickname": "Ninja",
+    "photo": "https://media.api-sports.io/mma/fighters/649.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "146 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 90,
+      "name": "Kings MMA"
+    },
+    "last_update": "2025-06-04T18:35:04+00:00"
+  },
+  {
+    "id": 1934,
+    "name": "Godofredo Pepey",
+    "nickname": "Pepey",
+    "photo": "https://media.api-sports.io/mma/fighters/1934.png",
+    "gender": "M",
+    "birth_date": "1987-07-02",
+    "age": 33,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "73.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 554,
+      "name": "Marcio Cupim"
+    },
+    "last_update": "2025-06-05T05:17:33+00:00"
+  },
+  {
+    "id": 1214,
+    "name": "Gray Maynard",
+    "nickname": "The Bully",
+    "photo": "https://media.api-sports.io/mma/fighters/1214.png",
+    "gender": "M",
+    "birth_date": "1979-05-09",
+    "age": 41,
+    "height": "5' 9'",
+    "weight": "155 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-04T23:17:32+00:00"
+  },
+  {
+    "id": 563,
+    "name": "Hakeem Dawodu",
+    "nickname": "Mean",
+    "photo": "https://media.api-sports.io/mma/fighters/563.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "73.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 252,
+      "name": "Champion's Creed MMA"
+    },
+    "last_update": "2025-06-04T17:52:03+00:00"
+  },
+  {
+    "id": 1366,
+    "name": "Hatsu Hioki",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1366.png",
+    "gender": "M",
+    "birth_date": "1983-07-18",
+    "age": 37,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 465,
+      "name": "ALIVE Shooto & Jiu-Jitsu Academy"
+    },
+    "last_update": "2025-06-05T00:33:35+00:00"
+  },
+  {
+    "id": 613,
+    "name": "Herbert Burns",
+    "nickname": "The Blaze",
+    "photo": "https://media.api-sports.io/mma/fighters/613.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "73.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 67,
+      "name": "Kill Cliff FC"
+    },
+    "last_update": "2025-06-04T18:17:06+00:00"
+  },
+  {
+    "id": 2214,
+    "name": "Horacio Gutierrez",
+    "nickname": "The Punisher",
+    "photo": "https://media.api-sports.io/mma/fighters/2214.png",
+    "gender": "M",
+    "birth_date": "1990-09-15",
+    "age": 30,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": 611,
+      "name": "Chicago Fight"
+    },
+    "last_update": "2025-06-05T07:37:32+00:00"
+  },
+  {
+    "id": 2115,
+    "name": "Humberto Brown",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2115.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "71'",
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:48:02+00:00"
+  },
+  {
+    "id": 485,
+    "name": "Hunter Azure",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/485.png",
+    "gender": "M",
+    "birth_date": "1992-03-02",
+    "age": 29,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 1,
+      "name": "MMA LAB"
+    },
+    "last_update": "2025-06-04T17:13:03+00:00"
+  },
+  {
+    "id": 2657,
+    "name": "Hyder Amil",
+    "nickname": "The Hurricane",
+    "photo": "https://media.api-sports.io/mma/fighters/2657.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 213,
+      "name": "Skrap Pack"
+    },
+    "last_update": "2025-07-06T00:02:07+00:00"
+  },
+  {
+    "id": 855,
+    "name": "Ilia Topuria",
+    "nickname": "El Matador",
+    "photo": "https://media.api-sports.io/mma/fighters/855.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 377,
+      "name": "Climent Club"
+    },
+    "last_update": "2025-07-06T00:10:33+00:00"
+  },
+  {
+    "id": 2559,
+    "name": "Isaac Dulgarian",
+    "nickname": "The Midwest Choppa",
+    "photo": "https://media.api-sports.io/mma/fighters/2559.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-05T10:30:08+00:00"
+  },
+  {
+    "id": 1170,
+    "name": "Ivan Menjivar",
+    "nickname": "Pride of El Salvador",
+    "photo": "https://media.api-sports.io/mma/fighters/1170.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "64'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 97,
+      "name": "TriStar Gym"
+    },
+    "last_update": "2025-06-04T22:55:33+00:00"
+  },
+  {
+    "id": 2562,
+    "name": "Jack Jenkins",
+    "nickname": "Phar",
+    "photo": "https://media.api-sports.io/mma/fighters/2562.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "68'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 391,
+      "name": "Absolute Mixed Martial Arts"
+    },
+    "last_update": "2025-06-05T10:31:34+00:00"
+  },
+  {
+    "id": 650,
+    "name": "Jack Shore",
+    "nickname": "Tank",
+    "photo": "https://media.api-sports.io/mma/fighters/650.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 286,
+      "name": "Shore Mixed Martial Arts Centre of Excellence"
+    },
+    "last_update": "2025-06-04T18:35:33+00:00"
+  },
+  {
+    "id": 684,
+    "name": "Jacob Kilburn",
+    "nickname": "The Killer",
+    "photo": "https://media.api-sports.io/mma/fighters/684.png",
+    "gender": "M",
+    "birth_date": "1995-06-28",
+    "age": 26,
+    "height": "5' 9'",
+    "weight": "154 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T18:52:34+00:00"
+  },
+  {
+    "id": 707,
+    "name": "Jamall Emmers",
+    "nickname": "Pretty Boy",
+    "photo": "https://media.api-sports.io/mma/fighters/707.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 311,
+      "name": "Pinnacle MMA"
+    },
+    "last_update": "2025-06-04T19:04:03+00:00"
+  },
+  {
+    "id": 887,
+    "name": "Jamey Simmons",
+    "nickname": "The Afro Samurai",
+    "photo": "https://media.api-sports.io/mma/fighters/887.png",
+    "gender": "M",
+    "birth_date": "1992-09-11",
+    "age": 29,
+    "height": "5' 6'",
+    "weight": "136 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 120,
+      "name": "Pura Vida BJJ"
+    },
+    "last_update": "2025-06-04T20:34:03+00:00"
+  },
+  {
+    "id": 2495,
+    "name": "Jarno Errens",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2495.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 692,
+      "name": "Thriving Training Center"
+    },
+    "last_update": "2025-06-05T09:58:02+00:00"
+  },
+  {
+    "id": 2188,
+    "name": "Jason Knight",
+    "nickname": "The Kid",
+    "photo": "https://media.api-sports.io/mma/fighters/2188.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 605,
+      "name": "Alan Belcher MMA Club"
+    },
+    "last_update": "2025-06-05T07:24:33+00:00"
+  },
+  {
+    "id": 1837,
+    "name": "Jason Young",
+    "nickname": "Shotgun",
+    "photo": "https://media.api-sports.io/mma/fighters/1837.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 440,
+      "name": "Titan"
+    },
+    "last_update": "2025-06-05T04:29:03+00:00"
+  },
+  {
+    "id": 1842,
+    "name": "Javier Vazquez",
+    "nickname": "Showtime",
+    "photo": "https://media.api-sports.io/mma/fighters/1842.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "69'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 525,
+      "name": "Gracie Jiu-Jitsu"
+    },
+    "last_update": "2025-06-05T04:31:37+00:00"
+  },
+  {
+    "id": 2328,
+    "name": "Jay Cucciniello",
+    "nickname": "Mellow Fellow",
+    "photo": "https://media.api-sports.io/mma/fighters/2328.png",
+    "gender": "M",
+    "birth_date": "1986-07-23",
+    "age": 34,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:34:34+00:00"
+  },
+  {
+    "id": 2666,
+    "name": "Jean Silva",
+    "nickname": "Lord",
+    "photo": "https://media.api-sports.io/mma/fighters/2666.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 667,
+      "name": "Fighting Nerds"
+    },
+    "last_update": "2025-06-05T11:23:34+00:00"
+  },
+  {
+    "id": 2566,
+    "name": "Jeka Saragih",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2566.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 700,
+      "name": "Batam Fighter Club"
+    },
+    "last_update": "2025-06-14T12:04:03+00:00"
+  },
+  {
+    "id": 2567,
+    "name": "JeongYeong Lee",
+    "nickname": "Korean Tiger",
+    "photo": "https://media.api-sports.io/mma/fighters/2567.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "73.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 20,
+      "name": "Fight Ready"
+    },
+    "last_update": "2025-06-05T10:34:02+00:00"
+  },
+  {
+    "id": 2219,
+    "name": "Jeremy Kennedy",
+    "nickname": "The Bandit",
+    "photo": "https://media.api-sports.io/mma/fighters/2219.png",
+    "gender": "M",
+    "birth_date": "1992-09-16",
+    "age": 28,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T07:40:05+00:00"
+  },
+  {
+    "id": 1915,
+    "name": "Jeremy Larsen",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1915.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 15,
+      "name": "Arizona Combat Sports"
+    },
+    "last_update": "2025-06-05T05:08:04+00:00"
+  },
+  {
+    "id": 2040,
+    "name": "Jim Alers",
+    "nickname": "The Beast",
+    "photo": "https://media.api-sports.io/mma/fighters/2040.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 91,
+      "name": "Alliance Jiu-Jitsu"
+    },
+    "last_update": "2025-06-05T06:10:33+00:00"
+  },
+  {
+    "id": 83,
+    "name": "Jimmie Rivera",
+    "nickname": "El Terror",
+    "photo": "https://media.api-sports.io/mma/fighters/83.png",
+    "gender": "M",
+    "birth_date": "1989-06-29",
+    "age": 32,
+    "height": "5' 4'",
+    "weight": "135 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 36,
+      "name": "Tiger Schulman"
+    },
+    "last_update": "2025-06-04T13:52:03+00:00"
+  },
+  {
+    "id": 1223,
+    "name": "Jimy Hettes",
+    "nickname": "The Kid",
+    "photo": "https://media.api-sports.io/mma/fighters/1223.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "71'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 422,
+      "name": "Gracie NEPA"
+    },
+    "last_update": "2025-06-04T23:22:02+00:00"
+  },
+  {
+    "id": 438,
+    "name": "Jo Sungbin",
+    "nickname": "Korean Falcon",
+    "photo": "https://media.api-sports.io/mma/fighters/438.png",
+    "gender": "M",
+    "birth_date": "1992-07-17",
+    "age": 28,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 206,
+      "name": "Stun Gun"
+    },
+    "last_update": "2025-06-04T16:49:33+00:00"
+  },
+  {
+    "id": 2384,
+    "name": "Joanderson Brito",
+    "nickname": "Tubarao",
+    "photo": "https://media.api-sports.io/mma/fighters/2384.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 768,
+      "name": "Chute Boxe - Joao Emilio"
+    },
+    "last_update": "2025-06-05T09:02:33+00:00"
+  },
+  {
+    "id": 1117,
+    "name": "Joao Roque",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1117.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T22:29:02+00:00"
+  },
+  {
+    "id": 1922,
+    "name": "Joey Gambino",
+    "nickname": "The Raging Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/1922.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 553,
+      "name": "Raging Warriors"
+    },
+    "last_update": "2025-06-05T05:11:33+00:00"
+  },
+  {
+    "id": 750,
+    "name": "John Castaneda",
+    "nickname": "Sexy Mexi",
+    "photo": "https://media.api-sports.io/mma/fighters/750.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 707,
+      "name": "The Academy MN"
+    },
+    "last_update": "2025-06-04T19:25:33+00:00"
+  },
+  {
+    "id": 1930,
+    "name": "John Teixeira",
+    "nickname": "Macapa",
+    "photo": "https://media.api-sports.io/mma/fighters/1930.png",
+    "gender": "M",
+    "birth_date": "1986-11-18",
+    "age": 34,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 29,
+      "name": "Nova Uniao"
+    },
+    "last_update": "2025-06-05T05:15:32+00:00"
+  },
+  {
+    "id": 782,
+    "name": "Johnny Munoz",
+    "nickname": "Kid Kvenbo",
+    "photo": "https://media.api-sports.io/mma/fighters/782.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "136 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 345,
+      "name": "CQuence Jiu-Jitsu"
+    },
+    "last_update": "2025-06-04T19:41:32+00:00"
+  },
+  {
+    "id": 490,
+    "name": "Jonathan Pearce",
+    "nickname": "JSP",
+    "photo": "https://media.api-sports.io/mma/fighters/490.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 20,
+      "name": "Fight Ready"
+    },
+    "last_update": "2025-06-04T17:15:35+00:00"
+  },
+  {
+    "id": 470,
+    "name": "Jordan Griffin",
+    "nickname": "Native Psycho",
+    "photo": "https://media.api-sports.io/mma/fighters/470.png",
+    "gender": "M",
+    "birth_date": "1990-02-28",
+    "age": 31,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 14,
+      "name": "Roufusport"
+    },
+    "last_update": "2025-06-04T17:05:33+00:00"
+  },
+  {
+    "id": 2759,
+    "name": "Jose Miguel Delgado",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2759.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 1,
+      "name": "MMA LAB"
+    },
+    "last_update": "2025-07-06T00:01:34+00:00"
+  },
+  {
+    "id": 1875,
+    "name": "Josh Clopton",
+    "nickname": "The Gentlemen",
+    "photo": "https://media.api-sports.io/mma/fighters/1875.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 213,
+      "name": "Skrap Pack"
+    },
+    "last_update": "2025-06-05T04:48:03+00:00"
+  },
+  {
+    "id": 705,
+    "name": "Josh Culibao",
+    "nickname": "Kuya",
+    "photo": "https://media.api-sports.io/mma/fighters/705.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 310,
+      "name": "Igor MMA"
+    },
+    "last_update": "2025-06-04T19:03:02+00:00"
+  },
+  {
+    "id": 306,
+    "name": "Josh Emmett",
+    "nickname": "CC0",
+    "photo": "https://media.api-sports.io/mma/fighters/306.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T15:43:33+00:00"
+  },
+  {
+    "id": 1213,
+    "name": "Josh Grispi",
+    "nickname": "The Fluke",
+    "photo": "https://media.api-sports.io/mma/fighters/1213.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 59,
+      "name": "South Shore Sport"
+    },
+    "last_update": "2025-06-04T23:17:05+00:00"
+  },
+  {
+    "id": 2076,
+    "name": "Juan Puig",
+    "nickname": "Fenix",
+    "photo": "https://media.api-sports.io/mma/fighters/2076.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:28:32+00:00"
+  },
+  {
+    "id": 216,
+    "name": "Julian Erosa",
+    "nickname": "Juicy J",
+    "photo": "https://media.api-sports.io/mma/fighters/216.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 1'",
+    "weight": "145 lbs",
+    "reach": "74.5'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-04T14:58:35+00:00"
+  },
+  {
+    "id": 427,
+    "name": "Julio Arce",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/427.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "147 lbs",
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 36,
+      "name": "Tiger Schulman"
+    },
+    "last_update": "2025-06-04T16:44:06+00:00"
+  },
+  {
+    "id": 463,
+    "name": "Justin Gonzales",
+    "nickname": "J-Train",
+    "photo": "https://media.api-sports.io/mma/fighters/463.png",
+    "gender": "M",
+    "birth_date": "1991-04-28",
+    "age": 29,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T17:02:02+00:00"
+  },
+  {
+    "id": 1916,
+    "name": "Justin Lawrence",
+    "nickname": "The American Kid",
+    "photo": "https://media.api-sports.io/mma/fighters/1916.png",
+    "gender": "M",
+    "birth_date": "1990-05-15",
+    "age": 30,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 159,
+      "name": "Black House"
+    },
+    "last_update": "2025-06-05T05:08:33+00:00"
+  },
+  {
+    "id": 2716,
+    "name": "Kaan Ofli",
+    "nickname": "Genghis",
+    "photo": "https://media.api-sports.io/mma/fighters/2716.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 46,
+      "name": "Australian Top"
+    },
+    "last_update": "2025-06-05T11:48:32+00:00"
+  },
+  {
+    "id": 805,
+    "name": "Kai Kamaka III",
+    "nickname": "The Fighting Hawaiian",
+    "photo": "https://media.api-sports.io/mma/fighters/805.png",
+    "gender": "M",
+    "birth_date": "1995-01-05",
+    "age": 26,
+    "height": "5' 7'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-04T19:53:03+00:00"
+  },
+  {
+    "id": 2643,
+    "name": "Kaiwen",
+    "nickname": "The Underdog",
+    "photo": "https://media.api-sports.io/mma/fighters/2643.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 728,
+      "name": "K-1 Gym"
+    },
+    "last_update": "2025-06-05T11:12:04+00:00"
+  },
+  {
+    "id": 1247,
+    "name": "Katsunori Kikuno",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1247.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:34:03+00:00"
+  },
+  {
+    "id": 1480,
+    "name": "Kenny Florian",
+    "nickname": "KenFlo",
+    "photo": "https://media.api-sports.io/mma/fighters/1480.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "74'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 483,
+      "name": "Florian Martial Arts Center"
+    },
+    "last_update": "2025-06-05T01:30:41+00:00"
+  },
+  {
+    "id": 307,
+    "name": "Kevin Aguilar",
+    "nickname": "Angel of Death",
+    "photo": "https://media.api-sports.io/mma/fighters/307.png",
+    "gender": "M",
+    "birth_date": "1988-09-07",
+    "age": 33,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 155,
+      "name": "Longview MMA"
+    },
+    "last_update": "2025-06-04T15:44:04+00:00"
+  },
+  {
+    "id": 843,
+    "name": "Kevin Natividad",
+    "nickname": "Quicksand",
+    "photo": "https://media.api-sports.io/mma/fighters/843.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 20,
+      "name": "Fight Ready"
+    },
+    "last_update": "2025-06-04T20:12:03+00:00"
+  },
+  {
+    "id": 2773,
+    "name": "Kevin Vallejos",
+    "nickname": "El Chino",
+    "photo": "https://media.api-sports.io/mma/fighters/2773.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "68'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 806,
+      "name": "Brothers of Life MMA"
+    },
+    "last_update": "2025-06-05T12:17:06+00:00"
+  },
+  {
+    "id": 248,
+    "name": "Khalid Taha",
+    "nickname": "The Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/248.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 132,
+      "name": "Arena Dortmund"
+    },
+    "last_update": "2025-06-04T15:14:33+00:00"
+  },
+  {
+    "id": 2383,
+    "name": "Khusein Askhabov",
+    "nickname": "Nohcho",
+    "photo": "https://media.api-sports.io/mma/fighters/2383.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 35,
+      "name": "Tiger Muay Thai"
+    },
+    "last_update": "2025-06-05T09:02:02+00:00"
+  },
+  {
+    "id": 1425,
+    "name": "Koji Oishi",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1425.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T01:03:05+00:00"
+  },
+  {
+    "id": 98,
+    "name": "Kron Gracie",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/98.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 66,
+      "name": "Kron Gracie Jiu-Jitsu"
+    },
+    "last_update": "2025-06-04T13:59:33+00:00"
+  },
+  {
+    "id": 678,
+    "name": "Kyle Bochniak",
+    "nickname": "Crash",
+    "photo": "https://media.api-sports.io/mma/fighters/678.png",
+    "gender": "M",
+    "birth_date": "1987-02-05",
+    "age": 34,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 302,
+      "name": "Broadway Jiu-Jitsu"
+    },
+    "last_update": "2025-06-04T18:49:33+00:00"
+  },
+  {
+    "id": 837,
+    "name": "Kyle Driscoll",
+    "nickname": "KD",
+    "photo": "https://media.api-sports.io/mma/fighters/837.png",
+    "gender": "M",
+    "birth_date": "1994-09-23",
+    "age": 26,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-04T20:09:03+00:00"
+  },
+  {
+    "id": 346,
+    "name": "Kyle Nelson",
+    "nickname": "The Monster",
+    "photo": "https://media.api-sports.io/mma/fighters/346.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "148 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 168,
+      "name": "House Of Champions"
+    },
+    "last_update": "2025-06-04T16:03:33+00:00"
+  },
+  {
+    "id": 511,
+    "name": "Lance Lawrence",
+    "nickname": "The Tornado",
+    "photo": "https://media.api-sports.io/mma/fighters/511.png",
+    "gender": "M",
+    "birth_date": "1993-06-26",
+    "age": 27,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T17:26:02+00:00"
+  },
+  {
+    "id": 2255,
+    "name": "Lazar Stojadinovic",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2255.png",
+    "gender": "M",
+    "birth_date": "1989-03-22",
+    "age": 32,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "68'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T07:58:03+00:00"
+  },
+  {
+    "id": 1444,
+    "name": "Leigh Remedios",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1444.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T01:12:32+00:00"
+  },
+  {
+    "id": 1593,
+    "name": "Leonard Garcia",
+    "nickname": "Bad Boy",
+    "photo": "https://media.api-sports.io/mma/fighters/1593.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-05T02:27:03+00:00"
+  },
+  {
+    "id": 593,
+    "name": "Lerone Murphy",
+    "nickname": "The Miracle",
+    "photo": "https://media.api-sports.io/mma/fighters/593.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 267,
+      "name": "Manchester Top"
+    },
+    "last_update": "2025-06-04T18:07:03+00:00"
+  },
+  {
+    "id": 2152,
+    "name": "Levan Makashvili",
+    "nickname": "The Hornet",
+    "photo": "https://media.api-sports.io/mma/fighters/2152.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:06:35+00:00"
+  },
+  {
+    "id": 2501,
+    "name": "Lucas Alexander",
+    "nickname": "The Lion",
+    "photo": "https://media.api-sports.io/mma/fighters/2501.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "148 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 164,
+      "name": "Fusion X-Cel"
+    },
+    "last_update": "2025-06-05T10:01:03+00:00"
+  },
+  {
+    "id": 2430,
+    "name": "Lucas Almeida",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2430.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "148 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 802,
+      "name": "MMA Sorocaba"
+    },
+    "last_update": "2025-06-05T09:25:34+00:00"
+  },
+  {
+    "id": 1288,
+    "name": "Lucas Martins",
+    "nickname": "Mineiro",
+    "photo": "https://media.api-sports.io/mma/fighters/1288.png",
+    "gender": "M",
+    "birth_date": "1988-11-11",
+    "age": 32,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 38,
+      "name": "Chute Boxe"
+    },
+    "last_update": "2025-06-04T23:54:32+00:00"
+  },
+  {
+    "id": 2262,
+    "name": "Luis Gomez",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2262.png",
+    "gender": "M",
+    "birth_date": "1995-01-28",
+    "age": 26,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-05T08:01:32+00:00"
+  },
+  {
+    "id": 2674,
+    "name": "Luis Pajuelo",
+    "nickname": "CorazÃ³n de Leon",
+    "photo": "https://media.api-sports.io/mma/fighters/2674.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "69.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 736,
+      "name": "Contacto Livre"
+    },
+    "last_update": "2025-06-05T11:27:33+00:00"
+  },
+  {
+    "id": 871,
+    "name": "Luis Saldana",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/871.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 20,
+      "name": "Fight Ready"
+    },
+    "last_update": "2025-06-04T20:26:04+00:00"
+  },
+  {
+    "id": 1824,
+    "name": "Mackens Semerzier",
+    "nickname": "Mack da Menace",
+    "photo": "https://media.api-sports.io/mma/fighters/1824.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T04:22:33+00:00"
+  },
+  {
+    "id": 2289,
+    "name": "Mads Burnell",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2289.png",
+    "gender": "M",
+    "birth_date": "1994-03-06",
+    "age": 27,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 78,
+      "name": "Arte Suave Copenhagen"
+    },
+    "last_update": "2025-06-05T08:15:02+00:00"
+  },
+  {
+    "id": 2718,
+    "name": "Mairon Santos",
+    "nickname": "The Legend",
+    "photo": "https://media.api-sports.io/mma/fighters/2718.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T11:49:35+00:00"
+  },
+  {
+    "id": 376,
+    "name": "Makwan Amirkhani",
+    "nickname": "Mr. Finland",
+    "photo": "https://media.api-sports.io/mma/fighters/376.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 40,
+      "name": "SBG Ireland"
+    },
+    "last_update": "2025-06-04T16:18:33+00:00"
+  },
+  {
+    "id": 2579,
+    "name": "Manolo Zecchini",
+    "nickname": "Angelo Veneziano",
+    "photo": "https://media.api-sports.io/mma/fighters/2579.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-05T10:40:13+00:00"
+  },
+  {
+    "id": 904,
+    "name": "Marcelo Rojo",
+    "nickname": "Pitbull",
+    "photo": "https://media.api-sports.io/mma/fighters/904.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 79,
+      "name": "Entram Gym"
+    },
+    "last_update": "2025-06-04T20:42:33+00:00"
+  },
+  {
+    "id": 2284,
+    "name": "Mark Cherico",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2284.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "155 lbs",
+    "reach": "69.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:12:37+00:00"
+  },
+  {
+    "id": 2030,
+    "name": "Mark Eddiva",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2030.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 573,
+      "name": "Lakay MMA"
+    },
+    "last_update": "2025-06-05T06:05:34+00:00"
+  },
+  {
+    "id": 1518,
+    "name": "Mark Hominick",
+    "nickname": "The Machine",
+    "photo": "https://media.api-sports.io/mma/fighters/1518.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 469,
+      "name": "Tompkins"
+    },
+    "last_update": "2025-06-05T01:49:33+00:00"
+  },
+  {
+    "id": 606,
+    "name": "Martin Bravo",
+    "nickname": "El Toro",
+    "photo": "https://media.api-sports.io/mma/fighters/606.png",
+    "gender": "M",
+    "birth_date": "1993-09-21",
+    "age": 27,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71.5'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 79,
+      "name": "Entram Gym"
+    },
+    "last_update": "2025-06-04T18:13:33+00:00"
+  },
+  {
+    "id": 498,
+    "name": "Martin Day",
+    "nickname": "The Spartan",
+    "photo": "https://media.api-sports.io/mma/fighters/498.png",
+    "gender": "M",
+    "birth_date": "1988-11-10",
+    "age": 33,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 230,
+      "name": "Hawaii Elite MMA"
+    },
+    "last_update": "2025-06-04T17:19:34+00:00"
+  },
+  {
+    "id": 2350,
+    "name": "Marty Coughran",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2350.png",
+    "gender": "M",
+    "birth_date": "1994-05-17",
+    "age": 26,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:45:33+00:00"
+  },
+  {
+    "id": 2138,
+    "name": "Masio Fullen",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2138.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:59:32+00:00"
+  },
+  {
+    "id": 2248,
+    "name": "Matt Bessette",
+    "nickname": "The Mangler",
+    "photo": "https://media.api-sports.io/mma/fighters/2248.png",
+    "gender": "M",
+    "birth_date": "1984-12-28",
+    "age": 36,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "70.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 351,
+      "name": "Underdog BJJ"
+    },
+    "last_update": "2025-06-05T07:54:33+00:00"
+  },
+  {
+    "id": 1595,
+    "name": "Matt Grice",
+    "nickname": "The Real One",
+    "photo": "https://media.api-sports.io/mma/fighters/1595.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 457,
+      "name": "Titan Martial Arts"
+    },
+    "last_update": "2025-06-05T02:28:02+00:00"
+  },
+  {
+    "id": 345,
+    "name": "Matt Sayles",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/345.png",
+    "gender": "M",
+    "birth_date": "1994-02-21",
+    "age": 27,
+    "height": "5' 7'",
+    "weight": "155 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 3,
+      "name": "Alliance MMA"
+    },
+    "last_update": "2025-06-04T16:03:03+00:00"
+  },
+  {
+    "id": 2345,
+    "name": "Maurice Mitchell",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2345.png",
+    "gender": "M",
+    "birth_date": "1987-06-29",
+    "age": 33,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-05T08:43:05+00:00"
+  },
+  {
+    "id": 256,
+    "name": "Max Holloway",
+    "nickname": "Blessed",
+    "photo": "https://media.api-sports.io/mma/fighters/256.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 135,
+      "name": "Gracie Technics"
+    },
+    "last_update": "2025-06-04T15:18:33+00:00"
+  },
+  {
+    "id": 1907,
+    "name": "Maximo Blanco",
+    "nickname": "Maxi",
+    "photo": "https://media.api-sports.io/mma/fighters/1907.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 496,
+      "name": "Yoshida Dojo"
+    },
+    "last_update": "2025-06-05T05:04:04+00:00"
+  },
+  {
+    "id": 2583,
+    "name": "Melquizael Costa",
+    "nickname": "Melk Cauthy",
+    "photo": "https://media.api-sports.io/mma/fighters/2583.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 768,
+      "name": "Chute Boxe - Joao Emilio"
+    },
+    "last_update": "2025-06-05T10:42:03+00:00"
+  },
+  {
+    "id": 813,
+    "name": "Melsik Baghdasaryan",
+    "nickname": "The Gun",
+    "photo": "https://media.api-sports.io/mma/fighters/813.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 360,
+      "name": "Glendale Fighting Club"
+    },
+    "last_update": "2025-06-04T19:57:02+00:00"
+  },
+  {
+    "id": 374,
+    "name": "Michael Trizano",
+    "nickname": "The Lone Wolf",
+    "photo": "https://media.api-sports.io/mma/fighters/374.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "148 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 36,
+      "name": "Tiger Schulman"
+    },
+    "last_update": "2025-06-04T16:17:34+00:00"
+  },
+  {
+    "id": 1623,
+    "name": "Michihiro Omigawa",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1623.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 496,
+      "name": "Yoshida Dojo"
+    },
+    "last_update": "2025-06-05T02:42:02+00:00"
+  },
+  {
+    "id": 1207,
+    "name": "Mike Brown",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1207.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:14:02+00:00"
+  },
+  {
+    "id": 2041,
+    "name": "Mike de la Torre",
+    "nickname": "El Cucuy",
+    "photo": "https://media.api-sports.io/mma/fighters/2041.png",
+    "gender": "M",
+    "birth_date": "1986-09-22",
+    "age": 34,
+    "height": "6' 0'",
+    "weight": "155 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:11:12+00:00"
+  },
+  {
+    "id": 231,
+    "name": "Mike Grundy",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/231.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 99,
+      "name": "Kaobon"
+    },
+    "last_update": "2025-06-04T15:06:03+00:00"
+  },
+  {
+    "id": 1791,
+    "name": "Mike Lullo",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1791.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T04:06:07+00:00"
+  },
+  {
+    "id": 2283,
+    "name": "Mike Santiago",
+    "nickname": "Little Bully",
+    "photo": "https://media.api-sports.io/mma/fighters/2283.png",
+    "gender": "M",
+    "birth_date": "1989-07-28",
+    "age": 31,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 623,
+      "name": "Top Notch Fitness"
+    },
+    "last_update": "2025-06-05T08:12:02+00:00"
+  },
+  {
+    "id": 1949,
+    "name": "Mike Wilkinson",
+    "nickname": "The Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/1949.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 556,
+      "name": "Atherton Submission Wrestling"
+    },
+    "last_update": "2025-06-05T05:25:06+00:00"
+  },
+  {
+    "id": 467,
+    "name": "Miles Johns",
+    "nickname": "Chapo",
+    "photo": "https://media.api-sports.io/mma/fighters/467.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 218,
+      "name": "Marathon MMA"
+    },
+    "last_update": "2025-06-04T17:04:03+00:00"
+  },
+  {
+    "id": 1925,
+    "name": "Milton Vieira",
+    "nickname": "Miltinho",
+    "photo": "https://media.api-sports.io/mma/fighters/1925.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 316,
+      "name": "Brazilian Top"
+    },
+    "last_update": "2025-06-05T05:13:08+00:00"
+  },
+  {
+    "id": 501,
+    "name": "Mirsad Bektic",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/501.png",
+    "gender": "M",
+    "birth_date": "1991-02-16",
+    "age": 30,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 97,
+      "name": "TriStar Gym"
+    },
+    "last_update": "2025-06-04T17:21:03+00:00"
+  },
+  {
+    "id": 2585,
+    "name": "Morgan CharriÃ¨re",
+    "nickname": "The Last Pirate",
+    "photo": "https://media.api-sports.io/mma/fighters/2585.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 721,
+      "name": "Chapa Quente"
+    },
+    "last_update": "2025-07-13T12:10:33+00:00"
+  },
+  {
+    "id": 326,
+    "name": "Movsar Evloev",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/326.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "72.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T15:53:34+00:00"
+  },
+  {
+    "id": 833,
+    "name": "Muhammad Naimov",
+    "nickname": "Hillman",
+    "photo": "https://media.api-sports.io/mma/fighters/833.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 19,
+      "name": "Elevation Fight"
+    },
+    "last_update": "2025-06-28T12:07:04+00:00"
+  },
+  {
+    "id": 101,
+    "name": "Myles Jury",
+    "nickname": "Fury",
+    "photo": "https://media.api-sports.io/mma/fighters/101.png",
+    "gender": "M",
+    "birth_date": "1988-10-31",
+    "age": 32,
+    "height": "5' 10'",
+    "weight": "155 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 3,
+      "name": "Alliance MMA"
+    },
+    "last_update": "2025-06-04T14:01:04+00:00"
+  },
+  {
+    "id": 232,
+    "name": "Nad Narimani",
+    "nickname": "Smiler",
+    "photo": "https://media.api-sports.io/mma/fighters/232.png",
+    "gender": "M",
+    "birth_date": "1987-04-14",
+    "age": 34,
+    "height": "5' 8'",
+    "weight": "150 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T15:06:33+00:00"
+  },
+  {
+    "id": 694,
+    "name": "Nate Landwehr",
+    "nickname": "The Train",
+    "photo": "https://media.api-sports.io/mma/fighters/694.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 98,
+      "name": "MMA Masters"
+    },
+    "last_update": "2025-07-13T12:11:03+00:00"
+  },
+  {
+    "id": 227,
+    "name": "Nathaniel Wood",
+    "nickname": "The Prospect",
+    "photo": "https://media.api-sports.io/mma/fighters/227.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 126,
+      "name": "Great Britain Top"
+    },
+    "last_update": "2025-06-04T15:04:04+00:00"
+  },
+  {
+    "id": 2587,
+    "name": "Nick Aguirre",
+    "nickname": "Slick",
+    "photo": "https://media.api-sports.io/mma/fighters/2587.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "136 lbs",
+    "reach": "74'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 180,
+      "name": "Valle Flow Striking"
+    },
+    "last_update": "2025-06-05T10:44:04+00:00"
+  },
+  {
+    "id": 89,
+    "name": "Nik Lentz",
+    "nickname": "The Carny",
+    "photo": "https://media.api-sports.io/mma/fighters/89.png",
+    "gender": "M",
+    "birth_date": "1984-08-13",
+    "age": 37,
+    "height": "5' 8'",
+    "weight": "150 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 62,
+      "name": "Sanford MMA"
+    },
+    "last_update": "2025-06-04T13:55:03+00:00"
+  },
+  {
+    "id": 2058,
+    "name": "Niklas Backstrom",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2058.png",
+    "gender": "M",
+    "birth_date": "1989-08-22",
+    "age": 31,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:19:32+00:00"
+  },
+  {
+    "id": 2037,
+    "name": "Noad Lahat",
+    "nickname": "Neo",
+    "photo": "https://media.api-sports.io/mma/fighters/2037.png",
+    "gender": "M",
+    "birth_date": "1984-06-08",
+    "age": 36,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-05T06:09:03+00:00"
+  },
+  {
+    "id": 2449,
+    "name": "Olivier Murad",
+    "nickname": "Warrior of God",
+    "photo": "https://media.api-sports.io/mma/fighters/2449.png",
+    "gender": "M",
+    "birth_date": "1993-12-21",
+    "age": 27,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": 672,
+      "name": "Freedom Fighters"
+    },
+    "last_update": "2025-06-05T09:35:03+00:00"
+  },
+  {
+    "id": 1801,
+    "name": "Pablo Garza",
+    "nickname": "The Scarecrow",
+    "photo": "https://media.api-sports.io/mma/fighters/1801.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 444,
+      "name": "Academy of Combat Arts"
+    },
+    "last_update": "2025-06-05T04:11:03+00:00"
+  },
+  {
+    "id": 1333,
+    "name": "Pat Sabatini",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1333.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 341,
+      "name": "Marquez MMA"
+    },
+    "last_update": "2025-06-05T00:17:03+00:00"
+  },
+  {
+    "id": 1885,
+    "name": "Pat Schilling",
+    "nickname": "Thrilling",
+    "photo": "https://media.api-sports.io/mma/fighters/1885.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 541,
+      "name": "Ambition Training Academy"
+    },
+    "last_update": "2025-06-05T04:53:02+00:00"
+  },
+  {
+    "id": 2774,
+    "name": "Patricio Pitbull",
+    "nickname": "Pitbull",
+    "photo": "https://media.api-sports.io/mma/fighters/2774.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "145 lbs",
+    "reach": "65.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 172,
+      "name": "Pitbull Brothers"
+    },
+    "last_update": "2025-06-05T12:17:33+00:00"
+  },
+  {
+    "id": 2134,
+    "name": "Paul Redmond",
+    "nickname": "Redser",
+    "photo": "https://media.api-sports.io/mma/fighters/2134.png",
+    "gender": "M",
+    "birth_date": "1986-10-20",
+    "age": 34,
+    "height": "5' 10'",
+    "weight": "155 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:57:32+00:00"
+  },
+  {
+    "id": 642,
+    "name": "Peter Barrett",
+    "nickname": "Slippery",
+    "photo": "https://media.api-sports.io/mma/fighters/642.png",
+    "gender": "M",
+    "birth_date": "1986-08-10",
+    "age": 34,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 281,
+      "name": "Sityodtong Boston"
+    },
+    "last_update": "2025-06-04T18:31:33+00:00"
+  },
+  {
+    "id": 2271,
+    "name": "Peter Petties",
+    "nickname": "The Joker",
+    "photo": "https://media.api-sports.io/mma/fighters/2271.png",
+    "gender": "M",
+    "birth_date": "1990-12-20",
+    "age": 30,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 65,
+      "name": "Lloyd Irvin"
+    },
+    "last_update": "2025-06-05T08:06:04+00:00"
+  },
+  {
+    "id": 1688,
+    "name": "Phillipe Nover",
+    "nickname": "The Filipino Assassin",
+    "photo": "https://media.api-sports.io/mma/fighters/1688.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T03:14:32+00:00"
+  },
+  {
+    "id": 1996,
+    "name": "Ramiro Hernandez",
+    "nickname": "Junior",
+    "photo": "https://media.api-sports.io/mma/fighters/1996.png",
+    "gender": "M",
+    "birth_date": "1986-07-22",
+    "age": 34,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 413,
+      "name": "Miletich Martial Arts"
+    },
+    "last_update": "2025-06-05T05:48:33+00:00"
+  },
+  {
+    "id": 79,
+    "name": "Renan Barao",
+    "nickname": "The Baron",
+    "photo": "https://media.api-sports.io/mma/fighters/79.png",
+    "gender": "M",
+    "birth_date": "1987-01-31",
+    "age": 34,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 29,
+      "name": "Nova Uniao"
+    },
+    "last_update": "2025-06-04T13:50:05+00:00"
+  },
+  {
+    "id": 416,
+    "name": "Ricardo Lamas",
+    "nickname": "The Bully",
+    "photo": "https://media.api-sports.io/mma/fighters/416.png",
+    "gender": "M",
+    "birth_date": "1982-05-21",
+    "age": 38,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 98,
+      "name": "MMA Masters"
+    },
+    "last_update": "2025-06-04T16:38:32+00:00"
+  },
+  {
+    "id": 37,
+    "name": "Ricardo Ramos",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/37.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T13:29:03+00:00"
+  },
+  {
+    "id": 1855,
+    "name": "Robert Peralta",
+    "nickname": "Problems",
+    "photo": "https://media.api-sports.io/mma/fighters/1855.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 528,
+      "name": "Xplode MMA"
+    },
+    "last_update": "2025-06-05T04:38:03+00:00"
+  },
+  {
+    "id": 1287,
+    "name": "Robert Whiteford",
+    "nickname": "The Hammer",
+    "photo": "https://media.api-sports.io/mma/fighters/1287.png",
+    "gender": "M",
+    "birth_date": "1983-04-12",
+    "age": 38,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T23:54:02+00:00"
+  },
+  {
+    "id": 2744,
+    "name": "Roberto Romero",
+    "nickname": "El Charro Negro",
+    "photo": "https://media.api-sports.io/mma/fighters/2744.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "155 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 119,
+      "name": "Oyama"
+    },
+    "last_update": "2025-06-05T12:02:40+00:00"
+  },
+  {
+    "id": 2146,
+    "name": "Rocky Lee",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2146.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:03:32+00:00"
+  },
+  {
+    "id": 2109,
+    "name": "Rodolfo Rubio",
+    "nickname": "Fito",
+    "photo": "https://media.api-sports.io/mma/fighters/2109.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:45:04+00:00"
+  },
+  {
+    "id": 1687,
+    "name": "Rolando Delgado",
+    "nickname": "Roli",
+    "photo": "https://media.api-sports.io/mma/fighters/1687.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "77'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T03:14:02+00:00"
+  },
+  {
+    "id": 2241,
+    "name": "Rolando Dy",
+    "nickname": "Dy Incredible",
+    "photo": "https://media.api-sports.io/mma/fighters/2241.png",
+    "gender": "M",
+    "birth_date": "1991-08-11",
+    "age": 29,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "69.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 616,
+      "name": "Biagtian Muay Thai"
+    },
+    "last_update": "2025-06-05T07:51:03+00:00"
+  },
+  {
+    "id": 1933,
+    "name": "Rony Jason",
+    "nickname": "Jason",
+    "photo": "https://media.api-sports.io/mma/fighters/1933.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 30,
+      "name": "Nogueira"
+    },
+    "last_update": "2025-06-05T05:17:03+00:00"
+  },
+  {
+    "id": 494,
+    "name": "Ryan Hall",
+    "nickname": "The Wizard",
+    "photo": "https://media.api-sports.io/mma/fighters/494.png",
+    "gender": "M",
+    "birth_date": "1985-02-22",
+    "age": 36,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "70.5'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 97,
+      "name": "TriStar Gym"
+    },
+    "last_update": "2025-06-04T17:17:33+00:00"
+  },
+  {
+    "id": 1652,
+    "name": "Ryan Roberts",
+    "nickname": "Are You Ready?",
+    "photo": "https://media.api-sports.io/mma/fighters/1652.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T02:56:32+00:00"
+  },
+  {
+    "id": 1273,
+    "name": "Sam Sicilia",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1273.png",
+    "gender": "M",
+    "birth_date": "1986-02-01",
+    "age": 35,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 49,
+      "name": "Sikjitsu"
+    },
+    "last_update": "2025-06-04T23:47:03+00:00"
+  },
+  {
+    "id": 607,
+    "name": "Sean Woodson",
+    "nickname": "The Sniper",
+    "photo": "https://media.api-sports.io/mma/fighters/607.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 2'",
+    "weight": "146 lbs",
+    "reach": "78'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 273,
+      "name": "Wolves Den Training Center"
+    },
+    "last_update": "2025-06-04T18:14:03+00:00"
+  },
+  {
+    "id": 390,
+    "name": "SeungWoo Choi",
+    "nickname": "Sting",
+    "photo": "https://media.api-sports.io/mma/fighters/390.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "146 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 236,
+      "name": "Korean Zombie MMA"
+    },
+    "last_update": "2025-06-04T16:25:32+00:00"
+  },
+  {
+    "id": 348,
+    "name": "Shane Burgos",
+    "nickname": "Hurricane",
+    "photo": "https://media.api-sports.io/mma/fighters/348.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "75.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 36,
+      "name": "Tiger Schulman"
+    },
+    "last_update": "2025-06-04T16:04:33+00:00"
+  },
+  {
+    "id": 1684,
+    "name": "Shane Nelson",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1684.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "70'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T03:12:32+00:00"
+  },
+  {
+    "id": 59,
+    "name": "Shane Young",
+    "nickname": "Smokin&#x27;",
+    "photo": "https://media.api-sports.io/mma/fighters/59.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "149 lbs",
+    "reach": "72.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 48,
+      "name": "City Kickboxing"
+    },
+    "last_update": "2025-06-04T13:40:03+00:00"
+  },
+  {
+    "id": 2366,
+    "name": "Shayilan Nuerdanbieke",
+    "nickname": "Wolverine",
+    "photo": "https://media.api-sports.io/mma/fighters/2366.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 520,
+      "name": "China Top"
+    },
+    "last_update": "2025-06-05T08:53:33+00:00"
+  },
+  {
+    "id": 238,
+    "name": "Sheymon Moraes",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/238.png",
+    "gender": "M",
+    "birth_date": "1990-10-11",
+    "age": 30,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 30,
+      "name": "Nogueira"
+    },
+    "last_update": "2025-06-04T15:09:33+00:00"
+  },
+  {
+    "id": 237,
+    "name": "Sodiq Yusuff",
+    "nickname": "Super",
+    "photo": "https://media.api-sports.io/mma/fighters/237.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 65,
+      "name": "Lloyd Irvin"
+    },
+    "last_update": "2025-06-04T15:09:03+00:00"
+  },
+  {
+    "id": 706,
+    "name": "Spike Carlyle",
+    "nickname": "Alpha Ginger",
+    "photo": "https://media.api-sports.io/mma/fighters/706.png",
+    "gender": "M",
+    "birth_date": "1993-05-06",
+    "age": 27,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 7,
+      "name": "Treigning Lab"
+    },
+    "last_update": "2025-06-04T19:03:32+00:00"
+  },
+  {
+    "id": 1870,
+    "name": "Stephen Bass",
+    "nickname": "Bigfish",
+    "photo": "https://media.api-sports.io/mma/fighters/1870.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": null,
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T04:45:32+00:00"
+  },
+  {
+    "id": 632,
+    "name": "Steve Garcia",
+    "nickname": "Mean Machine",
+    "photo": "https://media.api-sports.io/mma/fighters/632.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "145 lbs",
+    "reach": "75'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-07-13T12:09:35+00:00"
+  },
+  {
+    "id": 537,
+    "name": "Steven Nguyen",
+    "nickname": "The Ninja",
+    "photo": "https://media.api-sports.io/mma/fighters/537.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 2,
+      "name": "Fortis MMA"
+    },
+    "last_update": "2025-06-04T17:39:02+00:00"
+  },
+  {
+    "id": 303,
+    "name": "Steven Peterson",
+    "nickname": "Ocho",
+    "photo": "https://media.api-sports.io/mma/fighters/303.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 2,
+      "name": "Fortis MMA"
+    },
+    "last_update": "2025-06-04T15:42:03+00:00"
+  },
+  {
+    "id": 1874,
+    "name": "Steven Siler",
+    "nickname": "Super",
+    "photo": "https://media.api-sports.io/mma/fighters/1874.png",
+    "gender": "M",
+    "birth_date": "1987-02-15",
+    "age": 34,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-05T04:47:32+00:00"
+  },
+  {
+    "id": 687,
+    "name": "Suman Mokhtarian",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/687.png",
+    "gender": "M",
+    "birth_date": "1992-06-13",
+    "age": 28,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 46,
+      "name": "Australian Top"
+    },
+    "last_update": "2025-06-04T18:54:03+00:00"
+  },
+  {
+    "id": 1258,
+    "name": "Tatsuya Kawajiri",
+    "nickname": "The Crusher",
+    "photo": "https://media.api-sports.io/mma/fighters/1258.png",
+    "gender": "M",
+    "birth_date": "1978-05-08",
+    "age": 42,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:39:32+00:00"
+  },
+  {
+    "id": 2256,
+    "name": "Thanh Le",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2256.png",
+    "gender": "M",
+    "birth_date": "1985-08-28",
+    "age": 35,
+    "height": "5' 9'",
+    "weight": "155 lbs",
+    "reach": "74.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:58:33+00:00"
+  },
+  {
+    "id": 2420,
+    "name": "Theo Rlayang",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2420.png",
+    "gender": "M",
+    "birth_date": "1994-08-10",
+    "age": 27,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T09:20:32+00:00"
+  },
+  {
+    "id": 1591,
+    "name": "Thiago Tavares",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1591.png",
+    "gender": "M",
+    "birth_date": "1984-11-08",
+    "age": 36,
+    "height": "5' 7'",
+    "weight": "155 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 316,
+      "name": "Brazilian Top"
+    },
+    "last_update": "2025-06-05T02:26:04+00:00"
+  },
+  {
+    "id": 2084,
+    "name": "Tiago Trator",
+    "nickname": "Trator",
+    "photo": "https://media.api-sports.io/mma/fighters/2084.png",
+    "gender": "M",
+    "birth_date": "1987-03-12",
+    "age": 34,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "70.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 30,
+      "name": "Nogueira"
+    },
+    "last_update": "2025-06-05T06:32:32+00:00"
+  },
+  {
+    "id": 2676,
+    "name": "Timmy Cuamba",
+    "nickname": "Twilight",
+    "photo": "https://media.api-sports.io/mma/fighters/2676.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T11:28:33+00:00"
+  },
+  {
+    "id": 764,
+    "name": "Timur Valiev",
+    "nickname": "Lucky",
+    "photo": "https://media.api-sports.io/mma/fighters/764.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "136 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-04T19:32:33+00:00"
+  },
+  {
+    "id": 647,
+    "name": "TJ Brown",
+    "nickname": "Downtown",
+    "photo": "https://media.api-sports.io/mma/fighters/647.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 284,
+      "name": "Westside Fight"
+    },
+    "last_update": "2025-06-04T18:34:06+00:00"
+  },
+  {
+    "id": 773,
+    "name": "TJ Laramie",
+    "nickname": "The Truth",
+    "photo": "https://media.api-sports.io/mma/fighters/773.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 197,
+      "name": "Maximum Training Centre"
+    },
+    "last_update": "2025-06-04T19:37:03+00:00"
+  },
+  {
+    "id": 804,
+    "name": "Tony Kelley",
+    "nickname": "PrimeTime",
+    "photo": "https://media.api-sports.io/mma/fighters/804.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "137 lbs",
+    "reach": "70'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T19:52:33+00:00"
+  },
+  {
+    "id": 819,
+    "name": "Tucker Lutz",
+    "nickname": "Top Gun",
+    "photo": "https://media.api-sports.io/mma/fighters/819.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 363,
+      "name": "Ground Control Academy"
+    },
+    "last_update": "2025-06-04T20:00:06+00:00"
+  },
+  {
+    "id": 2326,
+    "name": "Tyler Diamond",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2326.png",
+    "gender": "M",
+    "birth_date": "1991-03-18",
+    "age": 30,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-05T08:33:33+00:00"
+  },
+  {
+    "id": 2637,
+    "name": "Victor Hugo",
+    "nickname": "Striker",
+    "photo": "https://media.api-sports.io/mma/fighters/2637.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": "71.5'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 43,
+      "name": "Astra Fight"
+    },
+    "last_update": "2025-06-05T11:09:03+00:00"
+  },
+  {
+    "id": 779,
+    "name": "Vince Cachero",
+    "nickname": "The Anomaly",
+    "photo": "https://media.api-sports.io/mma/fighters/779.png",
+    "gender": "M",
+    "birth_date": "1989-11-07",
+    "age": 32,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 342,
+      "name": "A4 Fitness"
+    },
+    "last_update": "2025-06-04T19:40:03+00:00"
+  },
+  {
+    "id": 2298,
+    "name": "Wang Guan",
+    "nickname": "The Dongbei Tiger",
+    "photo": "https://media.api-sports.io/mma/fighters/2298.png",
+    "gender": "M",
+    "birth_date": "1986-03-14",
+    "age": 35,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-05T08:19:33+00:00"
+  },
+  {
+    "id": 2609,
+    "name": "Westin Wilson",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2609.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 1'",
+    "weight": "146 lbs",
+    "reach": "73'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 107,
+      "name": "Upstate Karate"
+    },
+    "last_update": "2025-06-05T10:55:03+00:00"
+  },
+  {
+    "id": 1245,
+    "name": "Will Chope",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1245.png",
+    "gender": "M",
+    "birth_date": "1990-09-08",
+    "age": 30,
+    "height": "6' 4'",
+    "weight": "155 lbs",
+    "reach": "76'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T23:33:03+00:00"
+  },
+  {
+    "id": 2522,
+    "name": "William Gomis",
+    "nickname": "The Jaguar",
+    "photo": "https://media.api-sports.io/mma/fighters/2522.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "6' 0'",
+    "weight": "146 lbs",
+    "reach": "73'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 113,
+      "name": "MMA Factory"
+    },
+    "last_update": "2025-06-05T10:11:39+00:00"
+  },
+  {
+    "id": 2450,
+    "name": "Xie Bin",
+    "nickname": "The Stalker",
+    "photo": "https://media.api-sports.io/mma/fighters/2450.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T09:35:32+00:00"
+  },
+  {
+    "id": 602,
+    "name": "Yair Rodriguez",
+    "nickname": "El Pantera",
+    "photo": "https://media.api-sports.io/mma/fighters/602.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "146 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 180,
+      "name": "Valle Flow Striking"
+    },
+    "last_update": "2025-06-04T18:11:33+00:00"
+  },
+  {
+    "id": 1947,
+    "name": "Yaotzin Meza",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1947.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 1,
+      "name": "MMA LAB"
+    },
+    "last_update": "2025-06-05T05:24:04+00:00"
+  },
+  {
+    "id": 2317,
+    "name": "Yazan Hajeh",
+    "nickname": "Yazzle Dazzle",
+    "photo": "https://media.api-sports.io/mma/fighters/2317.png",
+    "gender": "M",
+    "birth_date": "1992-09-04",
+    "age": 28,
+    "height": "5' 7'",
+    "weight": "145 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 326,
+      "name": "10th Planet Jiu Jitsu"
+    },
+    "last_update": "2025-06-05T08:29:05+00:00"
+  },
+  {
+    "id": 2612,
+    "name": "Yizha",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2612.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "144 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 685,
+      "name": "Enbo Gedou"
+    },
+    "last_update": "2025-06-05T10:56:34+00:00"
+  },
+  {
+    "id": 562,
+    "name": "Yoshinori Horie",
+    "nickname": "Rising Star",
+    "photo": "https://media.api-sports.io/mma/fighters/562.png",
+    "gender": "M",
+    "birth_date": "1995-05-10",
+    "age": 25,
+    "height": "5' 8'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T17:51:33+00:00"
+  },
+  {
+    "id": 702,
+    "name": "Youssef Zalal",
+    "nickname": "The Moroccan Devil",
+    "photo": "https://media.api-sports.io/mma/fighters/702.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 10'",
+    "weight": "146 lbs",
+    "reach": "72'",
+    "stance": "Switch",
+    "category": "Featherweight",
+    "team": {
+      "id": 16,
+      "name": "FactoryX Muay Thai"
+    },
+    "last_update": "2025-06-04T19:01:34+00:00"
+  },
+  {
+    "id": 2027,
+    "name": "Yui Chul Nam",
+    "nickname": "The Korean Bulldozer",
+    "photo": "https://media.api-sports.io/mma/fighters/2027.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 572,
+      "name": "Posse"
+    },
+    "last_update": "2025-06-05T06:04:03+00:00"
+  },
+  {
+    "id": 140,
+    "name": "Zabit Magomedsharipov",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/140.png",
+    "gender": "M",
+    "birth_date": "1991-03-01",
+    "age": 30,
+    "height": "6' 1'",
+    "weight": "145 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 84,
+      "name": "Ricardo Almeida Jiu-Jitsu"
+    },
+    "last_update": "2025-06-04T14:20:32+00:00"
+  },
+  {
+    "id": 464,
+    "name": "Zach Zane",
+    "nickname": "God&#x27;s Warrior",
+    "photo": "https://media.api-sports.io/mma/fighters/464.png",
+    "gender": "M",
+    "birth_date": "1989-12-14",
+    "age": 31,
+    "height": "5' 10'",
+    "weight": "145 lbs",
+    "reach": "69'",
+    "stance": "Southpaw",
+    "category": "Featherweight",
+    "team": {
+      "id": 159,
+      "name": "Black House"
+    },
+    "last_update": "2025-06-04T17:02:33+00:00"
+  },
+  {
+    "id": 2727,
+    "name": "Zhu Kangjie",
+    "nickname": "The Hypnotist",
+    "photo": "https://media.api-sports.io/mma/fighters/2727.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "145 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T11:54:06+00:00"
+  },
+  {
+    "id": 2720,
+    "name": "Zygimantas Ramaska",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2720.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "145 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Featherweight",
+    "team": {
+      "id": 746,
+      "name": "Ukmerge Judo Club"
+    },
+    "last_update": "2025-06-05T11:50:37+00:00"
+  }
+]

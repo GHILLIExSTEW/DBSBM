@@ -6,7 +6,6 @@ import os
 from datetime import datetime, timedelta
 import logging
 from typing import List, Dict, Optional
-import difflib
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,6 @@ class OddsDropdownView(discord.ui.View):
         start = self.page * self.page_size
         end = min(start + self.page_size, len(self.all_games))
         games = self.all_games[start:end]
-        # Log the games being displayed for debugging
         logger.info(f"Dropdown page {self.page}: displaying games {start} to {end}:")
         for i, g in enumerate(games, start):
             logger.info(f"  {i}: {g['home_team_name']} vs {g['away_team_name']}")
@@ -71,171 +69,14 @@ class OddsDropdownView(discord.ui.View):
 class Odds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.odds_api_key = os.getenv("ODDS_API_KEY")
-        
-        # Log the API key status (without exposing the actual key)
-        if self.odds_api_key:
-            logger.info("Odds API key configured successfully")
-        else:
-            logger.warning("Odds API key not found in environment variables")
-        
-        # Map your sports to Odds API sport keys
-        self.sport_mapping = {
-            "soccer": "soccer_epl",  # Default to EPL for soccer
-            "basketball": "basketball_nba",
-            "football": "americanfootball_nfl", 
-            "hockey": "icehockey_nhl",
-            "baseball": "baseball_mlb",
-            "tennis": "tennis_atp_singles",
-            "mma": "mma_mixed_martial_arts",
-            "golf": "golf_pga_championship",
-            "cricket": "cricket_test_match",
-            "rugby": "rugbyleague_nrl",
-            "australian_rules": "aussierules_afl",
-            "darts": "darts_pdc_world_championship"
-        }
-        
-        # Map your league names to Odds API sport keys
-        self.league_sport_mapping = {
-            # Soccer/Football
-            "EPL": "soccer_epl",
-            "Premier League": "soccer_epl",
-            "WorldCup": "soccer_uefa_champs_league",  # FIFA Club World Cup
-            "Champions League": "soccer_uefa_champs_league",
-            "UEFA Champions League": "soccer_uefa_champs_league",
-            "La Liga": "soccer_spain_la_liga",
-            "Bundesliga": "soccer_germany_bundesliga",
-            "Serie A": "soccer_italy_serie_a",
-            "Ligue 1": "soccer_france_ligue_1",
-            "MLS": "soccer_usa_mls",
-            "A-League": "soccer_australia_aleague",
-            "J League": "soccer_japan_j_league",
-            "Brazil Série A": "soccer_brazil_campeonato",
-            "Denmark Superliga": "soccer_denmark_superliga",
-            "Veikkausliiga": "soccer_finland_veikkausliiga",
-            "League of Ireland": "soccer_league_of_ireland",
-            "Eliteserien": "soccer_norway_eliteserien",
-            "La Liga 2": "soccer_spain_segunda_division",
-            "Allsvenskan": "soccer_sweden_allsvenskan",
-            "Superettan": "soccer_sweden_superettan",
-            "UEFA Euro": "soccer_uefa_european_championship",
-            
-            # Basketball
-            "NBA": "basketball_nba",
-            "WNBA": "basketball_wnba",
-            "NCAA": "basketball_ncaab",
-            "EuroLeague": "basketball_euroleague",
-            "Champions League": "basketball_champions_league",
-            "Eurocup": "basketball_eurocup",
-            "BIG3": "basketball_big3",
-            "NIT": "basketball_nit",
-            
-            # American Football
-            "NFL": "americanfootball_nfl",
-            "NCAA": "americanfootball_ncaaf",
-            "CFL": "americanfootball_cfl",
-            "XFL": "americanfootball_xfl",
-            "AFL": "americanfootball_afl",
-            
-            # Ice Hockey
-            "NHL": "icehockey_nhl",
-            "KHL": "icehockey_khl",
-            
-            # Baseball
-            "MLB": "baseball_mlb",
-            "NPB": "baseball_npb",
-            "KBO": "baseball_kbo",
-            "CPBL": "baseball_cpbl",
-            "LIDOM": "baseball_lidom",
-            "World Baseball Classic": "baseball_world_baseball_classic",
-            "Italy": "baseball_italy",
-            "Netherlands": "baseball_netherlands",
-            "Spain": "baseball_spain",
-            
-            # Tennis
-            "ATP": "tennis_atp_singles",
-            "WTA": "tennis_wta_singles",
-            "ATP French Open": "tennis_atp_french_open",
-            "WTA French Open": "tennis_wta_french_open",
-            "ATP US Open": "tennis_atp_us_open",
-            "WTA US Open": "tennis_wta_us_open",
-            "ATP Wimbledon": "tennis_atp_wimbledon",
-            "WTA Wimbledon": "tennis_wta_wimbledon",
-            "ATP Australian Open": "tennis_atp_australian_open",
-            "WTA Australian Open": "tennis_wta_australian_open",
-            
-            # MMA
-            "UFC": "mma_ufc",
-            "MMA": "mma_mixed_martial_arts",
-            
-            # Golf
-            "PGA Championship": "golf_pga_championship",
-            "Masters Tournament": "golf_masters_tournament",
-            "US Open": "golf_us_open",
-            "The Open": "golf_the_open_championship",
-            "Ryder Cup": "golf_ryder_cup",
-            "Presidents Cup": "golf_presidents_cup",
-            
-            # Cricket
-            "Test Matches": "cricket_test_match",
-            "ODI": "cricket_odi",
-            "T20": "cricket_t20",
-            "IPL": "cricket_ipl",
-            "Big Bash League": "cricket_big_bash_league",
-            "Caribbean Premier League": "cricket_caribbean_premier_league",
-            
-            # Rugby
-            "NRL": "rugbyleague_nrl",
-            "Super Rugby": "rugby_union_super_rugby",
-            "Six Nations": "rugby_union_six_nations",
-            "Rugby Championship": "rugby_union_rugby_championship",
-            "Heineken Cup": "rugby_union_heineken_cup",
-            
-            # Australian Rules Football
-            "AFL": "aussierules_afl",
-            
-            # Darts
-            "PDC": "darts_pdc_world_championship",
-            "PDC World Championship": "darts_pdc_world_championship",
-            
-            # Handball
-            "EHF": "handball_ehf_champions_league",
-            
-            # Motorsport
-            "Formula 1": "motorsport_f1",
-            "Formula 1": "motorsport_formula_1",
-            "NASCAR": "motorsport_nascar",
-            "IndyCar": "motorsport_indycar",
-            "MotoGP": "motorsport_motogp",
-            
-            # Volleyball
-            "Volleyball": "volleyball_volleyball",
-            
-            # Table Tennis
-            "Table Tennis": "table_tennis_table_tennis",
-            
-            # Badminton
-            "Badminton": "badminton_badminton",
-            
-            # Snooker
-            "Snooker": "snooker_snooker",
-            
-            # Boxing
-            "Boxing": "boxing_boxing",
-            
-            # Esports
-            "CS:GO": "esports_csgo",
-            "Dota 2": "esports_dota2",
-            "League of Legends": "esports_lol",
-            "Overwatch": "esports_overwatch",
-            "Rocket League": "esports_rocket_league",
-            "Valorant": "esports_valorant"
-        }
-    
+        self.api_sports_key = os.getenv("API_SPORTS_KEY")
+        if not self.api_sports_key:
+            logger.warning("API-Sports key not found in environment variables")
+
     @app_commands.command(name="odds", description="Browse and get odds for upcoming games")
     async def odds(self, interaction: discord.Interaction, hours: int = 48):
-        if not self.odds_api_key:
-            await interaction.response.send_message("❌ Odds API key not configured!", ephemeral=True)
+        if not self.api_sports_key:
+            await interaction.response.send_message("❌ API-Sports key not configured!", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
         games = await self.get_upcoming_games(hours)
@@ -247,233 +88,112 @@ class Odds(commands.Cog):
             return
         view = OddsDropdownView(self, games)
         await interaction.followup.send("Select a game to view odds:", view=view, ephemeral=True)
-    
+
     async def get_upcoming_games(self, hours_ahead: int = 0) -> List[Dict]:
-        """Get all games from api_games table (no time or status filter)"""
+        """Get all games from api_games table, filtered to current season only"""
         try:
+            from config.leagues import get_current_season, LEAGUE_IDS
             db_manager = getattr(self.bot, 'db_manager', None)
             if not db_manager:
                 raise Exception("Database manager not available")
-
             query = """
                 SELECT 
-                    api_game_id, sport, league_name, home_team_name, away_team_name, 
-                    start_time, status
+                    api_game_id, sport, league_id, season, home_team_name, away_team_name, start_time, status
                 FROM api_games 
                 ORDER BY start_time ASC 
-                LIMIT 50
+                LIMIT 100
             """
             games = await db_manager.fetch_all(query)
             logger.info(f"[get_upcoming_games] Found {len(games)} games in database (no filter)")
-            for i, game in enumerate(games[:5]):
-                logger.info(f"Game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')} - {game.get('start_time')} - Status: {game.get('status')}")
-            return games
+            # Filter to current season only
+            filtered_games = []
+            for game in games:
+                league_id = game.get('league_id')
+                # Find league key by league_id
+                league_key = None
+                for k, v in LEAGUE_IDS.items():
+                    if str(v.get('id')) == str(league_id):
+                        league_key = k
+                        break
+                if not league_key:
+                    continue  # skip if league not recognized
+                current_season = get_current_season(league_key)
+                if str(game.get('season')) == str(current_season):
+                    filtered_games.append(game)
+            logger.info(f"[get_upcoming_games] Filtered to {len(filtered_games)} games for current season")
+            for i, game in enumerate(filtered_games[:5]):
+                logger.info(f"Game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_id')} - {game.get('start_time')} - Status: {game.get('status')}")
+            return filtered_games
         except Exception as e:
             logger.error(f"Error getting all games: {e}")
             return []
-    
-    async def fetch_odds_for_games(self, games: List[Dict]) -> List[discord.Embed]:
-        """Fetch odds for specific games and return list of embeds"""
-        embeds = []
-        
-        logger.info(f"Processing {len(games)} games for odds")
-        
-        for game in games:
-            try:
-                # Map sport/league to Odds API sport key
-                odds_sport_key = self.get_odds_sport_key(game)
-                if not odds_sport_key:
-                    logger.warning(f"Could not map sport for game: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')}")
-                    continue
-                
-                logger.info(f"Fetching odds for {game.get('home_team_name')} vs {game.get('away_team_name')} using sport key: {odds_sport_key}")
-                
-                # Fetch odds for this sport
-                odds_data = await self.fetch_odds_from_api(odds_sport_key)
-                if not odds_data:
-                    logger.warning(f"No odds data returned for sport: {odds_sport_key}")
-                    continue
-                
-                logger.info(f"Found {len(odds_data)} games in odds data for {odds_sport_key}")
-                
-                # Find matching game in odds data
-                matching_odds = self.find_matching_game_odds(game, odds_data)
-                if matching_odds:
-                    logger.info(f"Found matching odds for {game.get('home_team_name')} vs {game.get('away_team_name')}")
-                    embed = await self.create_odds_embed(game, matching_odds)
-                    embeds.append(embed)
-                else:
-                    logger.warning(f"No matching odds found for {game.get('home_team_name')} vs {game.get('away_team_name')}")
-                
-            except Exception as e:
-                logger.error(f"Error processing game {game.get('api_game_id')}: {e}")
-                continue
-        
-        logger.info(f"Created {len(embeds)} odds embeds")
-        return embeds
-    
-    def get_odds_sport_key(self, game: Dict) -> Optional[str]:
-        """Map game sport/league to Odds API sport key"""
-        sport = game.get('sport', '').lower()
-        league_name = game.get('league_name', '')
-        
-        # Try league mapping first
-        if league_name in self.league_sport_mapping:
-            return self.league_sport_mapping[league_name]
-        
-        # Fall back to sport mapping
-        if sport in self.sport_mapping:
-            return self.sport_mapping[sport]
-        
-        return None
-    
-    async def fetch_odds_from_api(self, sport_key: str) -> Optional[List[Dict]]:
-        """Fetch odds from The Odds API"""
-        url = (
-            f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
-            f"?apiKey={self.odds_api_key}&regions=us&markets=h2h&oddsFormat=american"
-        )
-        
+
+    async def fetch_odds_for_game(self, game: Dict) -> Optional[Dict]:
+        """Fetch odds for a specific game from API-Sports"""
+        sport = game.get('sport')
+        league_id = game.get('league_id')
+        season = game.get('season')
+        api_game_id = game.get('api_game_id')
+        if not (sport and league_id and season and api_game_id):
+            logger.warning(f"Missing required fields for odds query: {game}")
+            return None
+        # Build the endpoint
+        base_url = f"https://v1.{sport}.api-sports.io/odds"
+        params = {
+            "league": league_id,
+            "season": season,
+            "game": api_game_id
+        }
+        headers = {"x-apisports-key": self.api_sports_key}
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    # Log response headers for debugging
-                    remaining = resp.headers.get('x-requests-remaining', 'unknown')
-                    used = resp.headers.get('x-requests-used', 'unknown')
-                    logger.info(f"Odds API response - Remaining: {remaining}, Used: {used}")
-                    
-                    if resp.status == 429:
-                        logger.warning("Rate limited by Odds API - try again later")
+                async with session.get(base_url, params=params, headers=headers) as resp:
+                    if resp.status != 200:
+                        logger.error(f"API-Sports odds error {resp.status}: {await resp.text()}")
                         return None
-                    elif resp.status == 401:
-                        logger.error("Odds API authentication failed - check your API key")
-                        return None
-                    elif resp.status == 403:
-                        logger.error("Odds API access forbidden - check your subscription")
-                        return None
-                    elif resp.status != 200:
-                        error_text = await resp.text()
-                        logger.error(f"Odds API error {resp.status}: {error_text}")
-                        return None
-                    
                     data = await resp.json()
-                    if isinstance(data, list):
-                        logger.info(f"Successfully fetched {len(data)} games from Odds API for {sport_key}")
-                        return data
-                    else:
-                        logger.warning(f"Unexpected response format from Odds API: {type(data)}")
-                        return None
-                    
+                    logger.info(f"Fetched odds for game {api_game_id}: {data}")
+                    return data
         except Exception as e:
-            logger.error(f"Error fetching odds from API: {e}")
+            logger.error(f"Error fetching odds from API-Sports: {e}")
             return None
-    
-    def find_matching_game_odds(self, game: Dict, odds_data: List[Dict]) -> Optional[Dict]:
-        home_team = game.get('home_team_name', '').strip().lower()
-        away_team = game.get('away_team_name', '').strip().lower()
-        odds_sport_key = self.get_odds_sport_key(game)
 
-        for odds_game in odds_data:
-            odds_home = odds_game.get('home_team', '').strip().lower()
-            odds_away = odds_game.get('away_team', '').strip().lower()
-            # Check for exact team name match (order-insensitive)
-            teams_match = (
-                (home_team == odds_home and away_team == odds_away) or
-                (home_team == odds_away and away_team == odds_home)
-            )
-            # Check sport key matches
-            if teams_match and odds_game.get('sport_key') == odds_sport_key:
-                return odds_game
-        return None
-    
-    async def create_odds_embed(self, game: Dict, odds_data: Dict) -> discord.Embed:
-        """Create a Discord embed for odds data"""
-        # Sport icons
-        sport_icons = {
-            "soccer": "⚽",
-            "basketball": "🏀", 
-            "football": "🏈",
-            "hockey": "🏒",
-            "baseball": "⚾",
-            "tennis": "🎾",
-            "mma": "🥊",
-            "golf": "⛳",
-            "cricket": "🏏",
-            "rugby": "🏉",
-            "australian_rules": "🏉",
-            "darts": "🎯",
-            "handball": "🤾",
-            "motorsport": "🏎️",
-            "volleyball": "🏐",
-            "table_tennis": "🏓",
-            "badminton": "🏸",
-            "snooker": "🎱",
-            "boxing": "🥊",
-            "esports": "🎮"
-        }
-        
+    async def create_odds_embed_for_game(self, game: Dict) -> discord.Embed:
+        odds_data = await self.fetch_odds_for_game(game)
         sport = game.get('sport', '').lower()
-        sport_icon = sport_icons.get(sport, "🏆")
-        
-        # Parse game time
+        sport_icon = {
+            "soccer": "⚽", "basketball": "🏀", "football": "🏈", "hockey": "🏒", "baseball": "⚾",
+            "tennis": "🎾", "mma": "🥊", "golf": "⛳", "cricket": "🏏", "rugby": "🏉", "australian_rules": "🏉",
+            "darts": "🎯", "handball": "🤾", "motorsport": "🏎️", "volleyball": "🏐", "table_tennis": "🏓",
+            "badminton": "🏸", "snooker": "🎱", "boxing": "🥊", "esports": "🎮"
+        }.get(sport, "🏆")
         start_time = game.get('start_time')
         if isinstance(start_time, str):
-            start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-        
-        time_str = f"<t:{int(start_time.timestamp())}:F>"
-        time_relative = f"<t:{int(start_time.timestamp())}:R>"
-        
+            try:
+                start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            except:
+                pass
+        time_str = f"<t:{int(start_time.timestamp())}:F>" if isinstance(start_time, datetime) else str(start_time)
+        time_relative = f"<t:{int(start_time.timestamp())}:R>" if isinstance(start_time, datetime) else ""
         embed = discord.Embed(
             title=f"{sport_icon} {game['home_team_name']} vs {game['away_team_name']}",
-            description=f"**Start Time:** {time_str} ({time_relative})\n**League:** {game.get('league_name', 'Unknown')}",
+            description=f"**Start Time:** {time_str} {time_relative}\n**League ID:** {game.get('league_id', 'Unknown')}",
             color=0x00ff00,
             timestamp=datetime.utcnow()
         )
-        
-        # Add odds from top bookmakers
-        top_bookmakers = ["fanduel", "draftkings", "betmgm"]
-        odds_fields = []
-        
-        for bookmaker in odds_data.get("bookmakers", []):
-            if bookmaker["key"] in top_bookmakers and len(odds_fields) < 3:
-                market = next((m for m in bookmaker["markets"] if m["key"] == "h2h"), None)
-                if market:
-                    odds_str = "\n".join([
-                        f"**{outcome['name']}:** {outcome['price']:+d}" 
-                        for outcome in market["outcomes"]
-                    ])
-                    odds_fields.append(f"**{bookmaker['title']}**\n{odds_str}")
-        
-        if odds_fields:
-            embed.add_field(
-                name="💰 Current Odds",
-                value="\n\n".join(odds_fields),
-                inline=False
-            )
+        if odds_data and odds_data.get('response'):
+            # Display odds info (customize as needed)
+            odds_list = odds_data['response']
+            for bookmaker in odds_list:
+                book_name = bookmaker.get('bookmaker', {}).get('name', 'Unknown Bookmaker')
+                for bet in bookmaker.get('bets', []):
+                    bet_name = bet.get('name', 'Unknown Bet')
+                    values = bet.get('values', [])
+                    odds_str = ', '.join([f"{v.get('value')}: {v.get('odd')}" for v in values])
+                    embed.add_field(name=f"{book_name} - {bet_name}", value=odds_str or "No odds", inline=False)
         else:
-            embed.add_field(
-                name="💰 Odds",
-                value="No odds available",
-                inline=False
-            )
-        
-        embed.set_footer(text="Data from The Odds API | Use /odds to check again")
-        
+            embed.add_field(name="Odds", value="No odds available for this matchup.")
         return embed
-
-    async def create_odds_embed_for_game(self, game: Dict) -> discord.Embed:
-        # Fetch odds for this game's sport/league
-        odds_sport_key = self.get_odds_sport_key(game)
-        if not odds_sport_key:
-            return discord.Embed(title="No odds available", description="Could not map sport/league.")
-        odds_data = await self.fetch_odds_from_api(odds_sport_key)
-        if not odds_data:
-            return discord.Embed(title="No odds available", description="No odds data from API.")
-        matching_odds = self.find_matching_game_odds(game, odds_data)
-        if matching_odds:
-            return await self.create_odds_embed(game, matching_odds)
-        else:
-            return discord.Embed(title="No odds available", description="No matching odds found.")
 
     @app_commands.command(name="debug_games", description="Debug: Check what games are in the api_games table")
     async def debug_games(self, interaction: discord.Interaction):
@@ -494,18 +214,17 @@ class Odds(commands.Cog):
             # Get sample games
             sample_query = """
                 SELECT 
-                    api_game_id, sport, league_name, home_team_name, away_team_name, 
-                    start_time, status
+                    api_game_id, sport, league_id, season, home_team_name, away_team_name, start_time, status
                 FROM api_games 
                 ORDER BY start_time DESC 
-                LIMIT 10
+                LIMIT 20
             """
             
             games = await db_manager.fetch_all(sample_query)
             
             embed = discord.Embed(
-                title="🔍 API Games Table Debug",
-                description=f"Total games in table: **{total_games}**",
+                title="🔍 API Games Table Debug (Valid Only)",
+                description=f"Total games in table: **{total_games}**\nValid games shown: **{len(valid_games)}**",
                 color=0x00ff00
             )
             
@@ -524,7 +243,7 @@ class Odds(commands.Cog):
                     embed.add_field(
                         name=f"Game {i}",
                         value=f"**{game.get('home_team_name')} vs {game.get('away_team_name')}**\n"
-                              f"League: {game.get('league_name')}\n"
+                              f"League ID: {game.get('league_id')}\n"
                               f"Sport: {game.get('sport')}\n"
                               f"Time: {time_str}\n"
                               f"Status: {game.get('status')}",

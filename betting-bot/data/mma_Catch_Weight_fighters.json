@@ -1,0 +1,211 @@
+[
+  {
+    "id": 1284,
+    "name": "Brad Pickett",
+    "nickname": "One Punch",
+    "photo": "https://media.api-sports.io/mma/fighters/1284.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": 440,
+      "name": "Titan"
+    },
+    "last_update": "2025-06-04T23:52:33+00:00"
+  },
+  {
+    "id": 1706,
+    "name": "Brian Cobb",
+    "nickname": "The Bandit",
+    "photo": "https://media.api-sports.io/mma/fighters/1706.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T03:23:33+00:00"
+  },
+  {
+    "id": 1043,
+    "name": "Frank Shamrock",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1043.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T21:52:02+00:00"
+  },
+  {
+    "id": 1546,
+    "name": "Jake O&#x27;Brien",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1546.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "76.5'",
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T02:03:33+00:00"
+  },
+  {
+    "id": 1957,
+    "name": "Jon Manley",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1957.png",
+    "gender": "M",
+    "birth_date": "1986-07-07",
+    "age": 34,
+    "height": "6' 0'",
+    "weight": "170 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": 443,
+      "name": "Link"
+    },
+    "last_update": "2025-06-05T05:29:03+00:00"
+  },
+  {
+    "id": 1042,
+    "name": "Kazushi Sakuraba",
+    "nickname": "The Gracie Hunter",
+    "photo": "https://media.api-sports.io/mma/fighters/1042.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T21:51:32+00:00"
+  },
+  {
+    "id": 2339,
+    "name": "Nick Newell",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2339.png",
+    "gender": "M",
+    "birth_date": "1986-03-17",
+    "age": 35,
+    "height": "5' 10'",
+    "weight": "155 lbs",
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Catch Weight",
+    "team": {
+      "id": 227,
+      "name": "Fighting Arts Academy"
+    },
+    "last_update": "2025-06-05T08:40:05+00:00"
+  },
+  {
+    "id": 1178,
+    "name": "Renato Verissimo",
+    "nickname": "Charuto",
+    "photo": "https://media.api-sports.io/mma/fighters/1178.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-04T22:59:32+00:00"
+  },
+  {
+    "id": 2330,
+    "name": "Ricky Palacios",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2330.png",
+    "gender": "M",
+    "birth_date": "1987-07-05",
+    "age": 33,
+    "height": "5' 6'",
+    "weight": "155 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:35:32+00:00"
+  },
+  {
+    "id": 1020,
+    "name": "Tito Ortiz",
+    "nickname": "The People&#x27;s Champ",
+    "photo": "https://media.api-sports.io/mma/fighters/1020.png",
+    "gender": "M",
+    "birth_date": "1975-01-23",
+    "age": 46,
+    "height": "6' 3'",
+    "weight": "210 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": 401,
+      "name": "Punishment"
+    },
+    "last_update": "2025-06-04T21:40:33+00:00"
+  },
+  {
+    "id": 1859,
+    "name": "Walel Watson",
+    "nickname": "The Gazelle",
+    "photo": "https://media.api-sports.io/mma/fighters/1859.png",
+    "gender": "M",
+    "birth_date": "1984-07-16",
+    "age": 36,
+    "height": "5' 11'",
+    "weight": "135 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Catch Weight",
+    "team": {
+      "id": 75,
+      "name": "Hurricane Awesome"
+    },
+    "last_update": "2025-06-05T04:40:03+00:00"
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1460,
+    "name": "Jonathan Wiezorek",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/1460.png",
+    "gender": "M",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": null,
+    "stance": "Southpaw",
+    "category": "Super Heavyweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T01:20:32+00:00"
+  }
+]

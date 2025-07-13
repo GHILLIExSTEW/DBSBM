@@ -1,0 +1,170 @@
+[
+  {
+    "id": 162,
+    "name": "Atlanta Dream W",
+    "logo": "https://media.api-sports.io/basketball/teams/162.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 163,
+    "name": "Chicago Sky W",
+    "logo": "https://media.api-sports.io/basketball/teams/163.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 164,
+    "name": "Connecticut Sun W",
+    "logo": "https://media.api-sports.io/basketball/teams/164.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 165,
+    "name": "Dallas Wings W",
+    "logo": "https://media.api-sports.io/basketball/teams/165.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 166,
+    "name": "Indiana Fever W",
+    "logo": "https://media.api-sports.io/basketball/teams/166.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 167,
+    "name": "Las Vegas Aces W",
+    "logo": "https://media.api-sports.io/basketball/teams/167.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 168,
+    "name": "Los Angeles Sparks W",
+    "logo": "https://media.api-sports.io/basketball/teams/168.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 169,
+    "name": "Minnesota Lynx W",
+    "logo": "https://media.api-sports.io/basketball/teams/169.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 170,
+    "name": "New York Liberty W",
+    "logo": "https://media.api-sports.io/basketball/teams/170.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 171,
+    "name": "Phoenix Mercury W",
+    "logo": "https://media.api-sports.io/basketball/teams/171.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 172,
+    "name": "Seattle Storm W",
+    "logo": "https://media.api-sports.io/basketball/teams/172.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 3072,
+    "name": "Team USA W",
+    "logo": "https://media.api-sports.io/basketball/teams/3072.png",
+    "nationnal": true,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 3073,
+    "name": "Team WNBA W",
+    "logo": "https://media.api-sports.io/basketball/teams/3073.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  },
+  {
+    "id": 175,
+    "name": "Washington Mystics W",
+    "logo": "https://media.api-sports.io/basketball/teams/175.png",
+    "nationnal": false,
+    "country": {
+      "id": 5,
+      "name": "USA",
+      "code": "US",
+      "flag": "https://media.api-sports.io/flags/us.svg"
+    }
+  }
+]

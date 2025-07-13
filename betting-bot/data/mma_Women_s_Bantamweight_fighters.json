@@ -1,0 +1,1218 @@
+[
+  {
+    "id": 2461,
+    "name": "Ailin Perez",
+    "nickname": "Fiona",
+    "photo": "https://media.api-sports.io/mma/fighters/2461.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "66'",
+    "stance": "Switch",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 114,
+      "name": "The Goat Shed"
+    },
+    "last_update": "2025-06-05T09:41:03+00:00"
+  },
+  {
+    "id": 2073,
+    "name": "Alexis Dufresne",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2073.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 54,
+      "name": "Quest -Portland"
+    },
+    "last_update": "2025-06-05T06:27:03+00:00"
+  },
+  {
+    "id": 389,
+    "name": "Amanda Nunes",
+    "nickname": "The Lioness",
+    "photo": "https://media.api-sports.io/mma/fighters/389.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 5,
+      "name": "Nunes"
+    },
+    "last_update": "2025-06-04T16:25:04+00:00"
+  },
+  {
+    "id": 435,
+    "name": "Bea Malecki",
+    "nickname": "Bad News Barbie",
+    "photo": "https://media.api-sports.io/mma/fighters/435.png",
+    "gender": "W",
+    "birth_date": "1991-08-23",
+    "age": 30,
+    "height": "5' 9'",
+    "weight": "135 lbs",
+    "reach": "74'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 2,
+      "name": "Fortis MMA"
+    },
+    "last_update": "2025-06-04T16:48:02+00:00"
+  },
+  {
+    "id": 354,
+    "name": "Bethe Correia",
+    "nickname": "Pitbull",
+    "photo": "https://media.api-sports.io/mma/fighters/354.png",
+    "gender": "W",
+    "birth_date": "1983-06-22",
+    "age": 38,
+    "height": "5' 5'",
+    "weight": "138 lbs",
+    "reach": "64'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 172,
+      "name": "Pitbull Brothers"
+    },
+    "last_update": "2025-06-04T16:07:32+00:00"
+  },
+  {
+    "id": 2473,
+    "name": "Chelsea Chandler",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2473.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "141 lbs",
+    "reach": "68'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 248,
+      "name": "Cesar Gracie Jiu-Jitsu"
+    },
+    "last_update": "2025-06-05T09:47:06+00:00"
+  },
+  {
+    "id": 2627,
+    "name": "Daria Zhelezniakova",
+    "nickname": "Iron Lady",
+    "photo": "https://media.api-sports.io/mma/fighters/2627.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 113,
+      "name": "MMA Factory"
+    },
+    "last_update": "2025-06-28T12:04:06+00:00"
+  },
+  {
+    "id": 434,
+    "name": "Duda Santana",
+    "nickname": "Cowboyzinha",
+    "photo": "https://media.api-sports.io/mma/fighters/434.png",
+    "gender": "W",
+    "birth_date": "1996-01-10",
+    "age": 25,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 204,
+      "name": "Tata Fight"
+    },
+    "last_update": "2025-06-04T16:47:33+00:00"
+  },
+  {
+    "id": 2064,
+    "name": "Elizabeth Phillips",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2064.png",
+    "gender": "W",
+    "birth_date": "1986-08-20",
+    "age": 34,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 49,
+      "name": "Sikjitsu"
+    },
+    "last_update": "2025-06-05T06:22:33+00:00"
+  },
+  {
+    "id": 499,
+    "name": "Germaine de Randamie",
+    "nickname": "The Iron Lady",
+    "photo": "https://media.api-sports.io/mma/fighters/499.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "135 lbs",
+    "reach": "71'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 64,
+      "name": "AKA (American Kickboxing Academy)"
+    },
+    "last_update": "2025-06-04T17:20:03+00:00"
+  },
+  {
+    "id": 129,
+    "name": "Gina Mazany",
+    "nickname": "Danger",
+    "photo": "https://media.api-sports.io/mma/fighters/129.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "126 lbs",
+    "reach": "68'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 12,
+      "name": "Glory MMA & Fitness"
+    },
+    "last_update": "2025-06-04T14:15:03+00:00"
+  },
+  {
+    "id": 2555,
+    "name": "Hailey Cowan",
+    "nickname": "All Hail",
+    "photo": "https://media.api-sports.io/mma/fighters/2555.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "136 lbs",
+    "reach": "67'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 705,
+      "name": "Blitz Sport MMA"
+    },
+    "last_update": "2025-06-05T10:28:02+00:00"
+  },
+  {
+    "id": 127,
+    "name": "Holly Holm",
+    "nickname": "The Preacher&#x27;s Daughter",
+    "photo": "https://media.api-sports.io/mma/fighters/127.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "136 lbs",
+    "reach": "The Preacher's Daughter",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-04T14:14:03+00:00"
+  },
+  {
+    "id": 355,
+    "name": "Irene Aldana",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/355.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "136 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 110,
+      "name": "Lobo Gym MMA"
+    },
+    "last_update": "2025-06-04T16:08:02+00:00"
+  },
+  {
+    "id": 2558,
+    "name": "Irina Alekseeva",
+    "nickname": "Russian Ronda",
+    "photo": "https://media.api-sports.io/mma/fighters/2558.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 137,
+      "name": "Rati"
+    },
+    "last_update": "2025-06-28T12:03:07+00:00"
+  },
+  {
+    "id": 2617,
+    "name": "Jacqueline Cavalcanti",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2617.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "134 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 777,
+      "name": "Reborn Fight"
+    },
+    "last_update": "2025-06-05T10:59:03+00:00"
+  },
+  {
+    "id": 2011,
+    "name": "Jessamyn Duke",
+    "nickname": "The Gun",
+    "photo": "https://media.api-sports.io/mma/fighters/2011.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "73'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T05:56:07+00:00"
+  },
+  {
+    "id": 352,
+    "name": "Jessica-Rose Clark",
+    "nickname": "Jessy Jess",
+    "photo": "https://media.api-sports.io/mma/fighters/352.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "64.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 10,
+      "name": "Combat Sports Academy"
+    },
+    "last_update": "2025-06-04T16:06:33+00:00"
+  },
+  {
+    "id": 896,
+    "name": "Joselyne Edwards",
+    "nickname": "La Pantera",
+    "photo": "https://media.api-sports.io/mma/fighters/896.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "139 lbs",
+    "reach": "70'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 90,
+      "name": "Kings MMA"
+    },
+    "last_update": "2025-06-04T20:38:33+00:00"
+  },
+  {
+    "id": 1332,
+    "name": "Josiane Nunes",
+    "nickname": "Josi",
+    "photo": "https://media.api-sports.io/mma/fighters/1332.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 2'",
+    "weight": "136 lbs",
+    "reach": "67'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 456,
+      "name": "Striker's House"
+    },
+    "last_update": "2025-06-05T00:16:37+00:00"
+  },
+  {
+    "id": 477,
+    "name": "Julia Avila",
+    "nickname": "Raging Panda",
+    "photo": "https://media.api-sports.io/mma/fighters/477.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 224,
+      "name": "Oklahoma Martial Arts Academy"
+    },
+    "last_update": "2025-06-04T17:09:03+00:00"
+  },
+  {
+    "id": 558,
+    "name": "Julianna PeÃ±a",
+    "nickname": "The Venezuelan Vixen",
+    "photo": "https://media.api-sports.io/mma/fighters/558.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "134 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 180,
+      "name": "Valle Flow Striking"
+    },
+    "last_update": "2025-06-15T00:07:03+00:00"
+  },
+  {
+    "id": 1991,
+    "name": "Julie Kedzie",
+    "nickname": "Fireball",
+    "photo": "https://media.api-sports.io/mma/fighters/1991.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "64.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 55,
+      "name": "Jackson-Wink MMA"
+    },
+    "last_update": "2025-06-05T05:46:04+00:00"
+  },
+  {
+    "id": 586,
+    "name": "Karol Rosa",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/586.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "67.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 175,
+      "name": "Parana Vale Tudo"
+    },
+    "last_update": "2025-06-04T18:03:33+00:00"
+  },
+  {
+    "id": 2672,
+    "name": "Kayla Harrison",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2672.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "136 lbs",
+    "reach": "66'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-15T00:06:33+00:00"
+  },
+  {
+    "id": 2197,
+    "name": "Kelly Faszholz",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2197.png",
+    "gender": "W",
+    "birth_date": "1985-04-09",
+    "age": 36,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 445,
+      "name": "Nor-Cal Fighting Alliance"
+    },
+    "last_update": "2025-06-05T07:29:03+00:00"
+  },
+  {
+    "id": 2288,
+    "name": "Kelly Velasco",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2288.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 9'",
+    "weight": "135 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:14:32+00:00"
+  },
+  {
+    "id": 686,
+    "name": "Ketlen Vieira",
+    "nickname": "Fenomeno",
+    "photo": "https://media.api-sports.io/mma/fighters/686.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "136 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 29,
+      "name": "Nova Uniao"
+    },
+    "last_update": "2025-06-08T00:02:05+00:00"
+  },
+  {
+    "id": 2739,
+    "name": "Klaudia Sygula",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2739.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "136 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 73,
+      "name": "Ankos MMA"
+    },
+    "last_update": "2025-06-28T12:02:33+00:00"
+  },
+  {
+    "id": 585,
+    "name": "Lara Procopio",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/585.png",
+    "gender": "W",
+    "birth_date": "1995-11-14",
+    "age": 26,
+    "height": "5' 4'",
+    "weight": "125 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 29,
+      "name": "Nova Uniao"
+    },
+    "last_update": "2025-06-04T18:03:03+00:00"
+  },
+  {
+    "id": 1405,
+    "name": "Leslie Smith",
+    "nickname": "The Peacemaker",
+    "photo": "https://media.api-sports.io/mma/fighters/1405.png",
+    "gender": "W",
+    "birth_date": "1982-08-17",
+    "age": 38,
+    "height": "5' 9'",
+    "weight": "145 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 225,
+      "name": "El Nino Training Center"
+    },
+    "last_update": "2025-06-05T00:53:03+00:00"
+  },
+  {
+    "id": 595,
+    "name": "Liana Jojua",
+    "nickname": "She Wolf",
+    "photo": "https://media.api-sports.io/mma/fighters/595.png",
+    "gender": "W",
+    "birth_date": "1995-03-22",
+    "age": 26,
+    "height": "5' 4'",
+    "weight": "128 lbs",
+    "reach": "62'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 33,
+      "name": "Akhmat Fight"
+    },
+    "last_update": "2025-06-04T18:08:04+00:00"
+  },
+  {
+    "id": 411,
+    "name": "Lina Lansberg",
+    "nickname": "Elbow Queen",
+    "photo": "https://media.api-sports.io/mma/fighters/411.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "65.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 194,
+      "name": "Redline Training Center"
+    },
+    "last_update": "2025-06-04T16:36:04+00:00"
+  },
+  {
+    "id": 2578,
+    "name": "Luana Santos",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2578.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "126 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 718,
+      "name": "011 MMA"
+    },
+    "last_update": "2025-06-05T10:39:33+00:00"
+  },
+  {
+    "id": 130,
+    "name": "Macy Chiasson",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/130.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 11'",
+    "weight": "135 lbs",
+    "reach": "72'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 2,
+      "name": "Fortis MMA"
+    },
+    "last_update": "2025-06-08T00:01:41+00:00"
+  },
+  {
+    "id": 157,
+    "name": "Marion Reneau",
+    "nickname": "The Belizean Bruiser",
+    "photo": "https://media.api-sports.io/mma/fighters/157.png",
+    "gender": "W",
+    "birth_date": "1977-06-20",
+    "age": 44,
+    "height": "5' 6'",
+    "weight": "136 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 94,
+      "name": "Elite Training Centre"
+    },
+    "last_update": "2025-06-04T14:29:03+00:00"
+  },
+  {
+    "id": 2355,
+    "name": "Mayana Kellem",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2355.png",
+    "gender": "W",
+    "birth_date": "1981-07-07",
+    "age": 39,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": null,
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T08:48:03+00:00"
+  },
+  {
+    "id": 476,
+    "name": "Melissa Gatto",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/476.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 5'",
+    "weight": "134 lbs",
+    "reach": "69'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 223,
+      "name": "MSP"
+    },
+    "last_update": "2025-06-04T17:08:33+00:00"
+  },
+  {
+    "id": 2629,
+    "name": "Melissa Mullins",
+    "nickname": "No Mess",
+    "photo": "https://media.api-sports.io/mma/fighters/2629.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "137 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 112,
+      "name": "Renegade MMA"
+    },
+    "last_update": "2025-06-28T12:03:38+00:00"
+  },
+  {
+    "id": 1978,
+    "name": "Miesha Tate",
+    "nickname": "Cupcake",
+    "photo": "https://media.api-sports.io/mma/fighters/1978.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-05T05:39:32+00:00"
+  },
+  {
+    "id": 2141,
+    "name": "Milana Dudieva",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2141.png",
+    "gender": "W",
+    "birth_date": "1989-04-08",
+    "age": 32,
+    "height": "5' 5'",
+    "weight": "125 lbs",
+    "reach": "61.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T07:01:03+00:00"
+  },
+  {
+    "id": 2615,
+    "name": "Montserrat Rendon",
+    "nickname": "Monster",
+    "photo": "https://media.api-sports.io/mma/fighters/2615.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 8'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 776,
+      "name": "ECR Fight Center"
+    },
+    "last_update": "2025-06-05T10:58:02+00:00"
+  },
+  {
+    "id": 2589,
+    "name": "Nora Cornolle",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2589.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "137 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 774,
+      "name": "US Metro Bizot"
+    },
+    "last_update": "2025-06-05T10:45:03+00:00"
+  },
+  {
+    "id": 697,
+    "name": "Norma Dumont",
+    "nickname": "The Immortal",
+    "photo": "https://media.api-sports.io/mma/fighters/697.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "136 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 308,
+      "name": "Souto"
+    },
+    "last_update": "2025-06-04T18:59:03+00:00"
+  },
+  {
+    "id": 555,
+    "name": "Pannie Kianzad",
+    "nickname": "Banzai",
+    "photo": "https://media.api-sports.io/mma/fighters/555.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 31,
+      "name": "Xtreme Couture"
+    },
+    "last_update": "2025-06-04T17:48:05+00:00"
+  },
+  {
+    "id": 174,
+    "name": "Priscila Cachoeira",
+    "nickname": "Zombie Girl",
+    "photo": "https://media.api-sports.io/mma/fighters/174.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 98,
+      "name": "MMA Masters"
+    },
+    "last_update": "2025-06-04T14:37:32+00:00"
+  },
+  {
+    "id": 518,
+    "name": "Raquel Pennington",
+    "nickname": "Rocky",
+    "photo": "https://media.api-sports.io/mma/fighters/518.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "67.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 237,
+      "name": "Altitude MMA"
+    },
+    "last_update": "2025-06-04T17:29:32+00:00"
+  },
+  {
+    "id": 2102,
+    "name": "Rin Nakai",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2102.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "60.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 594,
+      "name": "Pancrase Venus"
+    },
+    "last_update": "2025-06-05T06:41:33+00:00"
+  },
+  {
+    "id": 1961,
+    "name": "Ronda Rousey",
+    "nickname": "Rowdy",
+    "photo": "https://media.api-sports.io/mma/fighters/1961.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 360,
+      "name": "Glendale Fighting Club"
+    },
+    "last_update": "2025-06-05T05:31:09+00:00"
+  },
+  {
+    "id": 1988,
+    "name": "Rosi Sexton",
+    "nickname": "The Surgeon",
+    "photo": "https://media.api-sports.io/mma/fighters/1988.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "63'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T05:44:32+00:00"
+  },
+  {
+    "id": 493,
+    "name": "Sara McMann",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/493.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "66'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 23,
+      "name": "Alpha Male"
+    },
+    "last_update": "2025-06-04T17:17:04+00:00"
+  },
+  {
+    "id": 623,
+    "name": "Sarah Alpar",
+    "nickname": "Too Sweet",
+    "photo": "https://media.api-sports.io/mma/fighters/623.png",
+    "gender": "W",
+    "birth_date": "1991-06-01",
+    "age": 30,
+    "height": "5' 4'",
+    "weight": "125 lbs",
+    "reach": "63'",
+    "stance": "Southpaw",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 278,
+      "name": "American Elite MMA"
+    },
+    "last_update": "2025-06-04T18:22:03+00:00"
+  },
+  {
+    "id": 2002,
+    "name": "Sarah Kaufman",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/2002.png",
+    "gender": "W",
+    "birth_date": "1985-09-20",
+    "age": 35,
+    "height": "5' 5'",
+    "weight": "155 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 282,
+      "name": "Zugec Ultimate Martial Arts"
+    },
+    "last_update": "2025-06-05T05:51:33+00:00"
+  },
+  {
+    "id": 285,
+    "name": "Sarah Moras",
+    "nickname": "Cheesecake",
+    "photo": "https://media.api-sports.io/mma/fighters/285.png",
+    "gender": "W",
+    "birth_date": "1988-04-30",
+    "age": 33,
+    "height": "5' 7'",
+    "weight": "135 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 148,
+      "name": "Toshida MMA"
+    },
+    "last_update": "2025-06-04T15:33:03+00:00"
+  },
+  {
+    "id": 622,
+    "name": "Shanna Young",
+    "nickname": "The Shanimal",
+    "photo": "https://media.api-sports.io/mma/fighters/622.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "125 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 17,
+      "name": "Syndicate MMA"
+    },
+    "last_update": "2025-06-04T18:21:32+00:00"
+  },
+  {
+    "id": 2096,
+    "name": "Shayna Baszler",
+    "nickname": "The Queen of Spades",
+    "photo": "https://media.api-sports.io/mma/fighters/2096.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "67.8'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T06:38:34+00:00"
+  },
+  {
+    "id": 1980,
+    "name": "Sheila Gaff",
+    "nickname": "The German Tank",
+    "photo": "https://media.api-sports.io/mma/fighters/1980.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": null,
+    "weight": null,
+    "reach": "62'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": null,
+      "name": null
+    },
+    "last_update": "2025-06-05T05:40:34+00:00"
+  },
+  {
+    "id": 369,
+    "name": "Sijara Eubanks",
+    "nickname": "SarJ",
+    "photo": "https://media.api-sports.io/mma/fighters/369.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 4'",
+    "weight": "127 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 178,
+      "name": "Catone MMA"
+    },
+    "last_update": "2025-06-04T16:15:04+00:00"
+  },
+  {
+    "id": 858,
+    "name": "Stephanie Egger",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/858.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 379,
+      "name": "Buddy Gym MMA St. Gallen"
+    },
+    "last_update": "2025-06-04T20:19:32+00:00"
+  },
+  {
+    "id": 2600,
+    "name": "Tainara Lisboa",
+    "nickname": "Thai Panther",
+    "photo": "https://media.api-sports.io/mma/fighters/2600.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 7'",
+    "weight": "133 lbs",
+    "reach": "67'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 775,
+      "name": "Damas 013"
+    },
+    "last_update": "2025-06-05T10:50:35+00:00"
+  },
+  {
+    "id": 353,
+    "name": "Talita Bernardo",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/353.png",
+    "gender": "W",
+    "birth_date": "1987-03-04",
+    "age": 34,
+    "height": "5' 4'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 171,
+      "name": "Imperio Fight"
+    },
+    "last_update": "2025-06-04T16:07:03+00:00"
+  },
+  {
+    "id": 2515,
+    "name": "Tamires Vidal",
+    "nickname": "Tractor",
+    "photo": "https://media.api-sports.io/mma/fighters/2515.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "68'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 694,
+      "name": "Brothers"
+    },
+    "last_update": "2025-06-05T10:08:03+00:00"
+  },
+  {
+    "id": 605,
+    "name": "Vanessa Melo",
+    "nickname": "Miss Simpatia",
+    "photo": "https://media.api-sports.io/mma/fighters/605.png",
+    "gender": "W",
+    "birth_date": "1988-03-27",
+    "age": 33,
+    "height": "5' 5'",
+    "weight": "135 lbs",
+    "reach": "65'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 214,
+      "name": "Babuino Gold"
+    },
+    "last_update": "2025-06-04T18:13:03+00:00"
+  },
+  {
+    "id": 158,
+    "name": "Yana Santos",
+    "nickname": null,
+    "photo": "https://media.api-sports.io/mma/fighters/158.png",
+    "gender": "W",
+    "birth_date": null,
+    "age": null,
+    "height": "5' 6'",
+    "weight": "135 lbs",
+    "reach": "68.5'",
+    "stance": "Orthodox",
+    "category": "Women's Bantamweight",
+    "team": {
+      "id": 21,
+      "name": "American Top"
+    },
+    "last_update": "2025-06-04T14:29:34+00:00"
+  }
+]
