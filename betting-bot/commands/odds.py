@@ -9,6 +9,61 @@ from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+class OddsDropdown(discord.ui.Select):
+    def __init__(self, games: List[Dict], page: int, page_size: int, total_games: int, parent_view):
+        self.games = games
+        self.page = page
+        self.page_size = page_size
+        self.total_games = total_games
+        self.parent_view = parent_view
+        options = []
+        start = page * page_size
+        end = min(start + page_size, total_games)
+        for i, g in enumerate(games, start):
+            label = f"{g['home_team_name']} vs {g['away_team_name']}"
+            value = str(i)
+            options.append(discord.SelectOption(label=label[:100], value=value))
+        if page > 0:
+            options.insert(0, discord.SelectOption(label="⬅️ Previous", value="previous"))
+        if end < total_games:
+            options.append(discord.SelectOption(label="Next ➡️", value="next"))
+        super().__init__(placeholder="Select a game or page...", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        value = self.values[0]
+        if value == "next":
+            self.parent_view.page += 1
+            await self.parent_view.update_dropdown(interaction)
+        elif value == "previous":
+            self.parent_view.page -= 1
+            await self.parent_view.update_dropdown(interaction)
+        else:
+            idx = int(value)
+            game = self.parent_view.all_games[idx]
+            # Fetch odds and show embed
+            embed = await self.parent_view.cog.create_odds_embed_for_game(game)
+            await interaction.response.edit_message(embed=embed, view=None)
+
+class OddsDropdownView(discord.ui.View):
+    def __init__(self, cog, all_games: List[Dict], page: int = 0, page_size: int = 23):
+        super().__init__(timeout=120)
+        self.cog = cog
+        self.all_games = all_games
+        self.page = page
+        self.page_size = page_size
+        self.update_dropdown_sync()
+
+    def update_dropdown_sync(self):
+        start = self.page * self.page_size
+        end = min(start + self.page_size, len(self.all_games))
+        games = self.all_games[start:end]
+        self.clear_items()
+        self.add_item(OddsDropdown(games, self.page, self.page_size, len(self.all_games), self))
+
+    async def update_dropdown(self, interaction: discord.Interaction):
+        self.update_dropdown_sync()
+        await interaction.response.edit_message(view=self)
+
 class Odds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -173,43 +228,18 @@ class Odds(commands.Cog):
             "Valorant": "esports_valorant"
         }
     
-    @app_commands.command(name="odds", description="Get current odds for upcoming games from your database")
-    @app_commands.describe(
-        hours="How many hours ahead to look for games (default: 24)"
-    )
-    async def odds(self, interaction: discord.Interaction, hours: int = 24):
-        """Get odds for upcoming games from your database"""
-        
+    @app_commands.command(name="odds", description="Browse and get odds for upcoming games")
+    async def odds(self, interaction: discord.Interaction, hours: int = 48):
         if not self.odds_api_key:
             await interaction.response.send_message("❌ Odds API key not configured!", ephemeral=True)
             return
-        
-        # Defer the response since API calls can take time
-        await interaction.response.defer()
-        
-        try:
-            # Get upcoming games from your database
-            upcoming_games = await self.get_upcoming_games(hours)
-            
-            if not upcoming_games:
-                await interaction.followup.send(f"❌ No upcoming games found in your database for the next {hours} hours.")
-                return
-            
-            # Fetch odds for these games
-            embeds = await self.fetch_odds_for_games(upcoming_games)
-            
-            if not embeds:
-                await interaction.followup.send("❌ No odds data found for the upcoming games.")
-                return
-            
-            # Send the embeds (Discord allows up to 10 per message)
-            for i in range(0, len(embeds), 10):
-                batch = embeds[i:i+10]
-                await interaction.followup.send(embeds=batch)
-                
-        except Exception as e:
-            logger.error(f"Error fetching odds: {e}")
-            await interaction.followup.send(f"❌ Error fetching odds: {str(e)}")
+        await interaction.response.defer(ephemeral=True)
+        games = await self.get_upcoming_games(hours)
+        if not games:
+            await interaction.followup.send("No games found.", ephemeral=True)
+            return
+        view = OddsDropdownView(self, games)
+        await interaction.followup.send("Select a game to view odds:", view=view, ephemeral=True)
     
     async def get_upcoming_games(self, hours_ahead: int) -> List[Dict]:
         """Get upcoming games from api_games table"""
@@ -346,38 +376,22 @@ class Odds(commands.Cog):
             return None
     
     def find_matching_game_odds(self, game: Dict, odds_data: List[Dict]) -> Optional[Dict]:
-        """Find matching game in odds data by team names"""
-        home_team = game.get('home_team_name', '').lower()
-        away_team = game.get('away_team_name', '').lower()
-        
+        home_team = game.get('home_team_name', '').strip().lower()
+        away_team = game.get('away_team_name', '').strip().lower()
+        odds_sport_key = self.get_odds_sport_key(game)
+
         for odds_game in odds_data:
-            odds_home = odds_game.get('home_team', '').lower()
-            odds_away = odds_game.get('away_team', '').lower()
-            
-            # Try exact match first
-            if (home_team == odds_home and away_team == odds_away) or \
-               (home_team == odds_away and away_team == odds_home):
+            odds_home = odds_game.get('home_team', '').strip().lower()
+            odds_away = odds_game.get('away_team', '').strip().lower()
+            # Check for exact team name match (order-insensitive)
+            teams_match = (
+                (home_team == odds_home and away_team == odds_away) or
+                (home_team == odds_away and away_team == odds_home)
+            )
+            # Check sport key matches
+            if teams_match and odds_game.get('sport_key') == odds_sport_key:
                 return odds_game
-            
-            # Try partial matches (handle team name variations)
-            if self.teams_match(home_team, away_team, odds_home, odds_away):
-                return odds_game
-        
         return None
-    
-    def teams_match(self, home1: str, away1: str, home2: str, away2: str) -> bool:
-        """Check if team names match (handling variations)"""
-        # Simple matching - you can enhance this with more sophisticated logic
-        home1_words = set(home1.split())
-        away1_words = set(away1.split())
-        home2_words = set(home2.split())
-        away2_words = set(away2.split())
-        
-        # Check if there's significant overlap in team names
-        home_match = len(home1_words & home2_words) >= 2 or len(home1_words & away2_words) >= 2
-        away_match = len(away1_words & away2_words) >= 2 or len(away1_words & home2_words) >= 2
-        
-        return home_match and away_match
     
     async def create_odds_embed(self, game: Dict, odds_data: Dict) -> discord.Embed:
         """Create a Discord embed for odds data"""
@@ -453,6 +467,20 @@ class Odds(commands.Cog):
         embed.set_footer(text="Data from The Odds API | Use /odds to check again")
         
         return embed
+
+    async def create_odds_embed_for_game(self, game: Dict) -> discord.Embed:
+        # Fetch odds for this game's sport/league
+        odds_sport_key = self.get_odds_sport_key(game)
+        if not odds_sport_key:
+            return discord.Embed(title="No odds available", description="Could not map sport/league.")
+        odds_data = await self.fetch_odds_from_api(odds_sport_key)
+        if not odds_data:
+            return discord.Embed(title="No odds available", description="No odds data from API.")
+        matching_odds = self.find_matching_game_odds(game, odds_data)
+        if matching_odds:
+            return await self.create_odds_embed(game, matching_odds)
+        else:
+            return discord.Embed(title="No odds available", description="No matching odds found.")
 
     @app_commands.command(name="sports", description="List all available sports and leagues for odds")
     async def sports(self, interaction: discord.Interaction):
