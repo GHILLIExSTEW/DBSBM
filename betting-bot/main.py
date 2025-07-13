@@ -503,19 +503,18 @@ class BettingBot(commands.Bot):
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
         # Only sync commands if not in scheduler mode
-        if not os.getenv("SCHEDULER_MODE"):
-            try:
-                # Single point of command syncing
-                success = await self.sync_commands_with_retry()
-                if not success:
-                    logger.error("Failed to sync commands after retries")
-                    return
-                    
-                global_commands = [cmd.name for cmd in self.tree.get_commands()]
-                logger.info("Final global commands: %s", global_commands)
-                
-            except Exception as e:
-                logger.error("Failed to sync command tree: %s", e, exc_info=True)
+        # DISABLED: Automatic command sync removed to avoid Discord rate limits
+        # if not os.getenv("SCHEDULER_MODE"):
+        #     try:
+        #         # Single point of command syncing
+        #         success = await self.sync_commands_with_retry()
+        #         if not success:
+        #             logger.error("Failed to sync commands after retries")
+        #             return
+        #         global_commands = [cmd.name for cmd in self.tree.get_commands()]
+        #         logger.info("Final global commands: %s", global_commands)
+        #     except Exception as e:
+        #         logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info("------ Bot is Ready ------")
 
     async def on_guild_join(self, guild: discord.Guild):
@@ -678,6 +677,75 @@ class SyncCog(commands.Cog):
 async def setup_sync_cog(bot: BettingBot):
     await bot.add_cog(SyncCog(bot))
     logger.info("SyncCog loaded")
+
+# Add a manual sync command to AdminService or a new AdminCog
+from discord.ext import commands
+
+class ManualSyncCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    @commands.is_owner()
+    async def synccommands(self, ctx):
+        """Manually sync commands to the test guild."""
+        test_guild_id = int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+        if test_guild_id:
+            await ctx.bot.tree.sync(guild=discord.Object(id=test_guild_id))
+            await ctx.send(f"Commands synced to test guild {test_guild_id}!")
+        else:
+            await ctx.send("TEST_GUILD_ID not set. Cannot sync commands.")
+
+# Register the manual sync cog in BettingBot.setup_hook
+    async def setup_hook(self):
+        logger.info("Starting setup_hook...")
+        await run_one_time_logo_download()
+        await run_one_time_player_data_download()
+        await self.db_manager.connect()
+        if not self.db_manager._pool:
+            logger.critical("Database connection pool failed to initialize. Bot cannot continue.")
+            await self.close()
+            sys.exit("Database connection failed.")
+        await self.db_manager.execute(
+            """
+            CREATE TABLE IF NOT EXISTS guild_settings (
+                guild_id INTEGER PRIMARY KEY,
+                live_game_updates INTEGER DEFAULT 0,
+                is_paid INTEGER DEFAULT 0,
+                subscription_level VARCHAR(20) DEFAULT 'initial'
+            )
+            """
+        )
+        logger.info("Ensured guild_settings table exists.")
+        if not os.getenv("SCHEDULER_MODE"):
+            await self.load_extensions()
+            commands_list = [cmd.name for cmd in self.tree.get_commands()]
+            logger.info("Registered commands: %s", commands_list)
+        logger.info("Starting services...")
+        service_starts = [
+            self.admin_service.start(),
+            self.analytics_service.start(),
+            self.bet_service.start(),
+            self.user_service.start(),
+            self.voice_service.start(),
+            self.game_service.start(),
+            self.data_sync_service.start(),
+            self.live_game_channel_service.start(),
+        ]
+        results = await asyncio.gather(*service_starts, return_exceptions=True)
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                service_name = service_starts[i].__self__.__class__.__name__ if hasattr(service_starts[i], "__self__") else f"Service {i}"
+                logger.error("Error starting %s: %s", service_name, result, exc_info=True)
+        logger.info("Services startup initiated, including LiveGameChannelService.")
+        # Register the manual sync cog
+        self.add_cog(ManualSyncCog(self))
+        if not os.getenv("SCHEDULER_MODE"):
+            self.start_flask_webapp()
+            self.start_fetcher()
+            logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
+        else:
+            logger.info("Bot setup_hook completed successfully in scheduler mode")
 
 # --- Main Execution ---
 async def run_bot():
