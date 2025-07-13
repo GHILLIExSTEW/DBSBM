@@ -39,7 +39,7 @@ SPORT_CATEGORIES = {
         "MLS", "EPL", "LA_LIGA", "BUNDESLIGA", "SERIE_A", "LIGUE_1",  # Current leagues
         "UEFA_CL", "UEFA_EL", "UEFA_ECL", "COPA_LIBERTADORES", "COPA_SUDAMERICANA",
         "AFC_CL", "CAF_CL", "CONCACAF_CL", "OFC_CL", "FIFA_WC", "EURO", "COPA_AMERICA",
-        "AFC_ASIAN_CUP", "AFRICAN_CUP", "GOLD_CUP", "NATIONS_LEAGUE"
+        "AFC_ASIAN_CUP", "AFRICAN_CUP", "GOLD_CUP", "NATIONS_LEAGUE", "WorldCup"
     ],
     "TENNIS": [
         "ATP", "WTA",  # Current leagues

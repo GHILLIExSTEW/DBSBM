@@ -665,6 +665,10 @@ def get_current_season(league: str) -> int:
     start_date = datetime.strptime(season_info["start"], "%Y-%m-%d")
     end_date = datetime.strptime(season_info["end"], "%Y-%m-%d")
     
+    # Special handling for WorldCup - always use the start year for Club World Cup
+    if league == "WorldCup":
+        return start_date.year
+    
     # If we're in the current season
     if start_date <= current_date <= end_date:
         return start_date.year

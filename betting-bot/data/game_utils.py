@@ -142,7 +142,7 @@ LEAGUE_ID_MAP = {
     "MLS": "253",
     "ChampionsLeague": "2",
     "EuropaLeague": "3",
-    "WorldCup": "1",
+    "WorldCup": "15",  # FIXED: was "1"
     "NBA": "12",
     "WNBA": "13",
     "MLB": "1",
