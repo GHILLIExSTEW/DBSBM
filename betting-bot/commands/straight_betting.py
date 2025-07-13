@@ -1068,6 +1068,18 @@ class StraightBetWorkflowView(View):
                     self.stop()
                     return
 
+                # Save message_id and channel_id in the bets table
+                if bet_service:
+                    try:
+                        await bet_service.update_straight_bet_channel(
+                            bet_serial=details["bet_serial"],
+                            channel_id=webhook_message.channel.id,
+                            message_id=webhook_message.id
+                        )
+                        logger.info(f"Updated bet {details['bet_serial']} with message_id {webhook_message.id} and channel_id {webhook_message.channel.id}")
+                    except Exception as e:
+                        logger.error(f"Failed to update bet with message_id: {e}")
+
                 await self.edit_message(content="✅ Bet posted successfully!", view=None, file=None)
                 self.stop()
             except Exception as e:
