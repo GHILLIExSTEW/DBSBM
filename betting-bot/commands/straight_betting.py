@@ -42,6 +42,7 @@ from api.sports_api import SportsAPI
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.player_prop_image_generator import PlayerPropImageGenerator
 from utils.parlay_image_generator import ParlayImageGenerator
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -854,36 +855,36 @@ class StraightBetWorkflowView(View):
         elif self.current_step == 6:
             # Step 6: Channel selection
             try:
-                # Get available channels for the user
-                guild = self.original_interaction.guild
-                if not guild:
-                    await self.edit_message(content="❌ Error: Could not access guild information.", view=None)
+                # Fetch allowed embed channels from guild settings
+                allowed_channels = []
+                guild_settings = await self.bot.db_manager.fetch_one(
+                    "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                    (str(self.original_interaction.guild_id),)
+                )
+                if guild_settings:
+                    for channel_id in (guild_settings.get("embed_channel_1"), guild_settings.get("embed_channel_2")):
+                        if channel_id:
+                            try:
+                                cid = int(channel_id)
+                                channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                                if isinstance(channel, TextChannel) and channel.permissions_for(self.original_interaction.guild.me).send_messages:
+                                    if channel not in allowed_channels:
+                                        allowed_channels.append(channel)
+                            except Exception as e:
+                                logger.error(f"Error processing channel {channel_id}: {e}")
+                if not allowed_channels:
+                    await self.edit_message(content="❌ No valid embed channels configured. Please contact an admin.", view=None)
                     self.stop()
                     return
-                
-                # Get channels where the bot can send messages
-                available_channels = []
-                for channel in guild.text_channels:
-                    if channel.permissions_for(guild.me).send_messages:
-                        available_channels.append(channel)
-                
-                if not available_channels:
-                    await self.edit_message(content="❌ No channels available for posting bets.", view=None)
-                    self.stop()
-                    return
-                
                 self.clear_items()
-                self.add_item(ChannelSelect(self, available_channels))
+                self.add_item(ChannelSelect(self, allowed_channels))
                 self.add_item(CancelButton(self))
-                
                 file_to_send = None
                 if self.preview_image_bytes:
                     self.preview_image_bytes.seek(0)
                     file_to_send = File(self.preview_image_bytes, filename="bet_preview.png")
-                
                 await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
                 return
-                
             except Exception as e:
                 logger.error(f"Error in step 6: {e}")
                 await self.edit_message(content=f"❌ Error: {e}", view=None)
@@ -1185,13 +1186,14 @@ class StraightBetWorkflowView(View):
 
 
 class StraightBetDetailsModal(Modal):
-    def __init__(self, line_type: str, selected_league_key: str, bet_details_from_view: Dict, is_manual: bool = False):
+    def __init__(self, line_type: str, selected_league_key: str, bet_details_from_view: Dict, is_manual: bool = False, view_custom_id_suffix: str = ""):
         super().__init__(title="Enter Bet Details")
         self.line_type = line_type
         self.selected_league_key = selected_league_key
-        self.bet_details = bet_details_from_view
+        self.bet_details = bet_details_from_view.copy() if bet_details_from_view else {}
         self.is_manual = is_manual
         self.view_ref = None
+        self.view_custom_id_suffix = view_custom_id_suffix or str(uuid.uuid4())
 
         # Get league config to check sport type
         from config.leagues import LEAGUE_CONFIG
@@ -1205,7 +1207,7 @@ class StraightBetDetailsModal(Modal):
                 label="Player Name",
                 placeholder="Enter player name",
                 required=True,
-                custom_id="player_input"
+                custom_id=f"player_input_{self.view_custom_id_suffix}"
             )
             self.add_item(self.player_input)
 
@@ -1232,7 +1234,7 @@ class StraightBetDetailsModal(Modal):
                     label=player_label,
                     placeholder=player_placeholder,
                     required=True,
-                    custom_id="player_input"
+                    custom_id=f"player_input_{self.view_custom_id_suffix}"
                 )
                 self.add_item(self.player_input)
                 
@@ -1256,7 +1258,7 @@ class StraightBetDetailsModal(Modal):
                         label=opponent_label,
                         placeholder=opponent_placeholder,
                         required=True,
-                        custom_id="opponent_input"
+                        custom_id=f"opponent_input_{self.view_custom_id_suffix}"
                     )
                     self.add_item(self.opponent_input)
             else:
@@ -1265,7 +1267,7 @@ class StraightBetDetailsModal(Modal):
                     label="Team",
                     placeholder="Enter your team (e.g., Yankees)",
                     required=True,
-                    custom_id="team_input"
+                    custom_id=f"team_input_{self.view_custom_id_suffix}"
                 )
                 self.add_item(self.team_input)
                 if line_type == "game_line":
@@ -1273,7 +1275,7 @@ class StraightBetDetailsModal(Modal):
                         label="Opponent",
                         placeholder="Enter opponent team (e.g., Red Sox)",
                         required=True,
-                        custom_id="opponent_input"
+                        custom_id=f"opponent_input_{self.view_custom_id_suffix}"
                     )
                     self.add_item(self.opponent_input)
 
@@ -1282,7 +1284,7 @@ class StraightBetDetailsModal(Modal):
             label="Line (e.g., -110, +150, Over 2.5)",
             placeholder="Enter the line",
             required=True,
-            custom_id="line_input"
+            custom_id=f"line_input_{self.view_custom_id_suffix}"
         )
         self.add_item(self.line_input)
 
@@ -1291,7 +1293,7 @@ class StraightBetDetailsModal(Modal):
             label="Odds (e.g., -110, +150)",
             placeholder="Enter the odds",
             required=True,
-            custom_id="odds_input"
+            custom_id=f"odds_input_{self.view_custom_id_suffix}"
         )
         self.add_item(self.odds_input)
 
