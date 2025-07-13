@@ -195,7 +195,7 @@ class ApiService:
             'MLS': ('football', '253'),
             'ChampionsLeague': ('football', '2'),
             'EuropaLeague': ('football', '3'),
-            'WorldCup': ('football', '1'),
+            'WorldCup': ('football', '15'),
             
             # Basketball
             'NBA': ('basketball', '12'),

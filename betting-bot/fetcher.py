@@ -88,7 +88,7 @@ LEAGUE_CONFIG = {
         "MLS": {"id": 253, "name": "Major League Soccer"},
         "ChampionsLeague": {"id": 2, "name": "UEFA Champions League"},
         "EuropaLeague": {"id": 3, "name": "UEFA Europa League"},
-        "WorldCup": {"id": 1, "name": "FIFA World Cup"},
+        "WorldCup": {"id": 15, "name": "FIFA World Cup"},
     },
     "basketball": {
         "WNBA": {"id": 13, "name": "Women's National Basketball Association"},

@@ -1,0 +1,144 @@
+{
+  "teams": [
+    {
+      "team": {
+        "id": 127,
+        "name": "Flamengo",
+        "code": "FLA",
+        "country": "Brazil",
+        "founded": 1895,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/127.png"
+      },
+      "venue": {
+        "id": 204,
+        "name": "Estadio Jornalista Mário Filho (Maracanã)",
+        "address": "Rua Professor Eurico Rabelo, Maracanã",
+        "city": "Rio de Janeiro, Rio de Janeiro",
+        "capacity": 78838,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/204.png"
+      }
+    },
+    {
+      "team": {
+        "id": 541,
+        "name": "Real Madrid",
+        "code": "REA",
+        "country": "Spain",
+        "founded": 1902,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/541.png"
+      },
+      "venue": {
+        "id": 1456,
+        "name": "Estadio Santiago Bernabéu",
+        "address": "Avenida de Concha Espina 1, Chamartín",
+        "city": "Madrid",
+        "capacity": 85454,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/1456.png"
+      }
+    },
+    {
+      "team": {
+        "id": 968,
+        "name": "Wydad AC",
+        "code": "WYD",
+        "country": "Morocco",
+        "founded": 1937,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/968.png"
+      },
+      "venue": {
+        "id": 1099,
+        "name": "Stade Mohamed V",
+        "address": "Rue Ali Abderrazak, Bouskoura, Maarif",
+        "city": "Casablanca",
+        "capacity": 45891,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/1099.png"
+      }
+    },
+    {
+      "team": {
+        "id": 1577,
+        "name": "Al Ahly",
+        "code": "AHL",
+        "country": "Egypt",
+        "founded": 1907,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/1577.png"
+      },
+      "venue": {
+        "id": 10635,
+        "name": "WE Al-Ahly Stadium",
+        "address": "Al Salam",
+        "city": "Cairo",
+        "capacity": 30000,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/10635.png"
+      }
+    },
+    {
+      "team": {
+        "id": 1595,
+        "name": "Seattle Sounders",
+        "code": "SEA",
+        "country": "USA",
+        "founded": 2007,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/1595.png"
+      },
+      "venue": {
+        "id": 11534,
+        "name": "Lumen Field",
+        "address": "800 Occidental Avenue South",
+        "city": "Seattle, Washington",
+        "capacity": 72000,
+        "surface": "artificial turf",
+        "image": "https://media.api-sports.io/football/venues/11534.png"
+      }
+    },
+    {
+      "team": {
+        "id": 2537,
+        "name": "Auckland City",
+        "code": "AUC",
+        "country": "New-Zealand",
+        "founded": 2004,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/2537.png"
+      },
+      "venue": {
+        "id": 1161,
+        "name": "Kiwitea Street",
+        "address": "Kiwitea Street, Sandringham",
+        "city": "Auckland",
+        "capacity": 5000,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/1161.png"
+      }
+    },
+    {
+      "team": {
+        "id": 2932,
+        "name": "Al-Hilal Saudi FC",
+        "code": "HIL",
+        "country": "Saudi-Arabia",
+        "founded": 1957,
+        "national": false,
+        "logo": "https://media.api-sports.io/football/teams/2932.png"
+      },
+      "venue": {
+        "id": 20744,
+        "name": "Kingdom Arena",
+        "address": "Hittin",
+        "city": "Riyadh",
+        "capacity": 26000,
+        "surface": "grass",
+        "image": "https://media.api-sports.io/football/venues/20744.png"
+      }
+    }
+  ]
+}

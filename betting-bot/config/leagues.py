@@ -508,7 +508,7 @@ LEAGUE_SEASON_STARTS = {
     "MLS": {"start": "2024-02-24", "end": "2024-12-07"},
     "ChampionsLeague": {"start": "2024-09-17", "end": "2025-06-01"},
     "EuropaLeague": {"start": "2024-09-19", "end": "2025-05-28"},
-    "WorldCup": {"start": "2026-06-08", "end": "2026-07-19"},
+    "WorldCup": {"start": "2025-12-10", "end": "2025-12-21"},
     
     # Rugby
     "SuperRugby": {"start": "2024-02-23", "end": "2024-06-22"},
@@ -560,7 +560,7 @@ LEAGUE_IDS = {
     "MLS": {"id": 253, "sport": "football", "name": "MLS"},
     "ChampionsLeague": {"id": 2, "sport": "football", "name": "UEFA Champions League"},
     "EuropaLeague": {"id": 3, "sport": "football", "name": "UEFA Europa League"},
-    "WorldCup": {"id": 1, "sport": "football", "name": "FIFA World Cup"},
+    "WorldCup": {"id": 15, "sport": "football", "name": "FIFA World Cup"},
     
     # Basketball
     "NBA": {"id": 12, "sport": "basketball", "name": "NBA"},
