@@ -261,6 +261,22 @@ class Odds(commands.Cog):
             
             logger.info(f"Querying games between {now} and {future_time}")
             
+            # First, let's see what's in the table without time filters
+            all_games_query = """
+                SELECT 
+                    api_game_id, sport, league_name, home_team_name, away_team_name, 
+                    start_time, status
+                FROM api_games 
+                ORDER BY start_time ASC 
+                LIMIT 10
+            """
+            
+            all_games = await db_manager.fetch_all(all_games_query)
+            logger.info(f"Total games in api_games table (first 10): {len(all_games)}")
+            for i, game in enumerate(all_games):
+                logger.info(f"All game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')} - {game.get('start_time')} - Status: {game.get('status')}")
+            
+            # Now query with time filter
             query = """
                 SELECT 
                     api_game_id, sport, league_name, home_team_name, away_team_name, 
@@ -487,6 +503,70 @@ class Odds(commands.Cog):
             return await self.create_odds_embed(game, matching_odds)
         else:
             return discord.Embed(title="No odds available", description="No matching odds found.")
+
+    @app_commands.command(name="debug_games", description="Debug: Check what games are in the api_games table")
+    async def debug_games(self, interaction: discord.Interaction):
+        """Debug command to check what's in the api_games table"""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            db_manager = getattr(self.bot, 'db_manager', None)
+            if not db_manager:
+                await interaction.followup.send("❌ Database manager not available", ephemeral=True)
+                return
+            
+            # Get total count
+            count_query = "SELECT COUNT(*) as total FROM api_games"
+            count_result = await db_manager.fetch_one(count_query)
+            total_games = count_result['total'] if count_result else 0
+            
+            # Get sample games
+            sample_query = """
+                SELECT 
+                    api_game_id, sport, league_name, home_team_name, away_team_name, 
+                    start_time, status
+                FROM api_games 
+                ORDER BY start_time DESC 
+                LIMIT 10
+            """
+            
+            games = await db_manager.fetch_all(sample_query)
+            
+            embed = discord.Embed(
+                title="🔍 API Games Table Debug",
+                description=f"Total games in table: **{total_games}**",
+                color=0x00ff00
+            )
+            
+            if games:
+                for i, game in enumerate(games[:5], 1):
+                    start_time = game.get('start_time')
+                    if isinstance(start_time, str):
+                        try:
+                            start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                            time_str = f"<t:{int(start_time.timestamp())}:F>"
+                        except:
+                            time_str = str(start_time)
+                    else:
+                        time_str = str(start_time)
+                    
+                    embed.add_field(
+                        name=f"Game {i}",
+                        value=f"**{game.get('home_team_name')} vs {game.get('away_team_name')}**\n"
+                              f"League: {game.get('league_name')}\n"
+                              f"Sport: {game.get('sport')}\n"
+                              f"Time: {time_str}\n"
+                              f"Status: {game.get('status')}",
+                        inline=False
+                    )
+            else:
+                embed.add_field(name="No Games", value="The api_games table appears to be empty", inline=False)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error in debug_games: {e}")
+            await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
 
     @app_commands.command(name="sports", description="List all available sports and leagues for odds")
     async def sports(self, interaction: discord.Interaction):

@@ -321,15 +321,16 @@ class GuildSettingsView(discord.ui.View):
         pass
 
     async def process_next_selection(self, interaction: discord.Interaction, initial: bool = False):
-        """Process the next selection step"""
         if self.current_step >= len(self.SETUP_STEPS):
             await self.finalize_setup(interaction)
             return
 
         step = self.SETUP_STEPS[self.current_step]
+        logger.info(f"Processing setup step {self.current_step}: {step}")
 
         # Skip premium-only steps for non-premium users
         if step.get('is_premium_only', False) and self.subscription_level != 'premium':
+            logger.info(f"Skipping premium step '{step['name']}' for subscription level '{self.subscription_level}'")
             self.current_step += 1
             await self.process_next_selection(interaction)
             return
@@ -358,6 +359,24 @@ class GuildSettingsView(discord.ui.View):
             await interaction.response.defer()
 
         select_class = step['select']
+        # Always handle select_class is None: show modal if setting_key is present, otherwise skip
+        if select_class is None:
+            if step.get('setting_key') not in [None, '']:
+                class InputModal(discord.ui.Modal, title=f"Enter {step['name']}"):
+                    user_input = discord.ui.TextInput(label=step['name'], required=True)
+                    async def on_submit(self, modal_interaction: discord.Interaction):
+                        self.view.settings[step['setting_key']] = self.user_input.value
+                        self.view.current_step += 1
+                        await self.view.process_next_selection(modal_interaction)
+                modal = InputModal()
+                modal.view = self
+                await interaction.response.send_modal(modal)
+                return
+            # Otherwise, always skip this step
+            self.current_step += 1
+            await self.process_next_selection(interaction)
+            return
+
         if select_class == ChannelSelect:
             items = interaction.guild.text_channels
         else:
@@ -385,6 +404,14 @@ class GuildSettingsView(discord.ui.View):
         skip_button = SkipButton()
         self.add_item(skip_button)
         await self.message.edit(content=f"Please select a {step['name'].lower()}:", view=self)
+
+        # Fallback: if for any reason the step is not handled, always advance
+        # (This should be unreachable, but ensures no infinite loop)
+        if not self.children:
+            logger.warning(f"Step {self.current_step} was not handled, skipping.")
+            self.current_step += 1
+            await self.process_next_selection(interaction)
+            return
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
@@ -497,7 +524,19 @@ class AdminCog(commands.Cog):
                 )
                 subscription_level = 'initial'
             else:
-                subscription_level = existing_settings.get('subscription_level', 'initial')
+                # Determine subscription level based on is_paid field
+                is_paid = existing_settings.get('is_paid', 0)
+                subscription_level = 'premium' if is_paid else 'initial'
+                
+                logger.info(f"Guild {interaction.guild_id} - is_paid: {is_paid}, subscription_level: {subscription_level}")
+                
+                # Update subscription_level in database if it doesn't match is_paid
+                if is_paid and existing_settings.get('subscription_level') != 'premium':
+                    await self.bot.db_manager.execute(
+                        "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
+                        interaction.guild_id
+                    )
+                    logger.info(f"Updated subscription_level to 'premium' for guild {interaction.guild_id}")
 
             # Create and start the setup view
             view = GuildSettingsView(
