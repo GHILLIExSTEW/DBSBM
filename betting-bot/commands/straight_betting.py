@@ -1297,6 +1297,7 @@ class StraightBetDetailsModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         # Set skip increment flag so go_next does not double-increment
+        preview_bytes = None  # Ensure this is always defined
         if self.view_ref:
             self.view_ref._skip_increment = True
             if preview_bytes:
