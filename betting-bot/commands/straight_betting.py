@@ -282,17 +282,41 @@ class GameSelect(Select):
                 self.parent_view.stop()
                 return
 
-        # Always show team selection after game selection
-        self.parent_view.clear_items()
-        home_team = self.parent_view.bet_details.get("home_team_name", "")
-        away_team = self.parent_view.bet_details.get("away_team_name", "")
-        self.parent_view.add_item(TeamSelect(self.parent_view, home_team, away_team))
-        self.parent_view.add_item(CancelButton(self.parent_view))
-        await interaction.response.defer()
-        await self.parent_view.edit_message(
-            content="Select which team you are betting on:",
-            view=self.parent_view
-        )
+        # For manual entry, skip team selection and go directly to modal
+        if self.parent_view.bet_details.get("is_manual", False):
+            line_type = self.parent_view.bet_details.get("line_type", "game_line")
+            modal = StraightBetDetailsModal(
+                line_type=line_type,
+                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=True,
+            )
+            modal.view_ref = self.parent_view
+            if not interaction.response.is_done():
+                await interaction.response.send_modal(modal)
+                await self.parent_view.edit_message(
+                    content="Please fill in the bet details in the popup form.", view=self.parent_view
+                )
+            else:
+                logger.error("Tried to send modal, but interaction already responded to.")
+                await self.parent_view.edit_message(
+                    content="❌ Error: Could not open modal. Please try again or cancel.",
+                    view=None
+                )
+                self.parent_view.stop()
+            return
+        else:
+            # For regular games, show team selection
+            self.parent_view.clear_items()
+            home_team = self.parent_view.bet_details.get("home_team_name", "")
+            away_team = self.parent_view.bet_details.get("away_team_name", "")
+            self.parent_view.add_item(TeamSelect(self.parent_view, home_team, away_team))
+            self.parent_view.add_item(CancelButton(self.parent_view))
+            await interaction.response.defer()
+            await self.parent_view.edit_message(
+                content="Select which team you are betting on:",
+                view=self.parent_view
+            )
 
 
 class CancelButton(Button):
@@ -649,11 +673,12 @@ class StraightBetWorkflowView(View):
                 logger.info("[WORKFLOW TRACE] Step 1: League selection")
                 allowed_leagues = [
                     "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga",
-                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "MMA",
+                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator",
                     "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts",
                     "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam",
                     "Players Championship", "European Championship", "Masters", "EuroLeague",
-                    "NPB", "KBO", "KHL"
+                    "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+                    "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
                 ]
                 new_view_items.append(LeagueSelect(self, allowed_leagues))
                 new_view_items.append(CancelButton(self))

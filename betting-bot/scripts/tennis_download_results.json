@@ -1,0 +1,54 @@
+{
+  "ATP": {
+    "successful": [
+      "Novak Djokovic",
+      "Carlos Alcaraz",
+      "Daniil Medvedev",
+      "Jannik Sinner",
+      "Andrey Rublev",
+      "Stefanos Tsitsipas",
+      "Alexander Zverev",
+      "Casper Ruud",
+      "Hubert Hurkacz",
+      "Taylor Fritz",
+      "Holger Rune",
+      "Karen Khachanov",
+      "Frances Tiafoe",
+      "Tommy Paul",
+      "Ben Shelton",
+      "Sebastian Korda",
+      "Felix Auger-Aliassime",
+      "Denis Shapovalov",
+      "Grigor Dimitrov",
+      "Lorenzo Musetti"
+    ],
+    "failed": [],
+    "not_found": []
+  },
+  "WTA": {
+    "successful": [
+      "Iga Świątek",
+      "Aryna Sabalenka",
+      "Coco Gauff",
+      "Elena Rybakina",
+      "Jessica Pegula",
+      "Ons Jabeur",
+      "Markéta Vondroušová",
+      "Karolína Muchová",
+      "Maria Sakkari",
+      "Barbora Krejčíková",
+      "Daria Kasatkina",
+      "Veronika Kudermetova",
+      "Madison Keys",
+      "Belinda Bencic",
+      "Liudmila Samsonova",
+      "Victoria Azarenka",
+      "Petra Kvitová",
+      "Caroline Garcia",
+      "Beatriz Haddad Maia",
+      "Elina Svitolina"
+    ],
+    "failed": [],
+    "not_found": []
+  }
+}

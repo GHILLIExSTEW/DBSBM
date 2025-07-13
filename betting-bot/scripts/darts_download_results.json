@@ -1,0 +1,48 @@
+{
+  "PDC": {
+    "successful": [
+      "Luke Humphries",
+      "Michael van Gerwen",
+      "Nathan Aspinall",
+      "Gerwyn Price",
+      "Rob Cross",
+      "Dimitri Van den Bergh",
+      "Jonny Clayton",
+      "Danny Noppert",
+      "Damon Heta",
+      "Dave Chisnall",
+      "Chris Dobey",
+      "Josh Rock",
+      "Andrew Gilding",
+      "Stephen Bunting",
+      "Krzysztof Ratajski"
+    ],
+    "failed": [],
+    "not_found": [
+      "Michael Smith",
+      "Peter Wright",
+      "Joe Cullen",
+      "Ross Smith",
+      "Ryan Searle"
+    ]
+  },
+  "BDO": {
+    "successful": [
+      "Glen Durrant",
+      "Scott Waites",
+      "Mikuru Suzuki",
+      "Anastasia Dobromyslova",
+      "Deta Hedman",
+      "Fallon Sherrock",
+      "Beau Greaves"
+    ],
+    "failed": [],
+    "not_found": [
+      "Scott Mitchell",
+      "Mark McGeeney",
+      "Jim Williams",
+      "Wayne Warren",
+      "Lisa Ashton"
+    ]
+  }
+}

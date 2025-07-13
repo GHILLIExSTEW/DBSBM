@@ -29,9 +29,10 @@ logger = logging.getLogger(__name__)
 # Add this near the top, after logger definition
 ALLOWED_LEAGUES = [
     "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
-    "Formula 1", "Tennis", "MMA", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+    "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
     "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
-    "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL"
+    "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+    "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
 ]
 
 # Add league name normalization mapping
@@ -52,6 +53,7 @@ LEAGUE_FILE_KEY_MAP = {
     'KBO': 'KBO',
     'KHL': 'KHL',
     'MMA': 'MMA',
+    'Bellator': 'Bellator',
     'PDC': 'PDC',
     'BDO': 'BDO',
     'WDF': 'WDF',
@@ -63,8 +65,22 @@ LEAGUE_FILE_KEY_MAP = {
     'Players Championship': 'PlayersChampionship',
     'European Championship': 'EuropeanChampionship',
     'Masters': 'Masters',
-    'Champions League': 'ChampionsLeague',
-    'TENNIS': ['WTP', 'ATP', 'WTA'],
+    'ChampionsLeague': 'ChampionsLeague',
+    'EuropaLeague': 'EuropaLeague',
+    'WorldCup': 'WorldCup',
+    'SuperRugby': 'SuperRugby',
+    'SixNations': 'SixNations',
+    'FIVB': 'FIVB',
+    'EHF': 'EHF',
+    'Tennis': 'Tennis',
+    'ATP': 'ATP',
+    'WTA': 'WTA',
+    'PGA': 'PGA',
+    'LPGA': 'LPGA',
+    'EuropeanTour': 'EuropeanTour',
+    'LIVGolf': 'LIVGolf',
+    'RyderCup': 'RyderCup',
+    'PresidentsCup': 'PresidentsCup',
     'ESPORTS':['CSGO', 'VALORANT', 'LOL', 'DOTA 2', 'PUBG', 'COD'],
     'OTHER_SPORTS':['OTHER_SPORTS'],
     # Add more as needed
@@ -368,14 +384,24 @@ class BetDetailsModal(Modal):
         try:
             # For manual game line, get team/opponent
             if self.is_manual and self.line_type == "game_line":
-                # ...existing code for manual entry...
-                pass  # (Assume this is handled above or elsewhere)
+                self.view_ref.current_leg_construction_details["team"] = self.team_input.value.strip()[:100] or "Team"
+                self.view_ref.current_leg_construction_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
+                self.view_ref.current_leg_construction_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                self.view_ref.current_leg_construction_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
+            elif self.is_manual and self.line_type == "player_prop":
+                self.view_ref.current_leg_construction_details["player_name"] = self.player_name_input.value.strip()[:100] or "Player"
+                # For player props, also set away_team_name to player name for right-side label
+                self.view_ref.current_leg_construction_details["away_team_name"] = self.view_ref.current_leg_construction_details["player_name"]
+            elif self.line_type == "player_prop":
+                # For non-manual, ensure player_name is set and used as away_team_name
+                self.view_ref.current_leg_construction_details["player_name"] = self.player_name_input.value.strip()[:100] or "Player"
+                self.view_ref.current_leg_construction_details["away_team_name"] = self.view_ref.current_leg_construction_details["player_name"]
+            
             line = self.line_input.value.strip()
             if not line:
                 raise ValidationError("Line cannot be empty.")
             self.view_ref.current_leg_construction_details['line'] = line
-            if self.line_type == "player_prop":
-                self.view_ref.current_leg_construction_details['player_name'] = self.player_name_input.value.strip()
+            
             # Store odds for this leg
             odds = self.odds_input.value.strip()
             if not odds:
@@ -949,14 +975,42 @@ class ParlayBetWorkflowView(View):
                 self.current_step += 1
                 return
             elif self.current_step == 3:
-                # Show team select for the chosen game
-                home_team = self.current_leg_construction_details.get('home_team_name', '')
-                away_team = self.current_leg_construction_details.get('away_team_name', '')
-                self.add_item(TeamSelect(self, home_team, away_team))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Select which team you are betting on:", view=self)
-                self.current_step += 1
-                return
+                # For manual entry, skip team selection and go directly to modal
+                if self.current_leg_construction_details.get('is_manual', False):
+                    line_type = self.current_leg_construction_details.get('line_type', 'game_line')
+                    modal = BetDetailsModal(
+                        line_type=line_type,
+                        is_manual=True,
+                        leg_number=len(self.bet_details.get('legs', [])) + 1,
+                        view_custom_id_suffix=self.original_interaction.id,
+                        bet_details_from_view=self.current_leg_construction_details
+                    )
+                    modal.view_ref = self
+                    if not interaction.response.is_done():
+                        await interaction.response.send_modal(modal)
+                        await self.edit_message_for_current_leg(
+                            interaction,
+                            content="Please fill in the bet details in the popup form.", 
+                            view=self
+                        )
+                    else:
+                        logger.error("Tried to send modal, but interaction already responded to.")
+                        await self.edit_message_for_current_leg(
+                            interaction,
+                            content="❌ Error: Could not open modal. Please try again or cancel.",
+                            view=None
+                        )
+                        self.stop()
+                    return
+                else:
+                    # For regular games, show team selection
+                    home_team = self.current_leg_construction_details.get('home_team_name', '')
+                    away_team = self.current_leg_construction_details.get('away_team_name', '')
+                    self.add_item(TeamSelect(self, home_team, away_team))
+                    self.add_item(CancelButton(self))
+                    await self.edit_message_for_current_leg(interaction, content="Select which team you are betting on:", view=self)
+                    self.current_step += 1
+                    return
             elif self.current_step == 4:
                 # Show bet details modal (handled by modal, so just return)
                 return

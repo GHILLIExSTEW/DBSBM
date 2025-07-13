@@ -280,6 +280,91 @@ LEAGUE_CONFIG = {
         "line_placeholder_player": "e.g., Fight to go the Distance - Yes/No, Round Betting"
     },
     
+    # Tennis
+    "Tennis": {
+        "sport": "Tennis",
+        "name": "Tennis",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Novak Djokovic",
+        "line_placeholder_game": "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5",
+        "line_placeholder_player": "e.g., Aces Over 8.5, Double Faults Under 3.5"
+    },
+    "ATP": {
+        "sport": "Tennis",
+        "name": "ATP Tour",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Novak Djokovic",
+        "line_placeholder_game": "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5",
+        "line_placeholder_player": "e.g., Aces Over 8.5, Double Faults Under 3.5"
+    },
+    "WTA": {
+        "sport": "Tennis",
+        "name": "WTA Tour",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Iga Swiatek",
+        "line_placeholder_game": "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5",
+        "line_placeholder_player": "e.g., Aces Over 6.5, Double Faults Under 4.5"
+    },
+    
+    # Golf
+    "PGA": {
+        "sport": "Golf",
+        "name": "PGA Tour",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Scottie Scheffler",
+        "line_placeholder_game": "e.g., To Win Tournament, Top 5 Finish, Round Score Under 68.5",
+        "line_placeholder_player": "e.g., Birdies Over 4.5, Fairways Hit Over 70%"
+    },
+    "LPGA": {
+        "sport": "Golf",
+        "name": "LPGA Tour",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Nelly Korda",
+        "line_placeholder_game": "e.g., To Win Tournament, Top 5 Finish, Round Score Under 69.5",
+        "line_placeholder_player": "e.g., Birdies Over 3.5, Fairways Hit Over 75%"
+    },
+    "EuropeanTour": {
+        "sport": "Golf",
+        "name": "European Tour",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Rory McIlroy",
+        "line_placeholder_game": "e.g., To Win Tournament, Top 10 Finish, Round Score Under 69.5",
+        "line_placeholder_player": "e.g., Birdies Over 4.0, Greens in Regulation Over 70%"
+    },
+    "LIVGolf": {
+        "sport": "Golf",
+        "name": "LIV Golf",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Jon Rahm",
+        "line_placeholder_game": "e.g., To Win Tournament, Top 3 Finish, Round Score Under 68.5",
+        "line_placeholder_player": "e.g., Birdies Over 5.0, Eagles Over 0.5"
+    },
+    "RyderCup": {
+        "sport": "Golf",
+        "name": "Ryder Cup",
+        "sport_type": "Team Sport",
+        "participant_label": "Team",
+        "team_placeholder": "e.g., Team USA",
+        "line_placeholder_game": "e.g., Team USA to Win, Total Points Over/Under 14.5",
+        "line_placeholder_player": "e.g., Player to Win Most Points, Player to Win Match"
+    },
+    "PresidentsCup": {
+        "sport": "Golf",
+        "name": "Presidents Cup",
+        "sport_type": "Team Sport",
+        "participant_label": "Team",
+        "team_placeholder": "e.g., Team USA",
+        "line_placeholder_game": "e.g., Team USA to Win, Total Points Over/Under 15.5",
+        "line_placeholder_player": "e.g., Player to Win Most Points, Player to Win Match"
+    },
+    
     # Darts
     "PDC": {
         "sport": "Darts",
@@ -521,6 +606,14 @@ LEAGUE_IDS = {
     "ATP": {"id": 2, "sport": "tennis", "name": "ATP Tour"},
     "WTA": {"id": 3, "sport": "tennis", "name": "WTA Tour"},
     
+    # Golf
+    "PGA": {"id": 1, "sport": "golf", "name": "PGA Tour"},
+    "LPGA": {"id": 2, "sport": "golf", "name": "LPGA Tour"},
+    "EuropeanTour": {"id": 3, "sport": "golf", "name": "European Tour"},
+    "LIVGolf": {"id": 4, "sport": "golf", "name": "LIV Golf"},
+    "RyderCup": {"id": 5, "sport": "golf", "name": "Ryder Cup"},
+    "PresidentsCup": {"id": 6, "sport": "golf", "name": "Presidents Cup"},
+    
     # Darts
     "PDC": {"id": 1, "sport": "darts", "name": "Professional Darts Corporation"},
     "BDO": {"id": 2, "sport": "darts", "name": "British Darts Organisation"},
@@ -550,6 +643,7 @@ ENDPOINTS = {
     "mma": "https://v1.mma.api-sports.io",
     "darts": "https://v1.darts.api-sports.io",
     "tennis": "https://v1.tennis.api-sports.io",
+    "golf": "https://v1.golf.api-sports.io",
     "cfl": "https://v1.american-football.api-sports.io",  # CFL uses american-football endpoint
 }
 

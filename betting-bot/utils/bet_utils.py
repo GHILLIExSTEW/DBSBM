@@ -10,9 +10,9 @@ def determine_risk_win_display_auto(odds: float, units: float, profit: float) ->
     """
     Determines whether to display "To Risk" or "To Win" in auto mode.
     
-    Based on capper industry standards:
-    - "To Win" range: +100 to -200 (this is the "value range")
-    - "To Risk" range: Everything else (odds outside +100 to -200)
+    Updated capper industry standards:
+    - "To Win" range: strictly greater than -200 and strictly less than +100 (i.e., -199 < odds < +100)
+    - "To Risk": odds >= +100 or odds <= -200
     
     Args:
         odds: The American odds value
@@ -20,14 +20,13 @@ def determine_risk_win_display_auto(odds: float, units: float, profit: float) ->
         profit: The calculated profit if the bet wins
         
     Returns:
-        True if should display "To Risk", False if should display "To Win"
+        False if should display "To Win", True if should display "To Risk"
     """
-    # Capper industry standard: +100 to -200 is "To Win" (value range)
-    if -200 <= odds <= 100:
-        # This is the "value range" - display as "To Win"
+    if -200 < odds < 100:
+        # Strictly between -200 and +100: display as "To Win"
         return False
     else:
-        # Outside the value range - display as "To Risk"
+        # +100 and above, or -200 and below: display as "To Risk"
         return True
 
 def calculate_profit_from_odds(odds: float, units: float) -> float:
