@@ -1034,9 +1034,10 @@ class StraightBetWorkflowView(View):
                     member_role_id = guild_settings["member_role"]
 
                 # Post the bet slip image to the channel using a webhook (for custom avatar/username)
-                content = f"<@{interaction.user.id}> placed a bet!"
                 if member_role_id:
-                    content = f"<@&{member_role_id}> {content}"
+                    content = f"<@&{member_role_id}>"
+                else:
+                    content = None
 
                 # --- Webhook logic restored ---
                 webhooks = await post_channel.webhooks()
