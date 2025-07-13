@@ -15,13 +15,31 @@ def generate_player_prop_bet_image(player_name, player_picture_path, team_name, 
     team_name_width, team_name_height = draw.textsize(team_name, font=font_bold)
     draw.text(((image_width - team_name_width) / 2, 20), team_name, font=font_bold, fill="white")
 
-    # Load and paste team logo
-    team_logo = Image.open(team_logo_path).resize((100, 100))
-    image.paste(team_logo, (50, 100))
 
-    # Load and paste player picture
-    player_picture = Image.open(player_picture_path).resize((100, 100))
-    image.paste(player_picture, (650, 100))
+    # For single player props: if sport is darts/tennis/golf/etc, only post the player image once (left), right image is always default_{sport}.png
+    import os
+    # Try to infer sport from team_name or team_logo_path if possible, fallback to 'darts'
+    sport = 'darts'
+    if team_logo_path and 'darts' in team_logo_path.lower():
+        sport = 'darts'
+    elif team_logo_path and 'tennis' in team_logo_path.lower():
+        sport = 'tennis'
+    elif team_logo_path and 'golf' in team_logo_path.lower():
+        sport = 'golf'
+    elif team_logo_path and 'mma' in team_logo_path.lower():
+        sport = 'mma'
+    elif team_logo_path and 'f1' in team_logo_path.lower():
+        sport = 'f1'
+    # You can add more sports as needed
+    player_img = Image.open(player_picture_path).resize((100, 100))
+    image.paste(player_img, (50, 100))
+    default_sport_path = f"betting-bot/static/logos/default_{sport}.png"
+    if os.path.exists(default_sport_path):
+        right_img = Image.open(default_sport_path).resize((100, 100))
+    else:
+        # fallback to default_image.png if not found
+        right_img = Image.open("betting-bot/static/logos/default_image.png").resize((100, 100))
+    image.paste(right_img, (650, 100))
 
     # Draw player name
     player_name_width, player_name_height = draw.textsize(player_name, font=font_bold)
