@@ -531,8 +531,9 @@ class BettingBot(commands.Bot):
             guild_obj = discord.Object(id=guild.id)
             self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
-            await self.tree.sync(guild=guild_obj)
-            logger.info(f"Synced setup command to new guild {guild.id}")
+            # DISABLED: Remove automatic sync to avoid rate limits
+            # await self.tree.sync(guild=guild_obj)
+            logger.info(f"(SYNC DISABLED) Would have synced setup command to new guild {guild.id}")
         except Exception as e:
             logger.error(f"Failed to sync setup command to new guild {guild.id}: {e}", exc_info=True)
 
@@ -540,15 +541,13 @@ class BettingBot(commands.Bot):
         """Handle when a guild completes the setup process."""
         try:
             guild_obj = discord.Object(id=guild_id)
-            
             # Add all commands except load_logos to the guild
             for cmd in self.tree.get_commands():
                 if cmd.name != "load_logos":
                     self.tree.add_command(cmd, guild=guild_obj)
-            
-            # Sync commands to this guild
-            await self.tree.sync(guild=guild_obj)
-            logger.info(f"Synced all commands to guild {guild_id} after setup completion")
+            # DISABLED: Remove automatic sync to avoid rate limits
+            # await self.tree.sync(guild=guild_obj)
+            logger.info(f"(SYNC DISABLED) Would have synced all commands to guild {guild_id} after setup completion")
         except Exception as e:
             logger.error(f"Failed to sync commands to guild {guild_id} after setup: {e}", exc_info=True)
 
