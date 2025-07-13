@@ -485,8 +485,8 @@ class ChannelSelect(Select):
         logger.debug(f"Channel selected: {channel_id_str} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
-        # FIX: Advance to final confirmation step after channel selection
-        self.parent_view.current_step = 7
+        # FIX: Set to 6 so go_next increments to 7 (final confirm step)
+        self.parent_view.current_step = 6
         await self.parent_view.go_next(interaction)
 
 
