@@ -247,58 +247,28 @@ class Odds(commands.Cog):
         view = OddsDropdownView(self, games)
         await interaction.followup.send("Select a game to view odds:", view=view, ephemeral=True)
     
-    async def get_upcoming_games(self, hours_ahead: int) -> List[Dict]:
-        """Get upcoming games from api_games table"""
+    async def get_upcoming_games(self, hours_ahead: int = 0) -> List[Dict]:
+        """Get all games from api_games table (no time or status filter)"""
         try:
-            # Get database connection from bot
             db_manager = getattr(self.bot, 'db_manager', None)
             if not db_manager:
                 raise Exception("Database manager not available")
-            
-            # Query upcoming games
-            now = datetime.utcnow()
-            future_time = now + timedelta(hours=hours_ahead)
-            
-            logger.info(f"Querying games between {now} and {future_time}")
-            
-            # First, let's see what's in the table without time filters
-            all_games_query = """
-                SELECT 
-                    api_game_id, sport, league_name, home_team_name, away_team_name, 
-                    start_time, status
-                FROM api_games 
-                ORDER BY start_time ASC 
-                LIMIT 10
-            """
-            
-            all_games = await db_manager.fetch_all(all_games_query)
-            logger.info(f"Total games in api_games table (first 10): {len(all_games)}")
-            for i, game in enumerate(all_games):
-                logger.info(f"All game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')} - {game.get('start_time')} - Status: {game.get('status')}")
-            
-            # Now query with time filter
+
             query = """
                 SELECT 
                     api_game_id, sport, league_name, home_team_name, away_team_name, 
                     start_time, status
                 FROM api_games 
-                WHERE start_time BETWEEN %s AND %s
-                AND status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended', 'Game Finished', 'Final')
                 ORDER BY start_time ASC 
-                LIMIT 20
+                LIMIT 50
             """
-            
-            games = await db_manager.fetch_all(query, (now, future_time))
-            logger.info(f"Found {len(games)} upcoming games in database")
-            
-            # Log some sample games for debugging
-            for i, game in enumerate(games[:3]):
-                logger.info(f"Game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')} - {game.get('start_time')}")
-            
+            games = await db_manager.fetch_all(query)
+            logger.info(f"[get_upcoming_games] Found {len(games)} games in database (no filter)")
+            for i, game in enumerate(games[:5]):
+                logger.info(f"Game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_name')} - {game.get('start_time')} - Status: {game.get('status')}")
             return games
-            
         except Exception as e:
-            logger.error(f"Error getting upcoming games: {e}")
+            logger.error(f"Error getting all games: {e}")
             return []
     
     async def fetch_odds_for_games(self, games: List[Dict]) -> List[discord.Embed]:
