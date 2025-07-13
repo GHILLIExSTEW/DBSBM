@@ -85,9 +85,8 @@ class CapperModal(Modal, title="Capper Profile Setup"):
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, banner_color, updated_at
-                    -- bet_won, bet_loss initialized to 0 by default in schema? If not, add here.
-                ) VALUES (%s, %s, %s, %s, NOW() AT TIME ZONE 'UTC') -- Use PG function for timestamp
-                ON CONFLICT (guild_id, user_id) DO NOTHING
+                ) VALUES (%s, %s, %s, %s, UTC_TIMESTAMP())
+                ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP()
                 """,
                 guild_id,
                 user_id,
@@ -231,7 +230,7 @@ class ImageURLModal(Modal, title="Enter Profile Image URL"):
             update_status = await self.db.execute(
                 """
                 UPDATE cappers
-                SET image_path = %s, updated_at = NOW() AT TIME ZONE 'UTC'
+                SET image_path = %s, updated_at = UTC_TIMESTAMP()
                 WHERE guild_id = %s AND user_id = %s
                 """,
                 db_path, self.guild_id, self.user_id
@@ -318,7 +317,7 @@ class CapperDisplayNameModal(Modal, title="Set Display Name"):
         # Update display_name in DB
         await self.db.execute(
             """
-            UPDATE cappers SET display_name = %s, updated_at = NOW() AT TIME ZONE 'UTC' WHERE guild_id = %s AND user_id = %s
+            UPDATE cappers SET display_name = %s, updated_at = UTC_TIMESTAMP() WHERE guild_id = %s AND user_id = %s
             """,
             self.display_name.value, guild_id, user_id
         )
@@ -342,7 +341,7 @@ class CapperImageURLModal(Modal, title="Set Profile Image URL"):
         # Save image_path in DB
         await self.db.execute(
             """
-            UPDATE cappers SET image_path = %s, updated_at = NOW() AT TIME ZONE 'UTC' WHERE guild_id = %s AND user_id = %s
+            UPDATE cappers SET image_path = %s, updated_at = UTC_TIMESTAMP() WHERE guild_id = %s AND user_id = %s
             """,
             self.image_url.value, guild_id, user_id
         )
