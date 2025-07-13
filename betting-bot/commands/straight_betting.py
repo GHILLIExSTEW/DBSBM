@@ -1204,7 +1204,8 @@ class StraightBetDetailsModal(Modal):
         sport_type = league_conf.get('sport_type', 'Team Sport')
         is_individual_sport = sport_type == 'Individual Player'
 
-        # Always add player name input for player props
+        # Add player input only once for player_prop or manual individual sport
+        player_input_added = False
         if line_type == "player_prop":
             self.player_input = TextInput(
                 label="Player Name",
@@ -1213,38 +1214,36 @@ class StraightBetDetailsModal(Modal):
                 custom_id=f"player_input_{self.view_custom_id_suffix}"
             )
             self.add_item(self.player_input)
+            player_input_added = True
 
         # Add team/opponent fields for manual entry
         if is_manual:
             if is_individual_sport:
                 # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
-                player_label = league_conf.get('participant_label', 'Player')
-                player_placeholder = league_conf.get('team_placeholder', 'e.g., Player Name')
-                
-                # League-specific player suggestions
-                if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
-                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
-                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
-                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
-                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
-                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
-                elif selected_league_key in ["MMA", "Bellator"]:
-                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
-                elif selected_league_key == "Formula-1":
-                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
-                
-                self.player_input = TextInput(
-                    label=player_label,
-                    placeholder=player_placeholder,
-                    required=True,
-                    custom_id=f"player_input_{self.view_custom_id_suffix}"
-                )
-                self.add_item(self.player_input)
-                
+                if not player_input_added:
+                    player_label = league_conf.get('participant_label', 'Player')
+                    player_placeholder = league_conf.get('team_placeholder', 'e.g., Player Name')
+                    # League-specific player suggestions
+                    if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                        player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
+                    elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                        player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
+                    elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                        player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
+                    elif selected_league_key in ["MMA", "Bellator"]:
+                        player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
+                    elif selected_league_key == "Formula-1":
+                        player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
+                    self.player_input = TextInput(
+                        label=player_label,
+                        placeholder=player_placeholder,
+                        required=True,
+                        custom_id=f"player_input_{self.view_custom_id_suffix}"
+                    )
+                    self.add_item(self.player_input)
                 if line_type == "game_line":
                     opponent_label = league_conf.get('opponent_label', 'Opponent')
                     opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Name')
-                    
                     # League-specific opponent suggestions
                     if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
                         opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
@@ -1256,7 +1255,6 @@ class StraightBetDetailsModal(Modal):
                         opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
                     elif selected_league_key == "Formula-1":
                         opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
-                    
                     self.opponent_input = TextInput(
                         label=opponent_label,
                         placeholder=opponent_placeholder,
