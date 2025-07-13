@@ -1033,11 +1033,39 @@ class StraightBetWorkflowView(View):
                 if guild_settings and guild_settings.get("member_role"):
                     member_role_id = guild_settings["member_role"]
 
-                # Post the bet slip image to the channel
+                # Post the bet slip image to the channel using a webhook (for custom avatar/username)
                 content = f"<@{interaction.user.id}> placed a bet!"
                 if member_role_id:
                     content = f"<@&{member_role_id}> {content}"
-                await post_channel.send(content=content, file=discord_file_to_send)
+
+                # --- Webhook logic restored ---
+                webhooks = await post_channel.webhooks()
+                target_webhook = None
+                for webhook in webhooks:
+                    if webhook.name == "Bet Bot":
+                        target_webhook = webhook
+                        break
+                if not target_webhook:
+                    target_webhook = await post_channel.create_webhook(name="Bet Bot")
+
+                try:
+                    webhook_message = await target_webhook.send(
+                        content=content,
+                        file=discord_file_to_send,
+                        username=webhook_username,
+                        avatar_url=webhook_avatar_url,
+                        wait=True
+                    )
+                except Exception as e:
+                    logger.error(f"Exception during webhook.send: {e}")
+                    await self.edit_message(content="Error: Failed to post bet message via webhook (send failed).", view=None)
+                    self.stop()
+                    return
+                if not webhook_message:
+                    logger.error("webhook.send returned None (no message object). Possible permission or Discord API error.")
+                    await self.edit_message(content="Error: Bet message could not be posted (no message returned from webhook).", view=None)
+                    self.stop()
+                    return
 
                 await self.edit_message(content="✅ Bet posted successfully!", view=None, file=None)
                 self.stop()
