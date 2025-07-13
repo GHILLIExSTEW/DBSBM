@@ -1299,6 +1299,17 @@ class StraightBetDetailsModal(Modal):
         # Set skip increment flag so go_next does not double-increment
         if self.view_ref:
             self.view_ref._skip_increment = True
+            if preview_bytes:
+                self.view_ref.preview_image_bytes = io.BytesIO(preview_bytes)
+                self.view_ref.preview_image_bytes.seek(0)
+            else:
+                self.view_ref.preview_image_bytes = None
+            # Update the view's bet_details with the modal data
+            self.view_ref.bet_details.update(self.bet_details)
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+            self.view_ref.current_step = 4  # Ensure next step is units selection
+            await self.view_ref.go_next(interaction)
         try:
             # --- FORCE line_type for player prop modal ---
             if self.line_type == "player_prop":
