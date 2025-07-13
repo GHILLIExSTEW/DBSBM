@@ -983,11 +983,37 @@ class StraightBetWorkflowView(View):
                 if not post_channel or not isinstance(post_channel, TextChannel):
                     raise ValueError(f"Invalid channel <#{post_channel_id}> for bet posting.")
 
-                # Use the preview image directly
+                # Regenerate the bet slip image with the real bet_serial
+                bet_type = details.get("line_type", "game_line")
+                league = details.get("league", "N/A")
+                home_team = details.get("home_team_name", details.get("team", "N/A"))
+                away_team = details.get("away_team_name", details.get("opponent", "N/A"))
+                line = details.get("line", "N/A")
+                odds = float(details.get("odds", 0.0))
+                bet_id = str(details.get("bet_serial", ""))
+                timestamp = datetime.now(timezone.utc)
+                generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                bet_slip_image_bytes = generator.generate_bet_slip_image(
+                    league=league,
+                    home_team=home_team,
+                    away_team=away_team,
+                    line=line,
+                    odds=odds,
+                    units=details.get("units", 1.0),
+                    bet_id=bet_id,
+                    timestamp=timestamp,
+                    selected_team=details.get("team", home_team),
+                    output_path=None,
+                    units_display_mode='auto',
+                    display_as_risk=False
+                )
                 discord_file_to_send = None
-                if self.preview_image_bytes:
+                if bet_slip_image_bytes:
+                    self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
                     self.preview_image_bytes.seek(0)
-                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{details['bet_serial']}.png")
+                    discord_file_to_send = File(self.preview_image_bytes, filename=f"bet_slip_{bet_id}.png")
+                else:
+                    logger.warning(f"Straight bet {bet_id}: Failed to generate bet slip image.")
 
                 capper_data = await self.bot.db_manager.fetch_one(
                     "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
@@ -1006,59 +1032,18 @@ class StraightBetWorkflowView(View):
                 )
                 if guild_settings and guild_settings.get("member_role"):
                     member_role_id = guild_settings["member_role"]
-                role_mention = f"<@&{member_role_id}>" if member_role_id else None
 
-                webhooks = await post_channel.webhooks()
-                target_webhook = None
-                for webhook in webhooks:
-                    if webhook.name == "Bet Bot":
-                        target_webhook = webhook
-                        break
-                if not target_webhook:
-                    target_webhook = await post_channel.create_webhook(name="Bet Bot")
+                # Post the bet slip image to the channel
+                content = f"<@{interaction.user.id}> placed a bet!"
+                if member_role_id:
+                    content = f"<@&{member_role_id}> {content}"
+                await post_channel.send(content=content, file=discord_file_to_send)
 
-                try:
-                    webhook_content = role_mention if role_mention else None
-                    # --- Capture the message returned by webhook.send ---
-                    try:
-                        webhook_message = await target_webhook.send(
-                            content=webhook_content,
-                            file=discord_file_to_send,
-                            username=webhook_username,
-                            avatar_url=webhook_avatar_url,
-                            wait=True  # Ensure we get the Message object back
-                        )
-                    except Exception as e:
-                        logger.error(f"Exception during webhook.send: {e}")
-                        await self.edit_message(content="Error: Failed to post bet message via webhook (send failed).", view=None)
-                        self.stop()
-                        return
-                    if not webhook_message:
-                        logger.error("webhook.send returned None (no message object). Possible permission or Discord API error.")
-                        await self.edit_message(content="Error: Bet message could not be posted (no message returned from webhook).", view=None)
-                        self.stop()
-                        return
-                    # --- Update bet with message_id and channel_id ---
-                    if bet_service:
-                        try:
-                            await bet_service.update_straight_bet_channel(
-                                bet_serial=details["bet_serial"],
-                                channel_id=webhook_message.channel.id,
-                                message_id=webhook_message.id
-                            )
-                            logger.info(f"Updated bet {details['bet_serial']} with message_id {webhook_message.id} and channel_id {webhook_message.channel.id}")
-                        except Exception as e:
-                            logger.error(f"Failed to update bet with message_id: {e}")
-                    await self.edit_message(content=f"✅ Bet #{details['bet_serial']} successfully posted!", view=None)
-                    self.stop()
-                except Exception as e:
-                    logger.error(f"Error posting bet via webhook: {e}")
-                    await self.edit_message(content="Error: Failed to post bet message.", view=None)
-                    self.stop()
-                    return
+                await self.edit_message(content="✅ Bet posted successfully!", view=None, file=None)
+                self.stop()
             except Exception as e:
-                logger.exception(f"Error in submit_bet (outer try): {e}")
-                await self.edit_message(content=f"❌ Error processing bet submission: {e}", view=None)
+                logger.error(f"[submit_bet] Failed to post bet: {str(e)}", exc_info=True)
+                await self.edit_message(content=f"❌ Failed to post bet: {str(e)}", view=None)
                 self.stop()
         except Exception as e:
             logger.exception(f"[WORKFLOW TRACE] Exception in submit_bet: {e}")
