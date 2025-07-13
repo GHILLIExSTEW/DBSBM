@@ -185,48 +185,102 @@ class StraightBetDetailsModal(Modal):
         self.view_ref = bet_details_from_view.get('view_ref')
         self.league_config = league_conf
 
-        # For manual entries, always ask for team and opponent first
-        if self.is_manual:
-            # Get league-specific team labels and placeholders
-            team_label = league_conf.get('participant_label', 'Team')
-            team_placeholder = league_conf.get('team_placeholder', 'e.g., Team A')
-            if selected_league_key == "NBA":
-                team_placeholder = "e.g., Los Angeles Lakers"
-            elif selected_league_key == "MLB":
-                team_placeholder = "e.g., New York Yankees"
-            elif selected_league_key == "NHL":
-                team_placeholder = "e.g., Toronto Maple Leafs"
-            elif selected_league_key == "NFL":
-                team_placeholder = "e.g., Kansas City Chiefs"
-            
-            self.team_input = TextInput(
-                label=team_label,
-                required=True,
-                max_length=100,
-                placeholder=team_placeholder,
-                default=bet_details_from_view.get('team', '')
-            )
-            self.add_item(self.team_input)
+        # Check if this is an individual sport
+        sport_type = league_conf.get('sport_type', 'Team Sport')
+        is_individual_sport = sport_type == 'Individual Player'
 
-            opponent_label = league_conf.get('opponent_label', 'Opponent')
-            opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Team')
-            if selected_league_key == "NBA":
-                opponent_placeholder = "e.g., Boston Celtics"
-            elif selected_league_key == "MLB":
-                opponent_placeholder = "e.g., Boston Red Sox"
-            elif selected_league_key == "NHL":
-                opponent_placeholder = "e.g., Montreal Canadiens"
-            elif selected_league_key == "NFL":
-                opponent_placeholder = "e.g., San Francisco 49ers"
-            
-            self.opponent_input = TextInput(
-                label=opponent_label,
-                required=True,
-                max_length=100,
-                placeholder=opponent_placeholder,
-                default=bet_details_from_view.get('opponent', '')
-            )
-            self.add_item(self.opponent_input)
+        # For manual entries, determine fields based on sport type
+        if self.is_manual:
+            if is_individual_sport:
+                # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
+                player_label = league_conf.get('participant_label', 'Player')
+                player_placeholder = league_conf.get('team_placeholder', 'e.g., Player Name')
+                
+                # League-specific player suggestions
+                if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
+                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
+                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
+                elif selected_league_key in ["MMA", "Bellator"]:
+                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
+                elif selected_league_key == "Formula-1":
+                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
+                
+                self.player_input = TextInput(
+                    label=player_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=player_placeholder,
+                    default=bet_details_from_view.get('player_name', bet_details_from_view.get('team', ''))
+                )
+                self.add_item(self.player_input)
+
+                opponent_label = league_conf.get('opponent_label', 'Opponent')
+                opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Name')
+                
+                # League-specific opponent suggestions
+                if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                    opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
+                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                    opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
+                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    opponent_placeholder = "e.g., Rory McIlroy, Lydia Ko"
+                elif selected_league_key in ["MMA", "Bellator"]:
+                    opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
+                elif selected_league_key == "Formula-1":
+                    opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
+                
+                self.opponent_input = TextInput(
+                    label=opponent_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=opponent_placeholder,
+                    default=bet_details_from_view.get('opponent', '')
+                )
+                self.add_item(self.opponent_input)
+            else:
+                # For team sports, show team and opponent (existing logic)
+                team_label = league_conf.get('participant_label', 'Team')
+                team_placeholder = league_conf.get('team_placeholder', 'e.g., Team A')
+                if selected_league_key == "NBA":
+                    team_placeholder = "e.g., Los Angeles Lakers"
+                elif selected_league_key == "MLB":
+                    team_placeholder = "e.g., New York Yankees"
+                elif selected_league_key == "NHL":
+                    team_placeholder = "e.g., Toronto Maple Leafs"
+                elif selected_league_key == "NFL":
+                    team_placeholder = "e.g., Kansas City Chiefs"
+                
+                self.team_input = TextInput(
+                    label=team_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=team_placeholder,
+                    default=bet_details_from_view.get('team', '')
+                )
+                self.add_item(self.team_input)
+
+                opponent_label = league_conf.get('opponent_label', 'Opponent')
+                opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Team')
+                if selected_league_key == "NBA":
+                    opponent_placeholder = "e.g., Boston Celtics"
+                elif selected_league_key == "MLB":
+                    opponent_placeholder = "e.g., Boston Red Sox"
+                elif selected_league_key == "NHL":
+                    opponent_placeholder = "e.g., Montreal Canadiens"
+                elif selected_league_key == "NFL":
+                    opponent_placeholder = "e.g., San Francisco 49ers"
+                
+                self.opponent_input = TextInput(
+                    label=opponent_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=opponent_placeholder,
+                    default=bet_details_from_view.get('opponent', '')
+                )
+                self.add_item(self.opponent_input)
 
         # For player props, add player name field with league-specific suggestions
         if self.line_type == "player_prop":
@@ -279,6 +333,16 @@ class StraightBetDetailsModal(Modal):
                 line_placeholder = "e.g., Moneyline, Puck Line -1.5, Over/Under 5.5"
             elif selected_league_key == "NFL":
                 line_placeholder = "e.g., Moneyline, Spread -3.5, Over/Under 45.5"
+            elif selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                line_placeholder = "e.g., To Win Match, Over/Under 180s, Checkout Percentage"
+            elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                line_placeholder = "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5"
+            elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                line_placeholder = "e.g., To Win Tournament, Top 5 Finish, Round Score Under 68.5"
+            elif selected_league_key in ["MMA", "Bellator"]:
+                line_placeholder = "e.g., To Win Fight, Method of Victory (KO/Sub/Decision)"
+            elif selected_league_key == "Formula-1":
+                line_placeholder = "e.g., To Win Race, Podium Finish, Fastest Lap"
         
         self.line_input = TextInput(
             label=line_label,
@@ -332,6 +396,10 @@ class StraightBetDetailsModal(Modal):
                 self.view_ref.bet_details['team'] = self.team_input.value.strip()
             if hasattr(self, 'opponent_input'):
                 self.view_ref.bet_details['opponent'] = self.opponent_input.value.strip()
+            if hasattr(self, 'player_input'):
+                self.view_ref.bet_details['player_name'] = self.player_input.value.strip()
+                # For individual sports, set team to player name for consistency
+                self.view_ref.bet_details['team'] = self.player_input.value.strip()
             if hasattr(self, 'player_name_input'):
                 self.view_ref.bet_details['player_name'] = self.player_name_input.value.strip()
         

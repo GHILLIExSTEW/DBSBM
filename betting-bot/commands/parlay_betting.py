@@ -308,6 +308,10 @@ class BetDetailsModal(Modal):
         league_key = bet_details_from_view.get('league') or bet_details_from_view.get('selected_league_key') or self.view_ref.current_leg_construction_details.get('league') if self.view_ref else None
         league_conf = LEAGUE_CONFIG.get(league_key, {})
         
+        # Check if this is an individual sport
+        sport_type = league_conf.get('sport_type', 'Team Sport')
+        is_individual_sport = sport_type == 'Individual Player'
+        
         if line_type == "player_prop":
             title = league_conf.get('player_prop_modal_title', f"Parlay Leg {leg_number} Details")
         else:
@@ -316,33 +320,97 @@ class BetDetailsModal(Modal):
             title += " (Manual Entry)"
         super().__init__(title=title)
 
-        # For manual entries, always ask for team and opponent first (like straight betting)
+        # For manual entries, determine fields based on sport type
         if self.is_manual and line_type == "game_line":
-            team_label = league_conf.get('participant_label', 'Team')
-            team_placeholder = league_conf.get('team_placeholder', 'e.g., Team A')
-            opponent_label = league_conf.get('opponent_label', 'Opponent')
-            opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Team')
-            self.team_input = TextInput(
-                label=team_label,
-                required=True,
-                max_length=100,
-                placeholder=team_placeholder,
-                default=bet_details_from_view.get('team', '')
-            )
-            self.add_item(self.team_input)
-            self.opponent_input = TextInput(
-                label=opponent_label,
-                required=True,
-                max_length=100,
-                placeholder=opponent_placeholder,
-                default=bet_details_from_view.get('opponent', '')
-            )
-            self.add_item(self.opponent_input)
+            if is_individual_sport:
+                # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
+                player_label = league_conf.get('participant_label', 'Player')
+                player_placeholder = league_conf.get('team_placeholder', 'e.g., Player Name')
+                
+                # League-specific player suggestions
+                if league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
+                elif league_key in ["ATP", "WTA", "Tennis"]:
+                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
+                elif league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
+                elif league_key in ["MMA", "Bellator"]:
+                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
+                elif league_key == "Formula-1":
+                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
+                
+                self.player_input = TextInput(
+                    label=player_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=player_placeholder,
+                    default=bet_details_from_view.get('player_name', bet_details_from_view.get('team', ''))
+                )
+                self.add_item(self.player_input)
+
+                opponent_label = league_conf.get('opponent_label', 'Opponent')
+                opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Name')
+                
+                # League-specific opponent suggestions
+                if league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                    opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
+                elif league_key in ["ATP", "WTA", "Tennis"]:
+                    opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
+                elif league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    opponent_placeholder = "e.g., Rory McIlroy, Lydia Ko"
+                elif league_key in ["MMA", "Bellator"]:
+                    opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
+                elif league_key == "Formula-1":
+                    opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
+                
+                self.opponent_input = TextInput(
+                    label=opponent_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=opponent_placeholder,
+                    default=bet_details_from_view.get('opponent', '')
+                )
+                self.add_item(self.opponent_input)
+            else:
+                # For team sports, show team and opponent (existing logic)
+                team_label = league_conf.get('participant_label', 'Team')
+                team_placeholder = league_conf.get('team_placeholder', 'e.g., Team A')
+                opponent_label = league_conf.get('opponent_label', 'Opponent')
+                opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Team')
+                self.team_input = TextInput(
+                    label=team_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=team_placeholder,
+                    default=bet_details_from_view.get('team', '')
+                )
+                self.add_item(self.team_input)
+                self.opponent_input = TextInput(
+                    label=opponent_label,
+                    required=True,
+                    max_length=100,
+                    placeholder=opponent_placeholder,
+                    default=bet_details_from_view.get('opponent', '')
+                )
+                self.add_item(self.opponent_input)
 
         # For game lines, use league-specific label/placeholder for line
         if line_type == "game_line":
             line_label = league_conf.get('line_label_game', 'Game Line / Match Outcome')
             line_placeholder = league_conf.get('line_placeholder_game', 'e.g., Moneyline, Spread -7.5')
+            
+            # League-specific line suggestions
+            if league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                line_placeholder = "e.g., To Win Match, Over/Under 180s, Checkout Percentage"
+            elif league_key in ["ATP", "WTA", "Tennis"]:
+                line_placeholder = "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5"
+            elif league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                line_placeholder = "e.g., To Win Tournament, Top 5 Finish, Round Score Under 68.5"
+            elif league_key in ["MMA", "Bellator"]:
+                line_placeholder = "e.g., To Win Fight, Method of Victory (KO/Sub/Decision)"
+            elif league_key == "Formula-1":
+                line_placeholder = "e.g., To Win Race, Podium Finish, Fastest Lap"
+            
             self.line_input = TextInput(
                 label=line_label,
                 required=True,
@@ -382,12 +450,27 @@ class BetDetailsModal(Modal):
         if self.view_ref:
             self.view_ref._skip_increment = True
         try:
-            # For manual game line, get team/opponent
+            # Get league config to check sport type
+            league_key = self.view_ref.current_leg_construction_details.get('league', '')
+            league_conf = LEAGUE_CONFIG.get(league_key, {})
+            sport_type = league_conf.get('sport_type', 'Team Sport')
+            is_individual_sport = sport_type == 'Individual Player'
+            
+            # For manual game line, get team/opponent or player/opponent based on sport type
             if self.is_manual and self.line_type == "game_line":
-                self.view_ref.current_leg_construction_details["team"] = self.team_input.value.strip()[:100] or "Team"
-                self.view_ref.current_leg_construction_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
-                self.view_ref.current_leg_construction_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
-                self.view_ref.current_leg_construction_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                if is_individual_sport:
+                    # For individual sports, use player and opponent
+                    self.view_ref.current_leg_construction_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
+                    self.view_ref.current_leg_construction_details["team"] = self.player_input.value.strip()[:100] or "Player"
+                    self.view_ref.current_leg_construction_details["home_team_name"] = self.player_input.value.strip()[:100] or "Player"
+                    self.view_ref.current_leg_construction_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                    self.view_ref.current_leg_construction_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                else:
+                    # For team sports, use team and opponent (existing logic)
+                    self.view_ref.current_leg_construction_details["team"] = self.team_input.value.strip()[:100] or "Team"
+                    self.view_ref.current_leg_construction_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
+                    self.view_ref.current_leg_construction_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                    self.view_ref.current_leg_construction_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
             elif self.is_manual and self.line_type == "player_prop":
                 self.view_ref.current_leg_construction_details["player_name"] = self.player_name_input.value.strip()[:100] or "Player"
                 # For player props, also set away_team_name to player name for right-side label
@@ -405,15 +488,74 @@ class BetDetailsModal(Modal):
             # Store odds for this leg
             odds = self.odds_input.value.strip()
             if not odds:
-                raise ValidationError("Leg odds cannot be empty.")
-            self.view_ref.current_leg_construction_details['odds'] = odds
-            # Add the leg to the parlay and show LegDecisionView
-            await self.view_ref.add_leg(interaction, self.view_ref.current_leg_construction_details)
+                raise ValidationError("Odds cannot be empty.")
+            try:
+                odds_float = float(odds)
+                self.view_ref.current_leg_construction_details['odds'] = odds_float
+            except ValueError:
+                raise ValidationError("Invalid odds format. Please use numbers like -110 or +150.")
+            self.view_ref.current_leg_construction_details['odds_str'] = odds
+            
+            # Generate preview image
+            try:
+                from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+                generator = ParlayBetImageGenerator(guild_id=self.view_ref.original_interaction.guild_id)
+                
+                # Prepare leg data for preview
+                leg_data = {
+                    'bet_type': self.line_type,
+                    'league': self.view_ref.current_leg_construction_details.get('league', ''),
+                    'home_team': self.view_ref.current_leg_construction_details.get('home_team_name', ''),
+                    'away_team': self.view_ref.current_leg_construction_details.get('away_team_name', ''),
+                    'selected_team': self.view_ref.current_leg_construction_details.get('team', ''),
+                    'line': line,
+                    'odds': odds_float,
+                }
+                
+                if self.line_type == 'player_prop':
+                    leg_data['player_name'] = self.view_ref.current_leg_construction_details.get('player_name', '')
+                    # For player props, keep the home team as the selected team
+                    leg_data['home_team'] = self.view_ref.current_leg_construction_details.get('team', '')
+                    leg_data['away_team'] = self.view_ref.current_leg_construction_details.get('player_name', '')  # This will be replaced with player image
+                    leg_data['selected_team'] = self.view_ref.current_leg_construction_details.get('team', '')  # Keep the team as selected
+                
+                # Generate preview with just this leg
+                preview_legs = [leg_data]
+                image_bytes = generator.generate_image(
+                    legs=preview_legs,
+                    output_path=None,
+                    total_odds=odds_float,  # Use leg odds for preview
+                    units=1.0,
+                    bet_id="PREVIEW",
+                    bet_datetime=datetime.now(timezone.utc),
+                    finalized=False,
+                    units_display_mode='auto',
+                    display_as_risk=False
+                )
+                
+                if image_bytes:
+                    self.view_ref.preview_image_bytes = image_bytes
+                else:
+                    self.view_ref.preview_image_bytes = None
+                    
+            except Exception as e:
+                logger.error(f"Error generating parlay preview image: {e}")
+                self.view_ref.preview_image_bytes = None
+
+            # Advance workflow
+            if hasattr(self.view_ref, 'current_step'):
+                self.view_ref.current_step += 1
+                logger.info(f"[PARLAY MODAL] Advancing to step {self.view_ref.current_step}")
+                await self.view_ref.go_next(interaction)
+            else:
+                logger.error("View reference missing current_step attribute")
+                await interaction.response.send_message("Error: Could not advance workflow", ephemeral=True)
+
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
-            logger.exception(f"Error in BetDetailsModal.on_submit: {e}")
-            await interaction.response.send_message("❌ An error occurred while processing your bet details. Please try again.", ephemeral=True)
+            logger.exception(f"Error in BetDetailsModal on_submit: {e}")
+            await interaction.response.send_message("❌ An error occurred while processing bet details. Please try again.", ephemeral=True)
 
 class TotalOddsModal(Modal):
     def __init__(self, view_custom_id_suffix: str):
@@ -928,56 +1070,50 @@ class ParlayBetWorkflowView(View):
             logger.exception(f"Parlay: Unexpected error editing message: {e}")
 
     async def go_next(self, interaction: Interaction):
-        if self.is_processing or self.is_finished() or getattr(self, '_stopped', False):
+        """Advance to the next step in the parlay workflow."""
+        if hasattr(self, '_skip_increment') and self._skip_increment:
+            self._skip_increment = False
             return
-
-        self.is_processing = True
-        try:
-            self.clear_items()  # Always clear items at the start of each step
-            if self.current_step == 0:
-                self.add_item(LeagueSelect(self, ALLOWED_LEAGUES))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Select a League for your Parlay Leg", view=self)
-                self.current_step += 1
-                return
-            elif self.current_step == 1:
-                self.add_item(LineTypeSelect(self))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Select Line Type for this Leg", view=self)
-                self.current_step += 1
-                return
-            elif self.current_step == 2:
-                league = self.current_leg_construction_details.get('league')
-                self.games = []
-                if league != "Other":
-                    league_key = league  # Use league name as key
-                    from config.leagues import LEAGUE_IDS
-                    league_info = LEAGUE_IDS.get(league_key)
-                    logger.info(f"[Parlay] Fetching games for league='{league}', league_info='{league_info}'")
-                    if league_info:
-                        self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
-                        logger.debug(f"Retrieved {len(self.games)} games for league: {league}: {self.games}")
-                        finished_statuses = [
-                            "Match Finished", "Finished", "FT", "Game Finished", "Final"
-                        ]
-                        filtered_games = []
-                        for game in self.games:
-                            status = (game.get('status') or '').strip()
-                            if status not in finished_statuses:
-                                filtered_games.append(game)
-                            else:
-                                logger.debug(f"Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}")
-                        self.games = filtered_games
-                        logger.debug(f"Games after filtering: {self.games}")
-                self.add_item(ParlayGameSelect(self, self.games))
-                self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Select a game for this leg:", view=self)
-                self.current_step += 1
-                return
-            elif self.current_step == 3:
-                # For manual entry, skip team selection and go directly to modal
-                if self.current_leg_construction_details.get('is_manual', False):
-                    line_type = self.current_leg_construction_details.get('line_type', 'game_line')
+        
+        self.current_step += 1
+        logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
+        
+        if self.current_step == 1:
+            # Step 1: League selection
+            leagues = [
+                "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
+                "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+                "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
+                "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+                "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
+            ]
+            self.clear_items()
+            self.add_item(LeagueSelect(self, leagues))
+            self.add_item(CancelButton(self))
+            await self.edit_message_for_current_leg(interaction, content="Select a league for your parlay:", view=self)
+            return
+        elif self.current_step == 2:
+            # Step 2: Line type selection
+            self.clear_items()
+            self.add_item(LineTypeSelect(self))
+            self.add_item(CancelButton(self))
+            await self.edit_message_for_current_leg(interaction, content="Select the type of bet for this leg:", view=self)
+            return
+        elif self.current_step == 3:
+            # Step 3: Game selection or modal (depending on manual entry and sport type)
+            league = self.current_leg_construction_details.get("league", "N/A")
+            line_type = self.current_leg_construction_details.get("line_type", "game_line")
+            is_manual = self.current_leg_construction_details.get('is_manual', False)
+            
+            if is_manual:
+                # For manual entry, check if this is an individual sport
+                from config.leagues import LEAGUE_CONFIG
+                league_conf = LEAGUE_CONFIG.get(league, {})
+                sport_type = league_conf.get('sport_type', 'Team Sport')
+                is_individual_sport = sport_type == 'Individual Player'
+                
+                if is_individual_sport:
+                    # For individual sports, skip team selection and go directly to modal
                     modal = BetDetailsModal(
                         line_type=line_type,
                         is_manual=True,
@@ -1003,54 +1139,92 @@ class ParlayBetWorkflowView(View):
                         self.stop()
                     return
                 else:
-                    # For regular games, show team selection
+                    # For team sports, show team selection (existing logic)
                     home_team = self.current_leg_construction_details.get('home_team_name', '')
                     away_team = self.current_leg_construction_details.get('away_team_name', '')
                     self.add_item(TeamSelect(self, home_team, away_team))
                     self.add_item(CancelButton(self))
                     await self.edit_message_for_current_leg(interaction, content="Select which team you are betting on:", view=self)
-                    self.current_step += 1
                     return
-            elif self.current_step == 4:
-                # Show bet details modal (handled by modal, so just return)
-                return
-            elif self.current_step == 5:
-                # Show summary and decision view
-                summary_text = self._generate_parlay_summary_text()
-                decision_view = LegDecisionView(self)
-                await self.edit_message_for_current_leg(
-                    interaction,
-content=f"Current Parlay:\n{summary_text}",
-                    view=decision_view
-                )
-                self.current_step += 1
-                return
-            elif self.current_step == 6:
-                # Show total odds modal
-                modal = TotalOddsModal(view_custom_id_suffix=self.original_interaction.id)
-                modal.view_ref = self
-                await interaction.response.send_modal(modal)
-                return
-            elif self.current_step == 7:
-                # Show units select
-                self.add_item(UnitsSelect(self))
-                self.add_item(ConfirmUnitsButton(self))
+            else:
+                # For regular games, show team selection
+                home_team = self.current_leg_construction_details.get('home_team_name', '')
+                away_team = self.current_leg_construction_details.get('away_team_name', '')
+                self.add_item(TeamSelect(self, home_team, away_team))
                 self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Select units for your parlay:", view=self)
-                self.current_step += 1
+                await self.edit_message_for_current_leg(interaction, content="Select which team you are betting on:", view=self)
                 return
-            elif self.current_step == 8:
-                # Show final confirm button
+        elif self.current_step == 4:
+            # Show bet details modal (handled by modal, so just return)
+            return
+        elif self.current_step == 5:
+            # Show summary and decision view
+            summary_text = self._generate_parlay_summary_text()
+            decision_view = LegDecisionView(self)
+            await self.edit_message_for_current_leg(
+                interaction,
+                content=f"Current Parlay:\n{summary_text}",
+                view=decision_view
+            )
+            self.current_step += 1
+            return
+        elif self.current_step == 6:
+            # Show total odds modal
+            modal = TotalOddsModal(view_custom_id_suffix=self.original_interaction.id)
+            modal.view_ref = self
+            await interaction.response.send_modal(modal)
+            return
+        elif self.current_step == 7:
+            # Show units select
+            self.add_item(UnitsSelect(self))
+            self.add_item(ConfirmUnitsButton(self))
+            self.add_item(CancelButton(self))
+            await self.edit_message_for_current_leg(interaction, content="Select units for your parlay:", view=self)
+            self.current_step += 1
+            return
+        elif self.current_step == 8:
+            # Show channel selection
+            try:
+                # Get available channels for the user
+                guild = self.original_interaction.guild
+                if not guild:
+                    await self.edit_message_for_current_leg(interaction, content="❌ Error: Could not access guild information.", view=None)
+                    self.stop()
+                    return
+                
+                # Get channels where the bot can send messages
+                available_channels = []
+                for channel in guild.text_channels:
+                    if channel.permissions_for(guild.me).send_messages:
+                        available_channels.append(channel)
+                
+                if not available_channels:
+                    await self.edit_message_for_current_leg(interaction, content="❌ No channels available for posting bets.", view=None)
+                    self.stop()
+                    return
+                
+                self.clear_items()
+                self.add_item(ChannelSelect(self, available_channels))
                 self.add_item(FinalConfirmButton(self))
                 self.add_item(CancelButton(self))
-                await self.edit_message_for_current_leg(interaction, content="Confirm and post your parlay:", view=self)
+                
+                file_to_send = None
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.seek(0)
+                    file_to_send = File(self.preview_image_bytes, filename="parlay_preview.png")
+                
+                await self.edit_message_for_current_leg(interaction, content="Select channel to post your parlay:", view=self, file=file_to_send)
                 return
-        except Exception as e:
-            logger.exception(f"Error in go_next: {e}")
-            await self.edit_message_for_current_leg(interaction, content=f"❌ An error occurred: {str(e)}", view=None)
+                
+            except Exception as e:
+                logger.error(f"Error in step 8: {e}")
+                await self.edit_message_for_current_leg(interaction, content=f"❌ Error: {e}", view=None)
+                self.stop()
+                return
+        else:
+            logger.warning(f"Unknown step: {self.current_step}")
+            await self.edit_message_for_current_leg(interaction, content="❌ Unknown workflow step. Please restart.", view=None)
             self.stop()
-        finally:
-            self.is_processing = False
 
     def _generate_parlay_summary_text(self) -> str:
         summary_parts = []

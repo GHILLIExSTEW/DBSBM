@@ -648,262 +648,268 @@ class StraightBetWorkflowView(View):
             logger.exception(f"Unexpected error editing message {self.message.id}: {e}")
 
     async def go_next(self, interaction: Interaction):
-        logger.info(f"[WORKFLOW TRACE] go_next called, current_step={self.current_step}, is_processing={self.is_processing}, stopped={getattr(self, '_stopped', False)}")
-        if self.is_processing or self.is_finished() or getattr(self, '_stopped', False):
-            logger.debug(f"Skipping go_next (step {self.current_step}); already processing or workflow stopped.")
-            if not interaction.response.is_done():
-                try:
-                    await interaction.response.defer(ephemeral=True)
-                except discord.HTTPException:
-                    pass
+        """Advance to the next step in the betting workflow."""
+        if hasattr(self, '_skip_increment') and self._skip_increment:
+            self._skip_increment = False
             return
-        self.is_processing = True
-        try:
-            # Only increment current_step if not set by modal (i.e., if called from a user action, not modal submit)
-            if hasattr(self, '_skip_increment') and self._skip_increment:
-                logger.debug(f"[WORKFLOW TRACE] Skipping current_step increment (set by modal)")
-                self._skip_increment = False
-            else:
-                self.current_step += 1
-            logger.info(f"[WORKFLOW TRACE] Advancing to step {self.current_step}")
+        
+        self.current_step += 1
+        logger.info(f"[WORKFLOW TRACE] go_next called for step {self.current_step}")
+        
+        if self.current_step == 1:
+            # Step 1: League selection
+            leagues = [
+                "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
+                "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+                "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
+                "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+                "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
+            ]
             self.clear_items()
-            content = self.get_content()
-            new_view_items = []
-            if self.current_step == 1:
-                logger.info("[WORKFLOW TRACE] Step 1: League selection")
-                allowed_leagues = [
-                    "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga",
-                    "Serie A", "Ligue 1", "MLS", "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator",
-                    "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts",
-                    "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam",
-                    "Players Championship", "European Championship", "Masters", "EuroLeague",
-                    "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
-                    "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
-                ]
-                new_view_items.append(LeagueSelect(self, allowed_leagues))
-                new_view_items.append(CancelButton(self))
-            elif self.current_step == 2:
-                logger.info("[WORKFLOW TRACE] Step 2: Line type selection")
-                new_view_items.append(LineTypeSelect(self))
-                new_view_items.append(CancelButton(self))
-            elif self.current_step == 3:
-                logger.info("[WORKFLOW TRACE] Step 3: Game selection")
-                league = self.bet_details.get("league")
-                if not league:
-                    await self.edit_message(content="❌ League not selected. Please restart.", view=None)
-                    self.stop()
-                    return
-                logger.debug(f"Fetching games for league: {league}")
-                self.games = await get_normalized_games_for_dropdown(self.bot.db, league)
-                logger.debug(f"Retrieved {len(self.games)} games for league: {league}: {self.games}")
-                finished_statuses = [
-                    "Match Finished", "Finished", "FT", "Game Finished", "Final"
-                ]
-                filtered_games = []
-                for game in self.games:
-                    status = (game.get('status') or '').strip()
-                    if status not in finished_statuses:
-                        filtered_games.append(game)
-                    else:
-                        logger.debug(f"Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}")
-                self.games = filtered_games
-                logger.debug(f"Games after filtering: {self.games}")
-                new_view_items.append(GameSelect(self, self.games))
-                new_view_items.append(ConfirmButton(self))
-                new_view_items.append(CancelButton(self))
-                if not self.games:
-                    content = f"No games available for {league} at this time. You can use Manual Entry to place your bet."
-            elif self.current_step == 4:
-                logger.info("[WORKFLOW TRACE] Step 4: Team selection/modal (auto-advance to units selection)")
-                # Immediately advance to step 5 (units selection/preview)
-                self.current_step = 5
-                # Set default units to 1.0 if not already set
-                if "units" not in self.bet_details:
-                    self.bet_details["units"] = 1.0
-                    self.bet_details["units_str"] = "1.0"
-                from utils.bet_utils import fetch_next_bet_serial
-                self.bet_details["preview_bet_serial"] = await fetch_next_bet_serial(self.bot)
-                # Only regenerate preview if not already set
-                if not self.preview_image_bytes:
-                    try:
-                        bet_type = self.bet_details.get("line_type", "game_line")
-                        league = self.bet_details.get("league", "N/A")
-                        home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
-                        away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
-                        line = self.bet_details.get("line", "N/A")
-                        odds = float(self.bet_details.get("odds", 0.0))
-                        bet_id = str(self.bet_details.get("preview_bet_serial", ""))
-                        timestamp = datetime.now(timezone.utc)
-                        units = 1.0
-                        if bet_type == "game_line":
-                            generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
-                            bet_slip_image_bytes = generator.generate_bet_slip_image(
-                                league=league,
-                                home_team=home_team,
-                                away_team=away_team,
-                                line=line,
-                                odds=odds,
-                                units=units,
-                                bet_id=bet_id,
-                                timestamp=timestamp,
-                                selected_team=self.bet_details.get("team", home_team),
-                                output_path=None,
-                                units_display_mode='auto',  # Default to auto for preview
-                                display_as_risk=None
-                            )
-                            if bet_slip_image_bytes:
-                                self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                                self.preview_image_bytes.seek(0)
-                            else:
-                                self.preview_image_bytes = None
-                        elif bet_type == "player_prop":
-                            generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
-                            player_name = self.bet_details.get("player_name")
-                            if not player_name and line:
-                                player_name = line.split(' - ')[0] if ' - ' in line else line
-                            team_name = home_team
-                            league = self.bet_details.get("league", "N/A")
-                            odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                            bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                                player_name=player_name or team_name,
-                                team_name=team_name,
-                                league=league,
-                                line=line,
-                                units=units,
-                                output_path=None,
-                                bet_id=bet_id,
-                                timestamp=timestamp,
-                                guild_id=str(self.original_interaction.guild_id),
-                                odds=odds,
-                                units_display_mode='auto',  # Default to auto for preview
-                                display_as_risk=None
-                            )
-                            if bet_slip_image_bytes:
-                                self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                                self.preview_image_bytes.seek(0)
-                            else:
-                                self.preview_image_bytes = None
-                        elif bet_type == "parlay":
-                            pass
-
-                        # Record the bet in the database after generating preview
-                        bet_service = getattr(self.bot, "bet_service", None)
-                        if bet_service:
-                            try:
-                                logger.info("[WORKFLOW TRACE] Creating straight bet in database after preview...")
-                                bet_serial = await bet_service.create_straight_bet(
-                                    guild_id=self.original_interaction.guild_id,
-                                    user_id=self.original_interaction.user.id,
-                                    league=league,
-                                    bet_type=bet_type,
-                                    units=float(units),
-                                    odds=float(odds),
-                                    team=self.bet_details.get("team"),
-                                    opponent=self.bet_details.get("opponent"),
-                                    line=line,
-                                    api_game_id=self.bet_details.get("api_game_id"),
-                                    channel_id=None,  # Will be set in final step
-                                    confirmed=0  # Not confirmed until final submission
-                                )
-                                if bet_serial:
-                                    self.bet_details["bet_serial"] = bet_serial
-                                    logger.info(f"[WORKFLOW TRACE] Bet recorded with serial {bet_serial}")
-                                else:
-                                    logger.error("[WORKFLOW TRACE] Failed to create bet in database")
-                                    await self.edit_message(content="❌ Failed to create bet in database. Please try again.", view=None)
-                                    self.stop()
-                                    return
-                            except Exception as e:
-                                logger.exception(f"[WORKFLOW TRACE] Error creating bet in database: {e}")
-                                await self.edit_message(content=f"❌ Error creating bet: {str(e)}", view=None)
-                                self.stop()
-                                return
-                        else:
-                            logger.error("[WORKFLOW TRACE] No bet_service available")
-                            await self.edit_message(content="❌ Bet service not available. Please try again.", view=None)
-                            self.stop()
-                            return
-
-                    except Exception as e:
-                        logger.exception(f"Error generating initial preview image for units step: {e}")
-                        self.preview_image_bytes = None
-                self.clear_items()
-                self.add_item(UnitsSelect(self))
-                self.add_item(ConfirmUnitsButton(self))
-                self.add_item(CancelButton(self))
-                file_to_send = None
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.seek(0)
-                    file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
-                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
-                return
-            elif self.current_step == 5:
-                logger.info("[WORKFLOW TRACE] Step 5: Units selection/preview")
-                # Show units selection and preview image
-                self.clear_items()
-                self.add_item(UnitsSelect(self))
-                self.add_item(ConfirmUnitsButton(self))
-                self.add_item(CancelButton(self))
-                file_to_send = None
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.seek(0)
-                    file_to_send = File(self.preview_image_bytes, filename=f"bet_preview_s{self.current_step}.png")
-                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
-                return
-            elif self.current_step == 6:
-                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - starting")
-                try:
-                    # Fetch allowed channel IDs from guild_settings
-                    guild_settings = await self.bot.db_manager.fetch_one(
-                        "SELECT embed_channel_1, embed_channel_2, command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = %s",
-                        (str(interaction.guild_id),)
+            self.add_item(LeagueSelect(self, leagues))
+            self.add_item(CancelButton(self))
+            await self.edit_message(content=self.get_content(), view=self)
+            return
+        elif self.current_step == 2:
+            # Step 2: Line type selection
+            self.clear_items()
+            self.add_item(LineTypeSelect(self))
+            self.add_item(CancelButton(self))
+            await self.edit_message(content=self.get_content(), view=self)
+            return
+        elif self.current_step == 3:
+            # Step 3: Game selection
+            league = self.bet_details.get("league", "N/A")
+            line_type = self.bet_details.get("line_type", "game_line")
+            logger.info(f"[WORKFLOW TRACE] Fetching games for league: {league}, line_type: {line_type}")
+            
+            try:
+                # Fetch games based on line type
+                if line_type == "game_line":
+                    games = await self.bot.get_cog('GameFetcher').fetch_games_for_league(league)
+                elif line_type == "player_prop":
+                    games = await self.bot.get_cog('GameFetcher').fetch_games_for_league(league)
+                else:
+                    games = []
+                
+                if not games:
+                    await self.edit_message(
+                        content=f"No games found for {league}. Please try a different league or check back later.",
+                        view=None
                     )
-                    allowed_channel_ids = set()
-                    for key in ["embed_channel_1", "embed_channel_2", "command_channel_1", "command_channel_2"]:
-                        val = guild_settings.get(key) if guild_settings else None
-                        if isinstance(val, list):
-                            allowed_channel_ids.update(int(v) for v in val if v)
-                        elif val:
-                            allowed_channel_ids.add(int(val))
-                    # Get all text channels the user has access to and are allowed
-                    channels = []
-                    for channel in interaction.guild.text_channels:
-                        if channel.permissions_for(interaction.user).send_messages and channel.id in allowed_channel_ids:
-                            channels.append(channel)
-                    logger.debug(f"[WORKFLOW TRACE] Step 6: Found {len(channels)} allowed channels: {[c.name for c in channels]}")
-                    if not channels:
-                        await self.edit_message(content="❌ No channels available to post bets. Please contact an admin.", view=None)
-                        self.stop()
-                        return
-                    # Add channel selection and final confirm button
-                    new_view_items.append(ChannelSelect(self, channels))
-                    new_view_items.append(FinalConfirmButton(self))
-                    new_view_items.append(CancelButton(self))
-                    content = self.get_content()
-                    logger.info("[WORKFLOW TRACE] Step 6: Sending channel selection dropdown and buttons.")
-                    await self.edit_message(content=content, view=self)
-                except Exception as e:
-                    logger.exception(f"[WORKFLOW TRACE] Exception in step 6 (channel selection): {e}")
-                    await self.edit_message(content=f"❌ Error in channel selection: {e}", view=None)
                     self.stop()
                     return
-                logger.info("[WORKFLOW TRACE] Step 6: Channel selection/final confirm - completed")
-            else:
-                logger.error(f"Unexpected step in StraightBetWorkflow: {self.current_step}")
+                
+                self.clear_items()
+                self.add_item(GameSelect(self, games))
+                self.add_item(CancelButton(self))
+                await self.edit_message(content=self.get_content(), view=self)
+                
+            except Exception as e:
+                logger.error(f"Error fetching games: {e}")
                 await self.edit_message(
-                    content="❌ An unexpected error occurred in the workflow.", view=None
+                    content=f"Error fetching games for {league}. Please try again or contact support.",
+                    view=None
                 )
                 self.stop()
                 return
-            for item in new_view_items:
-                self.add_item(item)
-            await self.edit_message(content=content, view=self)
-        except Exception as e:
-            logger.exception(f"[WORKFLOW TRACE] Exception in go_next: {e}")
-            await self.edit_message(content=f"❌ Error in go_next: {e}", view=None)
+        elif self.current_step == 4:
+            # Step 4: Team selection or modal (depending on manual entry and sport type)
+            is_manual = self.bet_details.get("is_manual", False)
+            
+            if is_manual:
+                # For manual entry, check if this is an individual sport
+                from config.leagues import LEAGUE_CONFIG
+                league_conf = LEAGUE_CONFIG.get(self.bet_details.get("league", ""), {})
+                sport_type = league_conf.get('sport_type', 'Team Sport')
+                is_individual_sport = sport_type == 'Individual Player'
+                
+                if is_individual_sport:
+                    # For individual sports, skip team selection and go directly to modal
+                    line_type = self.bet_details.get("line_type", "game_line")
+                    modal = StraightBetDetailsModal(
+                        line_type=line_type,
+                        selected_league_key=self.bet_details.get("league", "OTHER"),
+                        bet_details_from_view=self.bet_details,
+                        is_manual=True,
+                    )
+                    modal.view_ref = self
+                    if not interaction.response.is_done():
+                        await interaction.response.send_modal(modal)
+                        await self.edit_message(
+                            content="Please fill in the bet details in the popup form.", view=self
+                        )
+                    else:
+                        logger.error("Tried to send modal, but interaction already responded to.")
+                        await self.edit_message(
+                            content="❌ Error: Could not open modal. Please try again or cancel.",
+                            view=None
+                        )
+                        self.stop()
+                    return
+                else:
+                    # For team sports, show team selection (existing logic)
+                    home_team = self.bet_details.get("home_team_name", "")
+                    away_team = self.bet_details.get("away_team_name", "")
+                    self.clear_items()
+                    self.add_item(TeamSelect(self, home_team, away_team))
+                    self.add_item(CancelButton(self))
+                    await self.edit_message(
+                        content="Select which team you are betting on:",
+                        view=self
+                    )
+                    return
+            else:
+                # For regular games, show team selection
+                home_team = self.bet_details.get("home_team_name", "")
+                away_team = self.bet_details.get("away_team_name", "")
+                self.clear_items()
+                self.add_item(TeamSelect(self, home_team, away_team))
+                self.add_item(CancelButton(self))
+                await self.edit_message(
+                    content="Select which team you are betting on:",
+                    view=self
+                )
+                return
+        elif self.current_step == 5:
+            # Step 5: Units selection
+            self.clear_items()
+            self.add_item(UnitsSelect(self))
+            self.add_item(ConfirmUnitsButton(self))
+            self.add_item(CancelButton(self))
+            
+            # Generate preview image
+            try:
+                bet_type = self.bet_details.get("line_type", "game_line")
+                league = self.bet_details.get("league", "N/A")
+                home_team = self.bet_details.get("home_team_name", self.bet_details.get("team", "N/A"))
+                away_team = self.bet_details.get("away_team_name", self.bet_details.get("opponent", "N/A"))
+                line = self.bet_details.get("line", "N/A")
+                odds = float(self.bet_details.get("odds", 0.0))
+                bet_id = str(self.bet_details.get("preview_bet_serial", ""))
+                timestamp = datetime.now(timezone.utc)
+                
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.close()
+                    self.preview_image_bytes = None
+                
+                if bet_type == "game_line":
+                    generator = GameLineImageGenerator(guild_id=self.original_interaction.guild_id)
+                    bet_slip_image_bytes = generator.generate_bet_slip_image(
+                        league=league,
+                        home_team=home_team,
+                        away_team=away_team,
+                        line=line,
+                        odds=odds,
+                        units=1.0,
+                        bet_id=bet_id,
+                        timestamp=timestamp,
+                        selected_team=self.bet_details.get("team", home_team),
+                        output_path=None,
+                        units_display_mode='auto',
+                        display_as_risk=False
+                    )
+                    if bet_slip_image_bytes:
+                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                        self.preview_image_bytes.seek(0)
+                    else:
+                        self.preview_image_bytes = None
+                elif bet_type == "player_prop":
+                    from utils.player_prop_image_generator import PlayerPropImageGenerator
+                    generator = PlayerPropImageGenerator(guild_id=self.original_interaction.guild_id)
+                    player_name = self.bet_details.get("player_name")
+                    if not player_name and line:
+                        player_name = line.split(' - ')[0] if ' - ' in line else line
+                    team_name = home_team
+                    league = self.bet_details.get("league", "N/A")
+                    odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                    bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                        player_name=player_name or team_name,
+                        team_name=team_name,
+                        league=league,
+                        line=line,
+                        units=1.0,
+                        output_path=None,
+                        bet_id=bet_id,
+                        timestamp=timestamp,
+                        guild_id=str(self.original_interaction.guild_id),
+                        odds=odds,
+                        units_display_mode='auto',
+                        display_as_risk=False
+                    )
+                    if bet_slip_image_bytes:
+                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                        self.preview_image_bytes.seek(0)
+                    else:
+                        self.preview_image_bytes = None
+                else:
+                    self.preview_image_bytes = None
+            except Exception as e:
+                logger.exception(f"Error generating preview image: {e}")
+                self.preview_image_bytes = None
+            
+            file_to_send = None
+            if self.preview_image_bytes:
+                self.preview_image_bytes.seek(0)
+                file_to_send = File(self.preview_image_bytes, filename="bet_preview.png")
+            
+            await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+            return
+        elif self.current_step == 6:
+            # Step 6: Channel selection
+            try:
+                # Get available channels for the user
+                guild = self.original_interaction.guild
+                if not guild:
+                    await self.edit_message(content="❌ Error: Could not access guild information.", view=None)
+                    self.stop()
+                    return
+                
+                # Get channels where the bot can send messages
+                available_channels = []
+                for channel in guild.text_channels:
+                    if channel.permissions_for(guild.me).send_messages:
+                        available_channels.append(channel)
+                
+                if not available_channels:
+                    await self.edit_message(content="❌ No channels available for posting bets.", view=None)
+                    self.stop()
+                    return
+                
+                self.clear_items()
+                self.add_item(ChannelSelect(self, available_channels))
+                self.add_item(CancelButton(self))
+                
+                file_to_send = None
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.seek(0)
+                    file_to_send = File(self.preview_image_bytes, filename="bet_preview.png")
+                
+                await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+                return
+                
+            except Exception as e:
+                logger.error(f"Error in step 6: {e}")
+                await self.edit_message(content=f"❌ Error: {e}", view=None)
+                self.stop()
+                return
+        elif self.current_step == 7:
+            # Step 7: Final confirmation
+            self.clear_items()
+            self.add_item(FinalConfirmButton(self))
+            self.add_item(CancelButton(self))
+            
+            file_to_send = None
+            if self.preview_image_bytes:
+                self.preview_image_bytes.seek(0)
+                file_to_send = File(self.preview_image_bytes, filename="bet_preview.png")
+            
+            await self.edit_message(content=self.get_content(), view=self, file=file_to_send)
+            return
+        else:
+            logger.warning(f"Unknown step: {self.current_step}")
+            await self.edit_message(content="❌ Unknown workflow step. Please restart.", view=None)
             self.stop()
-        finally:
-            self.is_processing = False
 
     async def submit_bet(self, interaction: Interaction):
         logger.info("[WORKFLOW TRACE] submit_bet called!")
@@ -1158,6 +1164,12 @@ class StraightBetDetailsModal(Modal):
         self.is_manual = is_manual
         self.view_ref = None
 
+        # Get league config to check sport type
+        from config.leagues import LEAGUE_CONFIG
+        league_conf = LEAGUE_CONFIG.get(selected_league_key, {})
+        sport_type = league_conf.get('sport_type', 'Team Sport')
+        is_individual_sport = sport_type == 'Individual Player'
+
         # Always add player name input for player props
         if line_type == "player_prop":
             self.player_input = TextInput(
@@ -1170,21 +1182,71 @@ class StraightBetDetailsModal(Modal):
 
         # Add team/opponent fields for manual entry
         if is_manual:
-            self.team_input = TextInput(
-                label="Team",
-                placeholder="Enter your team (e.g., Yankees)",
-                required=True,
-                custom_id="team_input"
-            )
-            self.add_item(self.team_input)
-            if line_type == "game_line":
-                self.opponent_input = TextInput(
-                    label="Opponent",
-                    placeholder="Enter opponent team (e.g., Red Sox)",
+            if is_individual_sport:
+                # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
+                player_label = league_conf.get('participant_label', 'Player')
+                player_placeholder = league_conf.get('team_placeholder', 'e.g., Player Name')
+                
+                # League-specific player suggestions
+                if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
+                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
+                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
+                elif selected_league_key in ["MMA", "Bellator"]:
+                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
+                elif selected_league_key == "Formula-1":
+                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
+                
+                self.player_input = TextInput(
+                    label=player_label,
+                    placeholder=player_placeholder,
                     required=True,
-                    custom_id="opponent_input"
+                    custom_id="player_input"
                 )
-                self.add_item(self.opponent_input)
+                self.add_item(self.player_input)
+                
+                if line_type == "game_line":
+                    opponent_label = league_conf.get('opponent_label', 'Opponent')
+                    opponent_placeholder = league_conf.get('opponent_placeholder', 'e.g., Opponent Name')
+                    
+                    # League-specific opponent suggestions
+                    if selected_league_key in ["PDC", "BDO", "WDF", "PremierLeagueDarts", "WorldMatchplay", "WorldGrandPrix", "UKOpen", "GrandSlam", "PlayersChampionship", "EuropeanChampionship", "Masters"]:
+                        opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
+                    elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                        opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
+                    elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                        opponent_placeholder = "e.g., Rory McIlroy, Lydia Ko"
+                    elif selected_league_key in ["MMA", "Bellator"]:
+                        opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
+                    elif selected_league_key == "Formula-1":
+                        opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
+                    
+                    self.opponent_input = TextInput(
+                        label=opponent_label,
+                        placeholder=opponent_placeholder,
+                        required=True,
+                        custom_id="opponent_input"
+                    )
+                    self.add_item(self.opponent_input)
+            else:
+                # For team sports, show team and opponent (existing logic)
+                self.team_input = TextInput(
+                    label="Team",
+                    placeholder="Enter your team (e.g., Yankees)",
+                    required=True,
+                    custom_id="team_input"
+                )
+                self.add_item(self.team_input)
+                if line_type == "game_line":
+                    self.opponent_input = TextInput(
+                        label="Opponent",
+                        placeholder="Enter opponent team (e.g., Red Sox)",
+                        required=True,
+                        custom_id="opponent_input"
+                    )
+                    self.add_item(self.opponent_input)
 
         # Add line input
         self.line_input = TextInput(
@@ -1214,15 +1276,34 @@ class StraightBetDetailsModal(Modal):
                 self.bet_details["line_type"] = "player_prop"
             # Get values from inputs
             if self.is_manual:
-                self.bet_details["team"] = self.team_input.value.strip()[:100] or "Team"
-                self.bet_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
-                if self.line_type == "game_line":
-                    self.bet_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
-                    self.bet_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
-                elif self.line_type == "player_prop":
+                # Get league config to check sport type
+                from config.leagues import LEAGUE_CONFIG
+                league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
+                sport_type = league_conf.get('sport_type', 'Team Sport')
+                is_individual_sport = sport_type == 'Individual Player'
+                
+                if is_individual_sport:
+                    # For individual sports, use player and opponent
                     self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
-                    # For player props, also set away_team_name to player name for right-side label
-                    self.bet_details["away_team_name"] = self.bet_details["player_name"]
+                    self.bet_details["team"] = self.player_input.value.strip()[:100] or "Player"
+                    self.bet_details["home_team_name"] = self.player_input.value.strip()[:100] or "Player"
+                    if self.line_type == "game_line" and hasattr(self, 'opponent_input'):
+                        self.bet_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                        self.bet_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                    elif self.line_type == "player_prop":
+                        # For player props, also set away_team_name to player name for right-side label
+                        self.bet_details["away_team_name"] = self.bet_details["player_name"]
+                else:
+                    # For team sports, use team and opponent (existing logic)
+                    self.bet_details["team"] = self.team_input.value.strip()[:100] or "Team"
+                    self.bet_details["home_team_name"] = self.team_input.value.strip()[:100] or "Team"
+                    if self.line_type == "game_line":
+                        self.bet_details["opponent"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                        self.bet_details["away_team_name"] = self.opponent_input.value.strip()[:100] or "Opponent"
+                    elif self.line_type == "player_prop":
+                        self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
+                        # For player props, also set away_team_name to player name for right-side label
+                        self.bet_details["away_team_name"] = self.bet_details["player_name"]
             elif self.line_type == "player_prop":
                 # For non-manual, ensure player_name is set and used as away_team_name
                 self.bet_details["player_name"] = self.player_input.value.strip()[:100] or "Player"
