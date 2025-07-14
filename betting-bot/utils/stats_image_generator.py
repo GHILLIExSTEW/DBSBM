@@ -38,10 +38,11 @@ class StatsImageGenerator:
                 try:
                     import os
                     local_path = profile_image_url
-                    if not os.path.isabs(local_path):
-                        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        # Normalize path for OS
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    if profile_image_url.startswith('/static/'):
                         local_path = os.path.join(base_dir, *profile_image_url.lstrip('/').split('/'))
+                    elif not os.path.isabs(local_path):
+                        local_path = os.path.join(base_dir, local_path)
                     print(f"[DEBUG] Trying profile image local_path: {local_path}")
                     print(f"[DEBUG] File exists: {os.path.exists(local_path)}")
                     if os.path.exists(local_path):
