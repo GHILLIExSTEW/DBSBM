@@ -246,7 +246,8 @@ class StatsImageGenerator:
             guild_id = str(stats.get('guild_id', ''))
 
             # Try to load the guild's default image
-            profile_img = None
+            import traceback
+            profile_img_circle = None
             if guild_id:
                 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
@@ -254,31 +255,30 @@ class StatsImageGenerator:
                 logger.info(f"[DEBUG] Looking for default image at: {default_path}")
                 logger.info(f"[DEBUG] File exists: {os.path.exists(default_path)}")
                 if os.path.exists(default_path):
-                    from PIL import Image
-                    profile_img = Image.open(default_path).convert("RGBA")
-                    profile_img.thumbnail((400, 400), Image.Resampling.LANCZOS)
-                    # Crop to square
-                    min_side = min(profile_img.size)
-                    profile_img = profile_img.crop((
-                        (profile_img.width - min_side) // 2,
-                        (profile_img.height - min_side) // 2,
-                        (profile_img.width + min_side) // 2,
-                        (profile_img.height + min_side) // 2
-                    ))
-                    # Make it a circle
-                    from .stats_image_generator import make_rounded_feathered
-                    profile_img_circle = make_rounded_feathered(profile_img)
-                else:
-                    profile_img_circle = None
-            else:
-                profile_img_circle = None
-
-            # 1. Guild Overview (top left)
-            ax1.axis('off')
+                    try:
+                        from PIL import Image
+                        profile_img = Image.open(default_path).convert("RGBA")
+                        profile_img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                        min_side = min(profile_img.size)
+                        profile_img = profile_img.crop((
+                            (profile_img.width - min_side) // 2,
+                            (profile_img.height - min_side) // 2,
+                            (profile_img.width + min_side) // 2,
+                            (profile_img.height + min_side) // 2
+                        ))
+                        from .stats_image_generator import make_rounded_feathered
+                        profile_img_circle = make_rounded_feathered(profile_img)
+                        logger.info(f"[GUILD IMAGE] Successfully loaded and processed guild image for {guild_id}")
+                    except Exception as e:
+                        logger.error(f"[GUILD IMAGE] Failed to load or process image at {default_path}: {e}")
+                        logger.error(traceback.format_exc())
+                        profile_img_circle = None
             if profile_img_circle is not None:
+                ax1.axis('off')
                 ax1.imshow(profile_img_circle, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
                 ax1.set_title(f"{stats.get('guild_name', 'Guild')}", color='#00ffe7', fontsize=28, fontweight='bold', pad=20)
             else:
+                logger.info(f"[GUILD IMAGE] Fallback: No profile image for guild {guild_id}")
                 # Fallback: show stats as bar chart
                 overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
                 overview_values = [total_bets, total_cappers, total_units]
