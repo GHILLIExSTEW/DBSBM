@@ -230,7 +230,7 @@ class StatsImageGenerator:
             raise
 
     def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
-        print(f"[DEBUG] generate_guild_stats_image called with stats: {stats}")
+        logger.info(f"[DEBUG] generate_guild_stats_image called with stats: {stats}")
         """Generate a flashy guild stats image with charts and the guild's default image if available."""
         try:
             import os
@@ -250,9 +250,9 @@ class StatsImageGenerator:
             if guild_id:
                 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
-                print(f"[DEBUG] Guild ID: {guild_id}")
-                print(f"[DEBUG] Looking for default image at: {default_path}")
-                print(f"[DEBUG] File exists: {os.path.exists(default_path)}")
+                logger.info(f"[DEBUG] Guild ID: {guild_id}")
+                logger.info(f"[DEBUG] Looking for default image at: {default_path}")
+                logger.info(f"[DEBUG] File exists: {os.path.exists(default_path)}")
                 if os.path.exists(default_path):
                     from PIL import Image
                     profile_img = Image.open(default_path).convert("RGBA")
