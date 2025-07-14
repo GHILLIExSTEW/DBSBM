@@ -28,21 +28,31 @@ class StatsImageGenerator:
         """Generate a flashy stats image with charts and graphs."""
         try:
             # Create figure with dark theme
-            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 14))
             fig.patch.set_facecolor('#1a1a1a')
             
-            # Load profile image if available
+            # Load profile image if available (make it large for top left)
             profile_img = None
             if profile_image_url:
                 try:
-                    import requests
-                    response = requests.get(profile_image_url, timeout=10)
-                    if response.status_code == 200:
-                        profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
-                        profile_img.thumbnail((120, 120), Image.Resampling.LANCZOS)
-                        logger.info(f"Successfully loaded profile image")
+                    import os
+                    local_path = profile_image_url
+                    if not os.path.isabs(local_path):
+                        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                        local_path = os.path.join(base_dir, profile_image_url.lstrip('/'))
+                    if os.path.exists(local_path):
+                        profile_img = Image.open(local_path).convert("RGBA")
+                        profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                        logger.info(f"Loaded profile image from local path: {local_path}")
+                    elif profile_image_url.startswith('http://') or profile_image_url.startswith('https://'):
+                        import requests
+                        response = requests.get(profile_image_url, timeout=10)
+                        if response.status_code == 200:
+                            profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
+                            profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                            logger.info(f"Loaded profile image from URL: {profile_image_url}")
                 except Exception as e:
-                    logger.warning(f"Failed to load profile image: {e}")
+                    logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
 
             # Extract stats
             total_bets = int(stats.get('total_bets', 0) or 0)
@@ -53,18 +63,14 @@ class StatsImageGenerator:
             net_units = float(stats.get('net_units', 0) or 0.0)
             roi = float(stats.get('roi', 0) or 0.0)
 
-            # 1. Win/Loss/Push Pie Chart (top left)
-            if total_bets > 0:
-                labels = ['Wins', 'Losses', 'Pushes'] if pushes > 0 else ['Wins', 'Losses']
-                sizes = [wins, losses, pushes] if pushes > 0 else [wins, losses]
-                colors = ['#00ff88', '#ff4444', '#ffaa00'] if pushes > 0 else ['#00ff88', '#ff4444']
-                
-                ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-                ax1.set_title('Bet Distribution', color='white', fontsize=16, fontweight='bold')
+            # 1. Profile Image (top left)
+            ax1.axis('off')
+            if profile_img is not None:
+                ax1.imshow(profile_img)
+                ax1.set_title(f"{username}", color='white', fontsize=28, fontweight='bold', pad=30)
             else:
-                ax1.text(0.5, 0.5, 'No bets yet', ha='center', va='center', transform=ax1.transAxes, 
-                        color='white', fontsize=14)
-                ax1.set_title('Bet Distribution', color='white', fontsize=16, fontweight='bold')
+                ax1.text(0.5, 0.5, f"{username}\n(No Profile Image)", ha='center', va='center', color='white', fontsize=24, fontweight='bold', transform=ax1.transAxes)
+                ax1.set_title(f"{username}", color='white', fontsize=28, fontweight='bold', pad=30)
 
             # 2. Performance Metrics (top right)
             metrics = ['Win Rate', 'ROI', 'Net Units']
@@ -82,53 +88,41 @@ class StatsImageGenerator:
                 ax2.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(values)),
                         f'{value:.1f}', ha='center', va='bottom', color='white', fontweight='bold')
 
-            # 3. Win/Loss Bar Chart (bottom left)
+            # 3. Win/Loss/Push Pie Chart (bottom left)
             if total_bets > 0:
-                categories = ['Wins', 'Losses']
-                counts = [wins, losses]
-                colors_bars = ['#00ff88', '#ff4444']
-                
-                bars2 = ax3.bar(categories, counts, color=colors_bars, alpha=0.8, edgecolor='white', linewidth=2)
-                ax3.set_title('Wins vs Losses', color='white', fontsize=16, fontweight='bold')
-                ax3.set_ylabel('Count', color='white')
-                ax3.tick_params(colors='white')
-                
-                # Add count labels on bars
-                for bar, count in zip(bars2, counts):
-                    height = bar.get_height()
-                    ax3.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                            str(count), ha='center', va='bottom', color='white', fontweight='bold')
+                labels = ['Wins', 'Losses', 'Pushes'] if pushes > 0 else ['Wins', 'Losses']
+                sizes = [wins, losses, pushes] if pushes > 0 else [wins, losses]
+                colors = ['#00ff88', '#ff4444', '#ffaa00'] if pushes > 0 else ['#00ff88', '#ff4444']
+                ax3.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+                ax3.set_title('Bet Distribution', color='white', fontsize=20, fontweight='bold')
             else:
-                ax3.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax3.transAxes, 
-                        color='white', fontsize=14)
-                ax3.set_title('Wins vs Losses', color='white', fontsize=16, fontweight='bold')
+                ax3.text(0.5, 0.5, 'No bets yet', ha='center', va='center', transform=ax3.transAxes, color='white', fontsize=18)
+                ax3.set_title('Bet Distribution', color='white', fontsize=20, fontweight='bold')
 
             # 4. Summary Stats (bottom right)
             ax4.axis('off')
-            
-            # Create summary text
-            summary_text = f"""
-            📊 {username}'s Stats Summary
-            
-            🎯 Total Bets: {total_bets}
-            ✅ Wins: {wins}
-            ❌ Losses: {losses}
-            🤝 Pushes: {pushes}
-            
-            📈 Win Rate: {win_rate:.1f}%
-            💰 Net Units: {net_units:.2f}
-            📊 ROI: {roi:.1f}%
-            """
-            
-            # Add profile image if available
-            if profile_img:
-                # Convert PIL image to matplotlib format
-                profile_array = np.array(profile_img)
-                ax4.imshow(profile_array, extent=[0.1, 0.4, 0.6, 0.9])
-            
-            ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
-                    color='white', fontsize=12, fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8))
+            summary_lines = [
+                f"{username}'s Stats Summary",
+                "",
+                f"Total Bets: {total_bets}",
+                f"Wins: {wins}",
+                f"Losses: {losses}",
+                f"Pushes: {pushes}",
+                "",
+                f"Win Rate: {win_rate:.1f}%",
+                f"Net Units: {net_units:.2f}",
+                f"ROI: {roi:.1f}%"
+            ]
+            summary_text = "\n".join(summary_lines)
+            bbox_props = dict(boxstyle="round,pad=0.6", facecolor='#222', alpha=0.8, edgecolor='white')
+            ax4.text(
+                0.5, 0.5, summary_text,
+                ha='center', va='center',
+                fontsize=20, color='white',
+                fontweight='bold',
+                bbox=bbox_props,
+                transform=ax4.transAxes
+            )
 
             # Adjust layout
             plt.tight_layout(pad=3.0)
