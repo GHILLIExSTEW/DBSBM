@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 from PIL import Image, ImageFont
 import difflib
 import unidecode
+from rapidfuzz import process
 
 logger = logging.getLogger(__name__)
 
@@ -252,60 +253,22 @@ class AssetLoader:
 # Global instance for easy access
 asset_loader = AssetLoader() 
 
-def find_team_logo_path(league, team, base_dir='betting-bot/static/logos/teams/SOCCER'):
-    """
-    Robustly find the path to a team logo given league and team name.
-    Tries normalization, case variants, and fuzzy matching.
-    Returns the path to the logo file or None if not found.
-    """
-    logger = logging.getLogger(__name__)
-    # Normalize league directory
-    league_dir = league.replace(' ', '_').replace('-', '_')
-    league_dir = unidecode.unidecode(league_dir)
-    league_dir_path = os.path.join(base_dir, league_dir)
-    if not os.path.isdir(league_dir_path):
-        # Try all lowercase
-        league_dir_path = os.path.join(base_dir, league_dir.lower())
-        if not os.path.isdir(league_dir_path):
-            logger.warning(f"[LOGO] League directory not found: {league_dir_path}")
-            return None
-
-    # Generate possible team filename variants
-    candidates = []
-    team_base = team.replace(' ', '_').replace('-', '_')
-    team_base = unidecode.unidecode(team_base)
-    candidates.append(f"{team_base}.png")
-    candidates.append(f"{team_base.lower()}.png")
-    candidates.append(f"{team_base.title()}.png")
-    candidates.append(f"{team_base.upper()}.png")
-    # Try removing common suffixes
-    for suffix in ['_AIF', '_FF', '_FC', '_IF', '_SK', '_FK', '_IS', '_BoIS']:
-        if team_base.endswith(suffix):
-            candidates.append(f"{team_base[:-len(suffix)]}.png")
-            candidates.append(f"{team_base[:-len(suffix)].lower()}.png")
-    # Try removing accents
-    team_base_ascii = unidecode.unidecode(team_base)
-    candidates.append(f"{team_base_ascii}.png")
-    candidates.append(f"{team_base_ascii.lower()}.png")
-
-    # Try all candidates
-    for filename in candidates:
-        path = os.path.join(league_dir_path, filename)
-        if os.path.isfile(path):
-            logger.info(f"[LOGO] Found logo for '{team}' in '{league}': {path}")
-            return path
-
-    # Fuzzy match if no exact match
-    try:
-        files = [f for f in os.listdir(league_dir_path) if f.endswith('.png')]
-        file_bases = [os.path.splitext(f)[0] for f in files]
-        matches = difflib.get_close_matches(team_base, file_bases, n=1, cutoff=0.7)
-        if matches:
-            match_path = os.path.join(league_dir_path, matches[0] + '.png')
-            logger.info(f"[LOGO] Fuzzy matched '{team}' to '{matches[0]}' in '{league}': {match_path}")
-            return match_path
-    except Exception as e:
-        logger.warning(f"[LOGO] Fuzzy matching failed for '{team}' in '{league}': {e}")
-
-    logger.warning(f"[LOGO] No logo found for '{team}' in '{league}'")
+def find_team_logo_path(team_name, league, sport_category, static_root):
+    # Normalize team name
+    normalized_team = team_name.replace(" ", "_").replace("-", "_").replace("'", "").lower()
+    league_dir = os.path.join(static_root, "logos", "teams", sport_category, league)
+    if not os.path.isdir(league_dir):
+        return None
+    # Try exact match first
+    for ext in [".png", ".jpg", ".jpeg"]:
+        candidate = os.path.join(league_dir, f"{normalized_team}{ext}")
+        if os.path.isfile(candidate):
+            print(f"[DEBUG] Found exact logo: {candidate}")
+            return candidate
+    # Fuzzy/partial match
+    files = [f for f in os.listdir(league_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+    matches = process.extract(normalized_team, files, limit=1, scorer=process.fuzz.partial_ratio)
+    if matches and matches[0][1] > 80:
+        print(f"[DEBUG] Found fuzzy logo match: {matches[0][0]}")
+        return os.path.join(league_dir, matches[0][0])
     return None 
