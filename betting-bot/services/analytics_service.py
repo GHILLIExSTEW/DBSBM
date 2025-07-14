@@ -51,7 +51,7 @@ class AnalyticsService:
             wins = stats.get('wins') or 0
             losses = stats.get('losses') or 0
             total_bets = stats.get('total_bets') or 0
-            net_units = stats.get('net_units') or 0.0
+            net_units = float(stats.get('net_units') or 0.0)
 
             total_resolved_for_winrate = wins + losses
             win_rate = (wins / total_resolved_for_winrate * 100) if total_resolved_for_winrate > 0 else 0.0
@@ -65,7 +65,7 @@ class AnalyticsService:
                 WHERE guild_id = %s AND user_id = %s
                 AND status IN ('won', 'lost', 'push')
             """, guild_id, user_id)
-            total_risked = total_risked_result.get('total_risked') or 0 if total_risked_result else 0
+            total_risked = float(total_risked_result.get('total_risked') or 0) if total_risked_result else 0.0
 
             roi = (net_units / total_risked * 100.0) if total_risked > 0 else 0.0
 
@@ -101,7 +101,7 @@ class AnalyticsService:
             wins = stats.get('wins') or 0
             losses = stats.get('losses') or 0
             total_bets = stats.get('total_bets') or 0
-            net_units = stats.get('net_units') or 0.0
+            net_units = float(stats.get('net_units') or 0.0)
 
             total_resolved_for_winrate = wins + losses
             win_rate = (wins / total_resolved_for_winrate * 100.0) if total_resolved_for_winrate > 0 else 0.0
@@ -111,7 +111,7 @@ class AnalyticsService:
                 FROM bets
                 WHERE guild_id = %s AND status IN ('won', 'lost', 'push')
             """, guild_id)
-            total_risked = total_risked_result.get('total_risked') or 0 if total_risked_result else 0
+            total_risked = float(total_risked_result.get('total_risked') or 0) if total_risked_result else 0.0
             roi = (net_units / total_risked * 100.0) if total_risked > 0 else 0.0
 
             return {

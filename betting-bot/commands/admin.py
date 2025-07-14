@@ -567,6 +567,13 @@ class AdminCog(commands.Cog):
             # Process first step
             await view.process_next_selection(interaction, initial=True)
 
+            # After setup completes, trigger /sync in the background
+            sync_cog = self.bot.get_cog("SyncCog")
+            if sync_cog:
+                self.bot.loop.create_task(sync_cog.sync_command.callback(sync_cog, interaction))
+            else:
+                logger.warning("SyncCog not found; cannot trigger /sync after setup.")
+
         except Exception as e:
             logger.exception(f"Error initiating setup command: {e}")
             if not interaction.response.is_done():
