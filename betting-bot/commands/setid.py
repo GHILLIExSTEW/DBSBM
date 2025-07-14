@@ -161,21 +161,22 @@ class ImageUploadView(View):
                         "❌ Invalid image format. Use PNG, JPG, GIF, WEBP.", ephemeral=True
                     )
                     return
-                filename = f"{self.user_id}.png"
+                guild_id = str(self.guild_id)
+                user_id = str(self.user_id)
                 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                save_dir = os.path.join(base_dir, 'assets', 'logos', str(self.guild_id))
+                save_dir = os.path.join(base_dir, 'static', 'guilds', guild_id, 'users')
                 os.makedirs(save_dir, exist_ok=True)
-                save_path = os.path.join(save_dir, filename)
+                save_path = os.path.join(save_dir, f"{user_id}.png")
                 img.save(save_path, 'PNG')
                 logger.info(f"Saved capper logo to {save_path}")
-                db_path = os.path.relpath(save_path, base_dir)
+                url_path = f"/static/guilds/{guild_id}/users/{user_id}.png"
                 await self.db.execute(
                     """
                     UPDATE cappers
                     SET image_path = %s, updated_at = UTC_TIMESTAMP()
                     WHERE guild_id = %s AND user_id = %s
                     """,
-                    db_path, self.guild_id, self.user_id
+                    url_path, self.guild_id, self.user_id
                 )
                 await interaction.followup.send(
                     "✅ Profile picture updated successfully!",
@@ -212,85 +213,63 @@ class ImageURLModal(Modal, title="Enter Profile Image URL"):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             image_url = self.url.value
-
-            # --- Download and Process Image (Consider running in executor) ---
             try:
-                 # Use a timeout for the request
-                 response = requests.get(image_url, timeout=10, stream=True)
-                 response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-
-                 # Check content type (optional but recommended)
-                 content_type = response.headers.get('content-type', '').lower()
-                 if not content_type.startswith('image/'):
-                      await interaction.followup.send("❌ URL does not point to a valid image type.", ephemeral=True)
-                      return
-
-                 # Read image data
-                 image_data = BytesIO(response.content)
-                 with Image.open(image_data) as img:
-                      # Validate format
-                      if img.format not in ['PNG', 'JPEG', 'GIF', 'WEBP']: # Allow WEBP?
-                           await interaction.followup.send("❌ Invalid image format. Use PNG, JPG, GIF.", ephemeral=True)
-                           return
-
-                      # Define save path and ensure directory exists
-                      # Save as PNG for consistency? Or keep original format? Let's use PNG.
-                      filename = f"{self.user_id}.png"
-                      # Use absolute path based on bot's root if possible, otherwise relative
-                      # Assuming 'assets' is at the same level as 'commands', 'services' etc.
-                      base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # Up two levels
-                      save_dir = os.path.join(base_dir, 'assets', 'logos', str(self.guild_id))
-                      os.makedirs(save_dir, exist_ok=True)
-                      save_path = os.path.join(save_dir, filename)
-
-                      # Save the image (potentially resizing/optimizing first)
-                      img.save(save_path, 'PNG') # Save as PNG
-                      logger.info(f"Saved capper logo to {save_path}")
-                      db_path = os.path.relpath(save_path, base_dir) # Store relative path in DB
-
+                response = requests.get(image_url, timeout=10, stream=True)
+                response.raise_for_status()
+                content_type = response.headers.get('content-type', '').lower()
+                if not content_type.startswith('image/'):
+                    await interaction.followup.send("❌ URL does not point to a valid image type.", ephemeral=True)
+                    return
+                image_data = BytesIO(response.content)
+                with Image.open(image_data) as img:
+                    if img.format not in ['PNG', 'JPEG', 'GIF', 'WEBP']:
+                        await interaction.followup.send("❌ Invalid image format. Use PNG, JPG, GIF.", ephemeral=True)
+                        return
+                    guild_id = str(self.guild_id)
+                    user_id = str(self.user_id)
+                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                    save_dir = os.path.join(base_dir, 'static', 'guilds', guild_id, 'users')
+                    os.makedirs(save_dir, exist_ok=True)
+                    save_path = os.path.join(save_dir, f"{user_id}.png")
+                    img.save(save_path, 'PNG')
+                    logger.info(f"Saved capper logo to {save_path}")
+                    url_path = f"/static/guilds/{guild_id}/users/{user_id}.png"
             except requests.exceptions.RequestException as req_err:
-                 logger.error(f"Failed to download image from URL {image_url}: {req_err}")
-                 await interaction.followup.send("❌ Failed to download image from URL. Check the link.", ephemeral=True)
-                 return
-            except IOError as img_err: # Catch Pillow errors
-                 logger.error(f"Failed to process image from URL {image_url}: {img_err}")
-                 await interaction.followup.send("❌ Could not process the image file from the URL.", ephemeral=True)
-                 return
-            except Exception as proc_err: # Catch other potential errors
-                 logger.exception(f"Error processing image from {image_url}: {proc_err}")
-                 await interaction.followup.send("❌ An error occurred while processing the image.", ephemeral=True)
-                 return
-            # --- End Image Processing ---
-
-
-            # Update database using shared db_manager
+                logger.error(f"Failed to download image from URL {image_url}: {req_err}")
+                await interaction.followup.send("❌ Failed to download image from URL. Check the link.", ephemeral=True)
+                return
+            except IOError as img_err:
+                logger.error(f"Failed to process image from URL {image_url}: {img_err}")
+                await interaction.followup.send("❌ Could not process the image file from the URL.", ephemeral=True)
+                return
+            except Exception as proc_err:
+                logger.exception(f"Error processing image from {image_url}: {proc_err}")
+                await interaction.followup.send("❌ An error occurred while processing the image.", ephemeral=True)
+                return
             update_status = await self.db.execute(
                 """
                 UPDATE cappers
                 SET image_path = %s, updated_at = UTC_TIMESTAMP()
                 WHERE guild_id = %s AND user_id = %s
                 """,
-                db_path, self.guild_id, self.user_id
+                url_path, self.guild_id, self.user_id
             )
-
             if update_status and 'UPDATE 1' in update_status:
                 await interaction.followup.send(
                     "✅ Profile picture updated successfully!",
                     ephemeral=True
                 )
             else:
-                 await interaction.followup.send(
-                      "⚠️ Profile picture saved, but failed to update database record.",
-                      ephemeral=True
-                 )
-
+                await interaction.followup.send(
+                    "⚠️ Profile picture saved, but failed to update database record.",
+                    ephemeral=True
+                )
         except Exception as e:
             logger.exception(f"Error processing image URL modal: {e}")
-            # Check if response already sent before sending followup
             if not interaction.response.is_done():
-                 await interaction.response.send_message("❌ An error occurred.", ephemeral=True)
+                await interaction.response.send_message("❌ An error occurred.", ephemeral=True)
             else:
-                 await interaction.followup.send("❌ An error occurred processing the image URL.", ephemeral=True)
+                await interaction.followup.send("❌ An error occurred processing the image URL.", ephemeral=True)
 
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
          logger.error(f"Error in ImageURLModal: {error}", exc_info=True)
