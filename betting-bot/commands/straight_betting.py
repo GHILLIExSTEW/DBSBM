@@ -30,7 +30,7 @@ import requests
 from data.db_manager import DatabaseManager
 
 from data.game_utils import get_normalized_games_for_dropdown
-from utils.league_loader import load_sweden_league_names
+from utils.league_loader import get_all_league_names
 
 from utils.errors import (
     BetServiceError,
@@ -686,7 +686,7 @@ class StraightBetWorkflowView(View):
         
         if self.current_step == 1:
             # Step 1: League selection
-            leagues = load_sweden_league_names()
+            leagues = get_all_league_names()
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
@@ -1232,7 +1232,7 @@ class StraightBetWorkflowView(View):
         super().stop()
 
     async def update_league_page(self, interaction, page):
-        leagues = load_sweden_league_names()
+        leagues = get_all_league_names()
         self.clear_items()
         self.add_item(LeagueSelect(self, leagues, page=page))
         self.add_item(CancelButton(self))
