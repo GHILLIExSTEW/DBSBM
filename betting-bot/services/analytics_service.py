@@ -38,7 +38,7 @@ class AnalyticsService:
                     SUM(CASE WHEN b.status = 'won' THEN 1 ELSE 0 END) as wins,
                     SUM(CASE WHEN b.status = 'lost' THEN 1 ELSE 0 END) as losses,
                     SUM(CASE WHEN b.status = 'push' THEN 1 ELSE 0 END) as pushes,
-                    COALESCE(SUM(ur.result_value), 0.0) as net_units
+                    COALESCE(SUM(ur.monthly_result_value), 0.0) as net_units
                 FROM bets b
                 LEFT JOIN unit_records ur ON b.bet_serial = ur.bet_serial
                 WHERE b.guild_id = %s AND b.user_id = %s
@@ -87,7 +87,7 @@ class AnalyticsService:
                     SUM(CASE WHEN b.status = 'won' THEN 1 ELSE 0 END) as wins,
                     SUM(CASE WHEN b.status = 'lost' THEN 1 ELSE 0 END) as losses,
                     SUM(CASE WHEN b.status = 'push' THEN 1 ELSE 0 END) as pushes,
-                    COALESCE(SUM(ur.result_value), 0.0) as net_units,
+                    COALESCE(SUM(ur.monthly_result_value), 0.0) as net_units,
                     COUNT(DISTINCT b.user_id) as total_cappers
                 FROM bets b
                 LEFT JOIN unit_records ur ON b.bet_serial = ur.bet_serial
@@ -152,7 +152,7 @@ class AnalyticsService:
                     SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN 1 ELSE 0 END) as total_resolved_bets,
                     SUM(CASE WHEN b.status = 'won' THEN 1 ELSE 0 END) as wins,
                     SUM(CASE WHEN b.status = 'lost' THEN 1 ELSE 0 END) as losses,
-                    COALESCE(SUM(ur.result_value), 0.0) as net_units,
+                    COALESCE(SUM(ur.monthly_result_value), 0.0) as net_units,
                     COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0) as total_risked 
                 FROM bets b
                 LEFT JOIN unit_records ur ON b.bet_serial = ur.bet_serial
