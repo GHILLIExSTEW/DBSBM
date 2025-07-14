@@ -628,6 +628,43 @@ class BetService:
                 await self.db_manager.execute(unit_query, unit_params)
                 logger.info(f"Unit record updated for bet {bet_serial}. Result Value: {calculated_result_value:.2f}")
 
+                # Update cappers table with win/loss/push counts
+                capper_update_query = """
+                    UPDATE cappers 
+                    SET 
+                        bet_won = (
+                            SELECT COUNT(*)
+                            FROM bets b2
+                            WHERE b2.user_id = %s 
+                            AND b2.guild_id = %s 
+                            AND b2.status = 'won'
+                        ),
+                        bet_loss = (
+                            SELECT COUNT(*)
+                            FROM bets b2
+                            WHERE b2.user_id = %s 
+                            AND b2.guild_id = %s 
+                            AND b2.status = 'lost'
+                        ),
+                        bet_push = (
+                            SELECT COUNT(*)
+                            FROM bets b2
+                            WHERE b2.user_id = %s 
+                            AND b2.guild_id = %s 
+                            AND b2.status = 'push'
+                        ),
+                        updated_at = UTC_TIMESTAMP()
+                    WHERE user_id = %s AND guild_id = %s
+                """
+                capper_params = (
+                    bet_data["user_id"], bet_data["guild_id"],  # For won count
+                    bet_data["user_id"], bet_data["guild_id"],  # For lost count  
+                    bet_data["user_id"], bet_data["guild_id"],  # For push count
+                    bet_data["user_id"], bet_data["guild_id"]   # WHERE clause
+                )
+                await self.db_manager.execute(capper_update_query, capper_params)
+                logger.info(f"Cappers table updated for user {bet_data['user_id']} in guild {bet_data['guild_id']}")
+
                 if hasattr(self.bot, "voice_service") and hasattr(self.bot.voice_service, "update_on_bet_resolve"):
                     asyncio.create_task(self.bot.voice_service.update_on_bet_resolve(bet_data["guild_id"]))
                     logger.debug(f"Triggered voice channel update for guild {bet_data['guild_id']}")

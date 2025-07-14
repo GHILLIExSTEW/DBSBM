@@ -218,11 +218,16 @@ class StatsView(View):
 
             self.clear_items() # Clear old selects/buttons
             selection = interaction.data['values'][0]
+            
+            # Initialize variables
+            profile_image_url = None
+            username = None
 
             if selection == "server":
                 self.stats_data = await self.analytics_service.get_guild_stats(interaction.guild_id)
                 self.is_server = True
                 self.selected_user_id = None
+                username = interaction.guild.name
                 stats_title = f"📊 Server Stats for {interaction.guild.name}"
             else:
                 self.selected_user_id = int(selection)
@@ -231,13 +236,23 @@ class StatsView(View):
                 
                 # Get capper info from database
                 capper_info = await self.db.fetch_one(
-                    "SELECT display_name, profile_image_url FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
                     (interaction.guild_id, self.selected_user_id)
                 )
                 
                 if capper_info:
                     username = capper_info.get('display_name', f"User {self.selected_user_id}")
-                    profile_image_url = capper_info.get('profile_image_url')
+                    image_path = capper_info.get('image_path')
+                    
+                    # Convert relative path to full URL if needed
+                    if image_path and image_path.startswith('/static/'):
+                        # For PebbleHost or similar hosting, construct URL based on guild ID
+                        # You may need to adjust this based on your actual domain setup
+                        base_url = "https://your-domain.com"  # Replace with your actual domain
+                        profile_image_url = f"{base_url}{image_path}"
+                    else:
+                        profile_image_url = image_path
+                    
                     stats_title = f"📊 Stats for {username}"
                 else:
                     # Fallback to Discord user info
@@ -255,22 +270,12 @@ class StatsView(View):
             # Generate the stats image
             # Ensure StatsImageGenerator is async or run in executor
             image_generator = StatsImageGenerator()
-            # Determine username for the image
-            if not self.is_server and self.selected_user_id:
-                # Use capper info if available, otherwise fallback to Discord user
-                if 'capper_info' in locals() and capper_info:
-                    username = capper_info.get('display_name', f"User {self.selected_user_id}")
-                else:
-                    user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
-                    username = user.display_name if user else f"User {self.selected_user_id}"
-            else:
-                username = interaction.guild.name
             
             # Pass profile image URL to the image generator
             img = await image_generator.generate_capper_stats_image(
                 self.stats_data, 
                 username, 
-                profile_image_url=profile_image_url if not self.is_server else None
+                profile_image_url=profile_image_url
             )
             # Convert PIL Image to BytesIO for Discord
             from io import BytesIO

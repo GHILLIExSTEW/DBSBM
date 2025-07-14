@@ -2,6 +2,12 @@ import logging
 from typing import Dict, List
 from PIL import Image, ImageDraw, ImageFont
 import os
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.patches import FancyBboxPatch
+import numpy as np
+from io import BytesIO
+import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +19,143 @@ class StatsImageGenerator:
         # Create directories if they don't exist
         os.makedirs(os.path.dirname(self.font_path), exist_ok=True)
         os.makedirs(os.path.dirname(self.background_path), exist_ok=True)
+        
+        # Set matplotlib style for better looking charts
+        plt.style.use('dark_background')
+        sns.set_palette("husl")
 
     async def generate_capper_stats_image(self, stats: Dict, username: str, profile_image_url: str = None) -> Image.Image:
-        """Generate an image with capper statistics."""
+        """Generate a flashy stats image with charts and graphs."""
         try:
-            # Create a new image with a white background
-            img = Image.new('RGB', (800, 600), color='white')
+            # Create figure with dark theme
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+            fig.patch.set_facecolor('#1a1a1a')
+            
+            # Load profile image if available
+            profile_img = None
+            if profile_image_url:
+                try:
+                    import requests
+                    response = requests.get(profile_image_url, timeout=10)
+                    if response.status_code == 200:
+                        profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
+                        profile_img.thumbnail((120, 120), Image.Resampling.LANCZOS)
+                        logger.info(f"Successfully loaded profile image")
+                except Exception as e:
+                    logger.warning(f"Failed to load profile image: {e}")
+
+            # Extract stats
+            total_bets = stats.get('total_bets', 0)
+            wins = stats.get('wins', 0)
+            losses = stats.get('losses', 0)
+            pushes = stats.get('pushes', 0)
+            win_rate = stats.get('win_rate', 0)
+            net_units = stats.get('net_units', 0)
+            roi = stats.get('roi', 0)
+
+            # 1. Win/Loss/Push Pie Chart (top left)
+            if total_bets > 0:
+                labels = ['Wins', 'Losses', 'Pushes'] if pushes > 0 else ['Wins', 'Losses']
+                sizes = [wins, losses, pushes] if pushes > 0 else [wins, losses]
+                colors = ['#00ff88', '#ff4444', '#ffaa00'] if pushes > 0 else ['#00ff88', '#ff4444']
+                
+                ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+                ax1.set_title('Bet Distribution', color='white', fontsize=16, fontweight='bold')
+            else:
+                ax1.text(0.5, 0.5, 'No bets yet', ha='center', va='center', transform=ax1.transAxes, 
+                        color='white', fontsize=14)
+                ax1.set_title('Bet Distribution', color='white', fontsize=16, fontweight='bold')
+
+            # 2. Performance Metrics (top right)
+            metrics = ['Win Rate', 'ROI', 'Net Units']
+            values = [win_rate, roi, net_units]
+            colors_metrics = ['#00ff88' if v >= 0 else '#ff4444' for v in values]
+            
+            bars = ax2.bar(metrics, values, color=colors_metrics, alpha=0.8, edgecolor='white', linewidth=2)
+            ax2.set_title('Performance Metrics', color='white', fontsize=16, fontweight='bold')
+            ax2.set_ylabel('Value', color='white')
+            ax2.tick_params(colors='white')
+            
+            # Add value labels on bars
+            for bar, value in zip(bars, values):
+                height = bar.get_height()
+                ax2.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(values)),
+                        f'{value:.1f}', ha='center', va='bottom', color='white', fontweight='bold')
+
+            # 3. Win/Loss Bar Chart (bottom left)
+            if total_bets > 0:
+                categories = ['Wins', 'Losses']
+                counts = [wins, losses]
+                colors_bars = ['#00ff88', '#ff4444']
+                
+                bars2 = ax3.bar(categories, counts, color=colors_bars, alpha=0.8, edgecolor='white', linewidth=2)
+                ax3.set_title('Wins vs Losses', color='white', fontsize=16, fontweight='bold')
+                ax3.set_ylabel('Count', color='white')
+                ax3.tick_params(colors='white')
+                
+                # Add count labels on bars
+                for bar, count in zip(bars2, counts):
+                    height = bar.get_height()
+                    ax3.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                            str(count), ha='center', va='bottom', color='white', fontweight='bold')
+            else:
+                ax3.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax3.transAxes, 
+                        color='white', fontsize=14)
+                ax3.set_title('Wins vs Losses', color='white', fontsize=16, fontweight='bold')
+
+            # 4. Summary Stats (bottom right)
+            ax4.axis('off')
+            
+            # Create summary text
+            summary_text = f"""
+            📊 {username}'s Stats Summary
+            
+            🎯 Total Bets: {total_bets}
+            ✅ Wins: {wins}
+            ❌ Losses: {losses}
+            🤝 Pushes: {pushes}
+            
+            📈 Win Rate: {win_rate:.1f}%
+            💰 Net Units: {net_units:.2f}
+            📊 ROI: {roi:.1f}%
+            """
+            
+            # Add profile image if available
+            if profile_img:
+                # Convert PIL image to matplotlib format
+                profile_array = np.array(profile_img)
+                ax4.imshow(profile_array, extent=[0.1, 0.4, 0.6, 0.9])
+            
+            ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
+                    color='white', fontsize=12, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8))
+
+            # Adjust layout
+            plt.tight_layout(pad=3.0)
+            
+            # Convert matplotlib figure to PIL Image
+            buf = BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
+                       facecolor='#1a1a1a', edgecolor='none')
+            buf.seek(0)
+            
+            # Convert to PIL Image
+            img = Image.open(buf)
+            img = img.convert('RGB')
+            
+            plt.close()  # Close the matplotlib figure to free memory
+            
+            return img
+            
+        except Exception as e:
+            logger.error(f"Error generating capper stats image: {str(e)}")
+            # Fallback to simple image if matplotlib fails
+            return self._generate_fallback_image(stats, username)
+
+    def _generate_fallback_image(self, stats: Dict, username: str) -> Image.Image:
+        """Fallback image generation if matplotlib fails."""
+        try:
+            img = Image.new('RGB', (800, 600), color='#1a1a1a')
             draw = ImageDraw.Draw(img)
 
             # Load font
@@ -29,41 +166,9 @@ class StatsImageGenerator:
                 font = ImageFont.load_default()
                 title_font = ImageFont.load_default()
 
-            # Load and display profile image if available
-            profile_img = None
-            if profile_image_url:
-                try:
-                    import requests
-                    from io import BytesIO
-                    response = requests.get(profile_image_url, timeout=10)
-                    if response.status_code == 200:
-                        profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
-                        # Resize profile image to reasonable size
-                        profile_img.thumbnail((80, 80), Image.Resampling.LANCZOS)
-                except Exception as e:
-                    logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
-
-            # Draw title with profile image if available
+            # Draw title
             title_text = f"{username}'s Stats"
-            title_bbox = title_font.getbbox(title_text)
-            title_w = title_bbox[2] - title_bbox[0]
-            
-            if profile_img:
-                # Center title with profile image
-                profile_size = profile_img.size[0]
-                total_width = profile_size + 20 + title_w  # 20px gap
-                start_x = (800 - total_width) // 2
-                
-                # Draw profile image
-                profile_y = 50 - profile_size // 2
-                img.paste(profile_img, (start_x, profile_y), profile_img)
-                
-                # Draw title next to profile image
-                title_x = start_x + profile_size + 20
-                draw.text((title_x, 50), title_text, fill='black', font=title_font, anchor="lt")
-            else:
-                # Center title without profile image
-                draw.text((400, 50), title_text, fill='black', font=title_font, anchor="mm")
+            draw.text((400, 50), title_text, fill='white', font=title_font, anchor="mm")
 
             # Draw stats
             y = 150
@@ -78,22 +183,107 @@ class StatsImageGenerator:
             ]
 
             for text in stats_text:
-                draw.text((400, y), text, fill='black', font=font, anchor="mm")
+                draw.text((400, y), text, fill='white', font=font, anchor="mm")
                 y += 50
 
             return img
         except Exception as e:
-            logger.error(f"Error generating capper stats image: {str(e)}")
+            logger.error(f"Error generating fallback image: {str(e)}")
             raise
 
     def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
-        """Generate an image with guild statistics."""
+        """Generate a flashy guild stats image with charts."""
         try:
-            # Create a new image with a white background
-            img = Image.new('RGB', (800, 600), color='white')
+            # Create figure with dark theme
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+            fig.patch.set_facecolor('#1a1a1a')
+            
+            # Extract stats
+            total_bets = stats.get('total_bets', 0)
+            total_cappers = stats.get('total_cappers', 0)
+            total_units = stats.get('total_units', 0)
+            net_units = stats.get('net_units', 0)
+
+            # 1. Guild Overview (top left)
+            overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
+            overview_values = [total_bets, total_cappers, total_units]
+            colors_overview = ['#00ff88', '#0088ff', '#ff8800']
+            
+            bars = ax1.bar(overview_data, overview_values, color=colors_overview, alpha=0.8, edgecolor='white', linewidth=2)
+            ax1.set_title('Guild Overview', color='white', fontsize=16, fontweight='bold')
+            ax1.set_ylabel('Count', color='white')
+            ax1.tick_params(colors='white')
+            
+            # Add value labels
+            for bar, value in zip(bars, overview_values):
+                height = bar.get_height()
+                ax1.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(overview_values)),
+                        str(value), ha='center', va='bottom', color='white', fontweight='bold')
+
+            # 2. Net Units Performance (top right)
+            ax2.bar(['Net Units'], [net_units], color='#00ff88' if net_units >= 0 else '#ff4444', 
+                   alpha=0.8, edgecolor='white', linewidth=2)
+            ax2.set_title('Net Units Performance', color='white', fontsize=16, fontweight='bold')
+            ax2.set_ylabel('Units', color='white')
+            ax2.tick_params(colors='white')
+            ax2.text(0, net_units + (0.01 * abs(net_units) if net_units != 0 else 1),
+                    f'{net_units:.2f}', ha='center', va='bottom', color='white', fontweight='bold')
+
+            # 3. Activity Distribution (bottom left)
+            if total_bets > 0:
+                activity_data = ['Bets', 'Cappers']
+                activity_values = [total_bets, total_cappers]
+                ax3.pie(activity_values, labels=activity_data, autopct='%1.1f%%', 
+                       colors=['#00ff88', '#0088ff'], startangle=90)
+                ax3.set_title('Activity Distribution', color='white', fontsize=16, fontweight='bold')
+            else:
+                ax3.text(0.5, 0.5, 'No activity yet', ha='center', va='center', transform=ax3.transAxes, 
+                        color='white', fontsize=14)
+                ax3.set_title('Activity Distribution', color='white', fontsize=16, fontweight='bold')
+
+            # 4. Summary Stats (bottom right)
+            ax4.axis('off')
+            summary_text = f"""
+            🏆 Guild Stats Summary
+            
+            📊 Total Bets: {total_bets}
+            👥 Total Cappers: {total_cappers}
+            💰 Total Units Wagered: {total_units:.2f}
+            📈 Net Units: {net_units:.2f}
+            
+            🎯 Average Bets per Capper: {total_bets/total_cappers:.1f if total_cappers > 0 else 0}
+            """
+            
+            ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
+                    color='white', fontsize=12, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8))
+
+            # Adjust layout
+            plt.tight_layout(pad=3.0)
+            
+            # Convert to PIL Image
+            buf = BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
+                       facecolor='#1a1a1a', edgecolor='none')
+            buf.seek(0)
+            
+            img = Image.open(buf)
+            img = img.convert('RGB')
+            
+            plt.close()
+            
+            return img
+            
+        except Exception as e:
+            logger.error(f"Error generating guild stats image: {str(e)}")
+            return self._generate_fallback_guild_image(stats)
+
+    def _generate_fallback_guild_image(self, stats: Dict) -> Image.Image:
+        """Fallback guild image generation."""
+        try:
+            img = Image.new('RGB', (800, 600), color='#1a1a1a')
             draw = ImageDraw.Draw(img)
 
-            # Load font
             try:
                 font = ImageFont.truetype(self.font_path, 24)
                 title_font = ImageFont.truetype(self.font_path, 32)
@@ -101,10 +291,8 @@ class StatsImageGenerator:
                 font = ImageFont.load_default()
                 title_font = ImageFont.load_default()
 
-            # Draw title
-            draw.text((400, 50), "Guild Stats", fill='black', font=title_font, anchor="mm")
+            draw.text((400, 50), "Guild Stats", fill='white', font=title_font, anchor="mm")
 
-            # Draw stats
             y = 150
             stats_text = [
                 f"Total Bets: {stats.get('total_bets', 0)}",
@@ -114,22 +302,70 @@ class StatsImageGenerator:
             ]
 
             for text in stats_text:
-                draw.text((400, y), text, fill='black', font=font, anchor="mm")
+                draw.text((400, y), text, fill='white', font=font, anchor="mm")
                 y += 50
 
             return img
         except Exception as e:
-            logger.error(f"Error generating guild stats image: {str(e)}")
+            logger.error(f"Error generating fallback guild image: {str(e)}")
             raise
 
     def generate_top_cappers_image(self, cappers: List[Dict]) -> Image.Image:
-        """Generate an image with top cappers."""
+        """Generate a flashy top cappers leaderboard image."""
         try:
-            # Create a new image with a white background
-            img = Image.new('RGB', (800, 600), color='white')
+            # Create figure with dark theme
+            fig, ax = plt.subplots(1, 1, figsize=(16, 10))
+            fig.patch.set_facecolor('#1a1a1a')
+            
+            if not cappers:
+                ax.text(0.5, 0.5, 'No cappers data available', ha='center', va='center', 
+                       transform=ax.transAxes, color='white', fontsize=16)
+                ax.set_title('Top Cappers', color='white', fontsize=20, fontweight='bold')
+            else:
+                # Extract data
+                names = [capper.get('username', f"User {capper['user_id']}") for capper in cappers]
+                net_units = [capper.get('net_units', 0) for capper in cappers]
+                
+                # Create horizontal bar chart
+                colors = ['#00ff88' if units >= 0 else '#ff4444' for units in net_units]
+                bars = ax.barh(names, net_units, color=colors, alpha=0.8, edgecolor='white', linewidth=2)
+                
+                ax.set_title('Top Cappers by Net Units', color='white', fontsize=20, fontweight='bold')
+                ax.set_xlabel('Net Units', color='white', fontsize=14)
+                ax.tick_params(colors='white')
+                
+                # Add value labels on bars
+                for bar, units in zip(bars, net_units):
+                    width = bar.get_width()
+                    ax.text(width + (0.01 * max(abs(min(net_units)), max(net_units))), 
+                           bar.get_y() + bar.get_height()/2., f'{units:.2f}', 
+                           ha='left', va='center', color='white', fontweight='bold')
+
+            plt.tight_layout(pad=3.0)
+            
+            # Convert to PIL Image
+            buf = BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
+                       facecolor='#1a1a1a', edgecolor='none')
+            buf.seek(0)
+            
+            img = Image.open(buf)
+            img = img.convert('RGB')
+            
+            plt.close()
+            
+            return img
+            
+        except Exception as e:
+            logger.error(f"Error generating top cappers image: {str(e)}")
+            return self._generate_fallback_top_cappers_image(cappers)
+
+    def _generate_fallback_top_cappers_image(self, cappers: List[Dict]) -> Image.Image:
+        """Fallback top cappers image generation."""
+        try:
+            img = Image.new('RGB', (800, 600), color='#1a1a1a')
             draw = ImageDraw.Draw(img)
 
-            # Load font
             try:
                 font = ImageFont.truetype(self.font_path, 24)
                 title_font = ImageFont.truetype(self.font_path, 32)
@@ -137,17 +373,15 @@ class StatsImageGenerator:
                 font = ImageFont.load_default()
                 title_font = ImageFont.load_default()
 
-            # Draw title
-            draw.text((400, 50), "Top Cappers", fill='black', font=title_font, anchor="mm")
+            draw.text((400, 50), "Top Cappers", fill='white', font=title_font, anchor="mm")
 
-            # Draw cappers
             y = 150
             for capper in cappers:
                 text = f"User ID: {capper['user_id']} - Net Units: {capper['net_units']}"
-                draw.text((400, y), text, fill='black', font=font, anchor="mm")
+                draw.text((400, y), text, fill='white', font=font, anchor="mm")
                 y += 50
 
             return img
         except Exception as e:
-            logger.error(f"Error generating top cappers image: {str(e)}")
+            logger.error(f"Error generating fallback top cappers image: {str(e)}")
             raise 
