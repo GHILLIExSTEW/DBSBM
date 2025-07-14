@@ -555,6 +555,15 @@ async def fetch_games(
     base_url = sport_config["base"]
     if sport == "football":
         endpoint_path = sport_config.get("fixtures", "/fixtures")
+    elif sport == "formula-1":
+        endpoint_path = sport_config.get("races", "/races")
+    elif sport == "mma":
+        endpoint_path = sport_config.get("fights", "/fights")
+    # Note: tennis, golf, and darts APIs are not available
+    # elif sport in ["tennis", "golf", "darts"]:
+    #     endpoint_path = sport_config.get("matches", "/matches")
+    #     if not endpoint_path:
+    #         endpoint_path = sport_config.get("tournaments", "/tournaments")
     else:
         endpoint_path = sport_config.get("games", "/games")
     
@@ -651,8 +660,24 @@ async def initial_fetch(pool: aiomysql.Pool):
                 # Log sport configuration details
                 sport_config = ENDPOINTS_MAP.get(sport)
                 if sport_config:
+                    # Determine the correct endpoint for logging
+                    base_url = sport_config["base"]
+                    if sport == "football":
+                        endpoint_path = sport_config.get("fixtures", "/fixtures")
+                    elif sport == "formula-1":
+                        endpoint_path = sport_config.get("races", "/races")
+                    elif sport == "mma":
+                        endpoint_path = sport_config.get("fights", "/fights")
+                    # Note: tennis, golf, and darts APIs are not available
+                    # elif sport in ["tennis", "golf", "darts"]:
+                    #     endpoint_path = sport_config.get("matches", "/matches")
+                    #     if not endpoint_path:
+                    #         endpoint_path = sport_config.get("tournaments", "/tournaments")
+                    else:
+                        endpoint_path = sport_config.get("games", "/games")
+                    
                     logger.info(f"[initial] Fetching {league_name} (sport: {sport}, league_id: {league_id}, season: {season})")
-                    logger.info(f"[initial] Using endpoint: {sport_config['base']}{sport_config.get('fixtures' if sport == 'football' else 'games', '/games')}")
+                    logger.info(f"[initial] Using endpoint: {base_url}{endpoint_path}")
                 else:
                     logger.warning(f"[initial] No endpoint configuration found for sport '{sport}' when fetching {league_name}")
                 

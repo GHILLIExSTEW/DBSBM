@@ -25,6 +25,10 @@ ENDPOINTS = {
     "afl": "https://v1.afl.api-sports.io",
     "formula-1": "https://v1.formula-1.api-sports.io",
     "mma": "https://v1.mma.api-sports.io",
+    # Note: tennis, golf, and darts APIs may not be available
+    # "tennis": "https://v1.tennis.api-sports.io",
+    # "golf": "https://v1.golf.api-sports.io", 
+    # "darts": "https://v1.darts.api-sports.io",
 }
 
 # Expanded ENDPOINTS_MAP to include all requested sports
@@ -136,6 +140,21 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "odds": "/odds"
+    },
+    "american-football": {
+        "base": "https://v1.american-football.api-sports.io",
+        "leagues": "/leagues",
+        "teams": "/teams",
+        "players": "/players",
+        "games": "/games",
+        "standings": "/standings",
+        "odds": "/odds",
+        "statistics": "/statistics",
+        "venues": "/venues",
+        "countries": "/countries",
+        "timezone": "/timezone",
+        "status": "/status",
+        "events": "/events"
     },
     "handball": {
         "base": "https://v1.handball.api-sports.io",
