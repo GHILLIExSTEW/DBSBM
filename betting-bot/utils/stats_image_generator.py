@@ -12,27 +12,18 @@ from matplotlib.colors import LinearSegmentedColormap
 
 logger = logging.getLogger(__name__)
 
-def make_rounded_feathered(img, feather=40, border_color="#00ffe7", border_width=8):
+def make_rounded_feathered(img, feather=40):
     size = img.size[0]
-    # Create a circular mask (hard edge)
+    # Create a solid circular mask
     mask = Image.new('L', (size, size), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, size, size), fill=255)
-    # Feather the mask for the glow only
+    # Feather the mask for a smooth fade
     feathered_mask = mask.filter(ImageFilter.GaussianBlur(feather)) if feather > 0 else mask
-    # Main circular image (hard edge)
+    # Apply the feathered mask to the image
     result = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    result.paste(img, (0, 0), mask)
-    # Draw neon border
-    border = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    border_draw = ImageDraw.Draw(border)
-    border_draw.ellipse(
-        (border_width//2, border_width//2, size-border_width//2-1, size-border_width//2-1),
-        outline=border_color, width=border_width
-    )
-    result = Image.alpha_composite(result, border)
-    # For the glow, return both the main image and the feathered mask
-    return result, feathered_mask
+    result.paste(img, (0, 0), feathered_mask)
+    return result
 
 class StatsImageGenerator:
     def __init__(self):
@@ -113,11 +104,7 @@ class StatsImageGenerator:
                     (profile_img.width + min_side) // 2,
                     (profile_img.height + min_side) // 2
                 ))
-                profile_img_circle, feathered_mask = make_rounded_feathered(profile_img, feather=40, border_color="#00ffe7", border_width=10)
-                # For the glow, create a blurred version using the feathered mask
-                glow = profile_img.copy().resize((520, 520)).convert("RGBA")
-                glow_mask = feathered_mask.resize((520, 520)).filter(ImageFilter.GaussianBlur(18))
-                glow.putalpha(glow_mask)
+                profile_img_circle = make_rounded_feathered(profile_img, feather=40)
 
             # --- Flashy Background ---
             # Create a gradient background for the figure
@@ -129,8 +116,6 @@ class StatsImageGenerator:
             # 1. Profile Image (top left)
             ax1.axis('off')
             if profile_img is not None:
-                # Add a glow effect behind the circle
-                ax1.imshow(glow, extent=[-0.1, 1.1, -0.1, 1.1], alpha=0.5, zorder=1)
                 ax1.imshow(profile_img_circle, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
                 ax1.set_title(f"{username}", color='#00ffe7', fontsize=36, fontweight='bold', pad=30)
             else:
