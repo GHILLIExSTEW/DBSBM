@@ -16,7 +16,7 @@ from data.db_manager import DatabaseManager
 load_dotenv()
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data", "cache")
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, static_folder="static")
 CORS(app, origins=["https://www.betting-server-manager.com", "http://www.betting-server-manager.com"]) # Allow your website to connect
 
 db = DatabaseManager()
@@ -378,4 +378,5 @@ def live_scores_league(league_id):
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
+    print("Serving static file:", filename)
     return send_from_directory('static', filename)
