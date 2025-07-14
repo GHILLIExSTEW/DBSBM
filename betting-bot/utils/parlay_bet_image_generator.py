@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import difflib
 import logging
+from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 
@@ -272,140 +273,7 @@ class ParlayBetImageGenerator:
         draw.text((image_width-260, image_height-40), bet_datetime, font=self.font_mini, fill="#aaaaaa")
 
     def _load_team_logo(self, team_name: str, league: str):
-        import os
-        from PIL import Image
-        import difflib
-        from config.team_mappings import normalize_team_name
-        from config.asset_paths import get_sport_category_for_path
-        from data.game_utils import normalize_team_name_any_league
-        logger = logging.getLogger(__name__)
-
-        # First normalize the team name using league dictionaries
-        try:
-            # Import the appropriate league dictionary based on the league
-            league_lower = league.lower()
-            if league_lower == 'mlb':
-                from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
-            elif league_lower == 'nba':
-                from utils.league_dictionaries.basketball import TEAM_NAMES as league_dict
-            elif league_lower == 'nfl':
-                from utils.league_dictionaries.football import TEAM_NAMES as league_dict
-            elif league_lower == 'nhl':
-                from utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
-            else:
-                league_dict = {}
-
-            # Try to find the team in the dictionary
-            normalized_team = None
-            team_name_lower = team_name.lower()
-            
-            # First try exact match
-            if team_name_lower in league_dict:
-                normalized_team = league_dict[team_name_lower]
-            else:
-                # Try fuzzy matching against dictionary keys
-                matches = difflib.get_close_matches(team_name_lower, league_dict.keys(), n=1, cutoff=0.75)
-                if matches:
-                    normalized_team = league_dict[matches[0]]
-                    logger.info(f"[LOGO] Fuzzy matched team name '{team_name}' to '{normalized_team}' using league dictionary")
-        except Exception as e:
-            logger.warning(f"[LOGO] Error using league dictionary for '{team_name}': {e}")
-            normalized_team = None
-
-        # If dictionary lookup failed, fall back to the original normalization
-        if not normalized_team:
-            normalized_team = normalize_team_name_any_league(team_name)
-
-        sport = get_sport_category_for_path(league.upper())
-        if not sport:
-            # Always use guild-specific default if guild_id is available
-            if self.guild_id:
-                default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png"
-            else:
-                default_path = "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA")
-            
-        # First try exact match with normalized name
-        normalized = normalized_team.replace(".", "").replace(" ", "_").lower()
-        fname = f"{normalize_team_name(normalized)}.png"
-        logo_path = os.path.join("betting-bot/static/logos/teams", sport, league.upper(), fname)
-        
-        if os.path.exists(logo_path):
-            logger.info(f"[LOGO] Found exact logo match for '{team_name}' -> '{normalized_team}' at: {logo_path}")
-            return Image.open(logo_path).convert("RGBA")
-            
-        # If exact match fails, try fuzzy matching
-        logo_dir = os.path.join("betting-bot/static/logos/teams", sport, league.upper())
-        if os.path.exists(logo_dir):
-            candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized, candidate_names, n=1, cutoff=0.75)
-            if matches:
-                match_file = matches[0] + '.png'
-                match_path = os.path.join(logo_dir, match_file)
-                logger.info(f"[LOGO] Found fuzzy match for '{team_name}' -> '{matches[0]}' at: {match_path}")
-                return Image.open(match_path).convert("RGBA")
-                
-        # Always use guild-specific default if guild_id is available
-        if self.guild_id:
-            default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png"
-        else:
-            default_path = "betting-bot/static/logos/default_image.png"
-        logger.warning(f"[LOGO] Logo not found for '{team_name}' (tried: {logo_path}). Using fallback: {default_path}")
-        return Image.open(default_path).convert("RGBA")
+        return asset_loader.load_team_logo(team_name, league, getattr(self, 'guild_id', None))
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        import os
-        import difflib
-        from PIL import Image
-        from config.asset_paths import get_sport_category_for_path
-        from data.game_utils import normalize_team_name_any_league
-        sport = get_sport_category_for_path(league.upper())
-        if not sport:
-            if self.guild_id:
-                default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png"
-            else:
-                default_path = "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA"), None
-        normalized_team = normalize_team_name_any_league(team_name).lower().replace(" ", "_")
-        normalized_player = normalize_team_name_any_league(player_name).lower().replace(" ", "_")
-        sport_dir = sport.lower().replace(" ", "_")
-        player_dir = os.path.join(
-            "betting-bot/static/logos/players",
-            sport_dir,
-            normalized_team
-        )
-        # Try multiple filename patterns for player images
-        player_name_variants = [
-            player_name,
-            player_name.replace(".", "").replace(",", ""),
-            player_name.replace(".", "").replace(",", "").replace(" Jr", "_jr").replace(" Sr", "_sr"),
-            player_name.replace(".", "").replace(",", "").replace(" Jr.", "_jr").replace(" Sr.", "_sr"),
-            player_name.replace(".", "").replace(",", "").replace(" Jr", "_jr").replace(" Sr", "_sr").replace(" ", "_"),
-            player_name.replace(".", "").replace(",", "").replace(" Jr.", "_jr").replace(" Sr.", "_sr").replace(" ", "_"),
-            player_name.lower().replace(".", "").replace(",", "").replace(" ", "_"),
-            normalized_player,
-        ]
-        # Remove duplicate variants
-        seen = set()
-        player_name_variants = [x for x in player_name_variants if not (x in seen or seen.add(x))]
-        for variant in player_name_variants:
-            variant = variant.strip('_').lower()
-            img_path = os.path.join(player_dir, f"{variant}.png")
-            if os.path.exists(img_path):
-                return Image.open(img_path).convert("RGBA"), None
-        # Fuzzy match if exact not found
-        if os.path.exists(player_dir):
-            candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.6)
-            if matches:
-                match_file = matches[0] + '.png'
-                match_path = os.path.join(player_dir, match_file)
-                display_name = matches[0].replace('_', ' ').title()
-                return Image.open(match_path).convert("RGBA"), display_name
-        if self.guild_id:
-            default_path = f"betting-bot/static/guilds/{self.guild_id}/default_image.png"
-        else:
-            default_path = "betting-bot/static/logos/default_image.png"
-        return Image.open(default_path).convert("RGBA"), None
+        return asset_loader.load_player_image(player_name, team_name, league, getattr(self, 'guild_id', None))

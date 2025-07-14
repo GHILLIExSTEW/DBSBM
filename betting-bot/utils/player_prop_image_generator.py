@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import difflib
 import logging
+from utils.asset_loader import asset_loader
 
 class PlayerPropImageGenerator:
     def __init__(self, font_dir="betting-bot/assets/fonts", guild_id=None):
@@ -102,137 +103,11 @@ class PlayerPropImageGenerator:
 
     @staticmethod
     def _load_team_logo(team_name: str, league: str, guild_id: str = None):
-        import os
-        from PIL import Image
-        import difflib
-        from config.team_mappings import normalize_team_name
-        from config.asset_paths import get_sport_category_for_path
-        from data.game_utils import normalize_team_name_any_league
-        logger = logging.getLogger(__name__)
-
-        # First normalize the team name using league dictionaries
-        try:
-            # Import the appropriate league dictionary based on the league
-            league_lower = league.lower()
-            if league_lower == 'mlb':
-                from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
-            elif league_lower == 'nba':
-                from utils.league_dictionaries.basketball import TEAM_NAMES as league_dict
-            elif league_lower == 'nfl':
-                from utils.league_dictionaries.football import TEAM_NAMES as league_dict
-            elif league_lower == 'nhl':
-                from utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
-            else:
-                league_dict = {}
-
-            # Try to find the team in the dictionary
-            normalized_team = None
-            team_name_lower = team_name.lower()
-            # First try exact match
-            if team_name_lower in league_dict:
-                normalized_team = league_dict[team_name_lower]
-            else:
-                # Try fuzzy matching against dictionary keys (within this league only)
-                matches = difflib.get_close_matches(team_name_lower, league_dict.keys(), n=1, cutoff=0.75)
-                if matches:
-                    normalized_team = league_dict[matches[0]]
-                    logger.info(f"[LOGO] Fuzzy matched team name '{team_name}' to '{normalized_team}' using league dictionary")
-        except Exception as e:
-            logger.warning(f"[LOGO] Error using league dictionary for '{team_name}': {e}")
-            normalized_team = None
-
-        # If dictionary lookup failed, do NOT fall back to cross-league normalization
-        if not normalized_team:
-            normalized_team = team_name  # Use the original name as fallback
-
-        sport = get_sport_category_for_path(league.upper())
-        if not sport:
-            default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-            return Image.open(default_path).convert("RGBA")
-            
-        # First try exact match with normalized name
-        normalized = normalized_team.replace(".", "").replace(" ", "_").lower()
-        fname = f"{normalize_team_name(normalized)}.png"
-        logo_path = os.path.join("betting-bot/static/logos/teams", sport, league.upper(), fname)
-        
-        if os.path.exists(logo_path):
-            logger.info(f"[LOGO] Found exact logo match for '{team_name}' -> '{normalized_team}' at: {logo_path}")
-            return Image.open(logo_path).convert("RGBA")
-            
-        # If exact match fails, try fuzzy matching
-        logo_dir = os.path.join("betting-bot/static/logos/teams", sport, league.upper())
-        if os.path.exists(logo_dir):
-            candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized, candidate_names, n=1, cutoff=0.75)
-            if matches:
-                match_file = matches[0] + '.png'
-                match_path = os.path.join(logo_dir, match_file)
-                logger.info(f"[LOGO] Found fuzzy match for '{team_name}' -> '{matches[0]}' at: {match_path}")
-                return Image.open(match_path).convert("RGBA")
-                
-        default_path = f"betting-bot/static/guilds/{guild_id}/default_image.png" if guild_id else "betting-bot/static/logos/default_image.png"
-        logger.warning(f"[LOGO] Logo not found for '{team_name}' (tried: {logo_path}). Using fallback: {default_path}")
-        return Image.open(default_path).convert("RGBA")
+        return asset_loader.load_team_logo(team_name, league, guild_id)
 
     @staticmethod
     def _load_player_image(player_name: str, team_name: str, league: str, guild_id: str = None):
-        import os
-        from PIL import Image
-        import difflib
-        from config.asset_paths import get_sport_category_for_path
-        from data.game_utils import normalize_team_name_any_league
-        sport = get_sport_category_for_path(league.upper())
-        logger = logging.getLogger(__name__)
-        if not sport:
-            # Fallback logic for missing sport
-            fallback_paths = []
-            if guild_id:
-                fallback_paths.append(f"betting-bot/static/guilds/{guild_id}/default_image.png")
-            fallback_paths.append("betting-bot/static/logos/players/default_image.png")
-            fallback_paths.append("betting-bot/static/logos/default_image.png")
-            for path in fallback_paths:
-                if os.path.exists(path):
-                    logger.warning(f"[PLAYER_IMAGE] Using fallback image: {path}")
-                    return Image.open(path).convert("RGBA"), player_name
-            logger.error(f"[PLAYER_IMAGE] No fallback image found for player '{player_name}'. Returning blank image.")
-            return Image.new("RGBA", (90, 90), (0, 0, 0, 0)), player_name
-        normalized_team = normalize_team_name_any_league(team_name).replace(".", "").replace(" ", "_").lower()
-        normalized_player = normalize_team_name_any_league(player_name).replace(".", "").replace(" ", "_").lower()
-        player_dir = os.path.join("betting-bot/static/logos/players", sport.lower(), normalized_team)
-        player_img_path = os.path.join(player_dir, f"{normalized_player}.png")
-
-        logger.info(f"[PLAYER_IMAGE] Looking for player image. Inputs: player_name='{player_name}', team_name='{team_name}', league='{league}', guild_id='{guild_id}'")
-        logger.info(f"[PLAYER_IMAGE] Normalized team: '{normalized_team}', Normalized player: '{normalized_player}'")
-        logger.info(f"[PLAYER_IMAGE] Player dir: '{player_dir}', Player image path: '{player_img_path}'")
-
-        if os.path.exists(player_img_path):
-            logger.info(f"[PLAYER_IMAGE] Found exact player image: {player_img_path}")
-            return Image.open(player_img_path).convert("RGBA"), player_name
-        # Fuzzy match if exact not found
-        if os.path.exists(player_dir):
-            candidates = [f for f in os.listdir(player_dir) if f.endswith('.png')]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            logger.info(f"[PLAYER_IMAGE] Candidates in dir: {candidate_names}")
-            matches = difflib.get_close_matches(normalized_player, candidate_names, n=1, cutoff=0.75)
-            if matches:
-                match_file = matches[0] + '.png'
-                match_path = os.path.join(player_dir, match_file)
-                display_name = matches[0].replace('_', ' ').title()
-                logger.info(f"[PLAYER_IMAGE] Fuzzy matched player image: {match_path}")
-                return Image.open(match_path).convert("RGBA"), display_name
-        logger.warning(f"[PLAYER_IMAGE] No player image found for '{player_name}' (team: '{team_name}', league: '{league}'). Trying fallback images.")
-        fallback_paths = []
-        if guild_id:
-            fallback_paths.append(f"betting-bot/static/guilds/{guild_id}/default_image.png")
-        fallback_paths.append("betting-bot/static/logos/players/default_image.png")
-        fallback_paths.append("betting-bot/static/logos/default_image.png")
-        for path in fallback_paths:
-            if os.path.exists(path):
-                logger.warning(f"[PLAYER_IMAGE] Using fallback image: {path}")
-                return Image.open(path).convert("RGBA"), player_name
-        logger.error(f"[PLAYER_IMAGE] No fallback image found for player '{player_name}'. Returning blank image.")
-        return Image.new("RGBA", (90, 90), (0, 0, 0, 0)), player_name
+        return asset_loader.load_player_image(player_name, team_name, league, guild_id)
 
     @staticmethod
     def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, odds=None, units_display_mode='auto', display_as_risk=None):
