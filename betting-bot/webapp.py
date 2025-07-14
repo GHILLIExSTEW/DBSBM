@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, render_template, redirect, url_for, request, jsonify
+from flask import Flask, render_template, redirect, url_for, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import sys
@@ -375,3 +375,7 @@ def live_scores_league(league_id):
         return render_template("live_scores_league.html", league_id=league_id, league_name=league_name, games=games)
     except Exception as e:
         return f"Error loading live scores for league {league_id}: {e}", 500
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
