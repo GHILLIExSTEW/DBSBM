@@ -94,8 +94,11 @@ def get_league_file_key(league_name):
 
 # --- UI Component Classes ---
 class LeagueSelect(Select):
-    def __init__(self, parent_view: 'ParlayBetWorkflowView', leagues: List[str]):
+    def __init__(self, parent_view: 'ParlayBetWorkflowView', leagues: List[str], page: int = 0, per_page: int = 21):
         self.parent_view = parent_view
+        self.page = page
+        self.per_page = per_page
+        self.leagues = leagues
         # Deduplicate while preserving order
         seen = set()
         unique_leagues = []
@@ -104,13 +107,28 @@ class LeagueSelect(Select):
             if norm not in seen:
                 seen.add(norm)
                 unique_leagues.append(league)
-        options = [SelectOption(label=league, value=league.replace(" ", "_").upper()) for league in unique_leagues[:24]]
-        options.append(SelectOption(label="Other", value="OTHER"))
+        total_leagues = len(unique_leagues)
+        start = page * per_page
+        end = start + per_page
+        page_leagues = unique_leagues[start:end]
+        options = [SelectOption(label=league, value=league.replace(" ", "_").upper()) for league in page_leagues]
+        options.append(SelectOption(label="Manual", value="MANUAL"))
+        if end < total_leagues:
+            options.append(SelectOption(label="Next ➡️", value="NEXT"))
+        if page > 0:
+            options.insert(0, SelectOption(label="⬅️ Previous", value="PREVIOUS"))
         super().__init__(placeholder="Select League for this Leg...", options=options, min_values=1, max_values=1, custom_id=f"parlay_league_select_{uuid.uuid4()}")
 
     async def callback(self, interaction: Interaction):
-        self.parent_view.current_leg_construction_details['league'] = self.values[0]
-        logger.debug(f"Parlay Leg - League selected: {self.values[0]} by user {interaction.user.id}")
+        value = self.values[0]
+        if value == "NEXT":
+            await self.parent_view.update_league_page(interaction, self.page + 1)
+            return
+        elif value == "PREVIOUS":
+            await self.parent_view.update_league_page(interaction, self.page - 1)
+            return
+        self.parent_view.current_leg_construction_details['league'] = value
+        logger.debug(f"Parlay Leg - League selected: {value} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -1371,6 +1389,19 @@ class ParlayBetWorkflowView(View):
             view=self,
             file=file_to_send
         )
+
+    async def update_league_page(self, interaction, page):
+        leagues = [
+            "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
+            "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+            "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
+            "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+            "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
+        ]
+        self.clear_items()
+        self.add_item(LeagueSelect(self, leagues, page=page))
+        self.add_item(CancelButton(self))
+        await self.edit_message_for_current_leg(interaction, content="Select a league for your parlay:", view=self)
 
     async def submit_bet(self, interaction: Interaction):
         details = self.bet_details

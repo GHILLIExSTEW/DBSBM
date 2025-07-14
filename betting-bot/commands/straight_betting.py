@@ -101,8 +101,11 @@ def get_league_file_key(league_name):
 
 
 class LeagueSelect(Select):
-    def __init__(self, parent_view: View, leagues: List[str]):
+    def __init__(self, parent_view: View, leagues: List[str], page: int = 0, per_page: int = 21):
         self.parent_view = parent_view
+        self.page = page
+        self.per_page = per_page
+        self.leagues = leagues
         seen = set()
         unique_leagues = []
         for league in leagues:
@@ -110,11 +113,16 @@ class LeagueSelect(Select):
             if norm not in seen:
                 seen.add(norm)
                 unique_leagues.append(league)
-        options = [
-            SelectOption(label=league[:100], value=league[:100])
-            for league in unique_leagues[:24]
-        ]
-        options.append(SelectOption(label="Other", value="OTHER"))
+        total_leagues = len(unique_leagues)
+        start = page * per_page
+        end = start + per_page
+        page_leagues = unique_leagues[start:end]
+        options = [SelectOption(label=league[:100], value=league[:100]) for league in page_leagues]
+        options.append(SelectOption(label="Manual", value="MANUAL"))
+        if end < total_leagues:
+            options.append(SelectOption(label="Next ➡️", value="NEXT"))
+        if page > 0:
+            options.insert(0, SelectOption(label="⬅️ Previous", value="PREVIOUS"))
         super().__init__(
             placeholder="Select League...",
             options=options,
@@ -124,8 +132,15 @@ class LeagueSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        self.parent_view.bet_details["league"] = self.values[0]
-        logger.debug(f"League selected: {self.values[0]} by user {interaction.user.id}")
+        value = self.values[0]
+        if value == "NEXT":
+            await self.parent_view.update_league_page(interaction, self.page + 1)
+            return
+        elif value == "PREVIOUS":
+            await self.parent_view.update_league_page(interaction, self.page - 1)
+            return
+        self.parent_view.bet_details["league"] = value
+        logger.debug(f"League selected: {value} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -1215,6 +1230,19 @@ class StraightBetWorkflowView(View):
     def stop(self):
         self._stopped = True
         super().stop()
+
+    async def update_league_page(self, interaction, page):
+        leagues = [
+            "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
+            "ChampionsLeague", "EuropaLeague", "WorldCup", "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
+            "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
+            "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
+            "SuperRugby", "SixNations", "FIVB", "EHF"
+        ]
+        self.clear_items()
+        self.add_item(LeagueSelect(self, leagues, page=page))
+        self.add_item(CancelButton(self))
+        await self.edit_message(content=self.get_content(), view=self)
 
 
 class StraightBetDetailsModal(Modal):
