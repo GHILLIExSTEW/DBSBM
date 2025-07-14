@@ -249,6 +249,9 @@ class StatsImageGenerator:
             if guild_id:
                 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
+                print(f"[DEBUG] Guild ID: {guild_id}")
+                print(f"[DEBUG] Looking for default image at: {default_path}")
+                print(f"[DEBUG] File exists: {os.path.exists(default_path)}")
                 if os.path.exists(default_path):
                     from PIL import Image
                     profile_img = Image.open(default_path).convert("RGBA")
