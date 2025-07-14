@@ -42,6 +42,8 @@ class StatsImageGenerator:
                         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                         # Normalize path for OS
                         local_path = os.path.join(base_dir, *profile_image_url.lstrip('/').split('/'))
+                    print(f"[DEBUG] Trying profile image local_path: {local_path}")
+                    print(f"[DEBUG] File exists: {os.path.exists(local_path)}")
                     if os.path.exists(local_path):
                         profile_img = Image.open(local_path).convert("RGBA")
                         profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
@@ -55,6 +57,20 @@ class StatsImageGenerator:
                             logger.info(f"Loaded profile image from URL: {profile_image_url}")
                 except Exception as e:
                     logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
+
+            # Fallback: If no user profile image, try server's default image
+            if profile_img is None and stats.get('guild_id'):
+                try:
+                    guild_id = str(stats['guild_id'])
+                    default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
+                    print(f"[DEBUG] Trying guild default image: {default_path}")
+                    print(f"[DEBUG] Guild default exists: {os.path.exists(default_path)}")
+                    if os.path.exists(default_path):
+                        profile_img = Image.open(default_path).convert("RGBA")
+                        profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                        logger.info(f"Loaded guild default image from: {default_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to load guild default image: {e}")
 
             # Extract stats (must be before any chart code that uses them)
             total_bets = int(stats.get('total_bets', 0) or 0)
