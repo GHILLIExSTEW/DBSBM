@@ -12,6 +12,21 @@ from matplotlib.colors import LinearSegmentedColormap
 
 logger = logging.getLogger(__name__)
 
+def make_rounded_feathered(img, feather=40):
+    size = img.size[0]
+    # Create a circular mask
+    mask = Image.new('L', (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size, size), fill=255)
+    # Feather the mask
+    if feather > 0:
+        mask = mask.filter(ImageFilter.GaussianBlur(feather))
+    # Apply mask to alpha channel
+    result = Image.new('RGBA', (size, size))
+    result.paste(img, (0, 0), mask)
+    result.putalpha(mask)
+    return result
+
 class StatsImageGenerator:
     def __init__(self):
         self.font_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'arial.ttf')
@@ -74,20 +89,6 @@ class StatsImageGenerator:
                     logger.warning(f"Failed to load guild default image: {e}")
 
             # --- Make profile image rounded and feathered ---
-            def make_rounded_feathered(img, feather=40):
-                size = img.size[0]
-                # Create a circular mask
-                mask = Image.new('L', (size, size), 0)
-                draw = ImageDraw.Draw(mask)
-                draw.ellipse((0, 0, size, size), fill=255)
-                # Feather the mask
-                if feather > 0:
-                    mask = mask.filter(ImageFilter.GaussianBlur(feather))
-                # Apply mask to alpha channel
-                result = Image.new('RGBA', (size, size))
-                result.paste(img, (0, 0), mask)
-                result.putalpha(mask)
-                return result
             if profile_img is not None:
                 min_side = min(profile_img.size)
                 profile_img = profile_img.crop((
