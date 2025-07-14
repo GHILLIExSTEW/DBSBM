@@ -230,6 +230,7 @@ class StatsImageGenerator:
             raise
 
     def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
+        print(f"[DEBUG] generate_guild_stats_image called with stats: {stats}")
         """Generate a flashy guild stats image with charts and the guild's default image if available."""
         try:
             import os
