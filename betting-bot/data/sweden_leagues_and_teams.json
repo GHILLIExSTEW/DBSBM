@@ -1,0 +1,1825 @@
+[
+  {
+    "id": 113,
+    "name": "Allsvenskan",
+    "logo": "static\\logos\\leagues\\SOCCER\\Allsvenskan\\logo.png",
+    "teams": [
+      {
+        "id": 363,
+        "name": "Hammarby FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Hammarby_FF.png"
+      },
+      {
+        "id": 364,
+        "name": "Djurgardens IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Djurgardens_IF.png"
+      },
+      {
+        "id": 366,
+        "name": "IFK Goteborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\IFK_Goteborg.png"
+      },
+      {
+        "id": 367,
+        "name": "BK Hacken",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\BK_Hacken.png"
+      },
+      {
+        "id": 370,
+        "name": "Sirius",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Sirius.png"
+      },
+      {
+        "id": 371,
+        "name": "IF Brommapojkarna",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\IF_Brommapojkarna.png"
+      },
+      {
+        "id": 372,
+        "name": "IF Elfsborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\IF_Elfsborg.png"
+      },
+      {
+        "id": 375,
+        "name": "Malmo FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Malmo_FF.png"
+      },
+      {
+        "id": 377,
+        "name": "AIK Stockholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\AIK_Stockholm.png"
+      },
+      {
+        "id": 378,
+        "name": "IFK Norrkoping",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\IFK_Norrkoping.png"
+      },
+      {
+        "id": 766,
+        "name": "Halmstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Halmstad.png"
+      },
+      {
+        "id": 2163,
+        "name": "IFK Varnamo",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\IFK_Varnamo.png"
+      },
+      {
+        "id": 2170,
+        "name": "Gais",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Gais.png"
+      },
+      {
+        "id": 2172,
+        "name": "Degerfors IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Degerfors_IF.png"
+      },
+      {
+        "id": 2174,
+        "name": "Osters IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Osters_IF.png"
+      },
+      {
+        "id": 2240,
+        "name": "Mjallby AIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Allsvenskan\\Mjallby_AIF.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 114,
+    "name": "Superettan",
+    "logo": "static\\logos\\leagues\\SOCCER\\Superettan\\logo.png",
+    "teams": [
+      {
+        "id": 365,
+        "name": "Orebro SK",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Orebro_SK.png"
+      },
+      {
+        "id": 369,
+        "name": "trelleborgs FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\trelleborgs_FF.png"
+      },
+      {
+        "id": 373,
+        "name": "GIF Sundsvall",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\GIF_Sundsvall.png"
+      },
+      {
+        "id": 374,
+        "name": "Kalmar FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Kalmar_FF.png"
+      },
+      {
+        "id": 376,
+        "name": "Ostersunds FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Ostersunds_FK.png"
+      },
+      {
+        "id": 811,
+        "name": "Helsingborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Helsingborg.png"
+      },
+      {
+        "id": 812,
+        "name": "falkenbergs FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\falkenbergs_FF.png"
+      },
+      {
+        "id": 2166,
+        "name": "Orgryte IS",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Orgryte_IS.png"
+      },
+      {
+        "id": 2171,
+        "name": "Varbergs BoIS FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Varbergs_BoIS_FC.png"
+      },
+      {
+        "id": 2175,
+        "name": "IK brage",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\IK_brage.png"
+      },
+      {
+        "id": 2176,
+        "name": "Landskrona BoIS",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Landskrona_BoIS.png"
+      },
+      {
+        "id": 2241,
+        "name": "Vasteras SK FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Vasteras_SK_FK.png"
+      },
+      {
+        "id": 6697,
+        "name": "Sandviken",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Sandviken.png"
+      },
+      {
+        "id": 6705,
+        "name": "Umeå FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Umeå_FC.png"
+      },
+      {
+        "id": 6706,
+        "name": "Utsikten",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Utsikten.png"
+      },
+      {
+        "id": 11674,
+        "name": "Oddevold",
+        "logo": "static\\logos\\teams\\SOCCER\\Superettan\\Oddevold.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 563,
+    "name": "Ettan - Norra",
+    "logo": "static\\logos\\leagues\\SOCCER\\Ettan_-_Norra\\logo.png",
+    "teams": [
+      {
+        "id": 765,
+        "name": "AFC Eskilstuna",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\AFC_Eskilstuna.png"
+      },
+      {
+        "id": 813,
+        "name": "gefle IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\gefle_IF.png"
+      },
+      {
+        "id": 2169,
+        "name": "Assyriska FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Assyriska_FF.png"
+      },
+      {
+        "id": 6672,
+        "name": "Haninge",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Haninge.png"
+      },
+      {
+        "id": 6682,
+        "name": "Karlberg",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Karlberg.png"
+      },
+      {
+        "id": 6699,
+        "name": "Sollentuna",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Sollentuna.png"
+      },
+      {
+        "id": 6700,
+        "name": "Stocksund",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Stocksund.png"
+      },
+      {
+        "id": 6708,
+        "name": "Vasalund",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Vasalund.png"
+      },
+      {
+        "id": 11659,
+        "name": "IF Karlstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\IF_Karlstad.png"
+      },
+      {
+        "id": 11662,
+        "name": "Team Thoren",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Team_Thoren.png"
+      },
+      {
+        "id": 11664,
+        "name": "Örebro Syrianska",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Örebro_Syrianska.png"
+      },
+      {
+        "id": 12578,
+        "name": "Enköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Enköping.png"
+      },
+      {
+        "id": 12585,
+        "name": "Stockholm Internazionale",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Stockholm_Internazionale.png"
+      },
+      {
+        "id": 16596,
+        "name": "Hammarby Talang",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Hammarby_Talang.png"
+      },
+      {
+        "id": 16597,
+        "name": "Arlanda",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\Arlanda.png"
+      },
+      {
+        "id": 16601,
+        "name": "United Nordic",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Norra\\United_Nordic.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 564,
+    "name": "Ettan - Södra",
+    "logo": "static\\logos\\leagues\\SOCCER\\Ettan_-_Södra\\logo.png",
+    "teams": [
+      {
+        "id": 764,
+        "name": "Jonkopings Sodra",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Jonkopings_Sodra.png"
+      },
+      {
+        "id": 2165,
+        "name": "ljungSKile SK",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\ljungSKile_SK.png"
+      },
+      {
+        "id": 2168,
+        "name": "Angelholms FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Angelholms_FF.png"
+      },
+      {
+        "id": 2173,
+        "name": "Norrby IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Norrby_IF.png"
+      },
+      {
+        "id": 6663,
+        "name": "Eskilsminne",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Eskilsminne.png"
+      },
+      {
+        "id": 6675,
+        "name": "Husqvarna",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Husqvarna.png"
+      },
+      {
+        "id": 6676,
+        "name": "Hässleholms IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Hässleholms_IF.png"
+      },
+      {
+        "id": 6687,
+        "name": "Lund",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Lund.png"
+      },
+      {
+        "id": 6692,
+        "name": "Oskarshamns AIK",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Oskarshamns_AIK.png"
+      },
+      {
+        "id": 6694,
+        "name": "Rosengård",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Rosengård.png"
+      },
+      {
+        "id": 6698,
+        "name": "Skövde AIK",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Skövde_AIK.png"
+      },
+      {
+        "id": 6702,
+        "name": "Trollhättan",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Trollhättan.png"
+      },
+      {
+        "id": 12601,
+        "name": "Olympic",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Olympic.png"
+      },
+      {
+        "id": 12620,
+        "name": "Torslanda",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Torslanda.png"
+      },
+      {
+        "id": 16605,
+        "name": "IFK Skövde",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\IFK_Skövde.png"
+      },
+      {
+        "id": 21435,
+        "name": "Ariana",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Södra\\Ariana.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 592,
+    "name": "Division 2 - Norra Götaland",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Norra_Götaland\\logo.png",
+    "teams": [
+      {
+        "id": 6670,
+        "name": "Grebbestad",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Grebbestad.png"
+      },
+      {
+        "id": 6713,
+        "name": "Vänersborgs IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Vänersborgs_IF.png"
+      },
+      {
+        "id": 11673,
+        "name": "Motala",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Motala.png"
+      },
+      {
+        "id": 12570,
+        "name": "Ahlafors",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Ahlafors.png"
+      },
+      {
+        "id": 12573,
+        "name": "Lidköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Lidköping.png"
+      },
+      {
+        "id": 12577,
+        "name": "Vänersborgs FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Vänersborgs_FK.png"
+      },
+      {
+        "id": 12598,
+        "name": "Kumla",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Kumla.png"
+      },
+      {
+        "id": 12618,
+        "name": "Tord",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Tord.png"
+      },
+      {
+        "id": 12622,
+        "name": "FBK Karlstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\FBK_Karlstad.png"
+      },
+      {
+        "id": 18422,
+        "name": "Herrestads",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Herrestads.png"
+      },
+      {
+        "id": 22935,
+        "name": "Kongahälla",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Kongahälla.png"
+      },
+      {
+        "id": 23655,
+        "name": "Haga",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Haga.png"
+      },
+      {
+        "id": 23660,
+        "name": "Tidaholms GoIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Tidaholms_GoIF.png"
+      },
+      {
+        "id": 25569,
+        "name": "Skara",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Götaland\\Skara.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 593,
+    "name": "Division 2 - Norra Svealand",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Norra_Svealand\\logo.png",
+    "teams": [
+      {
+        "id": 6665,
+        "name": "Franke",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Franke.png"
+      },
+      {
+        "id": 6671,
+        "name": "Gute",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Gute.png"
+      },
+      {
+        "id": 11663,
+        "name": "Täby",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Täby.png"
+      },
+      {
+        "id": 12581,
+        "name": "IFK Österåker",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\IFK_Österåker.png"
+      },
+      {
+        "id": 12582,
+        "name": "Kungsängen",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Kungsängen.png"
+      },
+      {
+        "id": 12584,
+        "name": "Skiljebo",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Skiljebo.png"
+      },
+      {
+        "id": 12594,
+        "name": "Ytterhogdal",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Ytterhogdal.png"
+      },
+      {
+        "id": 14510,
+        "name": "Nacka Iliria",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Nacka_Iliria.png"
+      },
+      {
+        "id": 16598,
+        "name": "Järfälla",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Järfälla.png"
+      },
+      {
+        "id": 18427,
+        "name": "Korsnäs",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Korsnäs.png"
+      },
+      {
+        "id": 20838,
+        "name": "Viggbyholms IK",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Viggbyholms_IK.png"
+      },
+      {
+        "id": 22932,
+        "name": "Falu BS",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Falu_BS.png"
+      },
+      {
+        "id": 23659,
+        "name": "Sunnersta",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Sunnersta.png"
+      },
+      {
+        "id": 25574,
+        "name": "Bollstanäs",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norra_Svealand\\Bollstanäs.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 594,
+    "name": "Division 2 - Norrland",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Norrland\\logo.png",
+    "teams": [
+      {
+        "id": 6669,
+        "name": "Gottne",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Gottne.png"
+      },
+      {
+        "id": 6679,
+        "name": "IFK Luleå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\IFK_Luleå.png"
+      },
+      {
+        "id": 6681,
+        "name": "IFK Östersund",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\IFK_Östersund.png"
+      },
+      {
+        "id": 11665,
+        "name": "Boden",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Boden.png"
+      },
+      {
+        "id": 11669,
+        "name": "Skellefteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Skellefteå.png"
+      },
+      {
+        "id": 11671,
+        "name": "Piteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Piteå.png"
+      },
+      {
+        "id": 12586,
+        "name": "Friska Viljor",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Friska_Viljor.png"
+      },
+      {
+        "id": 12592,
+        "name": "Täfteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Täfteå.png"
+      },
+      {
+        "id": 12593,
+        "name": "Umeå FC Akademi",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Umeå_FC_Akademi.png"
+      },
+      {
+        "id": 16602,
+        "name": "Bergnäsets",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Bergnäsets.png"
+      },
+      {
+        "id": 18420,
+        "name": "Kiruna FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Kiruna_FF.png"
+      },
+      {
+        "id": 18999,
+        "name": "Lucksta",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Lucksta.png"
+      },
+      {
+        "id": 24030,
+        "name": "Kubikenborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Kubikenborg.png"
+      },
+      {
+        "id": 25577,
+        "name": "Boden City",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Norrland\\Boden_City.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 595,
+    "name": "Division 2 - Södra Svealand",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Södra_Svealand\\logo.png",
+    "teams": [
+      {
+        "id": 2162,
+        "name": "Atvidabergs FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Atvidabergs_FF.png"
+      },
+      {
+        "id": 2167,
+        "name": "Syrianska FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Syrianska_FC.png"
+      },
+      {
+        "id": 6662,
+        "name": "Enskede",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Enskede.png"
+      },
+      {
+        "id": 6691,
+        "name": "Nyköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Nyköping.png"
+      },
+      {
+        "id": 11661,
+        "name": "Sylvia",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Sylvia.png"
+      },
+      {
+        "id": 11666,
+        "name": "Forward",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Forward.png"
+      },
+      {
+        "id": 11668,
+        "name": "Arameiska / Syrianska",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Arameiska___Syrianska.png"
+      },
+      {
+        "id": 11670,
+        "name": "Sleipner",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Sleipner.png"
+      },
+      {
+        "id": 12596,
+        "name": "Huddinge",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Huddinge.png"
+      },
+      {
+        "id": 12650,
+        "name": "Smedby",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Smedby.png"
+      },
+      {
+        "id": 16745,
+        "name": "Rågsved",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Rågsved.png"
+      },
+      {
+        "id": 20835,
+        "name": "Farsta",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Farsta.png"
+      },
+      {
+        "id": 25570,
+        "name": "Eker Örebro",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Eker_Örebro.png"
+      },
+      {
+        "id": 25571,
+        "name": "Syrianska Eskilstuna",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Södra_Svealand\\Syrianska_Eskilstuna.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 596,
+    "name": "Division 2 - Västra Götaland",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Västra_Götaland\\logo.png",
+    "teams": [
+      {
+        "id": 6657,
+        "name": "Astrio",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Astrio.png"
+      },
+      {
+        "id": 6686,
+        "name": "Lindome",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Lindome.png"
+      },
+      {
+        "id": 6693,
+        "name": "Qviding FIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Qviding_FIF.png"
+      },
+      {
+        "id": 6703,
+        "name": "Tvååker",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Tvååker.png"
+      },
+      {
+        "id": 12606,
+        "name": "Onsala",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Onsala.png"
+      },
+      {
+        "id": 12608,
+        "name": "Varbergs GIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Varbergs_GIF.png"
+      },
+      {
+        "id": 12609,
+        "name": "Västra Frölunda",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Västra_Frölunda.png"
+      },
+      {
+        "id": 12657,
+        "name": "Laholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Laholm.png"
+      },
+      {
+        "id": 14543,
+        "name": "Åstorp",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Åstorp.png"
+      },
+      {
+        "id": 18424,
+        "name": "Landvetter IS",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Landvetter_IS.png"
+      },
+      {
+        "id": 21359,
+        "name": "Jonsered",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Jonsered.png"
+      },
+      {
+        "id": 22934,
+        "name": "Bergdalens",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Bergdalens.png"
+      },
+      {
+        "id": 25575,
+        "name": "Böljan",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Böljan.png"
+      },
+      {
+        "id": 25576,
+        "name": "Hestrafor",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Västra_Götaland\\Hestrafor.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 597,
+    "name": "Division 2 - Östra Götaland",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Östra_Götaland\\logo.png",
+    "teams": [
+      {
+        "id": 6683,
+        "name": "Karlskrona",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Karlskrona.png"
+      },
+      {
+        "id": 6701,
+        "name": "Torns",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Torns.png"
+      },
+      {
+        "id": 11675,
+        "name": "Kristianstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Kristianstad.png"
+      },
+      {
+        "id": 12614,
+        "name": "IFK Hässleholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\IFK_Hässleholm.png"
+      },
+      {
+        "id": 12615,
+        "name": "Karlshamn",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Karlshamn.png"
+      },
+      {
+        "id": 12616,
+        "name": "Nosaby",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Nosaby.png"
+      },
+      {
+        "id": 12617,
+        "name": "Räppe",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Räppe.png"
+      },
+      {
+        "id": 12619,
+        "name": "Österlen",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Österlen.png"
+      },
+      {
+        "id": 12653,
+        "name": "Högaborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Högaborg.png"
+      },
+      {
+        "id": 12660,
+        "name": "Sölvesborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Sölvesborg.png"
+      },
+      {
+        "id": 17119,
+        "name": "Balkan",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Balkan.png"
+      },
+      {
+        "id": 20839,
+        "name": "IFK Trelleborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\IFK_Trelleborg.png"
+      },
+      {
+        "id": 25572,
+        "name": "Linero",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Linero.png"
+      },
+      {
+        "id": 25573,
+        "name": "Växjö Norra",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Östra_Götaland\\Växjö_Norra.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 115,
+    "name": "Svenska Cupen",
+    "logo": "static\\logos\\leagues\\SOCCER\\Svenska_Cupen\\logo.png",
+    "teams": [
+      {
+        "id": 363,
+        "name": "Hammarby FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Hammarby_FF.png"
+      },
+      {
+        "id": 364,
+        "name": "Djurgardens IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Djurgardens_IF.png"
+      },
+      {
+        "id": 365,
+        "name": "Orebro SK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Orebro_SK.png"
+      },
+      {
+        "id": 366,
+        "name": "IFK Goteborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IFK_Goteborg.png"
+      },
+      {
+        "id": 367,
+        "name": "BK Hacken",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\BK_Hacken.png"
+      },
+      {
+        "id": 369,
+        "name": "trelleborgs FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\trelleborgs_FF.png"
+      },
+      {
+        "id": 370,
+        "name": "Sirius",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Sirius.png"
+      },
+      {
+        "id": 371,
+        "name": "IF Brommapojkarna",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IF_Brommapojkarna.png"
+      },
+      {
+        "id": 372,
+        "name": "IF Elfsborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IF_Elfsborg.png"
+      },
+      {
+        "id": 373,
+        "name": "GIF Sundsvall",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\GIF_Sundsvall.png"
+      },
+      {
+        "id": 374,
+        "name": "Kalmar FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Kalmar_FF.png"
+      },
+      {
+        "id": 375,
+        "name": "Malmo FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Malmo_FF.png"
+      },
+      {
+        "id": 376,
+        "name": "Ostersunds FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Ostersunds_FK.png"
+      },
+      {
+        "id": 377,
+        "name": "AIK Stockholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\AIK_Stockholm.png"
+      },
+      {
+        "id": 378,
+        "name": "IFK Norrkoping",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IFK_Norrkoping.png"
+      },
+      {
+        "id": 766,
+        "name": "Halmstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Halmstad.png"
+      },
+      {
+        "id": 811,
+        "name": "Helsingborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Helsingborg.png"
+      },
+      {
+        "id": 812,
+        "name": "falkenbergs FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\falkenbergs_FF.png"
+      },
+      {
+        "id": 813,
+        "name": "gefle IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\gefle_IF.png"
+      },
+      {
+        "id": 2163,
+        "name": "IFK Varnamo",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IFK_Varnamo.png"
+      },
+      {
+        "id": 2166,
+        "name": "Orgryte IS",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Orgryte_IS.png"
+      },
+      {
+        "id": 2167,
+        "name": "Syrianska FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Syrianska_FC.png"
+      },
+      {
+        "id": 2169,
+        "name": "Assyriska FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Assyriska_FF.png"
+      },
+      {
+        "id": 2171,
+        "name": "Varbergs BoIS FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Varbergs_BoIS_FC.png"
+      },
+      {
+        "id": 2172,
+        "name": "Degerfors IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Degerfors_IF.png"
+      },
+      {
+        "id": 2174,
+        "name": "Osters IF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Osters_IF.png"
+      },
+      {
+        "id": 2175,
+        "name": "IK brage",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IK_brage.png"
+      },
+      {
+        "id": 2176,
+        "name": "Landskrona BoIS",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Landskrona_BoIS.png"
+      },
+      {
+        "id": 2240,
+        "name": "Mjallby AIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Mjallby_AIF.png"
+      },
+      {
+        "id": 2241,
+        "name": "Vasteras SK FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Vasteras_SK_FK.png"
+      },
+      {
+        "id": 6663,
+        "name": "Eskilsminne",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Eskilsminne.png"
+      },
+      {
+        "id": 6665,
+        "name": "Franke",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Franke.png"
+      },
+      {
+        "id": 6667,
+        "name": "Gauthiod",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Gauthiod.png"
+      },
+      {
+        "id": 6671,
+        "name": "Gute",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Gute.png"
+      },
+      {
+        "id": 6672,
+        "name": "Haninge",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Haninge.png"
+      },
+      {
+        "id": 6674,
+        "name": "Hudiksvall",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Hudiksvall.png"
+      },
+      {
+        "id": 6682,
+        "name": "Karlberg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Karlberg.png"
+      },
+      {
+        "id": 6686,
+        "name": "Lindome",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Lindome.png"
+      },
+      {
+        "id": 6687,
+        "name": "Lund",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Lund.png"
+      },
+      {
+        "id": 6693,
+        "name": "Qviding FIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Qviding_FIF.png"
+      },
+      {
+        "id": 6694,
+        "name": "Rosengård",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Rosengård.png"
+      },
+      {
+        "id": 6697,
+        "name": "Sandviken",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Sandviken.png"
+      },
+      {
+        "id": 6699,
+        "name": "Sollentuna",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Sollentuna.png"
+      },
+      {
+        "id": 6700,
+        "name": "Stocksund",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Stocksund.png"
+      },
+      {
+        "id": 6702,
+        "name": "Trollhättan",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Trollhättan.png"
+      },
+      {
+        "id": 6705,
+        "name": "Umeå FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Umeå_FC.png"
+      },
+      {
+        "id": 6708,
+        "name": "Vasalund",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Vasalund.png"
+      },
+      {
+        "id": 11659,
+        "name": "IF Karlstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IF_Karlstad.png"
+      },
+      {
+        "id": 11660,
+        "name": "Karlslund",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Karlslund.png"
+      },
+      {
+        "id": 11661,
+        "name": "Sylvia",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Sylvia.png"
+      },
+      {
+        "id": 11663,
+        "name": "Täby",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Täby.png"
+      },
+      {
+        "id": 11668,
+        "name": "Arameiska / Syrianska",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Arameiska___Syrianska.png"
+      },
+      {
+        "id": 11669,
+        "name": "Skellefteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Skellefteå.png"
+      },
+      {
+        "id": 11671,
+        "name": "Piteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Piteå.png"
+      },
+      {
+        "id": 11674,
+        "name": "Oddevold",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Oddevold.png"
+      },
+      {
+        "id": 11675,
+        "name": "Kristianstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Kristianstad.png"
+      },
+      {
+        "id": 12572,
+        "name": "IFK Tidaholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IFK_Tidaholm.png"
+      },
+      {
+        "id": 12575,
+        "name": "Stenungsund",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Stenungsund.png"
+      },
+      {
+        "id": 12577,
+        "name": "Vänersborgs FK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Vänersborgs_FK.png"
+      },
+      {
+        "id": 12578,
+        "name": "Enköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Enköping.png"
+      },
+      {
+        "id": 12585,
+        "name": "Stockholm Internazionale",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Stockholm_Internazionale.png"
+      },
+      {
+        "id": 12586,
+        "name": "Friska Viljor",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Friska_Viljor.png"
+      },
+      {
+        "id": 12601,
+        "name": "Olympic",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Olympic.png"
+      },
+      {
+        "id": 12602,
+        "name": "Eslov",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Eslov.png"
+      },
+      {
+        "id": 12606,
+        "name": "Onsala",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Onsala.png"
+      },
+      {
+        "id": 12612,
+        "name": "Berga",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Berga.png"
+      },
+      {
+        "id": 12617,
+        "name": "Räppe",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Räppe.png"
+      },
+      {
+        "id": 12620,
+        "name": "Torslanda",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Torslanda.png"
+      },
+      {
+        "id": 12622,
+        "name": "FBK Karlstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\FBK_Karlstad.png"
+      },
+      {
+        "id": 12653,
+        "name": "Högaborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Högaborg.png"
+      },
+      {
+        "id": 12657,
+        "name": "Laholm",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Laholm.png"
+      },
+      {
+        "id": 12658,
+        "name": "Nässjö",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Nässjö.png"
+      },
+      {
+        "id": 12660,
+        "name": "Sölvesborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Sölvesborg.png"
+      },
+      {
+        "id": 14112,
+        "name": "Lödde",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Lödde.png"
+      },
+      {
+        "id": 16597,
+        "name": "Arlanda",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Arlanda.png"
+      },
+      {
+        "id": 16598,
+        "name": "Järfälla",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Järfälla.png"
+      },
+      {
+        "id": 16605,
+        "name": "IFK Skövde",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\IFK_Skövde.png"
+      },
+      {
+        "id": 16746,
+        "name": "Viken",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Viken.png"
+      },
+      {
+        "id": 17119,
+        "name": "Balkan",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Balkan.png"
+      },
+      {
+        "id": 18427,
+        "name": "Korsnäs",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Korsnäs.png"
+      },
+      {
+        "id": 20835,
+        "name": "Farsta",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Farsta.png"
+      },
+      {
+        "id": 20838,
+        "name": "Viggbyholms IK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Viggbyholms_IK.png"
+      },
+      {
+        "id": 21309,
+        "name": "Zenith",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Zenith.png"
+      },
+      {
+        "id": 21365,
+        "name": "Torstorps",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Torstorps.png"
+      },
+      {
+        "id": 22933,
+        "name": "Öckerö",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Öckerö.png"
+      },
+      {
+        "id": 24030,
+        "name": "Kubikenborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Kubikenborg.png"
+      },
+      {
+        "id": 26087,
+        "name": "Centern",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Centern.png"
+      },
+      {
+        "id": 26088,
+        "name": "Dvärsätt",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Dvärsätt.png"
+      },
+      {
+        "id": 26089,
+        "name": "Gimo",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Gimo.png"
+      },
+      {
+        "id": 26090,
+        "name": "Hjulsbro",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Hjulsbro.png"
+      },
+      {
+        "id": 26091,
+        "name": "Jönköping Torpa",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Jönköping_Torpa.png"
+      },
+      {
+        "id": 26092,
+        "name": "Myresjö / Vetlanda",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Myresjö___Vetlanda.png"
+      },
+      {
+        "id": 26093,
+        "name": "Ursvik",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Ursvik.png"
+      },
+      {
+        "id": 26094,
+        "name": "Västboås",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Västboås.png"
+      },
+      {
+        "id": 26122,
+        "name": "Dalarnas FF",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Dalarnas_FF.png"
+      },
+      {
+        "id": 26123,
+        "name": "Gestriklands",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen\\Gestriklands.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 549,
+    "name": "Damallsvenskan",
+    "logo": "static\\logos\\leagues\\SOCCER\\Damallsvenskan\\logo.png",
+    "teams": [
+      {
+        "id": 10900,
+        "name": "Piteå W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Piteå_W.png"
+      },
+      {
+        "id": 11075,
+        "name": "Rosengård W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Rosengård_W.png"
+      },
+      {
+        "id": 11076,
+        "name": "Djurgården",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Djurgården.png"
+      },
+      {
+        "id": 11079,
+        "name": "Kristianstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Kristianstad.png"
+      },
+      {
+        "id": 11080,
+        "name": "Linköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Linköping.png"
+      },
+      {
+        "id": 11083,
+        "name": "Vittsjö",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Vittsjö.png"
+      },
+      {
+        "id": 11084,
+        "name": "Växjö",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Växjö.png"
+      },
+      {
+        "id": 15629,
+        "name": "AIK",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\AIK.png"
+      },
+      {
+        "id": 15630,
+        "name": "Hammarby",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Hammarby.png"
+      },
+      {
+        "id": 16001,
+        "name": "Alingsås W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Alingsås_W.png"
+      },
+      {
+        "id": 16004,
+        "name": "Brommapojkarna W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Brommapojkarna_W.png"
+      },
+      {
+        "id": 16008,
+        "name": "Norrköping W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Norrköping_W.png"
+      },
+      {
+        "id": 16483,
+        "name": "Häcken",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Häcken.png"
+      },
+      {
+        "id": 21698,
+        "name": "Malmö FF W",
+        "logo": "static\\logos\\teams\\SOCCER\\Damallsvenskan\\Malmö_FF_W.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 737,
+    "name": "Svenska Cupen - Women",
+    "logo": "static\\logos\\leagues\\SOCCER\\Svenska_Cupen_-_Women\\logo.png",
+    "teams": [
+      {
+        "id": 10900,
+        "name": "Piteå W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Piteå_W.png"
+      },
+      {
+        "id": 11075,
+        "name": "Rosengård W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Rosengård_W.png"
+      },
+      {
+        "id": 11076,
+        "name": "Djurgården",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Djurgården.png"
+      },
+      {
+        "id": 11077,
+        "name": "Eskilstuna United",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Eskilstuna_United.png"
+      },
+      {
+        "id": 11078,
+        "name": "KIF Örebro",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\KIF_Örebro.png"
+      },
+      {
+        "id": 11079,
+        "name": "Kristianstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Kristianstad.png"
+      },
+      {
+        "id": 11080,
+        "name": "Linköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Linköping.png"
+      },
+      {
+        "id": 11081,
+        "name": "Umeå",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Umeå.png"
+      },
+      {
+        "id": 11082,
+        "name": "Uppsala W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Uppsala_W.png"
+      },
+      {
+        "id": 11083,
+        "name": "Vittsjö",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Vittsjö.png"
+      },
+      {
+        "id": 11084,
+        "name": "Växjö",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Växjö.png"
+      },
+      {
+        "id": 15629,
+        "name": "AIK",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\AIK.png"
+      },
+      {
+        "id": 15630,
+        "name": "Hammarby",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Hammarby.png"
+      },
+      {
+        "id": 15957,
+        "name": "Sandviken W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Sandviken_W.png"
+      },
+      {
+        "id": 16001,
+        "name": "Alingsås W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Alingsås_W.png"
+      },
+      {
+        "id": 16002,
+        "name": "Bollstanäs W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Bollstanäs_W.png"
+      },
+      {
+        "id": 16004,
+        "name": "Brommapojkarna W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Brommapojkarna_W.png"
+      },
+      {
+        "id": 16005,
+        "name": "Jitex W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Jitex_W.png"
+      },
+      {
+        "id": 16006,
+        "name": "Kalmar W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Kalmar_W.png"
+      },
+      {
+        "id": 16007,
+        "name": "Mallbacken W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Mallbacken_W.png"
+      },
+      {
+        "id": 16008,
+        "name": "Norrköping W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Norrköping_W.png"
+      },
+      {
+        "id": 16010,
+        "name": "Älvsjö AIK W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Älvsjö_AIK_W.png"
+      },
+      {
+        "id": 16011,
+        "name": "Lidköping W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Lidköping_W.png"
+      },
+      {
+        "id": 16028,
+        "name": "Örebro Söder W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Örebro_Söder_W.png"
+      },
+      {
+        "id": 16030,
+        "name": "Enskede W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Enskede_W.png"
+      },
+      {
+        "id": 16032,
+        "name": "Gamla Upsala W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Gamla_Upsala_W.png"
+      },
+      {
+        "id": 16033,
+        "name": "Husqvarna W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Husqvarna_W.png"
+      },
+      {
+        "id": 16483,
+        "name": "Häcken",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Häcken.png"
+      },
+      {
+        "id": 17638,
+        "name": "Team TG FF W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Team_TG_FF_W.png"
+      },
+      {
+        "id": 17639,
+        "name": "Trelleborg W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Trelleborg_W.png"
+      },
+      {
+        "id": 17640,
+        "name": "Trollhättans W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Trollhättans_W.png"
+      },
+      {
+        "id": 17645,
+        "name": "Lidingö W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Lidingö_W.png"
+      },
+      {
+        "id": 19017,
+        "name": "Smedby AIS",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Smedby_AIS.png"
+      },
+      {
+        "id": 19018,
+        "name": "Sunnanå",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Sunnanå.png"
+      },
+      {
+        "id": 19316,
+        "name": "Sollentuna W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Sollentuna_W.png"
+      },
+      {
+        "id": 21691,
+        "name": "Bankeryds",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Bankeryds.png"
+      },
+      {
+        "id": 21692,
+        "name": "Brage",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Brage.png"
+      },
+      {
+        "id": 21695,
+        "name": "Örgryte",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Örgryte.png"
+      },
+      {
+        "id": 21696,
+        "name": "IFK Göteborg W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\IFK_Göteborg_W.png"
+      },
+      {
+        "id": 21698,
+        "name": "Malmö FF W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Malmö_FF_W.png"
+      },
+      {
+        "id": 24079,
+        "name": "Lilla Torg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Lilla_Torg.png"
+      },
+      {
+        "id": 24080,
+        "name": "Segeltorp",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Segeltorp.png"
+      },
+      {
+        "id": 24081,
+        "name": "Skellefteå FC",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Skellefteå_FC.png"
+      },
+      {
+        "id": 24082,
+        "name": "Spjutstorp",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Spjutstorp.png"
+      },
+      {
+        "id": 24083,
+        "name": "Sturehov",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Sturehov.png"
+      },
+      {
+        "id": 24084,
+        "name": "Tjust",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Tjust.png"
+      },
+      {
+        "id": 24085,
+        "name": "Varberg",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Varberg.png"
+      },
+      {
+        "id": 24086,
+        "name": "Helsingborg W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Helsingborg_W.png"
+      },
+      {
+        "id": 24087,
+        "name": "IFK Östersund W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\IFK_Östersund_W.png"
+      },
+      {
+        "id": 24088,
+        "name": "Utsikten W",
+        "logo": "static\\logos\\teams\\SOCCER\\Svenska_Cupen_-_Women\\Utsikten_W.png"
+      }
+    ],
+    "season": 2024
+  },
+  {
+    "id": 736,
+    "name": "Elitettan",
+    "logo": "static\\logos\\leagues\\SOCCER\\Elitettan\\logo.png",
+    "teams": [
+      {
+        "id": 11077,
+        "name": "Eskilstuna United",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Eskilstuna_United.png"
+      },
+      {
+        "id": 11078,
+        "name": "KIF Örebro",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\KIF_Örebro.png"
+      },
+      {
+        "id": 11081,
+        "name": "Umeå",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Umeå.png"
+      },
+      {
+        "id": 11082,
+        "name": "Uppsala W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Uppsala_W.png"
+      },
+      {
+        "id": 16002,
+        "name": "Bollstanäs W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Bollstanäs_W.png"
+      },
+      {
+        "id": 16005,
+        "name": "Jitex W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Jitex_W.png"
+      },
+      {
+        "id": 16007,
+        "name": "Mallbacken W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Mallbacken_W.png"
+      },
+      {
+        "id": 16028,
+        "name": "Örebro Söder W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Örebro_Söder_W.png"
+      },
+      {
+        "id": 16032,
+        "name": "Gamla Upsala W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Gamla_Upsala_W.png"
+      },
+      {
+        "id": 17638,
+        "name": "Team TG FF W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Team_TG_FF_W.png"
+      },
+      {
+        "id": 17639,
+        "name": "Trelleborg W",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Trelleborg_W.png"
+      },
+      {
+        "id": 19018,
+        "name": "Sunnanå",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Sunnanå.png"
+      },
+      {
+        "id": 20820,
+        "name": "Häcken II",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Häcken_II.png"
+      },
+      {
+        "id": 21693,
+        "name": "Elfsborg",
+        "logo": "static\\logos\\teams\\SOCCER\\Elitettan\\Elfsborg.png"
+      }
+    ],
+    "season": 2025
+  },
+  {
+    "id": 1053,
+    "name": "Division 2 - Play-offs",
+    "logo": "static\\logos\\leagues\\SOCCER\\Division_2_-_Play-offs\\logo.png",
+    "teams": [
+      {
+        "id": 6657,
+        "name": "Astrio",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Astrio.png"
+      },
+      {
+        "id": 11661,
+        "name": "Sylvia",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Sylvia.png"
+      },
+      {
+        "id": 11665,
+        "name": "Boden",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Boden.png"
+      },
+      {
+        "id": 11675,
+        "name": "Kristianstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Kristianstad.png"
+      },
+      {
+        "id": 12576,
+        "name": "Sävedalen",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Sävedalen.png"
+      },
+      {
+        "id": 12578,
+        "name": "Enköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Enköping.png"
+      },
+      {
+        "id": 12587,
+        "name": "IFK Umeå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\IFK_Umeå.png"
+      },
+      {
+        "id": 12592,
+        "name": "Täfteå",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Täfteå.png"
+      },
+      {
+        "id": 14543,
+        "name": "Åstorp",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Åstorp.png"
+      },
+      {
+        "id": 16599,
+        "name": "Sandvikens AIK",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Sandvikens_AIK.png"
+      },
+      {
+        "id": 22935,
+        "name": "Kongahälla",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Kongahälla.png"
+      },
+      {
+        "id": 23659,
+        "name": "Sunnersta",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Sunnersta.png"
+      },
+      {
+        "id": 23660,
+        "name": "Tidaholms GoIF",
+        "logo": "static\\logos\\teams\\SOCCER\\Division_2_-_Play-offs\\Tidaholms_GoIF.png"
+      }
+    ],
+    "season": 2024
+  },
+  {
+    "id": 1055,
+    "name": "Ettan - Relegation Round",
+    "logo": "static\\logos\\leagues\\SOCCER\\Ettan_-_Relegation_Round\\logo.png",
+    "teams": [
+      {
+        "id": 6657,
+        "name": "Astrio",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Relegation_Round\\Astrio.png"
+      },
+      {
+        "id": 12578,
+        "name": "Enköping",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Relegation_Round\\Enköping.png"
+      },
+      {
+        "id": 12622,
+        "name": "FBK Karlstad",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Relegation_Round\\FBK_Karlstad.png"
+      },
+      {
+        "id": 21435,
+        "name": "Ariana",
+        "logo": "static\\logos\\teams\\SOCCER\\Ettan_-_Relegation_Round\\Ariana.png"
+      }
+    ],
+    "season": 2024
+  }
+]
