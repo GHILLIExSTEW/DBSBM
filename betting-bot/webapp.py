@@ -1,7 +1,7 @@
 import os
 import json
 from flask import Flask, render_template, redirect, url_for, request, jsonify, send_from_directory
-from flask_cors import CORS
+# from flask_cors import CORS  # Removed for image serving without CORS
 from dotenv import load_dotenv
 import sys
 from datetime import datetime, timedelta
@@ -17,7 +17,7 @@ load_dotenv()
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data", "cache")
 
 app = Flask(__name__, static_folder="static")
-CORS(app, origins=["https://www.betting-server-manager.com", "http://www.betting-server-manager.com"]) # Allow your website to connect
+# CORS(app, origins=["https://www.betting-server-manager.com", "http://www.betting-server-manager.com"])  # Removed for image serving without CORS
 
 db = DatabaseManager()
 
