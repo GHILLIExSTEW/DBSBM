@@ -244,14 +244,8 @@ class StatsView(View):
                     username = capper_info.get('display_name', f"User {self.selected_user_id}")
                     image_path = capper_info.get('image_path')
                     
-                    # Convert relative path to full URL if needed
-                    if image_path and image_path.startswith('/static/'):
-                        # For PebbleHost or similar hosting, construct URL based on guild ID
-                        # You may need to adjust this based on your actual domain setup
-                        base_url = "https://your-domain.com"  # Replace with your actual domain
-                        profile_image_url = f"{base_url}{image_path}"
-                    else:
-                        profile_image_url = image_path
+                    # Always pass the raw image_path; let the image generator handle local vs URL
+                    profile_image_url = image_path
                     
                     stats_title = f"📊 Stats for {username}"
                 else:
