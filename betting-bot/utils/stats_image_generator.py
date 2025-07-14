@@ -12,15 +12,14 @@ from matplotlib.colors import LinearSegmentedColormap
 
 logger = logging.getLogger(__name__)
 
-def make_rounded_feathered(img, feather=40):
+def make_rounded_feathered(img, feather=100):
     size = img.size[0]
-    # Create a solid circular mask
     mask = Image.new('L', (size, size), 0)
     draw = ImageDraw.Draw(mask)
-    draw.ellipse((0, 0, size, size), fill=255)
-    # Feather the mask for a smooth fade
+    # Inset the circle so the fade starts before the edge
+    inset = feather // 2
+    draw.ellipse((inset, inset, size - inset, size - inset), fill=255)
     feathered_mask = mask.filter(ImageFilter.GaussianBlur(feather)) if feather > 0 else mask
-    # Apply the feathered mask to the image
     result = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     result.paste(img, (0, 0), feathered_mask)
     return result
@@ -104,7 +103,7 @@ class StatsImageGenerator:
                     (profile_img.width + min_side) // 2,
                     (profile_img.height + min_side) // 2
                 ))
-                profile_img_circle = make_rounded_feathered(profile_img, feather=40)
+                profile_img_circle = make_rounded_feathered(profile_img, feather=100)
 
             # --- Flashy Background ---
             # Create a gradient background for the figure
