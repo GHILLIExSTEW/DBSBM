@@ -194,6 +194,71 @@ class AssetLoader:
         fallback = self._load_fallback_logo(guild_id)
         return fallback, player_name
     
+    def load_league_logo(self, league_code: str, sport: str = None) -> Optional[Image.Image]:
+        """
+        Load league logo with fallback chain.
+        
+        Args:
+            league_code: League code (e.g., "EPL", "NBA", "MLB")
+            sport: Sport category (optional, will be auto-detected if not provided)
+            
+        Returns:
+            PIL Image object or None if no logo found
+        """
+        from config.leagues import LEAGUE_IDS
+        from config.asset_paths import get_sport_category_for_path
+        
+        # Get league info from LEAGUE_IDS
+        league_info = LEAGUE_IDS.get(league_code.upper())
+        if not league_info:
+            logger.warning(f"No league info found for code: {league_code}")
+            return None
+        
+        league_name = league_info.get('name', league_code)
+        league_sport = league_info.get('sport', sport)
+        
+        # Get sport category if not provided
+        if not sport:
+            sport = get_sport_category_for_path(league_code.upper())
+            if not sport:
+                logger.warning(f"No sport category found for league: {league_code}")
+                return None
+        
+        # Normalize league name for filename
+        normalized_name = league_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        
+        # Try to find the logo file
+        logo_paths = [
+            # Try the new naming convention first (full league name)
+            os.path.join(self.logos_dir, "leagues", sport.upper(), league_code.upper(), f"{normalized_name}.png"),
+            # Fallback to old naming convention (league code)
+            os.path.join(self.logos_dir, "leagues", sport.upper(), league_code.upper(), f"{league_code.lower()}.png"),
+            # Try without sport subdirectory
+            os.path.join(self.logos_dir, "leagues", league_code.upper(), f"{normalized_name}.png"),
+            os.path.join(self.logos_dir, "leagues", league_code.upper(), f"{league_code.lower()}.png"),
+        ]
+        
+        for logo_path in logo_paths:
+            if os.path.exists(logo_path):
+                logger.info(f"Found league logo: {logo_path}")
+                return self.load_image(logo_path)
+        
+        # Try fuzzy matching in the league directory
+        league_dir = os.path.join(self.logos_dir, "leagues", sport.upper(), league_code.upper())
+        if os.path.exists(league_dir):
+            candidates = [f for f in os.listdir(league_dir) if f.endswith('.png')]
+            candidate_names = [os.path.splitext(f)[0] for f in candidates]
+            
+            # Try matching against normalized league name
+            matches = difflib.get_close_matches(normalized_name.lower(), [name.lower() for name in candidate_names], n=1, cutoff=0.75)
+            if matches:
+                match_path = os.path.join(league_dir, f"{matches[0]}.png")
+                logger.info(f"Found fuzzy league logo match: {match_path}")
+                return self.load_image(match_path)
+        
+        logger.warning(f"No league logo found for '{league_code}' ({league_name})")
+        return None
+
     def _normalize_team_name(self, team_name: str, league: str) -> Optional[str]:
         """Normalize team name using league dictionaries."""
         try:
