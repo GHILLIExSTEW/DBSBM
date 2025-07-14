@@ -51,10 +51,10 @@ class AddUserCog(commands.Cog):
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, image_path, banner_color, bet_won, bet_loss, bet_push, updated_at
-                ) VALUES (%s, %s, NULL, NULL, NULL, 0, 0, 0, UTC_TIMESTAMP())
+                ) VALUES (%s, %s, %s, NULL, NULL, 0, 0, 0, UTC_TIMESTAMP())
                 ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP()
                 """,
-                guild_id, user_id
+                guild_id, user_id, user.display_name
             )
             logger.info(f"Successfully executed INSERT for user {user_id} in guild {guild_id}")
             # Check if paid guild
