@@ -78,10 +78,8 @@ class ChannelSelect(Select):
             else:
                 # Fetch username and profile_image_url for the capper
                 # For now, use user_id as username if not available
-                user = guild.get_member(selected_user_id) if guild else None
-                username = user.display_name if user else str(selected_user_id)
-                profile_image_url = None
-                # If you have a way to get the image path, set profile_image_url here
+                username = self.parent_view.selected_username
+                profile_image_url = self.parent_view.selected_profile_image_url
                 img = await image_generator.generate_capper_stats_image(stats_data, username, profile_image_url)
             from io import BytesIO
             img_buffer = BytesIO()
@@ -92,7 +90,7 @@ class ChannelSelect(Select):
             if img_buffer:
                 # Send the image to the selected channel
                 # img_buffer.seek(0) # Already reset above
-                await channel.send(f"📊 Statistics requested by {interaction.user.mention}:", file=file)
+                await channel.send(file=file)
                 await interaction.followup.send(
                     f"✅ Statistics image sent to {channel.mention}",
                     ephemeral=True
@@ -130,6 +128,8 @@ class StatsView(View):
         self.stats_data = None
         self.is_server = False
         self.selected_user_id = None
+        self.selected_username = None  # Store selected username
+        self.selected_profile_image_url = None  # Store selected profile image path/url
         # Placeholder for the select component - will be added by populate_cappers
         self.capper_select: Optional[Select] = None
         self.channel_select: Optional[ChannelSelect] = None # To hold the channel select later
@@ -235,6 +235,8 @@ class StatsView(View):
                 self.is_server = True
                 self.selected_user_id = None
                 username = interaction.guild.name
+                self.selected_username = username
+                self.selected_profile_image_url = None
                 stats_title = f"📊 Server Stats for {interaction.guild.name}"
             else:
                 self.selected_user_id = int(selection)
@@ -253,6 +255,8 @@ class StatsView(View):
                     
                     # Always pass the raw image_path; let the image generator handle local vs URL
                     profile_image_url = image_path
+                    self.selected_username = username
+                    self.selected_profile_image_url = profile_image_url
                     
                     stats_title = f"📊 Stats for {username}"
                 else:
@@ -260,6 +264,8 @@ class StatsView(View):
                     user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
                     username = user.display_name if user else f"User {self.selected_user_id}"
                     profile_image_url = None
+                    self.selected_username = username
+                    self.selected_profile_image_url = None
                     stats_title = f"📊 Stats for {username}"
 
 
