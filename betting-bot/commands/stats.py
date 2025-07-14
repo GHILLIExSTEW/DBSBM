@@ -11,6 +11,7 @@ import os
 from io import BytesIO # Needed for sending PIL image
 from typing import Optional # Add Optional type import
 from .admin import require_registered_guild
+from PIL import Image # Added for PIL Image handling
 
 # Use relative imports
 try:
@@ -266,11 +267,16 @@ class StatsView(View):
             image_generator = StatsImageGenerator()
             
             # Pass profile image URL to the image generator
-            img_buffer: Optional[BytesIO] = await image_generator.generate_capper_stats_image(
+            img: Image.Image = await image_generator.generate_capper_stats_image(
                 self.stats_data,
                 username,
                 profile_image_url
             )
+            from io import BytesIO
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+            file = File(img_buffer, filename="stats.png")
 
             if img_buffer:
                 img_buffer.seek(0)
