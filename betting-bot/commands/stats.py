@@ -241,13 +241,19 @@ class StatsView(View):
             # Generate the stats image
             # Ensure StatsImageGenerator is async or run in executor
             image_generator = StatsImageGenerator()
-            img_buffer: Optional[BytesIO] = await image_generator.generate_capper_stats_image(
-                 stats_data=self.stats_data,
-                 is_server=self.is_server,
-                 guild=interaction.guild,
-                 user_id=self.selected_user_id,
-                 bot=self.bot # Pass bot if needed by generator
-            )
+            # Determine username for the image
+            username = None
+            if not self.is_server and self.selected_user_id:
+                user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
+                username = user.display_name if user else f"User {self.selected_user_id}"
+            else:
+                username = interaction.guild.name
+            img = await image_generator.generate_capper_stats_image(self.stats_data, username)
+            # Convert PIL Image to BytesIO for Discord
+            from io import BytesIO
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
 
             if img_buffer:
                 img_buffer.seek(0)
