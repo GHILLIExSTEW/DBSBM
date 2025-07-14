@@ -136,13 +136,28 @@ class GameLineImageGenerator:
         # Header (league logo + text)
         logo_display_size = (45, 45)
         league_upper = league.upper()
+        league_cap = league.capitalize()
         league_lower = league.lower()
         sport_category = get_sport_category_for_path(league_upper)
-        league_logo_path = f"betting-bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.png"
-        try:
-            league_logo = Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
-        except Exception:
-            league_logo = None
+        league_dir_variants = [league_upper, league_cap, league_lower]
+        logo_file_variants = [league_upper + ".png", league_cap + ".png", league_lower + ".png"]
+        league_logo_path = None
+        for dir_variant in league_dir_variants:
+            dir_path = f"betting-bot/static/logos/leagues/{sport_category}/{dir_variant}"
+            if os.path.exists(dir_path):
+                for file_variant in logo_file_variants:
+                    candidate_path = os.path.join(dir_path, file_variant)
+                    if os.path.exists(candidate_path):
+                        league_logo_path = candidate_path
+                        break
+                if league_logo_path:
+                    break
+        league_logo = None
+        if league_logo_path:
+            try:
+                league_logo = Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
+            except Exception:
+                league_logo = None
         header_text = f"{league_upper} - Game Line"
         header_w, header_h = font_bold.getbbox(header_text)[2:]
         block_h = max(logo_display_size[1], header_h)
