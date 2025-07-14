@@ -56,6 +56,15 @@ class StatsImageGenerator:
                 except Exception as e:
                     logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
 
+            # Extract stats (must be before any chart code that uses them)
+            total_bets = int(stats.get('total_bets', 0) or 0)
+            wins = int(stats.get('wins', 0) or 0)
+            losses = int(stats.get('losses', 0) or 0)
+            pushes = int(stats.get('pushes', 0) or 0)
+            win_rate = float(stats.get('win_rate', 0) or 0.0)
+            net_units = float(stats.get('net_units', 0) or 0.0)
+            roi = float(stats.get('roi', 0) or 0.0)
+
             # --- Flashy Background ---
             # Create a gradient background for the figure
             gradient = np.linspace(0, 1, 256)
