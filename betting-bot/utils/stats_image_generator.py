@@ -73,14 +73,30 @@ class StatsImageGenerator:
                 except Exception as e:
                     logger.warning(f"Failed to load guild default image: {e}")
 
-            # Extract stats (must be before any chart code that uses them)
-            total_bets = int(stats.get('total_bets', 0) or 0)
-            wins = int(stats.get('wins', 0) or 0)
-            losses = int(stats.get('losses', 0) or 0)
-            pushes = int(stats.get('pushes', 0) or 0)
-            win_rate = float(stats.get('win_rate', 0) or 0.0)
-            net_units = float(stats.get('net_units', 0) or 0.0)
-            roi = float(stats.get('roi', 0) or 0.0)
+            # --- Make profile image rounded and feathered ---
+            def make_rounded_feathered(img, feather=40):
+                size = img.size[0]
+                # Create a circular mask
+                mask = Image.new('L', (size, size), 0)
+                draw = ImageDraw.Draw(mask)
+                draw.ellipse((0, 0, size, size), fill=255)
+                # Feather the mask
+                if feather > 0:
+                    mask = mask.filter(ImageFilter.GaussianBlur(feather))
+                # Apply mask to alpha channel
+                result = Image.new('RGBA', (size, size))
+                result.paste(img, (0, 0), mask)
+                result.putalpha(mask)
+                return result
+            if profile_img is not None:
+                min_side = min(profile_img.size)
+                profile_img = profile_img.crop((
+                    (profile_img.width - min_side) // 2,
+                    (profile_img.height - min_side) // 2,
+                    (profile_img.width + min_side) // 2,
+                    (profile_img.height + min_side) // 2
+                ))
+                profile_img = make_rounded_feathered(profile_img, feather=40)
 
             # --- Flashy Background ---
             # Create a gradient background for the figure
@@ -96,7 +112,7 @@ class StatsImageGenerator:
                 from PIL import ImageFilter
                 glow = profile_img.copy().resize((520, 520)).filter(ImageFilter.GaussianBlur(18)).convert("RGBA")
                 ax1.imshow(glow, extent=[-0.1, 1.1, -0.1, 1.1], alpha=0.5, zorder=1)
-                ax1.imshow(profile_img, zorder=2)
+                ax1.imshow(profile_img, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
                 ax1.set_title(f"{username}", color='#00ffe7', fontsize=36, fontweight='bold', pad=30)
             else:
                 ax1.text(0.5, 0.5, f"{username}\n(No Profile Image)", ha='center', va='center', color='#00ffe7', fontsize=28, fontweight='bold', transform=ax1.transAxes)
