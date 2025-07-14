@@ -98,8 +98,8 @@ class AnalyticsService:
             if not stats or (stats.get('total_bets') or 0) == 0:
                 return {'total_bets': 0, 'wins': 0, 'losses': 0, 'pushes': 0, 'win_rate': 0.0, 'net_units': 0.0, 'total_cappers': 0, 'roi': 0.0}
 
-            wins = stats.get('wins') or 0
-            losses = stats.get('losses') or 0
+            wins = float(stats.get('wins') or 0)
+            losses = float(stats.get('losses') or 0)
             total_bets = stats.get('total_bets') or 0
             net_units = float(stats.get('net_units') or 0.0)
 
@@ -148,7 +148,7 @@ class AnalyticsService:
                 """
                 SELECT
                     b.user_id,
-                    COALESCE(u.username, CONCAT('User ', b.user_id)) as username,
+                    COALESCE(c.display_name, CONCAT('User ', b.user_id)) as username,
                     SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN 1 ELSE 0 END) as total_resolved_bets,
                     SUM(CASE WHEN b.status = 'won' THEN 1 ELSE 0 END) as wins,
                     SUM(CASE WHEN b.status = 'lost' THEN 1 ELSE 0 END) as losses,
@@ -156,7 +156,7 @@ class AnalyticsService:
                     COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0) as total_risked 
                 FROM bets b
                 LEFT JOIN unit_records ur ON b.bet_serial = ur.bet_serial
-                LEFT JOIN users u ON b.user_id = u.user_id
+                LEFT JOIN cappers c ON b.user_id = c.user_id AND c.guild_id = b.guild_id
                 WHERE b.guild_id = %s AND b.status IN ('won', 'lost', 'push')
                 """
             ]
@@ -168,7 +168,7 @@ class AnalyticsService:
                 query_parts.append("AND b.updated_at >= %s") # Filter by when bet was last updated (likely resolved time)
                 params.append(start_date)
 
-            query_parts.append("GROUP BY b.user_id, u.username")
+            query_parts.append("GROUP BY b.user_id, c.display_name")
 
             # Construct the main query part
             main_query = " ".join(query_parts)

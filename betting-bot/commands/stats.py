@@ -228,9 +228,23 @@ class StatsView(View):
                 self.selected_user_id = int(selection)
                 self.stats_data = await self.analytics_service.get_user_stats(interaction.guild_id, self.selected_user_id)
                 self.is_server = False
-                # Try to get user display name for title
-                user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
-                stats_title = f"📊 Stats for {user.display_name}" if user else f"Stats for User ID {self.selected_user_id}"
+                
+                # Get capper info from database
+                capper_info = await self.db.fetch_one(
+                    "SELECT display_name, profile_image_url FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    (interaction.guild_id, self.selected_user_id)
+                )
+                
+                if capper_info:
+                    username = capper_info.get('display_name', f"User {self.selected_user_id}")
+                    profile_image_url = capper_info.get('profile_image_url')
+                    stats_title = f"📊 Stats for {username}"
+                else:
+                    # Fallback to Discord user info
+                    user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
+                    username = user.display_name if user else f"User {self.selected_user_id}"
+                    profile_image_url = None
+                    stats_title = f"📊 Stats for {username}"
 
 
             if not self.stats_data:
@@ -242,13 +256,22 @@ class StatsView(View):
             # Ensure StatsImageGenerator is async or run in executor
             image_generator = StatsImageGenerator()
             # Determine username for the image
-            username = None
             if not self.is_server and self.selected_user_id:
-                user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
-                username = user.display_name if user else f"User {self.selected_user_id}"
+                # Use capper info if available, otherwise fallback to Discord user
+                if 'capper_info' in locals() and capper_info:
+                    username = capper_info.get('display_name', f"User {self.selected_user_id}")
+                else:
+                    user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
+                    username = user.display_name if user else f"User {self.selected_user_id}"
             else:
                 username = interaction.guild.name
-            img = await image_generator.generate_capper_stats_image(self.stats_data, username)
+            
+            # Pass profile image URL to the image generator
+            img = await image_generator.generate_capper_stats_image(
+                self.stats_data, 
+                username, 
+                profile_image_url=profile_image_url if not self.is_server else None
+            )
             # Convert PIL Image to BytesIO for Discord
             from io import BytesIO
             img_buffer = BytesIO()
