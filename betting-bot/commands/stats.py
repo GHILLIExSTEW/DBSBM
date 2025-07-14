@@ -266,16 +266,11 @@ class StatsView(View):
             image_generator = StatsImageGenerator()
             
             # Pass profile image URL to the image generator
-            img = await image_generator.generate_capper_stats_image(
-                self.stats_data, 
-                username, 
-                profile_image_url=profile_image_url
+            img_buffer: Optional[BytesIO] = await image_generator.generate_capper_stats_image(
+                self.stats_data,
+                username,
+                profile_image_url
             )
-            # Convert PIL Image to BytesIO for Discord
-            from io import BytesIO
-            img_buffer = BytesIO()
-            img.save(img_buffer, format="PNG")
-            img_buffer.seek(0)
 
             if img_buffer:
                 img_buffer.seek(0)
