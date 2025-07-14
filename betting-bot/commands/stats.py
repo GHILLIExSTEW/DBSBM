@@ -65,6 +65,7 @@ class ChannelSelect(Select):
             stats_data = self.parent_view.stats_data
             is_server = self.parent_view.is_server
             selected_user_id = self.parent_view.selected_user_id
+            guild = interaction.guild # Get guild object
 
             if not stats_data:
                  await interaction.followup.send("❌ Stats data not found. Please select a capper/server first.", ephemeral=True)
@@ -72,20 +73,25 @@ class ChannelSelect(Select):
 
             # Generate the stats image
             image_generator = StatsImageGenerator() # Assumes StatsImageGenerator doesn't need bot/db
-            # generate_stats_image needs to be async or run in executor if it's CPU bound
-            # For now, assume it returns a BytesIO object or path
-            img_buffer: Optional[BytesIO] = await image_generator.generate_stats_image(
-                stats_data=stats_data,
-                is_server=is_server,
-                guild=interaction.guild, # Pass guild object for name/icon
-                user_id=selected_user_id, # Pass user_id for capper stats title
-                bot=self.parent_view.bot # Pass bot if needed to fetch user names
-            )
+            if is_server:
+                img = image_generator.generate_guild_stats_image(stats_data)
+            else:
+                # Fetch username and profile_image_url for the capper
+                # For now, use user_id as username if not available
+                user = guild.get_member(selected_user_id) if guild else None
+                username = user.display_name if user else str(selected_user_id)
+                profile_image_url = None
+                # If you have a way to get the image path, set profile_image_url here
+                img = await image_generator.generate_capper_stats_image(stats_data, username, profile_image_url)
+            from io import BytesIO
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+            file = File(img_buffer, filename="stats.png")
 
             if img_buffer:
                 # Send the image to the selected channel
-                img_buffer.seek(0) # Reset buffer position
-                file = File(img_buffer, filename="stats.png")
+                # img_buffer.seek(0) # Already reset above
                 await channel.send(f"📊 Statistics requested by {interaction.user.mention}:", file=file)
                 await interaction.followup.send(
                     f"✅ Statistics image sent to {channel.mention}",
