@@ -157,13 +157,21 @@ class ScheduleImageGenerator:
                 # Draw league header
                 league_code = league_id.upper()
                 sport = get_sport_category_for_path(league_code)
-                league_logo_path = None
-                if sport:
-                    league_logo_path = os.path.join(self.base_dir, "static", "logos", "leagues", sport, league_code, f"{league_code.lower()}.png")
-                
                 league_logo_img = None
-                if league_logo_path and os.path.exists(league_logo_path):
-                    league_logo_img = Image.open(league_logo_path).convert("RGBA").resize((60, 60))
+                if sport:
+                    # Try all casing variants for directory and file
+                    dir_variants = [league_code, league_code.capitalize(), league_code.lower()]
+                    file_variants = [league_code + ".png", league_code.capitalize() + ".png", league_code.lower() + ".png"]
+                    for dir_variant in dir_variants:
+                        dir_path = os.path.join(self.base_dir, "static", "logos", "leagues", sport, dir_variant)
+                        if os.path.exists(dir_path):
+                            for file_variant in file_variants:
+                                candidate_path = os.path.join(dir_path, file_variant)
+                                if os.path.exists(candidate_path):
+                                    league_logo_img = Image.open(candidate_path).convert("RGBA").resize((60, 60))
+                                    break
+                            if league_logo_img:
+                                break
                 
                 # Draw header
                 header_draw = ImageDraw.Draw(final_image)

@@ -145,10 +145,27 @@ class Odds(commands.Cog):
         odds_data = await self.fetch_odds_for_game(game)
         sport = game.get('sport', '').lower()
         sport_icon = {
-            "soccer": "⚽", "basketball": "🏀", "football": "🏈", "hockey": "🏒", "baseball": "⚾",
-            "tennis": "🎾", "mma": "🥊", "golf": "⛳", "cricket": "🏏", "rugby": "🏉", "australian_rules": "🏉",
-            "darts": "🎯", "handball": "🤾", "motorsport": "🏎️", "volleyball": "🏐", "table_tennis": "🏓",
-            "badminton": "🏸", "snooker": "🎱", "boxing": "🥊", "esports": "🎮"
+            "football": "⚽",  # API-Sports 'football' is soccer
+            "soccer": "⚽",
+            "basketball": "🏀",
+            "american-football": "🏈",
+            "baseball": "⚾",
+            "hockey": "🏒",
+            "tennis": "🎾",
+            "mma": "🥊",
+            "golf": "⛳",
+            "cricket": "🏏",
+            "rugby": "🏉",
+            "australian_rules": "🏉",
+            "darts": "🎯",
+            "handball": "🤾",
+            "motorsport": "🏎️",
+            "volleyball": "🏐",
+            "table_tennis": "🏓",
+            "badminton": "🏸",
+            "snooker": "🎱",
+            "boxing": "🥊",
+            "esports": "🎮"
         }.get(sport, "🏆")
         start_time = game.get('start_time')
         if isinstance(start_time, str):
