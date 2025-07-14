@@ -23,7 +23,7 @@ from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
 from PIL import Image, ImageDraw, ImageFont
-from utils.league_loader import load_sweden_league_names
+from utils.league_loader import get_all_league_names
 
 logger = logging.getLogger(__name__)
 
@@ -1104,7 +1104,7 @@ class ParlayBetWorkflowView(View):
         
         if self.current_step == 1:
             # Step 1: League selection
-            leagues = load_sweden_league_names()
+            leagues = get_all_league_names()
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
@@ -1391,7 +1391,7 @@ class ParlayBetWorkflowView(View):
         )
 
     async def update_league_page(self, interaction, page):
-        leagues = load_sweden_league_names()
+        leagues = get_all_league_names()
         self.clear_items()
         self.add_item(LeagueSelect(self, leagues, page=page))
         self.add_item(CancelButton(self))
