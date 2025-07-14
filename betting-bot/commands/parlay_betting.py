@@ -23,6 +23,7 @@ from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
 from PIL import Image, ImageDraw, ImageFont
+from utils.league_loader import load_sweden_league_names
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +109,14 @@ class LeagueSelect(Select):
                 seen.add(norm)
                 unique_leagues.append(league)
         total_leagues = len(unique_leagues)
+        max_page = max(0, (total_leagues - 1) // per_page)
+        page = max(0, min(page, max_page))
         start = page * per_page
         end = start + per_page
         page_leagues = unique_leagues[start:end]
+        if not page_leagues:
+            page_leagues = unique_leagues[0:per_page]
+            self.page = 0
         options = [SelectOption(label=league, value=league.replace(" ", "_").upper()) for league in page_leagues]
         options.append(SelectOption(label="Manual", value="MANUAL"))
         if end < total_leagues:
@@ -1098,13 +1104,7 @@ class ParlayBetWorkflowView(View):
         
         if self.current_step == 1:
             # Step 1: League selection
-            leagues = [
-                "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
-                "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
-                "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
-                "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
-                "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
-            ]
+            leagues = load_sweden_league_names()
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
@@ -1391,13 +1391,7 @@ class ParlayBetWorkflowView(View):
         )
 
     async def update_league_page(self, interaction, page):
-        leagues = [
-            "NFL", "EPL", "NBA", "MLB", "NHL", "La Liga", "NCAA", "Bundesliga", "Serie A", "Ligue 1", "MLS",
-            "Formula 1", "Tennis", "ATP", "WTA", "MMA", "Bellator", "WNBA", "CFL", "AFL", "PDC", "BDO", "WDF", "Premier League Darts", 
-            "World Matchplay", "World Grand Prix", "UK Open", "Grand Slam", "Players Championship", 
-            "European Championship", "Masters", "EuroLeague", "NPB", "KBO", "KHL", "PGA", "LPGA", "EuropeanTour", "LIVGolf", "RyderCup", "PresidentsCup",
-            "ChampionsLeague", "EuropaLeague", "WorldCup", "SuperRugby", "SixNations", "FIVB", "EHF"
-        ]
+        leagues = load_sweden_league_names()
         self.clear_items()
         self.add_item(LeagueSelect(self, leagues, page=page))
         self.add_item(CancelButton(self))
