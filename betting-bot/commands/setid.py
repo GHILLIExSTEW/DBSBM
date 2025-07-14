@@ -333,6 +333,7 @@ class CapperImageURLModal(Modal, title="Set Profile Image URL"):
     image_url = TextInput(
         label="Profile Image URL",
         placeholder="https://example.com/image.png",
+        style=discord.TextStyle.short,
         required=True
     )
     async def on_submit(self, interaction: Interaction):
