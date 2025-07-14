@@ -126,19 +126,67 @@ class ImageUploadView(View):
         self.guild_id = guild_id
         self.user_id = user_id
         self.db = db_manager
+        self.waiting_for_upload = False
 
     async def interaction_check(self, interaction: Interaction) -> bool:
-         # Optional: Ensure only the admin who initiated setid can interact
-         # Or ensure only the target user can upload their *own* image?
-         # For now, allow admin interaction.
-         # return interaction.user.guild_permissions.administrator # Example check
          return True # Allow interaction
 
     @button(label="Provide URL", style=discord.ButtonStyle.secondary, custom_id="capper_provide_url")
     async def provide_url_button(self, interaction: Interaction, button: Button):
-        # Show the URL Modal
         modal = ImageURLModal(guild_id=self.guild_id, user_id=self.user_id, db_manager=self.db)
         await interaction.response.send_modal(modal)
+
+    @button(label="Upload Image", style=discord.ButtonStyle.primary, custom_id="capper_upload_image")
+    async def upload_image_button(self, interaction: Interaction, button: Button):
+        self.waiting_for_upload = True
+        await interaction.response.send_message(
+            "Please upload your image as a file in this channel (PNG, JPG, GIF, WEBP). This prompt will timeout in 2 minutes.",
+            ephemeral=True
+        )
+        # Wait for the next message from the user with an attachment
+        def check(msg):
+            return (
+                msg.author.id == interaction.user.id and
+                msg.channel.id == interaction.channel.id and
+                msg.attachments and
+                any(a.content_type and a.content_type.startswith('image/') for a in msg.attachments)
+            )
+        try:
+            msg = await interaction.client.wait_for('message', timeout=120, check=check)
+            attachment = next(a for a in msg.attachments if a.content_type and a.content_type.startswith('image/'))
+            image_data = BytesIO(await attachment.read())
+            with Image.open(image_data) as img:
+                if img.format not in ['PNG', 'JPEG', 'GIF', 'WEBP']:
+                    await interaction.followup.send(
+                        "❌ Invalid image format. Use PNG, JPG, GIF, WEBP.", ephemeral=True
+                    )
+                    return
+                filename = f"{self.user_id}.png"
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                save_dir = os.path.join(base_dir, 'assets', 'logos', str(self.guild_id))
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, filename)
+                img.save(save_path, 'PNG')
+                logger.info(f"Saved capper logo to {save_path}")
+                db_path = os.path.relpath(save_path, base_dir)
+                await self.db.execute(
+                    """
+                    UPDATE cappers
+                    SET image_path = %s, updated_at = UTC_TIMESTAMP()
+                    WHERE guild_id = %s AND user_id = %s
+                    """,
+                    db_path, self.guild_id, self.user_id
+                )
+                await interaction.followup.send(
+                    "✅ Profile picture updated successfully!",
+                    ephemeral=True
+                )
+        except Exception as e:
+            logger.exception(f"Error processing uploaded image: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while processing the uploaded image or the upload timed out.",
+                ephemeral=True
+            )
 
     async def on_timeout(self) -> None:
          logger.info(f"ImageUploadView timed out for user {self.user_id}")
