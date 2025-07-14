@@ -71,10 +71,10 @@ logger.info("Database configuration found")
 try:
     sys.path.append(os.path.join(os.path.dirname(__file__), "utils"))
     logger.info("Attempting to import utils.api_sports")
-    from utils.api_sports import LEAGUE_IDS, ENDPOINTS
-    logger.info("Successfully imported LEAGUE_IDS and ENDPOINTS")
+    from utils.api_sports import LEAGUE_IDS, ENDPOINTS, ENDPOINTS_MAP
+    logger.info("Successfully imported LEAGUE_IDS, ENDPOINTS, and ENDPOINTS_MAP")
 except ImportError as e:
-    logger.error(f"Failed to import LEAGUE_IDS or ENDPOINTS: {e}")
+    logger.error(f"Failed to import LEAGUE_IDS, ENDPOINTS, or ENDPOINTS_MAP: {e}")
     raise
 
 # League configuration
@@ -512,6 +512,20 @@ def get_season_for_league(league_name: str) -> int:
     """Return the correct season year for a league using auto-detection."""
     return get_auto_season_year(league_name)
 
+def log_endpoint_mapping():
+    """Log the complete endpoint mapping for debugging purposes."""
+    logger.info("=== ENDPOINT MAPPING CONFIGURATION ===")
+    for sport, config in ENDPOINTS_MAP.items():
+        logger.info(f"Sport: {sport}")
+        logger.info(f"  Base URL: {config['base']}")
+        logger.info(f"  Available endpoints: {list(config.keys())}")
+        if 'games' in config:
+            logger.info(f"  Games endpoint: {config['base']}{config['games']}")
+        if 'fixtures' in config:
+            logger.info(f"  Fixtures endpoint: {config['base']}{config['fixtures']}")
+        logger.info("---")
+    logger.info("=== END OF ENDPOINT MAPPING ===")
+
 
 async def fetch_games(
     pool: aiomysql.Pool,
@@ -529,18 +543,29 @@ async def fetch_games(
     if season is None:
         season = get_season_for_league(league_name)
     headers = {"x-apisports-key": API_KEY}
-    base_endpoint = ENDPOINTS.get(sport)
-    if not base_endpoint or not league_id:
-        logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
+    
+    # Use comprehensive ENDPOINTS_MAP for better endpoint resolution
+    sport_config = ENDPOINTS_MAP.get(sport)
+    if not sport_config or not league_id:
+        logger.warning(f"Skipping {league_name}: missing endpoint configuration or league_id for sport '{sport}'")
+        logger.debug(f"Available sports in ENDPOINTS_MAP: {list(ENDPOINTS_MAP.keys())}")
         return False
-    endpoint = f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
+    
+    # Determine the correct endpoint based on sport
+    base_url = sport_config["base"]
+    if sport == "football":
+        endpoint_path = sport_config.get("fixtures", "/fixtures")
+    else:
+        endpoint_path = sport_config.get("games", "/games")
+    
+    endpoint = f"{base_url}{endpoint_path}"
     params = {"league": league_id, "date": date, "season": season}
     if end_date:
         params["to"] = end_date
-    logger.info(
-        f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})"
-    )
-    logger.debug(f"API request endpoint: {endpoint}")
+    
+    logger.info(f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})")
+    logger.info(f"Using endpoint: {endpoint}")
+    logger.info(f"Sport configuration: {sport_config}")
     logger.debug(f"API request params: {params}")
     retry_count = 0
     while retry_count < max_retries:
@@ -611,27 +636,46 @@ async def initial_fetch(pool: aiomysql.Pool):
     tomorrow_str = tomorrow.strftime("%Y-%m-%d")
 
     logger.info("Starting initial data fetch for all leagues")
+    logger.info(f"Available sports in ENDPOINTS_MAP: {list(ENDPOINTS_MAP.keys())}")
+    logger.info(f"Configured leagues: {list(LEAGUE_IDS.keys())}")
+    
     failed_fetches = []
+    successful_fetches = []
     try:
         async with aiohttp.ClientSession() as session:
             for league_name, league_info in LEAGUE_IDS.items():
                 sport = league_info["sport"]
                 league_id = league_info["id"]
                 season = get_current_season(league_name)
-                logger.info(f"[initial] Scheduling initial fetch for {league_name} (season: {season})")
+                
+                # Log sport configuration details
+                sport_config = ENDPOINTS_MAP.get(sport)
+                if sport_config:
+                    logger.info(f"[initial] Fetching {league_name} (sport: {sport}, league_id: {league_id}, season: {season})")
+                    logger.info(f"[initial] Using endpoint: {sport_config['base']}{sport_config.get('fixtures' if sport == 'football' else 'games', '/games')}")
+                else:
+                    logger.warning(f"[initial] No endpoint configuration found for sport '{sport}' when fetching {league_name}")
+                
                 # Fetch for today
                 result_today = await fetch_games(pool, session, sport, league_name, league_id, today_str, season)
                 await asyncio.sleep(1.2)  # Throttle to avoid rate limit
                 # Fetch for tomorrow
                 result_tomorrow = await fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season)
                 await asyncio.sleep(1.2)  # Throttle to avoid rate limit
-                if not result_today:
-                    failed_fetches.append(f"{league_name} (today)")
-                if not result_tomorrow:
-                    failed_fetches.append(f"{league_name} (tomorrow)")
+                
+                if result_today and result_tomorrow:
+                    successful_fetches.append(league_name)
+                else:
+                    if not result_today:
+                        failed_fetches.append(f"{league_name} (today)")
+                    if not result_tomorrow:
+                        failed_fetches.append(f"{league_name} (tomorrow)")
 
+        logger.info(f"Initial fetch completed. Successful: {len(successful_fetches)} leagues")
+        if successful_fetches:
+            logger.info(f"Successfully fetched: {', '.join(successful_fetches)}")
         if failed_fetches:
-            logger.warning(f"Initial fetch completed with {len(failed_fetches)} failures: {', '.join(failed_fetches)}")
+            logger.warning(f"Failed fetches: {', '.join(failed_fetches)}")
         else:
             logger.info("Initial data fetch completed successfully for all leagues")
         return len(failed_fetches) == 0
@@ -727,6 +771,10 @@ async def main():
     try:
         pool = await setup_db_pool()
         logger.info("Database pool created successfully")
+        
+        # Log endpoint mapping configuration at startup
+        log_endpoint_mapping()
+        
         # Clear api_games on server restart
         await clear_api_games_table(pool)
         # Start the hourly fetch in the background
