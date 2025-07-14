@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
