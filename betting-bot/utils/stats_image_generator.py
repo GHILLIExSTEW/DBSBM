@@ -45,13 +45,13 @@ class StatsImageGenerator:
                     logger.warning(f"Failed to load profile image: {e}")
 
             # Extract stats
-            total_bets = stats.get('total_bets', 0)
-            wins = stats.get('wins', 0)
-            losses = stats.get('losses', 0)
-            pushes = stats.get('pushes', 0)
-            win_rate = stats.get('win_rate', 0)
-            net_units = stats.get('net_units', 0)
-            roi = stats.get('roi', 0)
+            total_bets = int(stats.get('total_bets', 0) or 0)
+            wins = int(stats.get('wins', 0) or 0)
+            losses = int(stats.get('losses', 0) or 0)
+            pushes = int(stats.get('pushes', 0) or 0)
+            win_rate = float(stats.get('win_rate', 0) or 0.0)
+            net_units = float(stats.get('net_units', 0) or 0.0)
+            roi = float(stats.get('roi', 0) or 0.0)
 
             # 1. Win/Loss/Push Pie Chart (top left)
             if total_bets > 0:
@@ -199,10 +199,10 @@ class StatsImageGenerator:
             fig.patch.set_facecolor('#1a1a1a')
             
             # Extract stats
-            total_bets = stats.get('total_bets', 0)
-            total_cappers = stats.get('total_cappers', 0)
-            total_units = stats.get('total_units', 0)
-            net_units = stats.get('net_units', 0)
+            total_bets = int(stats.get('total_bets', 0) or 0)
+            total_cappers = int(stats.get('total_cappers', 0) or 0)
+            total_units = float(stats.get('total_units', 0) or 0.0)
+            net_units = float(stats.get('net_units', 0) or 0.0)
 
             # 1. Guild Overview (top left)
             overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
@@ -324,7 +324,7 @@ class StatsImageGenerator:
             else:
                 # Extract data
                 names = [capper.get('username', f"User {capper['user_id']}") for capper in cappers]
-                net_units = [capper.get('net_units', 0) for capper in cappers]
+                net_units = [float(capper.get('net_units', 0) or 0.0) for capper in cappers]
                 
                 # Create horizontal bar chart
                 colors = ['#00ff88' if units >= 0 else '#ff4444' for units in net_units]
