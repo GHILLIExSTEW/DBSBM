@@ -155,12 +155,15 @@ for league_key, conf in LEAGUE_CONFIG.items():
             SPORT_CATEGORIES[cat].append(league_key.upper())
 # --- END AUTO-GENERATED ---
 
-def get_sport_category_for_path(league: str) -> str:
-    """Get the sport category for a given league name."""
-    league_upper = league.upper()
-    for category, leagues in SPORT_CATEGORIES.items():
-        if league_upper in leagues:
-            return category
+def get_sport_category_for_path(league_name):
+    league_name_norm = league_name.replace(" ", "_").replace("-", "_").upper()
+    for sport, leagues in SPORT_CATEGORIES.items():
+        for l in leagues:
+            l_norm = l.replace(" ", "_").replace("-", "_").upper()
+            if league_name_norm == l_norm:
+                print(f"[DEBUG] Matched league '{league_name}' to sport '{sport}'")
+                return sport
+    print(f"[DEBUG] No sport category found for league: {league_name}")
     return None
 
 def determine_asset_paths():
