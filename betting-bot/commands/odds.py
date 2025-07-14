@@ -90,9 +90,8 @@ class Odds(commands.Cog):
         await interaction.followup.send("Select a game to view odds:", view=view, ephemeral=True)
 
     async def get_upcoming_games(self, hours_ahead: int = 0) -> List[Dict]:
-        """Get all games from api_games table, filtered to current season only"""
+        """Get all games from api_games table, no season filter"""
         try:
-            from config.leagues import get_current_season, LEAGUE_IDS
             db_manager = getattr(self.bot, 'db_manager', None)
             if not db_manager:
                 raise Exception("Database manager not available")
@@ -105,25 +104,9 @@ class Odds(commands.Cog):
             """
             games = await db_manager.fetch_all(query)
             logger.info(f"[get_upcoming_games] Found {len(games)} games in database (no filter)")
-            # Filter to current season only
-            filtered_games = []
-            for game in games:
-                league_id = game.get('league_id')
-                # Find league key by league_id
-                league_key = None
-                for k, v in LEAGUE_IDS.items():
-                    if str(v.get('id')) == str(league_id):
-                        league_key = k
-                        break
-                if not league_key:
-                    continue  # skip if league not recognized
-                current_season = get_current_season(league_key)
-                if str(game.get('season')) == str(current_season):
-                    filtered_games.append(game)
-            logger.info(f"[get_upcoming_games] Filtered to {len(filtered_games)} games for current season")
-            for i, game in enumerate(filtered_games[:5]):
+            for i, game in enumerate(games[:5]):
                 logger.info(f"Game {i+1}: {game.get('home_team_name')} vs {game.get('away_team_name')} - {game.get('league_id')} - {game.get('start_time')} - Status: {game.get('status')}")
-            return filtered_games
+            return games
         except Exception as e:
             logger.error(f"Error getting all games: {e}")
             return []

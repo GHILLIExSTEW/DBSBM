@@ -43,33 +43,34 @@ class AddUserCog(commands.Cog):
         """Add a user as a capper (admin only)"""
         guild_id = interaction.guild_id
         user_id = user.id
+        logger.info(f"Adding user {user_id} as capper in guild {guild_id}")
         try:
             # Insert or update the capper row
+            logger.debug(f"Executing INSERT INTO cappers for guild_id={guild_id}, user_id={user_id}")
             await self.db_manager.execute(
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, image_path, banner_color, bet_won, bet_loss, bet_push, updated_at
-                ) VALUES (%s, %s, NULL, NULL, NULL, 0, 0, 0, NOW() AT TIME ZONE 'UTC')
-                ON CONFLICT (guild_id, user_id) DO UPDATE SET updated_at = NOW() AT TIME ZONE 'UTC'
+                ) VALUES (%s, %s, NULL, NULL, NULL, 0, 0, 0, UTC_TIMESTAMP())
+                ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP()
                 """,
                 guild_id, user_id
             )
+            logger.info(f"Successfully executed INSERT for user {user_id} in guild {guild_id}")
             # Check if paid guild
             if not await is_paid_guild(guild_id, self.db_manager):
-                await interaction.response.send_message(
-                    f"✅ {user.mention} added as a capper (free guild, setup complete).",
-                    ephemeral=True
+                await interaction.channel.send(
+                    f"✅ {user.mention} has been added as a capper (free guild, setup complete)."
                 )
                 return
             # If paid, authorize user for /setid (could be a flag or just allow if row exists)
-            await interaction.response.send_message(
-                f"✅ {user.mention} added as a capper! They can now use /setid to finish their profile.",
-                ephemeral=True
+            await interaction.channel.send(
+                f"✅ {user.mention} has been added as a capper! They can now use /setid to finish their profile."
             )
         except Exception as e:
             logger.exception(f"Error in add_user: {e}")
             await interaction.response.send_message(
-                "❌ An error occurred while adding the capper.", ephemeral=True
+                f"❌ An error occurred while adding the capper: {str(e)}", ephemeral=True
             )
 
     @add_user_command.error
