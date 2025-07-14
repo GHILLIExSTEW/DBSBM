@@ -257,23 +257,23 @@ def find_team_logo_path(team_name, league, sport_category, static_root):
     # Normalize team name
     normalized_team = team_name.replace(" ", "_").replace("-", "_").replace("'", "").lower()
     league_dir = os.path.join(static_root, "logos", "teams", sport_category, league)
-    logger.debug(f"[DEBUG] Searching for team logo in: {league_dir}")
-    logger.debug(f"[DEBUG] Normalized team name: {normalized_team}")
+    logger.warning(f"[DEBUG] Searching for team logo in: {league_dir}")
+    logger.warning(f"[DEBUG] Normalized team name: {normalized_team}")
     if not os.path.isdir(league_dir):
-        logger.debug(f"[DEBUG] Directory does not exist: {league_dir}")
+        logger.warning(f"[DEBUG] Directory does not exist: {league_dir}")
         return None
     files = [f for f in os.listdir(league_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
-    logger.debug(f"[DEBUG] Files in directory: {files}")
+    logger.warning(f"[DEBUG] Files in directory: {files}")
     # Try exact match first
     for ext in [".png", ".jpg", ".jpeg"]:
         candidate = os.path.join(league_dir, f"{normalized_team}{ext}")
         if os.path.isfile(candidate):
-            logger.debug(f"[DEBUG] Found exact logo: {candidate}")
+            logger.warning(f"[DEBUG] Found exact logo: {candidate}")
             return candidate
     from rapidfuzz import process
     matches = process.extract(normalized_team, files, limit=1, scorer=process.fuzz.partial_ratio)
     if matches and matches[0][1] > 80:
-        logger.debug(f"[DEBUG] Found fuzzy logo match: {matches[0][0]}")
+        logger.warning(f"[DEBUG] Found fuzzy logo match: {matches[0][0]}")
         return os.path.join(league_dir, matches[0][0])
-    logger.debug(f"[DEBUG] No logo found for team '{team_name}' in league '{league}'")
+    logger.warning(f"[DEBUG] No logo found for team '{team_name}' in league '{league}'")
     return None 
