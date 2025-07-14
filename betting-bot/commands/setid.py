@@ -296,8 +296,8 @@ class SetIDCog(commands.Cog):
                 "❌ This feature is only available in paid guilds.", ephemeral=True
             )
             return
-        # Show modal for display name
-        modal = CapperDisplayNameModal(self.db_manager)
+        # Show modal for display name and color, then image upload view
+        modal = CapperModal(interaction.user, self.db_manager)
         await interaction.response.send_modal(modal)
 
 # Modal for display name

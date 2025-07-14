@@ -2,6 +2,7 @@
 
 import os
 import logging
+from .leagues import LEAGUE_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +37,13 @@ SPORT_CATEGORIES = {
         "WORLD_BASEBALL_CLASSIC", "CARIBBEAN_SERIES"
     ],
     "SOCCER": [
-        "MLS", "EPL", "LA_LIGA", "BUNDESLIGA", "SERIE_A", "LIGUE_1",  # Current leagues
-        "UEFA_CL", "UEFA_EL", "UEFA_ECL", "COPA_LIBERTADORES", "COPA_SUDAMERICANA",
-        "AFC_CL", "CAF_CL", "CONCACAF_CL", "OFC_CL", "FIFA_WC", "EURO", "COPA_AMERICA",
-        "AFC_ASIAN_CUP", "AFRICAN_CUP", "GOLD_CUP", "NATIONS_LEAGUE",
-        "WorldCup", "WORLDCUP", "FIFA Club World Cup", "FIFA World Cup"
+        "MLS", "EPL", "LA_LIGA", "BUNDESLIGA", "SERIE_A", "LIGUE_1",
+        "UEFACL", "EuropaLeague", "WORLDCUP",
+        "Allsvenskan", "Superettan", "Damallsvenskan", "Elitettan",
+        "Svenska_Cupen", "Svenska_Cupen_-_Women",
+        "Ettan_-_Norra", "Ettan_-_Södra", "Ettan_-_Relegation_Round",
+        "Division_2_-_Norra_Götaland", "Division_2_-_Norra_Svealand", "Division_2_-_Norrland",
+        "Division_2_-_Södra_Svealand", "Division_2_-_Västra_Götaland", "Division_2_-_Östra_Götaland"
     ],
     "TENNIS": [
         "ATP", "WTA",  # Current leagues
@@ -116,6 +119,41 @@ SPORT_CATEGORIES = {
 
 # Default fallback category
 DEFAULT_FALLBACK_CATEGORY = "OTHER_SPORTS"
+
+# --- AUTO-GENERATED: Add all leagues from LEAGUE_CONFIG to SPORT_CATEGORIES ---
+# Build a reverse map from sport name to SPORT_CATEGORIES key
+SPORT_NAME_TO_CATEGORY = {
+    'Basketball': 'BASKETBALL',
+    'Baseball': 'BASEBALL',
+    'Ice Hockey': 'HOCKEY',
+    'American Football': 'FOOTBALL',
+    'Soccer': 'SOCCER',
+    'Rugby': 'RUGBY',
+    'Volleyball': 'VOLLEYBALL',
+    'Handball': 'HANDBALL',
+    'Australian Football': 'AUSTRALIAN_FOOTBALL',
+    'Tennis': 'TENNIS',
+    'Golf': 'GOLF',
+    'Racing': 'RACING',
+    'Fighting': 'FIGHTING',
+    'Darts': 'DARTS',
+    'Esports': 'ESPORTS',
+    'Cricket': 'CRICKET',
+    'Lacrosse': 'LACROSSE',
+    'Field Hockey': 'FIELD_HOCKEY',
+    'Badminton': 'BADMINTON',
+    'Table Tennis': 'TABLE_TENNIS',
+    'Snooker': 'SNOOKER',
+    'Cycling': 'CYCLING',
+}
+
+for league_key, conf in LEAGUE_CONFIG.items():
+    sport = conf.get('sport')
+    cat = SPORT_NAME_TO_CATEGORY.get(sport)
+    if cat:
+        if league_key.upper() not in SPORT_CATEGORIES[cat]:
+            SPORT_CATEGORIES[cat].append(league_key.upper())
+# --- END AUTO-GENERATED ---
 
 def get_sport_category_for_path(league: str) -> str:
     """Get the sport category for a given league name."""
