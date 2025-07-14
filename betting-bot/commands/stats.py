@@ -74,6 +74,7 @@ class ChannelSelect(Select):
             # Generate the stats image
             image_generator = StatsImageGenerator() # Assumes StatsImageGenerator doesn't need bot/db
             if is_server:
+                stats_data['guild_id'] = str(interaction.guild_id)
                 img = image_generator.generate_guild_stats_image(stats_data)
             else:
                 # Fetch username and profile_image_url for the capper
