@@ -230,8 +230,9 @@ class StatsImageGenerator:
             raise
 
     def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
-        """Generate a flashy guild stats image with charts."""
+        """Generate a flashy guild stats image with charts and the guild's default image if available."""
         try:
+            import os
             # Create figure with dark theme
             fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
             fig.patch.set_facecolor('#1a1a1a')
@@ -241,22 +242,51 @@ class StatsImageGenerator:
             total_cappers = int(stats.get('total_cappers', 0) or 0)
             total_units = float(stats.get('total_units', 0) or 0.0)
             net_units = float(stats.get('net_units', 0) or 0.0)
+            guild_id = str(stats.get('guild_id', ''))
+
+            # Try to load the guild's default image
+            profile_img = None
+            if guild_id:
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
+                if os.path.exists(default_path):
+                    from PIL import Image
+                    profile_img = Image.open(default_path).convert("RGBA")
+                    profile_img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                    # Crop to square
+                    min_side = min(profile_img.size)
+                    profile_img = profile_img.crop((
+                        (profile_img.width - min_side) // 2,
+                        (profile_img.height - min_side) // 2,
+                        (profile_img.width + min_side) // 2,
+                        (profile_img.height + min_side) // 2
+                    ))
+                    # Make it a circle
+                    from .stats_image_generator import make_rounded_feathered
+                    profile_img_circle = make_rounded_feathered(profile_img)
+                else:
+                    profile_img_circle = None
+            else:
+                profile_img_circle = None
 
             # 1. Guild Overview (top left)
-            overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
-            overview_values = [total_bets, total_cappers, total_units]
-            colors_overview = ['#00ff88', '#0088ff', '#ff8800']
-            
-            bars = ax1.bar(overview_data, overview_values, color=colors_overview, alpha=0.8, edgecolor='white', linewidth=2)
-            ax1.set_title('Guild Overview', color='white', fontsize=16, fontweight='bold')
-            ax1.set_ylabel('Count', color='white')
-            ax1.tick_params(colors='white')
-            
-            # Add value labels
-            for bar, value in zip(bars, overview_values):
-                height = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(overview_values)),
-                        str(value), ha='center', va='bottom', color='white', fontweight='bold')
+            ax1.axis('off')
+            if profile_img_circle is not None:
+                ax1.imshow(profile_img_circle, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
+                ax1.set_title(f"{stats.get('guild_name', 'Guild')}", color='#00ffe7', fontsize=28, fontweight='bold', pad=20)
+            else:
+                # Fallback: show stats as bar chart
+                overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
+                overview_values = [total_bets, total_cappers, total_units]
+                colors_overview = ['#00ff88', '#0088ff', '#ff8800']
+                bars = ax1.bar(overview_data, overview_values, color=colors_overview, alpha=0.8, edgecolor='white', linewidth=2)
+                ax1.set_title('Guild Overview', color='white', fontsize=16, fontweight='bold')
+                ax1.set_ylabel('Count', color='white')
+                ax1.tick_params(colors='white')
+                for bar, value in zip(bars, overview_values):
+                    height = bar.get_height()
+                    ax1.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(overview_values)),
+                            str(value), ha='center', va='bottom', color='white', fontweight='bold')
 
             # 2. Net Units Performance (top right)
             ax2.bar(['Net Units'], [net_units], color='#00ff88' if net_units >= 0 else '#ff4444', 
@@ -291,7 +321,6 @@ class StatsImageGenerator:
             
             🎯 Average Bets per Capper: {total_bets/total_cappers:.1f if total_cappers > 0 else 0}
             """
-            
             ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
                     color='white', fontsize=12, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8))
@@ -311,7 +340,6 @@ class StatsImageGenerator:
             plt.close()
             
             return img
-            
         except Exception as e:
             logger.error(f"Error generating guild stats image: {str(e)}")
             return self._generate_fallback_guild_image(stats)

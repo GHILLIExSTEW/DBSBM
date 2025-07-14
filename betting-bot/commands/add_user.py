@@ -59,30 +59,35 @@ class AddUserCog(commands.Cog):
             logger.info(f"Successfully executed INSERT for user {user_id} in guild {guild_id}")
             # Check if paid guild
             if not await is_paid_guild(guild_id, self.db_manager):
-                await interaction.channel.send(
-                    f"✅ {user.mention} has been added as a capper (free guild, setup complete)."
+                await interaction.response.send_message(
+                    f"✅ {user.mention} has been added as a capper (free guild, setup complete).",
+                    ephemeral=True
                 )
                 return
             # If paid, authorize user for /setid (could be a flag or just allow if row exists)
-            await interaction.channel.send(
-                f"✅ {user.mention} has been added as a capper! They can now use /setid to finish their profile."
+            await interaction.response.send_message(
+                f"✅ {user.mention} has been added as a capper! They can now use /setid to finish their profile.",
+                ephemeral=True
             )
         except Exception as e:
             logger.exception(f"Error in add_user: {e}")
-            await interaction.channel.send(
-                f"❌ An error occurred while adding the capper: {str(e)}"
+            await interaction.response.send_message(
+                f"❌ An error occurred while adding the capper: {str(e)}",
+                ephemeral=True
             )
 
     @add_user_command.error
     async def add_user_error(self, interaction: Interaction, error: app_commands.AppCommandError):
         """Handle errors for the add_user command."""
         if isinstance(error, app_commands.MissingPermissions):
-            await interaction.channel.send(
-                "❌ You need Administrator permissions to add cappers. Please ask a server administrator for help."
+            await interaction.response.send_message(
+                "❌ You need Administrator permissions to add cappers. Please ask a server administrator for help.",
+                ephemeral=True
             )
         else:
-            await interaction.channel.send(
-                "❌ An error occurred while processing the command."
+            await interaction.response.send_message(
+                "❌ An error occurred while processing the command.",
+                ephemeral=True
             )
 
 async def setup(bot: commands.Bot):
