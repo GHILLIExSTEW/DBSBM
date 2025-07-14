@@ -116,29 +116,39 @@ class AssetLoader:
         normalized_team = self._normalize_team_name(team_name, league)
         if not normalized_team:
             normalized_team = team_name
-            
+        
         # Get sport category
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             logger.warning(f"No sport category found for league: {league}")
             return self._load_fallback_logo(guild_id)
-        
+
+        # Try league directory in uppercase, capitalized, and lowercase
+        league_variants = [league.upper(), league.capitalize(), league.lower()]
+        logo_dir = None
+        for variant in league_variants:
+            candidate_dir = os.path.join(self.logos_dir, "teams", sport, variant)
+            if os.path.exists(candidate_dir):
+                logo_dir = candidate_dir
+                break
+        if not logo_dir:
+            logger.warning(f"No logo directory found for league: {league} (tried {league_variants})")
+            return self._load_fallback_logo(guild_id)
+
         # Try exact match
-        logo_path = os.path.join(self.logos_dir, "teams", sport, league.upper(), f"{normalized_team}.png")
+        logo_path = os.path.join(logo_dir, f"{normalized_team}.png")
         if os.path.exists(logo_path):
             logger.info(f"Found exact logo match: {logo_path}")
             return self.load_image(logo_path)
         
         # Try fuzzy matching
-        logo_dir = os.path.join(self.logos_dir, "teams", sport, league.upper())
-        if os.path.exists(logo_dir):
-            candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
-            matches = difflib.get_close_matches(normalized_team, candidate_names, n=1, cutoff=0.75)
-            if matches:
-                match_path = os.path.join(logo_dir, f"{matches[0]}.png")
-                logger.info(f"Found fuzzy logo match: {match_path}")
-                return self.load_image(match_path)
+        candidates = [f for f in os.listdir(logo_dir) if f.endswith('.png')]
+        candidate_names = [os.path.splitext(f)[0] for f in candidates]
+        matches = difflib.get_close_matches(normalized_team, candidate_names, n=1, cutoff=0.75)
+        if matches:
+            match_path = os.path.join(logo_dir, f"{matches[0]}.png")
+            logger.info(f"Found fuzzy logo match: {match_path}")
+            return self.load_image(match_path)
         
         # Fallback to default logo
         logger.warning(f"No logo found for team '{team_name}' in league '{league}'")
