@@ -38,8 +38,8 @@ class ChannelSelect(Select):
             SelectOption(
                 label=f"#{channel.name}",
                 value=str(channel.id),
-                description=f"ID: {channel.id}"
-            )[:100] # Ensure description length limit
+                description=f"ID: {channel.id}"[:100]  # Ensure description length limit
+            )
             for channel in channels[:25] # Limit options
         ]
         super().__init__(
