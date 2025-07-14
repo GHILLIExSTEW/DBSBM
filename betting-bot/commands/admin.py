@@ -538,6 +538,16 @@ class AdminCog(commands.Cog):
                     )
                     logger.info(f"Updated subscription_level to 'premium' for guild {interaction.guild_id}")
 
+            # --- Create static/guilds/{guild_id}/users directory ---
+            try:
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                guild_dir = os.path.join(base_dir, 'static', 'guilds', str(interaction.guild_id))
+                users_dir = os.path.join(guild_dir, 'users')
+                os.makedirs(users_dir, exist_ok=True)
+                logger.info(f"Created guild users directory: {users_dir}")
+            except Exception as e:
+                logger.error(f"Failed to create guild users directory: {e}")
+
             # Create and start the setup view
             view = GuildSettingsView(
                 self.bot, 
