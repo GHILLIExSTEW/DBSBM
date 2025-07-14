@@ -1,7 +1,7 @@
 # betting-bot/commands/setid.py
 
 import discord
-from discord import app_commands, Interaction, Member
+from discord import app_commands, Interaction, Member, Attachment
 from discord.ext import commands # Import commands for Cog
 from discord.ui import Modal, TextInput, View, Button, button # Corrected import for button decorator
 import logging
@@ -134,17 +134,6 @@ class ImageUploadView(View):
          # return interaction.user.guild_permissions.administrator # Example check
          return True # Allow interaction
 
-    @button(label="Upload Image", style=discord.ButtonStyle.primary, custom_id="capper_upload_img")
-    async def upload_image_button(self, interaction: Interaction, button: Button):
-        # Prompt user to upload an image in the *next* message they send
-        await interaction.response.send_message(
-            "Please upload your profile image (PNG, JPG, GIF) in your next message in this channel.",
-            ephemeral=True
-        )
-        # Need logic in on_message event handler to catch the upload, which is complex with ephemeral interactions.
-        # A better approach might be needed here, perhaps a different flow or command.
-        # For now, this button just gives instructions.
-
     @button(label="Provide URL", style=discord.ButtonStyle.secondary, custom_id="capper_provide_url")
     async def provide_url_button(self, interaction: Interaction, button: Button):
         # Show the URL Modal
@@ -271,11 +260,17 @@ class SetIDCog(commands.Cog):
         self.db_manager = bot.db_manager
 
     @app_commands.command(name="setid", description="Set your capper ID and display name.")
+    @app_commands.describe(
+        display_name="Your display name for the capper profile",
+        banner_color="Banner color in hex format (e.g., #0096FF)",
+        profile_image="Upload your profile image (PNG, JPG, GIF)"
+    )
     @require_registered_guild()
-    async def setid(self, interaction: Interaction):
-        """Allows an authorized user to set up their capper profile."""
+    async def setid(self, interaction: Interaction, display_name: str, banner_color: Optional[str] = "#0096FF", profile_image: Optional[Attachment] = None):
+        """Allows an authorized user to set up their capper profile with optional image upload."""
         user_id = interaction.user.id
         guild_id = interaction.guild_id
+        
         # Check if user is authorized (row exists and guild is paid)
         capper_row = await self.db_manager.fetch_one(
             """
@@ -289,6 +284,7 @@ class SetIDCog(commands.Cog):
                 ephemeral=True
             )
             return
+            
         # Optionally check if paid guild (reuse is_paid_guild from add_user)
         from .add_user import is_paid_guild
         if not is_paid_guild(guild_id, self.db_manager):
@@ -296,60 +292,114 @@ class SetIDCog(commands.Cog):
                 "❌ This feature is only available in paid guilds.", ephemeral=True
             )
             return
-        # Show modal for display name and color, then image upload view
-        modal = CapperModal(interaction.user, self.db_manager)
-        await interaction.response.send_modal(modal)
 
-# Modal for display name
-class CapperDisplayNameModal(Modal, title="Set Display Name"):
-    def __init__(self, db_manager):
-        super().__init__(timeout=300)
-        self.db = db_manager
-    display_name = TextInput(
-        label="Display Name",
-        placeholder="Enter your display name",
-        required=True,
-        max_length=32
-    )
-    async def on_submit(self, interaction: Interaction):
-        guild_id = interaction.guild_id
-        user_id = interaction.user.id
-        # Update display_name in DB
-        await self.db.execute(
-            """
-            UPDATE cappers SET display_name = %s, updated_at = UTC_TIMESTAMP() WHERE guild_id = %s AND user_id = %s
-            """,
-            self.display_name.value, guild_id, user_id
-        )
-        # Prompt for image URL
-        modal = CapperImageURLModal(self.db)
-        await interaction.response.send_modal(modal)
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
-# Modal for image URL
-class CapperImageURLModal(Modal, title="Set Profile Image URL"):
-    def __init__(self, db_manager):
-        super().__init__(timeout=300)
-        self.db = db_manager
-    image_url = TextInput(
-        label="Profile Image URL",
-        placeholder="https://example.com/image.png",
-        style=discord.TextStyle.short,
-        required=True
-    )
-    async def on_submit(self, interaction: Interaction):
-        guild_id = interaction.guild_id
-        user_id = interaction.user.id
-        # Save image_path in DB
-        await self.db.execute(
-            """
-            UPDATE cappers SET image_path = %s, updated_at = UTC_TIMESTAMP() WHERE guild_id = %s AND user_id = %s
-            """,
-            self.image_url.value, guild_id, user_id
-        )
-        await interaction.response.send_message(
-            "✅ Your profile has been updated!",
-            ephemeral=True
-        )
+        try:
+            # Validate hex color
+            color_value = banner_color.strip() if banner_color else "#0096FF"
+            if color_value:
+                if not color_value.startswith('#'):
+                    color_value = '#' + color_value
+                if len(color_value) != 7:
+                    try: 
+                        int(color_value[1:], 16)
+                    except ValueError:
+                        await interaction.followup.send(
+                            "❌ Invalid hex color format. Please use #RRGGBB (e.g., #3498db).",
+                            ephemeral=True
+                        )
+                        return
+                final_color = color_value
+            else:
+                final_color = "#0096FF"
+
+            # Create/update the capper entry
+            await self.db_manager.execute(
+                """
+                INSERT INTO cappers (
+                    guild_id, user_id, display_name, banner_color, updated_at
+                ) VALUES (%s, %s, %s, %s, UTC_TIMESTAMP())
+                ON DUPLICATE KEY UPDATE 
+                    display_name = VALUES(display_name),
+                    banner_color = VALUES(banner_color),
+                    updated_at = UTC_TIMESTAMP()
+                """,
+                guild_id, user_id, display_name, final_color
+            )
+
+            # Handle profile image if provided
+            if profile_image:
+                try:
+                    # Validate file type
+                    if not profile_image.content_type.startswith('image/'):
+                        await interaction.followup.send(
+                            "❌ Invalid file type. Please upload an image file (PNG, JPG, GIF).",
+                            ephemeral=True
+                        )
+                        return
+
+                    # Download and process the image
+                    image_data = BytesIO(await profile_image.read())
+                    with Image.open(image_data) as img:
+                        # Validate format
+                        if img.format not in ['PNG', 'JPEG', 'GIF', 'WEBP']:
+                            await interaction.followup.send(
+                                "❌ Invalid image format. Use PNG, JPG, GIF.", 
+                                ephemeral=True
+                            )
+                            return
+
+                        # Define save path and ensure directory exists
+                        filename = f"{user_id}.png"
+                        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                        save_dir = os.path.join(base_dir, 'assets', 'logos', str(guild_id))
+                        os.makedirs(save_dir, exist_ok=True)
+                        save_path = os.path.join(save_dir, filename)
+
+                        # Save the image as PNG
+                        img.save(save_path, 'PNG')
+                        logger.info(f"Saved capper logo to {save_path}")
+                        db_path = os.path.relpath(save_path, base_dir)
+
+                        # Update database with image path
+                        await self.db_manager.execute(
+                            """
+                            UPDATE cappers
+                            SET image_path = %s, updated_at = UTC_TIMESTAMP()
+                            WHERE guild_id = %s AND user_id = %s
+                            """,
+                            db_path, guild_id, user_id
+                        )
+
+                except Exception as e:
+                    logger.exception(f"Error processing uploaded image: {e}")
+                    await interaction.followup.send(
+                        "❌ An error occurred while processing the uploaded image.",
+                        ephemeral=True
+                    )
+                    return
+
+                await interaction.followup.send(
+                    f"✅ Profile updated successfully! Display name: {display_name}, Color: {final_color}, Image: ✅",
+                    ephemeral=True
+                )
+            else:
+                # No image provided, show the image upload view
+                image_view = ImageUploadView(guild_id=guild_id, user_id=user_id, db_manager=self.db_manager)
+                await interaction.followup.send(
+                    f"✅ Profile base updated! Display name: {display_name}, Color: {final_color}\n\nNow you can add a profile picture:",
+                    view=image_view,
+                    ephemeral=True
+                )
+
+        except Exception as e:
+            logger.exception(f"Error in setid command: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while setting up your profile.",
+                ephemeral=True
+            )
+
 # The setup function for the extension
 async def setup(bot: commands.Bot):
     await bot.add_cog(SetIDCog(bot))
