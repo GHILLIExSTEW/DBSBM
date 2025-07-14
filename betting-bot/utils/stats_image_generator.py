@@ -8,6 +8,7 @@ from matplotlib.patches import FancyBboxPatch
 import numpy as np
 from io import BytesIO
 import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ class StatsImageGenerator:
                     local_path = profile_image_url
                     if not os.path.isabs(local_path):
                         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                        local_path = os.path.join(base_dir, profile_image_url.lstrip('/'))
+                        # Normalize path for OS
+                        local_path = os.path.join(base_dir, *profile_image_url.lstrip('/').split('/'))
                     if os.path.exists(local_path):
                         profile_img = Image.open(local_path).convert("RGBA")
                         profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
@@ -54,50 +56,50 @@ class StatsImageGenerator:
                 except Exception as e:
                     logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
 
-            # Extract stats
-            total_bets = int(stats.get('total_bets', 0) or 0)
-            wins = int(stats.get('wins', 0) or 0)
-            losses = int(stats.get('losses', 0) or 0)
-            pushes = int(stats.get('pushes', 0) or 0)
-            win_rate = float(stats.get('win_rate', 0) or 0.0)
-            net_units = float(stats.get('net_units', 0) or 0.0)
-            roi = float(stats.get('roi', 0) or 0.0)
+            # --- Flashy Background ---
+            # Create a gradient background for the figure
+            gradient = np.linspace(0, 1, 256)
+            gradient = np.vstack((gradient, gradient))
+            cmap = LinearSegmentedColormap.from_list("custom", ["#232526", "#414345", "#232526"])
+            fig.figimage(cmap(gradient), xo=0, yo=0, alpha=0.5, zorder=0)
 
             # 1. Profile Image (top left)
             ax1.axis('off')
             if profile_img is not None:
-                ax1.imshow(profile_img)
-                ax1.set_title(f"{username}", color='white', fontsize=28, fontweight='bold', pad=30)
+                # Add a glow effect
+                from PIL import ImageFilter
+                glow = profile_img.copy().resize((520, 520)).filter(ImageFilter.GaussianBlur(18)).convert("RGBA")
+                ax1.imshow(glow, extent=[-0.1, 1.1, -0.1, 1.1], alpha=0.5, zorder=1)
+                ax1.imshow(profile_img, zorder=2)
+                ax1.set_title(f"{username}", color='#00ffe7', fontsize=36, fontweight='bold', pad=30)
             else:
-                ax1.text(0.5, 0.5, f"{username}\n(No Profile Image)", ha='center', va='center', color='white', fontsize=24, fontweight='bold', transform=ax1.transAxes)
-                ax1.set_title(f"{username}", color='white', fontsize=28, fontweight='bold', pad=30)
+                ax1.text(0.5, 0.5, f"{username}\n(No Profile Image)", ha='center', va='center', color='#00ffe7', fontsize=28, fontweight='bold', transform=ax1.transAxes)
+                ax1.set_title(f"{username}", color='#00ffe7', fontsize=36, fontweight='bold', pad=30)
 
             # 2. Performance Metrics (top right)
             metrics = ['Win Rate', 'ROI', 'Net Units']
             values = [win_rate, roi, net_units]
             colors_metrics = ['#00ff88' if v >= 0 else '#ff4444' for v in values]
-            
-            bars = ax2.bar(metrics, values, color=colors_metrics, alpha=0.8, edgecolor='white', linewidth=2)
-            ax2.set_title('Performance Metrics', color='white', fontsize=16, fontweight='bold')
-            ax2.set_ylabel('Value', color='white')
-            ax2.tick_params(colors='white')
-            
-            # Add value labels on bars
+            bars = ax2.bar(metrics, values, color=colors_metrics, alpha=0.9, edgecolor='white', linewidth=3, zorder=3)
+            ax2.set_title('Performance Metrics', color='#00ffe7', fontsize=22, fontweight='bold')
+            ax2.set_ylabel('Value', color='white', fontsize=14)
+            ax2.tick_params(colors='white', labelsize=12)
             for bar, value in zip(bars, values):
                 height = bar.get_height()
                 ax2.text(bar.get_x() + bar.get_width()/2., height + (0.01 * max(values)),
-                        f'{value:.1f}', ha='center', va='bottom', color='white', fontweight='bold')
+                        f'{value:.1f}', ha='center', va='bottom', color='white', fontweight='bold', fontsize=16)
+            ax2.grid(axis='y', alpha=0.2)
 
-            # 3. Win/Loss/Push Pie Chart (bottom left)
+            # 3. Bet Distribution Pie Chart (bottom left)
             if total_bets > 0:
                 labels = ['Wins', 'Losses', 'Pushes'] if pushes > 0 else ['Wins', 'Losses']
                 sizes = [wins, losses, pushes] if pushes > 0 else [wins, losses]
                 colors = ['#00ff88', '#ff4444', '#ffaa00'] if pushes > 0 else ['#00ff88', '#ff4444']
-                ax3.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-                ax3.set_title('Bet Distribution', color='white', fontsize=20, fontweight='bold')
+                wedges, texts, autotexts = ax3.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, textprops={'color':'white', 'fontsize':16}, wedgeprops={'linewidth':2, 'edgecolor':'white'})
+                ax3.set_title('Bet Distribution', color='#00ffe7', fontsize=22, fontweight='bold')
             else:
-                ax3.text(0.5, 0.5, 'No bets yet', ha='center', va='center', transform=ax3.transAxes, color='white', fontsize=18)
-                ax3.set_title('Bet Distribution', color='white', fontsize=20, fontweight='bold')
+                ax3.text(0.5, 0.5, 'No bets yet', ha='center', va='center', transform=ax3.transAxes, color='#00ffe7', fontsize=18)
+                ax3.set_title('Bet Distribution', color='#00ffe7', fontsize=22, fontweight='bold')
 
             # 4. Summary Stats (bottom right)
             ax4.axis('off')
@@ -114,11 +116,11 @@ class StatsImageGenerator:
                 f"ROI: {roi:.1f}%"
             ]
             summary_text = "\n".join(summary_lines)
-            bbox_props = dict(boxstyle="round,pad=0.6", facecolor='#222', alpha=0.8, edgecolor='white')
+            bbox_props = dict(boxstyle="round,pad=1.0", facecolor='#111', alpha=0.95, edgecolor='#00ffe7', linewidth=3)
             ax4.text(
                 0.5, 0.5, summary_text,
                 ha='center', va='center',
-                fontsize=20, color='white',
+                fontsize=24, color='#ffffff',
                 fontweight='bold',
                 bbox=bbox_props,
                 transform=ax4.transAxes
