@@ -70,7 +70,6 @@ LEAGUE_FILE_KEY_MAP = {
 
 # Add 'UEFA CL' as an alias for ChampionsLeague
 LEAGUE_FILE_KEY_MAP["UEFA CL"] = "ChampionsLeague"
-LEAGUE_NAME_NORMALIZATION["UEFA CL"] = "UEFA Champions League"
 
 # Map league names to sports
 LEAGUE_TO_SPORT_MAP = {
@@ -223,6 +222,9 @@ LEAGUE_NAME_NORMALIZATION = {
     "EHF": "EHF Champions League",
     "AFL": "Australian Football League",
 }
+
+# Add 'UEFA CL' as an alias for ChampionsLeague
+LEAGUE_NAME_NORMALIZATION["UEFA CL"] = "UEFA Champions League"
 
 
 def get_league_abbreviation(league_name: str) -> str:
