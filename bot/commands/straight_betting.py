@@ -408,9 +408,29 @@ class TeamSelect(Select):
                 self.parent_view.stop()
                 return
         else:
-            # For regular game selections, proceed directly to units selection
-            await interaction.response.defer()
-            await self.parent_view.go_next(interaction)
+            # For regular game selections, show modal for line/odds input
+            line_type = self.parent_view.bet_details.get("line_type", "game_line")
+            modal = StraightBetDetailsModal(
+                line_type=line_type,
+                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=False,
+                view_custom_id_suffix=str(interaction.id),
+            )
+            modal.view_ref = self.parent_view
+            if not interaction.response.is_done():
+                await interaction.response.send_modal(modal)
+                return
+            else:
+                logger.error(
+                    "Tried to send modal, but interaction already responded to."
+                )
+                await self.parent_view.edit_message(
+                    content="❌ Error: Could not open modal. Please try again or cancel.",
+                    view=None,
+                )
+                self.parent_view.stop()
+                return
 
 
 class UnitsSelect(Select):
