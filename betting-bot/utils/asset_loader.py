@@ -159,23 +159,18 @@ class AssetLoader:
             )
             return self._load_fallback_logo(guild_id)
 
-        # Try exact match
+        # Try exact match (full name)
         logo_path = os.path.join(logo_dir, f"{filename_team}.png")
         if os.path.exists(logo_path):
             logger.info(f"Found exact logo match: {logo_path}")
             return self.load_image(logo_path)
 
-        # Try fuzzy matching
-        candidates = [f for f in os.listdir(logo_dir) if f.endswith(".png")]
-        candidate_names = [os.path.splitext(f)[0] for f in candidates]
-        import difflib
-        matches = difflib.get_close_matches(
-            filename_team, candidate_names, n=1, cutoff=0.75
-        )
-        if matches:
-            match_path = os.path.join(logo_dir, f"{matches[0]}.png")
-            logger.info(f"Found fuzzy logo match: {match_path}")
-            return self.load_image(match_path)
+        # Try mascot-only (last word of mapped name)
+        mascot = filename_team.split("_")[-1]
+        mascot_path = os.path.join(logo_dir, f"{mascot}.png")
+        if os.path.exists(mascot_path):
+            logger.info(f"Found mascot-only logo match: {mascot_path}")
+            return self.load_image(mascot_path)
 
         # Fallback to default logo
         logger.warning(f"No logo found for team '{team_name}' in league '{league}'")
