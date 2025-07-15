@@ -43,6 +43,7 @@ from api.sports_api import SportsAPI
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.player_prop_image_generator import PlayerPropImageGenerator
 from utils.parlay_image_generator import ParlayImageGenerator
+from utils.image_url_converter import convert_image_path_to_url
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,9 @@ def get_league_file_key(league_name):
     if isinstance(key, list):
         return key[0]
     return key
+
+
+
 
 
 class LeagueSelect(Select):
@@ -1037,7 +1041,7 @@ class StraightBetWorkflowView(View):
                 webhook_username = capper_data.get("display_name") if capper_data and capper_data.get("display_name") else interaction.user.display_name
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
-                    webhook_avatar_url = capper_data["image_path"]
+                    webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
 
                 # Fetch member_role for mention
                 member_role_id = None

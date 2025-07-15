@@ -22,6 +22,7 @@ from utils.formatters import format_parlay_bet_details_embed
 from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
+from utils.image_url_converter import convert_image_path_to_url
 from PIL import Image, ImageDraw, ImageFont
 from utils.league_loader import get_all_league_names
 
