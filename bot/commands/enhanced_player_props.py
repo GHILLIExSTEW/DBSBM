@@ -2,7 +2,7 @@
 Enhanced Player Props Command
 Provides a modern, user-friendly interface for creating player prop bets.
 
-VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
+VERSION: 1.2.0 - Fixed CancelButton import conflict causing workflow freeze
 """
 
 import io
@@ -109,7 +109,6 @@ class PlayerPropsWorkflowView(View):
         if self.current_step == 1:
             # Step 1: League selection
             from commands.straight_betting import (
-                CancelButton,
                 LeagueSelect,
                 get_all_league_names,
             )
@@ -124,7 +123,7 @@ class PlayerPropsWorkflowView(View):
             # Step 2: Game selection
             from data.game_utils import get_normalized_games_for_dropdown
 
-            from commands.straight_betting import CancelButton, GameSelect
+            from commands.straight_betting import GameSelect
 
             league = self.bet_details.get("league", "N/A")
             logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
@@ -206,7 +205,6 @@ class PlayerPropsWorkflowView(View):
         elif self.current_step == 5:
             # Step 5: Units selection
             from commands.straight_betting import (
-                CancelButton,
                 ConfirmUnitsButton,
                 UnitsSelect,
             )
@@ -270,7 +268,6 @@ class PlayerPropsWorkflowView(View):
         elif self.current_step == 6:
             # Step 6: Channel selection
             from commands.straight_betting import (
-                CancelButton,
                 ChannelSelect,
                 FinalConfirmButton,
             )
