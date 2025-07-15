@@ -381,39 +381,147 @@ class PlayerPropSearchView(discord.ui.View):
     async def search_players(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        """Show popular players for this league."""
+        """Search for players using the enhanced search service."""
         try:
-            popular_players = await self.player_search_service.get_popular_players(
-                self.league, limit=10
+            # Get the search query from the modal
+            search_query = self.player_search.value.strip()
+            if not search_query:
+                await interaction.response.send_message(
+                    "Please enter a player name to search for.", ephemeral=True
+                )
+                return
+
+            # Search for players using the enhanced service with team library support
+            search_results = await self.player_search_service.search_players(
+                query=search_query,
+                league=self.league,
+                team_name=self.team_name,  # Pass team name to utilize team library
+                limit=10,
+                min_confidence=50.0,
             )
 
-            if not popular_players:
+            if not search_results:
                 await interaction.response.send_message(
-                    "No popular players found for this league. Use the modal to search manually.",
+                    f"No players found for '{search_query}'. Try a different search term.",
                     ephemeral=True,
                 )
                 return
 
-            # Create embed with popular players
-            embed = discord.Embed(
-                title=f"Popular {self.league} Players",
-                description="Click a player to create a prop bet",
-                color=discord.Color.blue(),
-            )
-
-            for i, player in enumerate(popular_players[:5], 1):
-                embed.add_field(
-                    name=f"{i}. {player.player_name}",
-                    value=f"Team: {player.team_name}\nUsage: {player.usage_count} times",
-                    inline=True,
+            # Create player selection dropdown
+            options = []
+            for result in search_results[:25]:  # Discord limit is 25 options
+                # Add confidence indicator for team library players
+                confidence_indicator = "⭐" if result.confidence > 80 else "🔍"
+                label = f"{confidence_indicator} {result.player_name}"
+                description = f"{result.team_name} ({result.confidence:.0f}% match)"
+                
+                options.append(
+                    discord.SelectOption(
+                        label=label[:100],  # Discord limit
+                        value=result.player_name,
+                        description=description[:100],  # Discord limit
+                    )
                 )
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            # Create player selection dropdown
+            player_select = discord.ui.Select(
+                placeholder="Select a player...",
+                options=options,
+                min_values=1,
+                max_values=1,
+            )
+
+            async def player_callback(interaction: discord.Interaction):
+                selected_player = player_select.values[0]
+                
+                # Update the player search field with the selected player
+                self.player_search.default = selected_player
+                
+                # Show prop type selection
+                await self._show_prop_type_selection(interaction, selected_player)
+
+            player_select.callback = player_callback
+
+            # Create new view with player selection
+            view = discord.ui.View(timeout=300)
+            view.add_item(player_select)
+            view.add_item(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary))
+
+            await interaction.response.edit_message(
+                content=f"**Found {len(search_results)} players for '{search_query}':**\n"
+                f"⭐ = High confidence (team library)\n"
+                f"🔍 = Database match",
+                view=view
+            )
 
         except Exception as e:
-            logger.error(f"Error showing popular players: {e}")
+            logger.error(f"Error in player search: {e}")
             await interaction.response.send_message(
-                "❌ Error loading popular players.", ephemeral=True
+                "❌ Error searching for players. Please try again.",
+                ephemeral=True,
+            )
+
+    async def _show_prop_type_selection(self, interaction: discord.Interaction, selected_player: str):
+        """Show prop type selection after player is chosen."""
+        try:
+            # Get prop templates for this league
+            prop_templates = get_prop_templates_for_league(self.league)
+
+            if not prop_templates:
+                await interaction.response.send_message(
+                    f"No prop types available for {self.league}.", ephemeral=True
+                )
+                return
+
+            # Create prop type options
+            options = []
+            for prop_type, template in prop_templates.items():
+                options.append(
+                    discord.SelectOption(
+                        label=prop_type.title(),
+                        value=prop_type,
+                        description=f"{template.min_value}-{template.max_value} {template.unit}",
+                    )
+                )
+
+            # Create prop type selection dropdown
+            prop_select = discord.ui.Select(
+                placeholder="Select prop type...",
+                options=options,
+                min_values=1,
+                max_values=1,
+            )
+
+            async def prop_callback(interaction: discord.Interaction):
+                selected_prop_type = prop_select.values[0]
+                
+                # Update the prop type field
+                self.prop_type.default = selected_prop_type
+                
+                # Show success message and return to modal
+                await interaction.response.edit_message(
+                    content=f"✅ Selected **{selected_player}** for **{selected_prop_type}** prop.\n"
+                    f"Complete the form and submit your bet!",
+                    view=None
+                )
+
+            prop_select.callback = prop_callback
+
+            # Create new view with prop type selection
+            view = discord.ui.View(timeout=300)
+            view.add_item(prop_select)
+            view.add_item(discord.ui.Button(label="Back", style=discord.ButtonStyle.secondary))
+
+            await interaction.response.edit_message(
+                content=f"**Select prop type for {selected_player}:**",
+                view=view
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing prop type selection: {e}")
+            await interaction.response.send_message(
+                "❌ Error showing prop types. Please try again.",
+                ephemeral=True,
             )
 
     @discord.ui.button(label="Create Prop Bet", style=discord.ButtonStyle.success)

@@ -39,15 +39,17 @@ class PlayerSearchService:
         self,
         query: str,
         league: Optional[str] = None,
+        team_name: Optional[str] = None,
         limit: int = 10,
         min_confidence: float = 60.0,
     ) -> List[PlayerSearchResult]:
         """
-        Search for players using fuzzy matching.
+        Search for players using fuzzy matching with team library support.
 
         Args:
             query: Search query (player name)
             league: Optional league filter
+            team_name: Optional team name to prioritize team library players
             limit: Maximum number of results
             min_confidence: Minimum confidence score (0-100)
 
@@ -60,22 +62,30 @@ class PlayerSearchService:
         query = query.strip().lower()
 
         # Check in-memory cache first
-        cache_key = f"{query}:{league}:{limit}"
+        cache_key = f"{query}:{league}:{team_name}:{limit}"
         if cache_key in self._search_cache:
             cached_result, timestamp = self._search_cache[cache_key]
             if datetime.now() - timestamp < timedelta(seconds=self._cache_ttl):
                 return cached_result
 
         try:
-            # Get players from database
-            players = await self._get_players_from_db(league)
+            # Get players from team library first if team is specified
+            team_players = []
+            if team_name:
+                team_players = await self._get_players_from_team_library(league, team_name)
 
-            if not players:
+            # Get players from database
+            db_players = await self._get_players_from_db(league)
+
+            # Combine and prioritize team library players
+            all_players = team_players + db_players
+
+            if not all_players:
                 return []
 
             # Perform fuzzy search
             search_results = []
-            for player in players:
+            for player in all_players:
                 # Create searchable text
                 search_text = f"{player['player_name']} {player['team_name']}".lower()
 
@@ -86,6 +96,10 @@ class PlayerSearchService:
 
                 # Use the best score
                 confidence = max(name_score, team_score, full_score)
+
+                # Boost confidence for team library players
+                if player.get("from_team_library", False):
+                    confidence += 20  # Boost team library players
 
                 if confidence >= min_confidence:
                     search_results.append(
@@ -361,3 +375,208 @@ class PlayerSearchService:
         except Exception as e:
             logger.error(f"Error cleaning up cache: {e}")
             return 0
+
+    async def _get_players_from_team_library(
+        self, league: Optional[str] = None, team_name: Optional[str] = None
+    ) -> List[Dict]:
+        """Get players from team library based on league and team."""
+        try:
+            players = []
+
+            # Import team mappings
+            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
+            from utils.helpers import get_league_teams
+
+            # Get league-specific player data
+            if league:
+                # Try to get players from league-specific mappings
+                if league in LEAGUE_TEAM_MAPPINGS:
+                    league_mappings = LEAGUE_TEAM_MAPPINGS[league]
+                    
+                    # For individual sports (tennis, darts, golf), return players directly
+                    if league in ["ATP", "WTA", "PDC", "BDO", "WDF", "PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                        for player_key, player_name in league_mappings.items():
+                            players.append({
+                                "player_name": player_name,
+                                "team_name": league,  # Use league as team for individual sports
+                                "league": league,
+                                "sport": self._get_sport_from_league(league),
+                                "from_team_library": True,
+                                "usage_count": 1,
+                            })
+                    else:
+                        # For team sports, filter by team if specified
+                        if team_name:
+                            # Normalize team name for matching
+                            normalized_team = team_name.lower().replace(" ", "_")
+                            
+                            # Get players for this specific team
+                            team_players = await self._get_team_players(league, team_name)
+                            for player in team_players:
+                                players.append({
+                                    "player_name": player,
+                                    "team_name": team_name,
+                                    "league": league,
+                                    "sport": self._get_sport_from_league(league),
+                                    "from_team_library": True,
+                                    "usage_count": 1,
+                                })
+
+            return players
+
+        except Exception as e:
+            logger.error(f"Error getting players from team library: {e}")
+            return []
+
+    async def _get_team_players(self, league: str, team_name: str) -> List[str]:
+        """Get players for a specific team from various sources."""
+        try:
+            players = []
+
+            # Try to get players from static data files
+            if league == "NBA":
+                players = await self._get_nba_team_players(team_name)
+            elif league == "NFL":
+                players = await self._get_nfl_team_players(team_name)
+            elif league == "MLB":
+                players = await self._get_mlb_team_players(team_name)
+            elif league == "NHL":
+                players = await self._get_nhl_team_players(team_name)
+            elif league in ["EPL", "LaLiga", "Bundesliga", "SerieA", "Ligue1"]:
+                players = await self._get_soccer_team_players(team_name)
+
+            return players
+
+        except Exception as e:
+            logger.error(f"Error getting team players: {e}")
+            return []
+
+    async def _get_nba_team_players(self, team_name: str) -> List[str]:
+        """Get NBA team players from static data."""
+        try:
+            # Common NBA players by team (simplified - in production, use API or database)
+            nba_teams_players = {
+                "lakers": ["LeBron James", "Anthony Davis", "Austin Reaves", "D'Angelo Russell"],
+                "celtics": ["Jayson Tatum", "Jaylen Brown", "Kristaps Porzingis", "Derrick White"],
+                "warriors": ["Stephen Curry", "Klay Thompson", "Draymond Green", "Andrew Wiggins"],
+                "heat": ["Jimmy Butler", "Bam Adebayo", "Tyler Herro", "Duncan Robinson"],
+                "nuggets": ["Nikola Jokic", "Jamal Murray", "Aaron Gordon", "Michael Porter Jr."],
+                "suns": ["Kevin Durant", "Devin Booker", "Bradley Beal", "Jusuf Nurkic"],
+                "bucks": ["Giannis Antetokounmpo", "Damian Lillard", "Khris Middleton", "Brook Lopez"],
+                "76ers": ["Joel Embiid", "Tyrese Maxey", "Tobias Harris", "Kelly Oubre Jr."],
+            }
+            
+            normalized_team = team_name.lower().replace(" ", "")
+            return nba_teams_players.get(normalized_team, [])
+
+        except Exception as e:
+            logger.error(f"Error getting NBA team players: {e}")
+            return []
+
+    async def _get_nfl_team_players(self, team_name: str) -> List[str]:
+        """Get NFL team players from static data."""
+        try:
+            # Common NFL players by team (simplified)
+            nfl_teams_players = {
+                "chiefs": ["Patrick Mahomes", "Travis Kelce", "Isiah Pacheco", "Rashee Rice"],
+                "eagles": ["Jalen Hurts", "A.J. Brown", "DeVonta Smith", "Dallas Goedert"],
+                "bills": ["Josh Allen", "Stefon Diggs", "James Cook", "Dalton Kincaid"],
+                "cowboys": ["Dak Prescott", "CeeDee Lamb", "Tony Pollard", "Jake Ferguson"],
+                "ravens": ["Lamar Jackson", "Mark Andrews", "Zay Flowers", "Gus Edwards"],
+            }
+            
+            normalized_team = team_name.lower().replace(" ", "")
+            return nfl_teams_players.get(normalized_team, [])
+
+        except Exception as e:
+            logger.error(f"Error getting NFL team players: {e}")
+            return []
+
+    async def _get_mlb_team_players(self, team_name: str) -> List[str]:
+        """Get MLB team players from static data."""
+        try:
+            # Common MLB players by team (simplified)
+            mlb_teams_players = {
+                "yankees": ["Aaron Judge", "Giancarlo Stanton", "Anthony Rizzo", "Gleyber Torres"],
+                "dodgers": ["Mookie Betts", "Freddie Freeman", "Shohei Ohtani", "Will Smith"],
+                "astros": ["Yordan Alvarez", "Jose Altuve", "Alex Bregman", "Kyle Tucker"],
+                "braves": ["Ronald Acuña Jr.", "Matt Olson", "Austin Riley", "Ozzie Albies"],
+                "phillies": ["Bryce Harper", "Trea Turner", "Kyle Schwarber", "Nick Castellanos"],
+            }
+            
+            normalized_team = team_name.lower().replace(" ", "")
+            return mlb_teams_players.get(normalized_team, [])
+
+        except Exception as e:
+            logger.error(f"Error getting MLB team players: {e}")
+            return []
+
+    async def _get_nhl_team_players(self, team_name: str) -> List[str]:
+        """Get NHL team players from static data."""
+        try:
+            # Common NHL players by team (simplified)
+            nhl_teams_players = {
+                "oilers": ["Connor McDavid", "Leon Draisaitl", "Evan Bouchard", "Zach Hyman"],
+                "avalanche": ["Nathan MacKinnon", "Mikko Rantanen", "Cale Makar", "Valeri Nichushkin"],
+                "lightning": ["Nikita Kucherov", "Brayden Point", "Victor Hedman", "Steven Stamkos"],
+                "bruins": ["David Pastrnak", "Brad Marchand", "Charlie McAvoy", "Jeremy Swayman"],
+                "leafs": ["Auston Matthews", "Mitch Marner", "William Nylander", "John Tavares"],
+            }
+            
+            normalized_team = team_name.lower().replace(" ", "")
+            return nhl_teams_players.get(normalized_team, [])
+
+        except Exception as e:
+            logger.error(f"Error getting NHL team players: {e}")
+            return []
+
+    async def _get_soccer_team_players(self, team_name: str) -> List[str]:
+        """Get soccer team players from static data."""
+        try:
+            # Common soccer players by team (simplified)
+            soccer_teams_players = {
+                "manchester city": ["Erling Haaland", "Kevin De Bruyne", "Phil Foden", "Rodri"],
+                "arsenal": ["Bukayo Saka", "Martin Ødegaard", "Gabriel Jesus", "Declan Rice"],
+                "real madrid": ["Jude Bellingham", "Vinicius Jr.", "Rodrygo", "Toni Kroos"],
+                "barcelona": ["Robert Lewandowski", "Frenkie de Jong", "Pedri", "Gavi"],
+                "bayern munich": ["Harry Kane", "Jamal Musiala", "Leroy Sané", "Joshua Kimmich"],
+            }
+            
+            normalized_team = team_name.lower()
+            return soccer_teams_players.get(normalized_team, [])
+
+        except Exception as e:
+            logger.error(f"Error getting soccer team players: {e}")
+            return []
+
+    def _get_sport_from_league(self, league: str) -> str:
+        """Get sport name from league."""
+        sport_mapping = {
+            "NBA": "basketball",
+            "WNBA": "basketball", 
+            "NFL": "football",
+            "MLB": "baseball",
+            "NHL": "hockey",
+            "EPL": "soccer",
+            "LaLiga": "soccer",
+            "Bundesliga": "soccer",
+            "SerieA": "soccer",
+            "Ligue1": "soccer",
+            "ChampionsLeague": "soccer",
+            "EuropaLeague": "soccer",
+            "WorldCup": "soccer",
+            "ATP": "tennis",
+            "WTA": "tennis",
+            "Tennis": "tennis",
+            "PDC": "darts",
+            "BDO": "darts",
+            "WDF": "darts",
+            "PGA": "golf",
+            "LPGA": "golf",
+            "EuropeanTour": "golf",
+            "LIVGolf": "golf",
+            "Formula-1": "racing",
+            "MMA": "mma",
+            "Bellator": "mma",
+        }
+        return sport_mapping.get(league, "other")
