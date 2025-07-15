@@ -31,9 +31,7 @@ def format_nba_template():
         data = json.loads(content)
 
         # Write the properly formatted JSON to the main file
-        with open(
-            "bot/data/basketball_nba_teams.json", "w", encoding="utf-8"
-        ) as f:
+        with open("bot/data/basketball_nba_teams.json", "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         print(

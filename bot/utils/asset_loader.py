@@ -108,6 +108,7 @@ class AssetLoader:
         """
         # Import here to avoid circular imports
         from config.asset_paths import get_sport_category_for_path
+
         # Import team mappings
         try:
             from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
@@ -127,10 +128,13 @@ class AssetLoader:
             else:
                 # Fuzzy match
                 import difflib
-                matches = difflib.get_close_matches(team_name.lower(), mapping.keys(), n=1, cutoff=0.7)
+
+                matches = difflib.get_close_matches(
+                    team_name.lower(), mapping.keys(), n=1, cutoff=0.7
+                )
                 if matches:
                     mapped_team = mapping[matches[0]]
-        
+
         # Get normalized team name from league dictionary or mapping
         normalized_team = mapped_team or self._normalize_team_name(team_name, league)
         if not normalized_team:
@@ -145,7 +149,9 @@ class AssetLoader:
             logger.warning(f"No sport category found for league: {league}")
             return self._load_fallback_logo(guild_id)
 
-        logger.info(f"[DEBUG] Looking for team '{team_name}' in league '{league}' -> sport '{sport}'")
+        logger.info(
+            f"[DEBUG] Looking for team '{team_name}' in league '{league}' -> sport '{sport}'"
+        )
 
         # Try league directory in uppercase, capitalized, and lowercase
         league_variants = [league.upper(), league.capitalize(), league.lower()]
@@ -190,6 +196,7 @@ class AssetLoader:
         candidates = [f for f in os.listdir(logo_dir) if f.endswith(".png")]
         candidate_names = [os.path.splitext(f)[0] for f in candidates]
         import difflib
+
         matches = difflib.get_close_matches(
             filename_team, candidate_names, n=1, cutoff=0.7
         )

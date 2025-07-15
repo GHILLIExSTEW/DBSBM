@@ -414,7 +414,7 @@ class PlayerPropSearchView(discord.ui.View):
                 confidence_indicator = "⭐" if result.confidence > 80 else "🔍"
                 label = f"{confidence_indicator} {result.player_name}"
                 description = f"{result.team_name} ({result.confidence:.0f}% match)"
-                
+
                 options.append(
                     discord.SelectOption(
                         label=label[:100],  # Discord limit
@@ -433,10 +433,10 @@ class PlayerPropSearchView(discord.ui.View):
 
             async def player_callback(interaction: discord.Interaction):
                 selected_player = player_select.values[0]
-                
+
                 # Update the player search field with the selected player
                 self.player_search.default = selected_player
-                
+
                 # Show prop type selection
                 await self._show_prop_type_selection(interaction, selected_player)
 
@@ -445,13 +445,15 @@ class PlayerPropSearchView(discord.ui.View):
             # Create new view with player selection
             view = discord.ui.View(timeout=300)
             view.add_item(player_select)
-            view.add_item(discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary))
+            view.add_item(
+                discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary)
+            )
 
             await interaction.response.edit_message(
                 content=f"**Found {len(search_results)} players for '{search_query}':**\n"
                 f"⭐ = High confidence (team library)\n"
                 f"🔍 = Database match",
-                view=view
+                view=view,
             )
 
         except Exception as e:
@@ -461,7 +463,9 @@ class PlayerPropSearchView(discord.ui.View):
                 ephemeral=True,
             )
 
-    async def _show_prop_type_selection(self, interaction: discord.Interaction, selected_player: str):
+    async def _show_prop_type_selection(
+        self, interaction: discord.Interaction, selected_player: str
+    ):
         """Show prop type selection after player is chosen."""
         try:
             # Get prop templates for this league
@@ -494,15 +498,15 @@ class PlayerPropSearchView(discord.ui.View):
 
             async def prop_callback(interaction: discord.Interaction):
                 selected_prop_type = prop_select.values[0]
-                
+
                 # Update the prop type field
                 self.prop_type.default = selected_prop_type
-                
+
                 # Show success message and return to modal
                 await interaction.response.edit_message(
                     content=f"✅ Selected **{selected_player}** for **{selected_prop_type}** prop.\n"
                     f"Complete the form and submit your bet!",
-                    view=None
+                    view=None,
                 )
 
             prop_select.callback = prop_callback
@@ -510,11 +514,12 @@ class PlayerPropSearchView(discord.ui.View):
             # Create new view with prop type selection
             view = discord.ui.View(timeout=300)
             view.add_item(prop_select)
-            view.add_item(discord.ui.Button(label="Back", style=discord.ButtonStyle.secondary))
+            view.add_item(
+                discord.ui.Button(label="Back", style=discord.ButtonStyle.secondary)
+            )
 
             await interaction.response.edit_message(
-                content=f"**Select prop type for {selected_player}:**",
-                view=view
+                content=f"**Select prop type for {selected_player}:**", view=view
             )
 
         except Exception as e:

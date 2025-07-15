@@ -238,24 +238,24 @@ class BettingCog(commands.Cog):
         try:
             # For /gameline, always use straight bets - skip bet type selection
             from commands.straight_betting import StraightBetWorkflowView
-            
+
             view = StraightBetWorkflowView(
                 interaction,
                 self.bot,
                 message_to_control=None,
             )
-            
+
             # Send the initial message
             await interaction.response.send_message(
                 "Starting game line bet workflow...", view=view, ephemeral=True
             )
-            
+
             # Retrieve and assign the message object
             view.message = await interaction.original_response()
-            
+
             # Start the workflow
             await view.start_flow(interaction)
-            
+
             logger.info("/gameline command response sent successfully.")
         except Exception as e:
             logger.error(f"Error in /gameline command: {e}", exc_info=True)

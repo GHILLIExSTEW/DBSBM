@@ -197,9 +197,7 @@ class GameLineImageGenerator:
         ]
         league_logo_path = None
         for dir_variant in league_dir_variants:
-            dir_path = (
-                f"bot/static/logos/leagues/{sport_category}/{dir_variant}"
-            )
+            dir_path = f"bot/static/logos/leagues/{sport_category}/{dir_variant}"
             if os.path.exists(dir_path):
                 for file_variant in logo_file_variants:
                     candidate_path = os.path.join(dir_path, file_variant)

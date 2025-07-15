@@ -27,9 +27,7 @@ class MetricPoint:
 class MetricsCollector:
     """Collects and stores system metrics."""
 
-    def __init__(
-        self, max_history: int = 1000, storage_path: str = "bot/data/metrics"
-    ):
+    def __init__(self, max_history: int = 1000, storage_path: str = "bot/data/metrics"):
         """
         Initialize the metrics collector.
 

@@ -49,10 +49,10 @@ class EnhancedPlayerPropsCog(commands.Cog):
             await interaction.response.send_message(
                 "Starting player props workflow...", view=view, ephemeral=True
             )
-            
+
             # Retrieve and assign the message object
             view.message = await interaction.original_response()
-            
+
             # Start the workflow
             await view.start_flow(interaction)
 

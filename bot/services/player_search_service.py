@@ -72,7 +72,9 @@ class PlayerSearchService:
             # Get players from team library first if team is specified
             team_players = []
             if team_name:
-                team_players = await self._get_players_from_team_library(league, team_name)
+                team_players = await self._get_players_from_team_library(
+                    league, team_name
+                )
 
             # Get players from database
             db_players = await self._get_players_from_db(league)
@@ -384,43 +386,59 @@ class PlayerSearchService:
             players = []
 
             # Import team mappings
-            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
             from utils.helpers import get_league_teams
+            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
 
             # Get league-specific player data
             if league:
                 # Try to get players from league-specific mappings
                 if league in LEAGUE_TEAM_MAPPINGS:
                     league_mappings = LEAGUE_TEAM_MAPPINGS[league]
-                    
+
                     # For individual sports (tennis, darts, golf), return players directly
-                    if league in ["ATP", "WTA", "PDC", "BDO", "WDF", "PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
+                    if league in [
+                        "ATP",
+                        "WTA",
+                        "PDC",
+                        "BDO",
+                        "WDF",
+                        "PGA",
+                        "LPGA",
+                        "EuropeanTour",
+                        "LIVGolf",
+                    ]:
                         for player_key, player_name in league_mappings.items():
-                            players.append({
-                                "player_name": player_name,
-                                "team_name": league,  # Use league as team for individual sports
-                                "league": league,
-                                "sport": self._get_sport_from_league(league),
-                                "from_team_library": True,
-                                "usage_count": 1,
-                            })
+                            players.append(
+                                {
+                                    "player_name": player_name,
+                                    "team_name": league,  # Use league as team for individual sports
+                                    "league": league,
+                                    "sport": self._get_sport_from_league(league),
+                                    "from_team_library": True,
+                                    "usage_count": 1,
+                                }
+                            )
                     else:
                         # For team sports, filter by team if specified
                         if team_name:
                             # Normalize team name for matching
                             normalized_team = team_name.lower().replace(" ", "_")
-                            
+
                             # Get players for this specific team
-                            team_players = await self._get_team_players(league, team_name)
+                            team_players = await self._get_team_players(
+                                league, team_name
+                            )
                             for player in team_players:
-                                players.append({
-                                    "player_name": player,
-                                    "team_name": team_name,
-                                    "league": league,
-                                    "sport": self._get_sport_from_league(league),
-                                    "from_team_library": True,
-                                    "usage_count": 1,
-                                })
+                                players.append(
+                                    {
+                                        "player_name": player,
+                                        "team_name": team_name,
+                                        "league": league,
+                                        "sport": self._get_sport_from_league(league),
+                                        "from_team_library": True,
+                                        "usage_count": 1,
+                                    }
+                                )
 
             return players
 
@@ -456,16 +474,56 @@ class PlayerSearchService:
         try:
             # Common NBA players by team (simplified - in production, use API or database)
             nba_teams_players = {
-                "lakers": ["LeBron James", "Anthony Davis", "Austin Reaves", "D'Angelo Russell"],
-                "celtics": ["Jayson Tatum", "Jaylen Brown", "Kristaps Porzingis", "Derrick White"],
-                "warriors": ["Stephen Curry", "Klay Thompson", "Draymond Green", "Andrew Wiggins"],
-                "heat": ["Jimmy Butler", "Bam Adebayo", "Tyler Herro", "Duncan Robinson"],
-                "nuggets": ["Nikola Jokic", "Jamal Murray", "Aaron Gordon", "Michael Porter Jr."],
-                "suns": ["Kevin Durant", "Devin Booker", "Bradley Beal", "Jusuf Nurkic"],
-                "bucks": ["Giannis Antetokounmpo", "Damian Lillard", "Khris Middleton", "Brook Lopez"],
-                "76ers": ["Joel Embiid", "Tyrese Maxey", "Tobias Harris", "Kelly Oubre Jr."],
+                "lakers": [
+                    "LeBron James",
+                    "Anthony Davis",
+                    "Austin Reaves",
+                    "D'Angelo Russell",
+                ],
+                "celtics": [
+                    "Jayson Tatum",
+                    "Jaylen Brown",
+                    "Kristaps Porzingis",
+                    "Derrick White",
+                ],
+                "warriors": [
+                    "Stephen Curry",
+                    "Klay Thompson",
+                    "Draymond Green",
+                    "Andrew Wiggins",
+                ],
+                "heat": [
+                    "Jimmy Butler",
+                    "Bam Adebayo",
+                    "Tyler Herro",
+                    "Duncan Robinson",
+                ],
+                "nuggets": [
+                    "Nikola Jokic",
+                    "Jamal Murray",
+                    "Aaron Gordon",
+                    "Michael Porter Jr.",
+                ],
+                "suns": [
+                    "Kevin Durant",
+                    "Devin Booker",
+                    "Bradley Beal",
+                    "Jusuf Nurkic",
+                ],
+                "bucks": [
+                    "Giannis Antetokounmpo",
+                    "Damian Lillard",
+                    "Khris Middleton",
+                    "Brook Lopez",
+                ],
+                "76ers": [
+                    "Joel Embiid",
+                    "Tyrese Maxey",
+                    "Tobias Harris",
+                    "Kelly Oubre Jr.",
+                ],
             }
-            
+
             normalized_team = team_name.lower().replace(" ", "")
             return nba_teams_players.get(normalized_team, [])
 
@@ -478,13 +536,33 @@ class PlayerSearchService:
         try:
             # Common NFL players by team (simplified)
             nfl_teams_players = {
-                "chiefs": ["Patrick Mahomes", "Travis Kelce", "Isiah Pacheco", "Rashee Rice"],
-                "eagles": ["Jalen Hurts", "A.J. Brown", "DeVonta Smith", "Dallas Goedert"],
+                "chiefs": [
+                    "Patrick Mahomes",
+                    "Travis Kelce",
+                    "Isiah Pacheco",
+                    "Rashee Rice",
+                ],
+                "eagles": [
+                    "Jalen Hurts",
+                    "A.J. Brown",
+                    "DeVonta Smith",
+                    "Dallas Goedert",
+                ],
                 "bills": ["Josh Allen", "Stefon Diggs", "James Cook", "Dalton Kincaid"],
-                "cowboys": ["Dak Prescott", "CeeDee Lamb", "Tony Pollard", "Jake Ferguson"],
-                "ravens": ["Lamar Jackson", "Mark Andrews", "Zay Flowers", "Gus Edwards"],
+                "cowboys": [
+                    "Dak Prescott",
+                    "CeeDee Lamb",
+                    "Tony Pollard",
+                    "Jake Ferguson",
+                ],
+                "ravens": [
+                    "Lamar Jackson",
+                    "Mark Andrews",
+                    "Zay Flowers",
+                    "Gus Edwards",
+                ],
             }
-            
+
             normalized_team = team_name.lower().replace(" ", "")
             return nfl_teams_players.get(normalized_team, [])
 
@@ -497,13 +575,38 @@ class PlayerSearchService:
         try:
             # Common MLB players by team (simplified)
             mlb_teams_players = {
-                "yankees": ["Aaron Judge", "Giancarlo Stanton", "Anthony Rizzo", "Gleyber Torres"],
-                "dodgers": ["Mookie Betts", "Freddie Freeman", "Shohei Ohtani", "Will Smith"],
-                "astros": ["Yordan Alvarez", "Jose Altuve", "Alex Bregman", "Kyle Tucker"],
-                "braves": ["Ronald Acuña Jr.", "Matt Olson", "Austin Riley", "Ozzie Albies"],
-                "phillies": ["Bryce Harper", "Trea Turner", "Kyle Schwarber", "Nick Castellanos"],
+                "yankees": [
+                    "Aaron Judge",
+                    "Giancarlo Stanton",
+                    "Anthony Rizzo",
+                    "Gleyber Torres",
+                ],
+                "dodgers": [
+                    "Mookie Betts",
+                    "Freddie Freeman",
+                    "Shohei Ohtani",
+                    "Will Smith",
+                ],
+                "astros": [
+                    "Yordan Alvarez",
+                    "Jose Altuve",
+                    "Alex Bregman",
+                    "Kyle Tucker",
+                ],
+                "braves": [
+                    "Ronald Acuña Jr.",
+                    "Matt Olson",
+                    "Austin Riley",
+                    "Ozzie Albies",
+                ],
+                "phillies": [
+                    "Bryce Harper",
+                    "Trea Turner",
+                    "Kyle Schwarber",
+                    "Nick Castellanos",
+                ],
             }
-            
+
             normalized_team = team_name.lower().replace(" ", "")
             return mlb_teams_players.get(normalized_team, [])
 
@@ -516,13 +619,38 @@ class PlayerSearchService:
         try:
             # Common NHL players by team (simplified)
             nhl_teams_players = {
-                "oilers": ["Connor McDavid", "Leon Draisaitl", "Evan Bouchard", "Zach Hyman"],
-                "avalanche": ["Nathan MacKinnon", "Mikko Rantanen", "Cale Makar", "Valeri Nichushkin"],
-                "lightning": ["Nikita Kucherov", "Brayden Point", "Victor Hedman", "Steven Stamkos"],
-                "bruins": ["David Pastrnak", "Brad Marchand", "Charlie McAvoy", "Jeremy Swayman"],
-                "leafs": ["Auston Matthews", "Mitch Marner", "William Nylander", "John Tavares"],
+                "oilers": [
+                    "Connor McDavid",
+                    "Leon Draisaitl",
+                    "Evan Bouchard",
+                    "Zach Hyman",
+                ],
+                "avalanche": [
+                    "Nathan MacKinnon",
+                    "Mikko Rantanen",
+                    "Cale Makar",
+                    "Valeri Nichushkin",
+                ],
+                "lightning": [
+                    "Nikita Kucherov",
+                    "Brayden Point",
+                    "Victor Hedman",
+                    "Steven Stamkos",
+                ],
+                "bruins": [
+                    "David Pastrnak",
+                    "Brad Marchand",
+                    "Charlie McAvoy",
+                    "Jeremy Swayman",
+                ],
+                "leafs": [
+                    "Auston Matthews",
+                    "Mitch Marner",
+                    "William Nylander",
+                    "John Tavares",
+                ],
             }
-            
+
             normalized_team = team_name.lower().replace(" ", "")
             return nhl_teams_players.get(normalized_team, [])
 
@@ -535,13 +663,33 @@ class PlayerSearchService:
         try:
             # Common soccer players by team (simplified)
             soccer_teams_players = {
-                "manchester city": ["Erling Haaland", "Kevin De Bruyne", "Phil Foden", "Rodri"],
-                "arsenal": ["Bukayo Saka", "Martin Ødegaard", "Gabriel Jesus", "Declan Rice"],
-                "real madrid": ["Jude Bellingham", "Vinicius Jr.", "Rodrygo", "Toni Kroos"],
+                "manchester city": [
+                    "Erling Haaland",
+                    "Kevin De Bruyne",
+                    "Phil Foden",
+                    "Rodri",
+                ],
+                "arsenal": [
+                    "Bukayo Saka",
+                    "Martin Ødegaard",
+                    "Gabriel Jesus",
+                    "Declan Rice",
+                ],
+                "real madrid": [
+                    "Jude Bellingham",
+                    "Vinicius Jr.",
+                    "Rodrygo",
+                    "Toni Kroos",
+                ],
                 "barcelona": ["Robert Lewandowski", "Frenkie de Jong", "Pedri", "Gavi"],
-                "bayern munich": ["Harry Kane", "Jamal Musiala", "Leroy Sané", "Joshua Kimmich"],
+                "bayern munich": [
+                    "Harry Kane",
+                    "Jamal Musiala",
+                    "Leroy Sané",
+                    "Joshua Kimmich",
+                ],
             }
-            
+
             normalized_team = team_name.lower()
             return soccer_teams_players.get(normalized_team, [])
 
@@ -553,7 +701,7 @@ class PlayerSearchService:
         """Get sport name from league."""
         sport_mapping = {
             "NBA": "basketball",
-            "WNBA": "basketball", 
+            "WNBA": "basketball",
             "NFL": "football",
             "MLB": "baseball",
             "NHL": "hockey",

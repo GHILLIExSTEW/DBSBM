@@ -3,4 +3,4 @@
 f"Ensure this script is in a subdirectory of 'bot' (e.g., utils/) "
 f"and that the 'config' package is in 'bot/config/'. "
 # CSV_FILE_PATH: bot/data/team_logos.csv
-# STATIC_DIR for saving logos: bot/static/ 
+# STATIC_DIR for saving logos: bot/static/

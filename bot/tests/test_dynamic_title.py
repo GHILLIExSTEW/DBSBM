@@ -13,22 +13,22 @@ def test_dynamic_title_sizing():
         "English Premier League",  # Medium-long
         "Major League Baseball",  # Medium
     ]
-    
+
     # Create a test image to measure text
     image_width = 600
     image_height = 400
     image = Image.new("RGB", (image_width, image_height), "#232733")
     draw = ImageDraw.Draw(image)
-    
+
     # Load font
     font_dir = "bot/assets/fonts"
     font_bold = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", 36)
-    
+
     # Test the dynamic sizing logic
     logo_display_size = (45, 45)
     logo_space = logo_display_size[0] + 15  # Assume logo exists
     available_text_width = image_width - 48 - logo_space
-    
+
     # League abbreviations mapping
     LEAGUE_ABBREVIATIONS = {
         "UEFA Champions League": "UEFA CL",
@@ -42,7 +42,7 @@ def test_dynamic_title_sizing():
         "Serie A": "Serie A",
         "Ligue 1": "Ligue 1",
     }
-    
+
     def create_header_text_with_fallback(league_name, font, max_width, logo_width=0):
         """Create header text that fits within the available width, always keeping '- Game Line'."""
         suffix = " - Game Line"
@@ -72,38 +72,42 @@ def test_dynamic_title_sizing():
             return f"{truncated}{suffix}"
         else:
             return suffix.strip()  # Fallback
-    
+
     for league in test_cases:
         header_text = create_header_text_with_fallback(
             league, font_bold, available_text_width, logo_space
         )
-        
+
         # Measure the final text width
         final_width = font_bold.getbbox(header_text)[2]
-        
+
         # Assert that the text fits within the available width
-        assert final_width <= available_text_width, f"Text '{header_text}' (width: {final_width}) does not fit in available width ({available_text_width})"
-        
+        assert (
+            final_width <= available_text_width
+        ), f"Text '{header_text}' (width: {final_width}) does not fit in available width ({available_text_width})"
+
         # Assert that the text always ends with " - Game Line" or is just "Game Line"
-        assert header_text.endswith(" - Game Line") or header_text == "Game Line", f"Text '{header_text}' does not have proper suffix"
+        assert (
+            header_text.endswith(" - Game Line") or header_text == "Game Line"
+        ), f"Text '{header_text}' does not have proper suffix"
 
 
 def test_uefa_cl_alias():
     """Test that UEFA CL alias works correctly."""
     # Test that "UEFA CL" is properly recognized
     assert "UEFA CL" in ["UEFA CL", "UEFA Champions League", "ChampionsLeague"]
-    
+
     # Test that the abbreviation mapping works
     LEAGUE_ABBREVIATIONS = {
         "UEFA Champions League": "UEFA CL",
         "ChampionsLeague": "UEFA CL",
         "UEFA CL": "UEFA CL",
     }
-    
+
     assert LEAGUE_ABBREVIATIONS.get("UEFA Champions League") == "UEFA CL"
     assert LEAGUE_ABBREVIATIONS.get("ChampionsLeague") == "UEFA CL"
     assert LEAGUE_ABBREVIATIONS.get("UEFA CL") == "UEFA CL"
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"]) 
+    pytest.main([__file__, "-v"])

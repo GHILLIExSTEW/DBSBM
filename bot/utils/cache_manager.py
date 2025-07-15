@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 class CacheManager:
     """Manages caching for various data types."""
 
-    def __init__(
-        self, cache_dir: str = "bot/data/cache", max_size_mb: int = 100
-    ):
+    def __init__(self, cache_dir: str = "bot/data/cache", max_size_mb: int = 100):
         """
         Initialize the cache manager.
 
