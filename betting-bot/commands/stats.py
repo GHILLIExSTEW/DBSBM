@@ -276,19 +276,32 @@ class StatsView(View):
                  return
 
             # Generate the stats image
-            # Ensure StatsImageGenerator is async or run in executor
             image_generator = StatsImageGenerator()
-            
-            # Pass profile image URL to the image generator
-            img: Image.Image = await image_generator.generate_capper_stats_image(
-                self.stats_data,
-                username,
-                profile_image_url
-            )
             from io import BytesIO
-            img_buffer = BytesIO()
-            img.save(img_buffer, format="PNG")
-            img_buffer.seek(0)
+            if self.is_server:
+                # Use the guild stats image generator (sync, so run in executor if needed)
+                loop = None
+                try:
+                    import asyncio
+                    loop = asyncio.get_running_loop()
+                except Exception:
+                    pass
+                img = await loop.run_in_executor(
+                    None,
+                    lambda: image_generator.generate_guild_stats_image(self.stats_data)
+                ) if loop else image_generator.generate_guild_stats_image(self.stats_data)
+                img_buffer = BytesIO()
+                img.save(img_buffer, format="PNG")
+                img_buffer.seek(0)
+            else:
+                img: Image.Image = await image_generator.generate_capper_stats_image(
+                    self.stats_data,
+                    username,
+                    profile_image_url
+                )
+                img_buffer = BytesIO()
+                img.save(img_buffer, format="PNG")
+                img_buffer.seek(0)
             file = File(img_buffer, filename="stats.png")
 
             if img_buffer:
