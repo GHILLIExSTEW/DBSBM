@@ -22,6 +22,46 @@ def make_rounded_feathered(img):
     return result
 
 class StatsImageGenerator:
+
+    def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
+        """Generate a stats image for the guild/server."""
+        try:
+            # Create figure with dark theme
+            fig, ax = plt.subplots(figsize=(12, 8))
+            fig.patch.set_facecolor('#1a1a1a')
+            ax.axis('off')
+
+            # Prepare stats text
+            summary_lines = [
+                "Server Stats Summary",
+                "",
+                f"Total Bets: {stats.get('total_bets', 0)}",
+                f"Total Cappers: {stats.get('total_cappers', 0)}",
+                f"Total Units Wagered: {stats.get('total_units', 0)}",
+                f"Net Units: {stats.get('net_units', 0)}"
+            ]
+            summary_text = "\n".join(summary_lines)
+            bbox_props = dict(boxstyle="round,pad=1.0", facecolor='#111', alpha=0.95, edgecolor='#00ffe7', linewidth=3)
+            ax.text(
+                0.5, 0.5, summary_text,
+                ha='center', va='center',
+                fontsize=28, color='#ffffff',
+                fontweight='bold',
+                bbox=bbox_props,
+                transform=ax.transAxes
+            )
+
+            plt.tight_layout(pad=3.0)
+            buf = BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#1a1a1a', edgecolor='none')
+            buf.seek(0)
+            img = Image.open(buf)
+            img = img.convert('RGB')
+            plt.close()
+            return img
+        except Exception as e:
+            logger.error(f"Error generating guild stats image: {str(e)}")
+            return self._generate_fallback_guild_image(stats)
     def __init__(self):
         self.font_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'arial.ttf')
         self.background_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'stats_bg.png')
