@@ -337,3 +337,6 @@ TEAM_FULL_NAMES = {
     "vityaz": "Vityaz Moscow Region",
     "moscow region": "Vityaz Moscow Region",
 }
+
+# Export TEAM_NAMES for compatibility with asset loader
+TEAM_NAMES = TEAM_FULL_NAMES

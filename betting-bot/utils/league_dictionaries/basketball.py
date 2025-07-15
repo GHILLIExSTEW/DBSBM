@@ -320,3 +320,6 @@ TEAM_FULL_NAMES = {
     "zalgiris": "Zalgiris",
     "kaunas": "Zalgiris",
 }
+
+# Export TEAM_NAMES for compatibility with asset loader
+TEAM_NAMES = TEAM_FULL_NAMES
