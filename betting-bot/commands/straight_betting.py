@@ -411,28 +411,35 @@ class TeamSelect(Select):
             opponent = home_team
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent
-        line_type = self.parent_view.bet_details.get("line_type", "game_line")
+        
         is_manual = self.parent_view.bet_details.get("is_manual", False)
-        # Always show modal for line/odds after team selection
-        modal = StraightBetDetailsModal(
-            line_type=line_type,
-            selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
-            bet_details_from_view=self.parent_view.bet_details,
-            is_manual=is_manual,
-            view_custom_id_suffix=str(interaction.id),
-        )
-        modal.view_ref = self.parent_view
-        if not interaction.response.is_done():
-            await interaction.response.send_modal(modal)
-            return
-        else:
-            logger.error("Tried to send modal, but interaction already responded to.")
-            await self.parent_view.edit_message(
-                content="❌ Error: Could not open modal. Please try again or cancel.",
-                view=None,
+        
+        if is_manual:
+            # For manual entries, show modal for line/odds input
+            line_type = self.parent_view.bet_details.get("line_type", "game_line")
+            modal = StraightBetDetailsModal(
+                line_type=line_type,
+                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=is_manual,
+                view_custom_id_suffix=str(interaction.id),
             )
-            self.parent_view.stop()
-            return
+            modal.view_ref = self.parent_view
+            if not interaction.response.is_done():
+                await interaction.response.send_modal(modal)
+                return
+            else:
+                logger.error("Tried to send modal, but interaction already responded to.")
+                await self.parent_view.edit_message(
+                    content="❌ Error: Could not open modal. Please try again or cancel.",
+                    view=None,
+                )
+                self.parent_view.stop()
+                return
+        else:
+            # For regular game selections, proceed directly to units selection
+            await interaction.response.defer()
+            await self.parent_view.go_next(interaction)
 
 
 class UnitsSelect(Select):
@@ -1723,7 +1730,8 @@ class StraightBetDetailsModal(Modal):
                 self.view_ref.bet_details.update(self.bet_details)
                 if not interaction.response.is_done():
                     await interaction.response.defer()
-                self.view_ref.current_step = 4  # Ensure next step is units selection
+                # For manual entries, go to units selection (step 4)
+                self.view_ref.current_step = 3  # Set to 3 so go_next increments to 4 (units selection)
                 await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(
