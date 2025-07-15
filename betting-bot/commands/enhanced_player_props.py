@@ -326,20 +326,20 @@ class PlayerPropsWorkflowView(View):
             if self.message:
                 # Only pass files parameter if we have a file
                 kwargs = {"content": content, "view": view, "embed": embed}
-                if file:
+                if file is not None:
                     kwargs["files"] = [file]
                 await self.message.edit(**kwargs)
             else:
                 # If no message to control, send a new one
                 if not hasattr(self, '_initial_message_sent'):
                     kwargs = {"content": content, "view": view, "embed": embed, "ephemeral": True}
-                    if file:
+                    if file is not None:
                         kwargs["file"] = file
                     await self.original_interaction.response.send_message(**kwargs)
                     self._initial_message_sent = True
                 else:
                     kwargs = {"content": content, "view": view, "embed": embed}
-                    if file:
+                    if file is not None:
                         kwargs["file"] = file
                     await self.original_interaction.followup.send(**kwargs)
         except discord.HTTPException as e:
