@@ -303,46 +303,10 @@ class GameSelect(Select):
                 self.parent_view.stop()
                 return
 
-        # For manual entry, skip team selection and go directly to modal
-        if self.parent_view.bet_details.get("is_manual", False):
-            line_type = self.parent_view.bet_details.get("line_type", "game_line")
-            modal = StraightBetDetailsModal(
-                line_type=line_type,
-                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
-                bet_details_from_view=self.parent_view.bet_details,
-                is_manual=True,
-                view_custom_id_suffix=str(interaction.id),
-            )
-            modal.view_ref = self.parent_view
-            if not interaction.response.is_done():
-                await interaction.response.send_modal(modal)
-                await self.parent_view.edit_message(
-                    content="Please fill in the bet details in the popup form.",
-                    view=self.parent_view,
-                )
-            else:
-                logger.error(
-                    "Tried to send modal, but interaction already responded to."
-                )
-                await self.parent_view.edit_message(
-                    content="❌ Error: Could not open modal. Please try again or cancel.",
-                    view=None,
-                )
-                self.parent_view.stop()
-            return
-        else:
-            # For regular games, show team selection
-            self.parent_view.clear_items()
-            home_team = self.parent_view.bet_details.get("home_team_name", "")
-            away_team = self.parent_view.bet_details.get("away_team_name", "")
-            self.parent_view.add_item(
-                TeamSelect(self.parent_view, home_team, away_team)
-            )
-            self.parent_view.add_item(CancelButton(self.parent_view))
-            await interaction.response.defer()
-            await self.parent_view.edit_message(
-                content="Select which team you are betting on:", view=self.parent_view
-            )
+        # Always proceed to the next step in the workflow
+        # Team selection will be handled in go_next method
+        await interaction.response.defer()
+        await self.parent_view.go_next(interaction)
 
 
 class CancelButton(Button):

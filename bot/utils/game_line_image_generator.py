@@ -220,6 +220,7 @@ class GameLineImageGenerator:
         from config.leagues import LEAGUE_CONFIG
 
         league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
+        logger.info(f"[IMAGE GENERATOR] League: {league}, Display name: {league_display_name}")
 
         # Dynamic header text sizing with abbreviation support
         LEAGUE_ABBREVIATIONS = {
