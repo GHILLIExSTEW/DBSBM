@@ -446,9 +446,9 @@ class ParlayPlayerSearchView(View):
             for player in search_results:
                 options.append(
                     SelectOption(
-                        label=f"{player.name} ({player.team_name})",
-                        value=player.player_id,
-                        description=f"{player.team_name} - {player.position or 'N/A'}",
+                        label=f"{player.player_name} ({player.team_name})",
+                        value=player.player_name,
+                        description=f"{player.team_name} - {player.confidence:.0f}% match",
                     )
                 )
 
@@ -461,9 +461,9 @@ class ParlayPlayerSearchView(View):
             )
 
             async def player_callback(interaction: Interaction):
-                selected_player_id = player_select.values[0]
+                selected_player_name = player_select.values[0]
                 selected_player = next(
-                    (p for p in search_results if p.player_id == selected_player_id),
+                    (p for p in search_results if p.player_name == selected_player_name),
                     None,
                 )
 
@@ -527,7 +527,7 @@ class ParlayPlayerSearchView(View):
             )
 
             async def prop_callback(interaction: Interaction):
-                prop_select.values[0]
+                selected_prop_type = prop_select.values[0]
 
                 # Show the enhanced modal with pre-filled data
                 modal = ParlayEnhancedPlayerPropModal(
@@ -535,7 +535,7 @@ class ParlayPlayerSearchView(View):
                 )
 
                 # Pre-fill player name
-                modal.player_search.default = player.name
+                modal.player_search.default = player.player_name
 
                 await interaction.response.send_modal(modal)
 
@@ -547,7 +547,7 @@ class ParlayPlayerSearchView(View):
             view.add_item(Button(label="Back", style=ButtonStyle.secondary))
 
             await interaction.response.edit_message(
-                content=f"**Select prop type for {player.name}:**", view=view
+                content=f"**Select prop type for {player.player_name}:**", view=view
             )
 
         except Exception as e:

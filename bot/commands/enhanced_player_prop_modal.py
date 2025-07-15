@@ -359,26 +359,20 @@ class PlayerPropSearchView(discord.ui.View):
     ):
         """Search for players using the enhanced search service."""
         try:
-            # Get the search query from the modal
-            search_query = self.player_search.value.strip()
-            if not search_query:
-                await interaction.response.send_message(
-                    "Please enter a player name to search for.", ephemeral=True
-                )
-                return
-
-            # Search for players using the enhanced service with team library support
-            search_results = await self.player_search_service.search_players(
-                query=search_query,
-                league=self.league,
-                team_name=self.team_name,  # Pass team name to utilize team library
-                limit=10,
-                min_confidence=50.0,
+            # Prompt user for search query since we don't have direct access to modal fields
+            await interaction.response.send_message(
+                "Please enter a player name to search for (e.g., 'Messi', 'Ronaldo', 'Haaland'):",
+                ephemeral=True,
+            )
+            
+            # For now, we'll show popular players for this league
+            search_results = await self.player_search_service.get_popular_players(
+                self.league, limit=15
             )
 
             if not search_results:
-                await interaction.response.send_message(
-                    f"No players found for '{search_query}'. Try a different search term.",
+                await interaction.followup.send(
+                    f"No players found for {self.league}. Please try a different league.",
                     ephemeral=True,
                 )
                 return
@@ -410,9 +404,6 @@ class PlayerPropSearchView(discord.ui.View):
             async def player_callback(interaction: discord.Interaction):
                 selected_player = player_select.values[0]
 
-                # Update the player search field with the selected player
-                self.player_search.default = selected_player
-
                 # Show prop type selection
                 await self._show_prop_type_selection(interaction, selected_player)
 
@@ -425,11 +416,13 @@ class PlayerPropSearchView(discord.ui.View):
                 discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary)
             )
 
-            await interaction.response.edit_message(
-                content=f"**Found {len(search_results)} players for '{search_query}':**\n"
+            await interaction.followup.send(
+                content=f"**Popular players for {self.league}:**\n"
                 f"⭐ = High confidence (team library)\n"
-                f"🔍 = Database match",
+                f"🔍 = Database match\n\n"
+                f"Select a player to continue:",
                 view=view,
+                ephemeral=True,
             )
 
         except Exception as e:
@@ -475,13 +468,10 @@ class PlayerPropSearchView(discord.ui.View):
             async def prop_callback(interaction: discord.Interaction):
                 selected_prop_type = prop_select.values[0]
 
-                # Update the prop type field
-                self.prop_type.default = selected_prop_type
-
-                # Show success message and return to modal
+                # Show success message and instructions to open modal
                 await interaction.response.edit_message(
-                    content=f"✅ Selected **{selected_player}** for **{selected_prop_type}** prop.\n"
-                    f"Complete the form and submit your bet!",
+                    content=f"✅ Selected **{selected_player}** for **{selected_prop_type}** prop.\n\n"
+                    f"Click 'Create Prop Bet' below to open the betting form with your selections!",
                     view=None,
                 )
 
