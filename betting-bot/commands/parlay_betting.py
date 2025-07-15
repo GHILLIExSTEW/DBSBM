@@ -37,6 +37,7 @@ from utils.image_url_converter import convert_image_path_to_url
 from utils.league_loader import get_all_league_names
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 from utils.validators import validate_units
+from .admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
 
@@ -660,21 +661,15 @@ class BetDetailsModal(Modal):
             )
             self.add_item(self.line_input)
         elif line_type == "player_prop":
-            # For player props, keep as before
-            self.player_name_input = TextInput(
-                label="Player Name",
-                placeholder="Enter player name (e.g. LeBron James)",
-                required=True,
-                custom_id=f"parlay_player_name_input_{view_custom_id_suffix}",
+            # For enhanced player props, we'll use a separate modal
+            # This is just a placeholder - the actual enhanced modal will be called separately
+            self.enhanced_player_prop_placeholder = TextInput(
+                label="Enhanced Player Prop",
+                placeholder="Click 'Continue' to use enhanced player prop selection",
+                required=False,
+                custom_id=f"parlay_enhanced_placeholder_{view_custom_id_suffix}",
             )
-            self.line_input = TextInput(
-                label="Player Prop Line",
-                placeholder="Enter the prop line (e.g. Over 25.5 Points)",
-                required=True,
-                custom_id=f"parlay_line_input_{view_custom_id_suffix}",
-            )
-            self.add_item(self.player_name_input)
-            self.add_item(self.line_input)
+            self.add_item(self.enhanced_player_prop_placeholder)
         # Add odds input for every leg
         self.odds_input = TextInput(
             label="Leg Odds",
@@ -734,21 +729,15 @@ class BetDetailsModal(Modal):
                         self.opponent_input.value.strip()[:100] or "Opponent"
                     )
             elif self.is_manual and self.line_type == "player_prop":
-                self.view_ref.current_leg_construction_details["player_name"] = (
-                    self.player_name_input.value.strip()[:100] or "Player"
-                )
-                # For player props, also set away_team_name to player name for right-side label
-                self.view_ref.current_leg_construction_details[
-                    "away_team_name"
-                ] = self.view_ref.current_leg_construction_details["player_name"]
+                # For enhanced player props, we'll handle this in a separate modal
+                # Just store the basic info for now
+                self.view_ref.current_leg_construction_details["line_type"] = "player_prop"
+                self.view_ref.current_leg_construction_details["league"] = self.view_ref.current_leg_construction_details.get("league", "")
             elif self.line_type == "player_prop":
-                # For non-manual, ensure player_name is set and used as away_team_name
-                self.view_ref.current_leg_construction_details["player_name"] = (
-                    self.player_name_input.value.strip()[:100] or "Player"
-                )
-                self.view_ref.current_leg_construction_details[
-                    "away_team_name"
-                ] = self.view_ref.current_leg_construction_details["player_name"]
+                # For enhanced player props, we'll handle this in a separate modal
+                # Just store the basic info for now
+                self.view_ref.current_leg_construction_details["line_type"] = "player_prop"
+                self.view_ref.current_leg_construction_details["league"] = self.view_ref.current_leg_construction_details.get("league", "")
 
             line = self.line_input.value.strip()
             if not line:
@@ -1279,16 +1268,31 @@ class TeamSelect(Select):
         line_type = self.parent_view.current_leg_construction_details.get(
             "line_type", "game_line"
         )
-        modal = BetDetailsModal(
-            line_type=line_type,
-            is_manual=self.parent_view.current_leg_construction_details.get(
-                "is_manual", False
-            ),
-            leg_number=len(self.parent_view.bet_details.get("legs", [])) + 1,
-            view_custom_id_suffix=self.parent_view.original_interaction.id,
-            bet_details_from_view=self.parent_view.current_leg_construction_details,
-        )
-        modal.view_ref = self.parent_view
+        
+        # Use enhanced player prop modal for player props
+        if line_type == "player_prop":
+            from commands.parlay_enhanced_player_prop_modal import ParlayEnhancedPlayerPropModal
+            modal = ParlayEnhancedPlayerPropModal(
+                self.parent_view.bot,
+                self.parent_view.bot.db_manager,
+                self.parent_view.current_leg_construction_details.get("league", ""),
+                leg_number=len(self.parent_view.bet_details.get("legs", [])) + 1,
+                view_custom_id_suffix=self.parent_view.original_interaction.id,
+                bet_details_from_view=self.parent_view.current_leg_construction_details,
+            )
+            modal.view_ref = self.parent_view
+        else:
+            # Use regular bet details modal for game lines
+            modal = BetDetailsModal(
+                line_type=line_type,
+                is_manual=self.parent_view.current_leg_construction_details.get(
+                    "is_manual", False
+                ),
+                leg_number=len(self.parent_view.bet_details.get("legs", [])) + 1,
+                view_custom_id_suffix=self.parent_view.original_interaction.id,
+                bet_details_from_view=self.parent_view.current_leg_construction_details,
+            )
+            modal.view_ref = self.parent_view
         if not interaction.response.is_done():
             await interaction.response.send_modal(modal)
             await self.parent_view.edit_message_for_current_leg(
@@ -1625,14 +1629,29 @@ class ParlayBetWorkflowView(View):
 
                 if is_individual_sport:
                     # For individual sports, skip team selection and go directly to modal
-                    modal = BetDetailsModal(
-                        line_type=line_type,
-                        is_manual=True,
-                        leg_number=len(self.bet_details.get("legs", [])) + 1,
-                        view_custom_id_suffix=self.original_interaction.id,
-                        bet_details_from_view=self.current_leg_construction_details,
-                    )
-                    modal.view_ref = self
+                    if line_type == "player_prop":
+                        # Use enhanced player prop modal
+                        from commands.parlay_enhanced_player_prop_modal import ParlayEnhancedPlayerPropModal
+                        modal = ParlayEnhancedPlayerPropModal(
+                            self.bot,
+                            self.bot.db_manager,
+                            league,
+                            leg_number=len(self.bet_details.get("legs", [])) + 1,
+                            view_custom_id_suffix=self.original_interaction.id,
+                            bet_details_from_view=self.current_leg_construction_details,
+                        )
+                        modal.view_ref = self
+                    else:
+                        # Use regular bet details modal for game lines
+                        modal = BetDetailsModal(
+                            line_type=line_type,
+                            is_manual=True,
+                            leg_number=len(self.bet_details.get("legs", [])) + 1,
+                            view_custom_id_suffix=self.original_interaction.id,
+                            bet_details_from_view=self.current_leg_construction_details,
+                        )
+                        modal.view_ref = self
+                    
                     if not interaction.response.is_done():
                         await interaction.response.send_modal(modal)
                         await self.edit_message_for_current_leg(
@@ -2038,3 +2057,38 @@ class ParlayBetWorkflowView(View):
         # If there is a PlayerPropBetDetailsModal or similar, ensure its on_submit does the same as parlay/straight:
         # Always generate preview image with units=1.0 for the first units selection, attach to edit_message.
         # If not present, this is a placeholder for future consistency.
+
+
+class ParlayCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        logging.info("ParlayCog initialized")
+
+    @app_commands.command(name="parlay", description="Create a multi-leg parlay bet (game lines and player props)")
+    @require_registered_guild()
+    async def parlay(self, interaction: Interaction):
+        logging.info(f"/parlay command invoked by {interaction.user} (ID: {interaction.user.id})")
+        try:
+            view = ParlayBetWorkflowView(interaction, self.bot)
+            logging.debug("ParlayBetWorkflowView initialized successfully.")
+            await interaction.response.send_message(
+                "Let's build your parlay! Add legs (game lines or player props) and finalize when ready:",
+                view=view,
+                ephemeral=True
+            )
+            view.message = await interaction.original_response()
+            logging.info("/parlay command response sent successfully.")
+        except Exception as e:
+            logging.error(f"Error in /parlay command: {e}", exc_info=True)
+            await interaction.response.send_message(
+                "❌ An error occurred while processing your parlay request.", ephemeral=True
+            )
+
+async def setup(bot: commands.Bot):
+    logging.info("Setting up parlay commands...")
+    try:
+        await bot.add_cog(ParlayCog(bot))
+        logging.info("ParlayCog loaded successfully")
+    except Exception as e:
+        logging.error(f"Error during parlay command setup: {e}", exc_info=True)
+        raise

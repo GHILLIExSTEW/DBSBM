@@ -90,11 +90,6 @@ class BetTypeSelect(Select):
                 value="straight",
                 description="Moneyline or over/under",
             ),
-            SelectOption(
-                label="Parlay",
-                value="parlay",
-                description="Combine multiple bets",
-            ),
         ]
         super().__init__(
             placeholder="Select Bet Type...",
@@ -211,17 +206,6 @@ class BetTypeView(View):
                 await view.start_flow(
                     interaction_from_select
                 )  # Pass the component interaction
-            elif bet_type == "parlay":
-                logger.debug("Initializing ParlayBetWorkflowView")
-                view = ParlayBetWorkflowView(
-                    self.original_interaction,
-                    self.bot,
-                    message_to_control=self.message,  # Pass the message to control
-                )
-                await view.start_flow(
-                    interaction_from_select
-                )  # Pass the interaction for consistency
-
             logger.debug(f"{bet_type} bet workflow started successfully")
         except Exception as e:
             logger.error(
