@@ -145,19 +145,26 @@ class AssetLoader:
             logger.warning(f"No sport category found for league: {league}")
             return self._load_fallback_logo(guild_id)
 
+        logger.info(f"[DEBUG] Looking for team '{team_name}' in league '{league}' -> sport '{sport}'")
+
         # Try league directory in uppercase, capitalized, and lowercase
         league_variants = [league.upper(), league.capitalize(), league.lower()]
         logo_dir = None
         for variant in league_variants:
             candidate_dir = os.path.join(self.logos_dir, "teams", sport, variant)
+            logger.info(f"[DEBUG] Trying directory: {candidate_dir}")
             if os.path.exists(candidate_dir):
                 logo_dir = candidate_dir
+                logger.info(f"[DEBUG] Found logo directory: {logo_dir}")
                 break
         if not logo_dir:
             logger.warning(
                 f"No logo directory found for league: {league} (tried {league_variants})"
             )
             return self._load_fallback_logo(guild_id)
+
+        logger.info(f"[DEBUG] Using logo directory: {logo_dir}")
+        logger.info(f"[DEBUG] Looking for filename: {filename_team}.png")
 
         # Try exact match (full name)
         logo_path = os.path.join(logo_dir, f"{filename_team}.png")
