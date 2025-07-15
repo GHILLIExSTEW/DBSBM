@@ -324,18 +324,24 @@ class PlayerPropsWorkflowView(View):
         """Edit the message with new content."""
         try:
             if self.message:
-                await self.message.edit(content=content, view=view, embed=embed, files=[file] if file else None)
+                # Only pass files parameter if we have a file
+                kwargs = {"content": content, "view": view, "embed": embed}
+                if file:
+                    kwargs["files"] = [file]
+                await self.message.edit(**kwargs)
             else:
                 # If no message to control, send a new one
                 if not hasattr(self, '_initial_message_sent'):
-                    await self.original_interaction.response.send_message(
-                        content=content, view=view, embed=embed, file=file, ephemeral=True
-                    )
+                    kwargs = {"content": content, "view": view, "embed": embed, "ephemeral": True}
+                    if file:
+                        kwargs["file"] = file
+                    await self.original_interaction.response.send_message(**kwargs)
                     self._initial_message_sent = True
                 else:
-                    await self.original_interaction.followup.send(
-                        content=content, view=view, embed=embed, file=file, ephemeral=True
-                    )
+                    kwargs = {"content": content, "view": view, "embed": embed}
+                    if file:
+                        kwargs["file"] = file
+                    await self.original_interaction.followup.send(**kwargs)
         except discord.HTTPException as e:
             logger.error(f"HTTP error editing message: {e}")
         except Exception as e:
