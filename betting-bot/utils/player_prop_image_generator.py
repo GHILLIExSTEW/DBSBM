@@ -233,7 +233,11 @@ class PlayerPropImageGenerator:
             )
         except Exception:
             league_logo = None
-        header_text = f"{league_upper} - Player Prop"
+        # Get proper league display name
+        from config.leagues import LEAGUE_CONFIG
+
+        league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
+        header_text = f"{league_display_name} - Player Prop"
         header_bbox = font_bold.getbbox(header_text)
         header_w = header_bbox[2] - header_bbox[0]
         header_h = header_bbox[3] - header_bbox[1]

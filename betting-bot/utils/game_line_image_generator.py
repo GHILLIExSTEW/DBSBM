@@ -218,7 +218,11 @@ class GameLineImageGenerator:
                 )
             except Exception:
                 league_logo = None
-        header_text = f"{league_upper} - Game Line"
+        # Get proper league display name
+        from config.leagues import LEAGUE_CONFIG
+
+        league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
+        header_text = f"{league_display_name} - Game Line"
         header_w, header_h = font_bold.getbbox(header_text)[2:]
         block_h = max(logo_display_size[1], header_h)
         block_w = logo_display_size[0] + 15 + header_w if league_logo else header_w
