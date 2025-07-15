@@ -130,9 +130,14 @@ class AssetLoader:
                 matches = difflib.get_close_matches(team_name.lower(), mapping.keys(), n=1, cutoff=0.7)
                 if matches:
                     mapped_team = mapping[matches[0]]
+        
+        # Get normalized team name from league dictionary or mapping
         normalized_team = mapped_team or self._normalize_team_name(team_name, league)
         if not normalized_team:
             normalized_team = team_name
+
+        # Convert normalized team name to filename format
+        filename_team = self._team_name_to_filename(normalized_team)
 
         # Get sport category
         sport = get_sport_category_for_path(league.upper())
@@ -155,7 +160,7 @@ class AssetLoader:
             return self._load_fallback_logo(guild_id)
 
         # Try exact match
-        logo_path = os.path.join(logo_dir, f"{normalized_team}.png")
+        logo_path = os.path.join(logo_dir, f"{filename_team}.png")
         if os.path.exists(logo_path):
             logger.info(f"Found exact logo match: {logo_path}")
             return self.load_image(logo_path)
@@ -165,7 +170,7 @@ class AssetLoader:
         candidate_names = [os.path.splitext(f)[0] for f in candidates]
         import difflib
         matches = difflib.get_close_matches(
-            normalized_team, candidate_names, n=1, cutoff=0.75
+            filename_team, candidate_names, n=1, cutoff=0.75
         )
         if matches:
             match_path = os.path.join(logo_dir, f"{matches[0]}.png")
@@ -384,6 +389,18 @@ class AssetLoader:
             )
 
         return None
+
+    def _team_name_to_filename(self, team_name: str) -> str:
+        """Convert a full team name to a filename-friendly format."""
+        # Convert to lowercase
+        filename_team = team_name.lower()
+        # Replace spaces with underscores
+        filename_team = filename_team.replace(" ", "_")
+        # Replace special characters with underscores
+        filename_team = "".join(c for c in filename_team if c.isalnum() or c == "_")
+        # Remove any leading/trailing underscores
+        filename_team = filename_team.strip("_")
+        return filename_team
 
     def _load_fallback_logo(self, guild_id: str = None) -> Optional[Image.Image]:
         """Load fallback logo with guild-specific priority."""
