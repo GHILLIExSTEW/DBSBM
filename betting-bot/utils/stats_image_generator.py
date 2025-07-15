@@ -254,7 +254,6 @@ class StatsImageGenerator:
                 logger.info(f"[DEBUG] Looking for default image at: {default_path}")
                 logger.info(f"[DEBUG] File exists: {os.path.exists(default_path)}")
                 if os.path.exists(default_path):
-                    from PIL import Image
                     profile_img = Image.open(default_path).convert("RGBA")
                     profile_img.thumbnail((400, 400), Image.Resampling.LANCZOS)
                     # Crop to square
