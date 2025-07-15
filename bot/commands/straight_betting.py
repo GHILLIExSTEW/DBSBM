@@ -378,6 +378,8 @@ class TeamSelect(Select):
             opponent = home_team
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent
+        logger.info(f"[TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}")
+        logger.info(f"[TEAM SELECT] Updated bet details: {self.parent_view.bet_details}")
 
         is_manual = self.parent_view.bet_details.get("is_manual", False)
 
@@ -849,7 +851,10 @@ class StraightBetWorkflowView(View):
 
             # Generate preview image only if team has been selected
             selected_team = self.bet_details.get("team")
+            logger.info(f"[STEP 4] Selected team: {selected_team}")
+            logger.info(f"[STEP 4] Bet details: {self.bet_details}")
             if selected_team:
+                logger.info(f"[PREVIEW] Generating preview image for team: {selected_team}")
                 try:
                     bet_type = self.bet_details.get("line_type", "game_line")
                     league = self.bet_details.get("league", "N/A")
@@ -859,6 +864,7 @@ class StraightBetWorkflowView(View):
                     odds = float(self.bet_details.get("odds", 0.0))
                     bet_id = str(self.bet_details.get("preview_bet_serial", ""))
                     timestamp = datetime.now(timezone.utc)
+                    logger.info(f"[PREVIEW] Image params - league: {league}, home: {home_team}, away: {away_team}, line: {line}, odds: {odds}")
 
                     if self.preview_image_bytes:
                         self.preview_image_bytes.close()
