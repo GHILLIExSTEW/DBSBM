@@ -107,7 +107,6 @@ class EnhancedPlayerPropImageGenerator:
         prop_type: str,
         line_value: float,
         bet_direction: str,
-        bet_amount: float,
         odds: Optional[float] = None,
         player_image_url: Optional[str] = None,
         team_logo_url: Optional[str] = None,
@@ -123,7 +122,6 @@ class EnhancedPlayerPropImageGenerator:
             prop_type: Type of prop (points, rebounds, etc.)
             line_value: The line value
             bet_direction: 'over' or 'under'
-            bet_amount: Bet amount
             odds: Betting odds (optional)
             player_image_url: URL to player image (optional)
             team_logo_url: URL to team logo (optional)
@@ -149,9 +147,7 @@ class EnhancedPlayerPropImageGenerator:
 
             # Add main content
             self._add_player_info(draw, player_name, team_name, league)
-            self._add_prop_details(
-                draw, prop_type, line_value, bet_direction, bet_amount, odds
-            )
+            self._add_prop_details(draw, prop_type, line_value, bet_direction, odds)
 
             # Add performance stats if available
             if performance_stats:
@@ -277,7 +273,6 @@ class EnhancedPlayerPropImageGenerator:
         prop_type: str,
         line_value: float,
         bet_direction: str,
-        bet_amount: float,
         odds: Optional[float],
     ):
         """Add prop bet details."""
@@ -302,20 +297,11 @@ class EnhancedPlayerPropImageGenerator:
             (140, 160), direction_text, font=self.fonts["large"], fill=direction_color
         )
 
-        # Bet amount
-        amount_text = f"Bet Amount: ${bet_amount:.2f}"
-        draw.text(
-            (140, 200),
-            amount_text,
-            font=self.fonts["medium"],
-            fill=self.colors["text_secondary"],
-        )
-
         # Odds (if available)
         if odds:
             odds_text = f"Odds: {odds}"
             draw.text(
-                (140, 230),
+                (140, 200),
                 odds_text,
                 font=self.fonts["medium"],
                 fill=self.colors["text_secondary"],

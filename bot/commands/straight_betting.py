@@ -303,9 +303,9 @@ class GameSelect(Select):
                 self.parent_view.stop()
                 return
 
-        # Always proceed to the next step in the workflow
-        # Team selection will be handled in go_next method
-        await interaction.response.defer()
+            # Always proceed to the next step in the workflow
+            # Team selection will be handled in go_next method
+            await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
 
@@ -378,8 +378,12 @@ class TeamSelect(Select):
             opponent = home_team
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent
-        logger.info(f"[TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}")
-        logger.info(f"[TEAM SELECT] Updated bet details: {self.parent_view.bet_details}")
+        logger.info(
+            f"[TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}"
+        )
+        logger.info(
+            f"[TEAM SELECT] Updated bet details: {self.parent_view.bet_details}"
+        )
 
         is_manual = self.parent_view.bet_details.get("is_manual", False)
 
@@ -874,51 +878,55 @@ class StraightBetWorkflowView(View):
             logger.info(f"[STEP 4] Selected team: {selected_team}")
             logger.info(f"[STEP 4] Bet details: {self.bet_details}")
             if selected_team:
-                logger.info(f"[PREVIEW] Generating preview image for team: {selected_team}")
-                try:
-                    bet_type = self.bet_details.get("line_type", "game_line")
-                    league = self.bet_details.get("league", "N/A")
-                    home_team = self.bet_details.get("home_team_name", "N/A")
-                    away_team = self.bet_details.get("away_team_name", "N/A")
-                    line = self.bet_details.get("line", "N/A")
-                    odds = float(self.bet_details.get("odds", 0.0))
-                    bet_id = str(self.bet_details.get("preview_bet_serial", ""))
-                    timestamp = datetime.now(timezone.utc)
-                    logger.info(f"[PREVIEW] Image params - league: {league}, home: {home_team}, away: {away_team}, line: {line}, odds: {odds}")
+                logger.info(
+                    f"[PREVIEW] Generating preview image for team: {selected_team}"
+                )
+            try:
+                bet_type = self.bet_details.get("line_type", "game_line")
+                league = self.bet_details.get("league", "N/A")
+                home_team = self.bet_details.get("home_team_name", "N/A")
+                away_team = self.bet_details.get("away_team_name", "N/A")
+                line = self.bet_details.get("line", "N/A")
+                odds = float(self.bet_details.get("odds", 0.0))
+                bet_id = str(self.bet_details.get("preview_bet_serial", ""))
+                timestamp = datetime.now(timezone.utc)
+                logger.info(
+                    f"[PREVIEW] Image params - league: {league}, home: {home_team}, away: {away_team}, line: {line}, odds: {odds}"
+                )
 
-                    if self.preview_image_bytes:
-                        self.preview_image_bytes.close()
-                        self.preview_image_bytes = None
+                if self.preview_image_bytes:
+                    self.preview_image_bytes.close()
+                    self.preview_image_bytes = None
 
-                    if bet_type == "game_line":
-                        generator = GameLineImageGenerator(
-                            guild_id=self.original_interaction.guild_id
-                        )
-                        bet_slip_image_bytes = generator.generate_bet_slip_image(
-                            league=league,
-                            home_team=home_team,
-                            away_team=away_team,
-                            line=line,
-                            odds=odds,
-                            units=1.0,
-                            bet_id=bet_id,
-                            timestamp=timestamp,
-                            selected_team=selected_team,
-                            output_path=None,
-                            units_display_mode="auto",
-                            display_as_risk=False,
-                        )
-                        if bet_slip_image_bytes:
-                            self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                            self.preview_image_bytes.seek(0)
-                        else:
-                            self.preview_image_bytes = None
-
+                if bet_type == "game_line":
+                    generator = GameLineImageGenerator(
+                        guild_id=self.original_interaction.guild_id
+                    )
+                    bet_slip_image_bytes = generator.generate_bet_slip_image(
+                        league=league,
+                        home_team=home_team,
+                        away_team=away_team,
+                        line=line,
+                        odds=odds,
+                        units=1.0,
+                        bet_id=bet_id,
+                        timestamp=timestamp,
+                        selected_team=selected_team,
+                        output_path=None,
+                        units_display_mode="auto",
+                        display_as_risk=False,
+                    )
+                    if bet_slip_image_bytes:
+                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
+                        self.preview_image_bytes.seek(0)
                     else:
                         self.preview_image_bytes = None
-                except Exception as e:
-                    logger.exception(f"Error generating preview image: {e}")
+
+                else:
                     self.preview_image_bytes = None
+            except Exception as e:
+                logger.exception(f"Error generating preview image: {e}")
+                self.preview_image_bytes = None
             else:
                 # No team selected yet, clear any existing preview
                 if self.preview_image_bytes:

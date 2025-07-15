@@ -180,21 +180,11 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             max_length=10,
         )
 
-        # Bet amount
-        self.bet_amount = discord.ui.TextInput(
-            label="Bet Amount",
-            placeholder="Enter bet amount (e.g., 10.00)",
-            style=discord.TextStyle.short,
-            required=True,
-            max_length=10,
-        )
-
         # Add components to modal
         self.add_item(self.player_search)
         self.add_item(self.prop_type)
         self.add_item(self.line_value)
         self.add_item(self.bet_direction)
-        self.add_item(self.bet_amount)
 
     async def on_submit(self, interaction: discord.Interaction):
         """Handle modal submission with validation."""
@@ -217,8 +207,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 await interaction.response.send_message(
                     f"✅ **Player Prop Bet Created!**\n"
                     f"**{bet_data['player_name']}** - {bet_data['prop_type']}\n"
-                    f"{bet_data['bet_direction'].upper()} {bet_data['line_value']}\n"
-                    f"Amount: ${bet_data['bet_amount']}",
+                    f"{bet_data['bet_direction'].upper()} {bet_data['line_value']}",
                     ephemeral=True,
                 )
             else:
@@ -285,17 +274,6 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     "error": 'Bet direction must be "over" or "under".',
                 }
 
-            # Validate bet amount
-            try:
-                bet_amount = float(self.bet_amount.value.strip())
-                if bet_amount <= 0:
-                    return {
-                        "valid": False,
-                        "error": "Bet amount must be greater than 0.",
-                    }
-            except ValueError:
-                return {"valid": False, "error": "Bet amount must be a valid number."}
-
             # All validations passed
             return {
                 "valid": True,
@@ -307,7 +285,6 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     "prop_type": prop_type,
                     "line_value": line_value,
                     "bet_direction": bet_direction,
-                    "bet_amount": bet_amount,
                     "game_id": self.game_id,
                 },
             }
@@ -326,8 +303,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 INSERT INTO bets (
                     user_id, guild_id, bet_type, player_prop, player_name,
                     team_name, league, sport, player_prop_type, player_prop_line,
-                    player_prop_direction, bet_amount, game_id, status, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    player_prop_direction, game_id, status, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             """
 
             await self.db_manager.execute(
@@ -344,7 +321,6 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     bet_data["prop_type"],
                     bet_data["line_value"],
                     bet_data["bet_direction"],
-                    bet_data["bet_amount"],
                     bet_data["game_id"],
                     "pending",
                 ),

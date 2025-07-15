@@ -420,7 +420,7 @@ async def get_normalized_games_for_dropdown(
     sport = None
     league_key = None
     league_name_db = None
-    
+
     # First, try to find the league by key (e.g., "ChampionsLeague")
     for key, league_info in LEAGUE_IDS.items():
         if key == league_name:
@@ -437,7 +437,7 @@ async def get_normalized_games_for_dropdown(
                 f"[get_normalized_games_for_dropdown] Found league by key: sport={sport}, league_key={league_key}, league_name={league_name_db}"
             )
             break
-    
+
     # If not found by key, try to find by display name (e.g., "UEFA Champions League")
     if not sport:
         for key, league_info in LEAGUE_IDS.items():
@@ -456,7 +456,7 @@ async def get_normalized_games_for_dropdown(
                     f"[get_normalized_games_for_dropdown] Found league by display name: sport={sport}, league_key={league_key}, league_name={league_name_db}"
                 )
                 break
-    
+
     # If still not found, try the reverse mapping from LEAGUE_NAME_NORMALIZATION
     if not sport:
         for key, normalized_name in LEAGUE_NAME_NORMALIZATION.items():
@@ -484,7 +484,7 @@ async def get_normalized_games_for_dropdown(
     league_names = set()
     league_abbr = get_league_abbreviation(league_key)
     league_names.add(league_name_db)  # Use the display name from database
-    league_names.add(league_key)      # Add the league key
+    league_names.add(league_key)  # Add the league key
     league_names.add(league_abbr)
     normalized_full = normalize_league_name(league_abbr)
     league_names.add(normalized_full)
@@ -543,7 +543,9 @@ async def get_normalized_games_for_dropdown(
         ORDER BY start_time ASC LIMIT 100
     """
 
-    league_id = LEAGUE_ID_MAP.get(league_key, "1")  # Use league_key instead of league_name
+    league_id = LEAGUE_ID_MAP.get(
+        league_key, "1"
+    )  # Use league_key instead of league_name
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     logger.info(
         f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"

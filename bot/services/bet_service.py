@@ -220,7 +220,7 @@ class BetService:
                         )
                         raise BetServiceError(f"Game with ID {api_game_id} not found")
                     logger.info(
-                        f"[BET INSERT] Game found, getting/creating internal game record"
+                        "[BET INSERT] Game found, getting/creating internal game record"
                     )
                     internal_game_id = await self._get_or_create_game(api_game_id)
                     logger.info(f"[BET INSERT] Internal game_id: {internal_game_id}")
@@ -296,7 +296,7 @@ class BetService:
                 # --- No longer insert into unit_records table here ---
                 return last_id
             else:
-                logger.error(f"[BET INSERT] Failed to create straight bet record.")
+                logger.error("[BET INSERT] Failed to create straight bet record.")
                 return None
         except IntegrityError as e:
             logger.error(
@@ -656,9 +656,6 @@ class BetService:
                     return
 
                 new_status = resolve_emoji_map[emoji_str]
-                new_result_description = (
-                    f"Resolved as {new_status} by user {payload.user_id} via reaction."
-                )
 
                 if current_bet_status not in ["pending", "live"]:
                     logger.warning(

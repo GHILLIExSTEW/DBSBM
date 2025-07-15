@@ -119,35 +119,35 @@ class DatabaseOptimizer:
             if table_name == "bets":
                 if not any(idx["column_name"] == "guild_id" for idx in indexes):
                     recommendations.append(
-                        f"Add index on bets.guild_id for better query performance"
+                        "Add index on bets.guild_id for better query performance"
                     )
                 if not any(idx["column_name"] == "user_id" for idx in indexes):
                     recommendations.append(
-                        f"Add index on bets.user_id for better query performance"
+                        "Add index on bets.user_id for better query performance"
                     )
                 if not any(idx["column_name"] == "created_at" for idx in indexes):
                     recommendations.append(
-                        f"Add index on bets.created_at for better date range queries"
+                        "Add index on bets.created_at for better date range queries"
                     )
 
             elif table_name == "cappers":
                 if not any(idx["column_name"] == "guild_id" for idx in indexes):
                     recommendations.append(
-                        f"Add index on cappers.guild_id for better query performance"
+                        "Add index on cappers.guild_id for better query performance"
                     )
                 if not any(idx["column_name"] == "user_id" for idx in indexes):
                     recommendations.append(
-                        f"Add index on cappers.user_id for better query performance"
+                        "Add index on cappers.user_id for better query performance"
                     )
 
             elif table_name == "games":
                 if not any(idx["column_name"] == "game_time" for idx in indexes):
                     recommendations.append(
-                        f"Add index on games.game_time for better date range queries"
+                        "Add index on games.game_time for better date range queries"
                     )
                 if not any(idx["column_name"] == "status" for idx in indexes):
                     recommendations.append(
-                        f"Add index on games.status for better status filtering"
+                        "Add index on games.status for better status filtering"
                     )
 
             # Check for large table size
@@ -360,13 +360,13 @@ async def main():
 
         # Print recommendations
         if analysis["recommendations"]:
-            logger.info(f"\nRECOMMENDATIONS:")
+            logger.info("\nRECOMMENDATIONS:")
             for rec in analysis["recommendations"]:
                 logger.info(f"  - {rec}")
 
         # Print index analysis
         if analysis["indexes"].get("unused_indexes"):
-            logger.info(f"\nUNUSED INDEXES:")
+            logger.info("\nUNUSED INDEXES:")
             for idx in analysis["indexes"]["unused_indexes"]:
                 logger.info(f"  - {idx['table_name']}.{idx['index_name']}")
 

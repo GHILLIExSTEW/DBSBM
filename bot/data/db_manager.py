@@ -208,6 +208,51 @@ class DatabaseManager:
             logger.error("[DB EXECUTE] Args that failed: %s", flat_args)
             return None, None
 
+    async def executemany(self, query: str, args_list: List[Tuple]) -> Optional[int]:
+        """Execute INSERT, UPDATE, DELETE for multiple rows. Returns total rowcount."""
+        pool = await self.connect()
+        if not pool:
+            logger.error("[DB EXECUTEMANY] Cannot execute: DB pool unavailable.")
+            raise ConnectionError("DB pool unavailable.")
+
+        logger.info("[DB EXECUTEMANY] Starting batch execution")
+        logger.debug("[DB EXECUTEMANY] Query: %s", query)
+        logger.debug("[DB EXECUTEMANY] Batch size: %s", len(args_list))
+
+        total_rowcount = 0
+        try:
+            async with pool.acquire() as conn:
+                logger.debug("[DB EXECUTEMANY] Acquired connection from pool")
+                async with conn.cursor() as cursor:
+                    logger.debug("[DB EXECUTEMANY] Executing batch query...")
+                    total_rowcount = await cursor.executemany(query, args_list)
+                    logger.info(
+                        "[DB EXECUTEMANY] Batch executed. Total rowcount: %s",
+                        total_rowcount,
+                    )
+
+                    if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
+                        logger.debug("[DB EXECUTEMANY] Committing transaction...")
+                        await conn.commit()
+                        logger.info(
+                            "[DB EXECUTEMANY] Transaction committed successfully"
+                        )
+
+            logger.info(
+                "[DB EXECUTEMANY] Batch execution completed. Total rowcount: %s",
+                total_rowcount,
+            )
+            return total_rowcount
+        except Exception as e:
+            logger.error(
+                "[DB EXECUTEMANY] Error executing batch query: %s",
+                str(e),
+                exc_info=True,
+            )
+            logger.error("[DB EXECUTEMANY] Query that failed: %s", query)
+            logger.error("[DB EXECUTEMANY] Batch size that failed: %s", len(args_list))
+            return None
+
     async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
         """Fetch one row as a dictionary."""
         pool = await self.connect()

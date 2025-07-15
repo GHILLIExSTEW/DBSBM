@@ -386,7 +386,6 @@ class PlayerSearchService:
             players = []
 
             # Import team mappings
-            from utils.helpers import get_league_teams
             from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
 
             # Get league-specific player data
@@ -421,9 +420,6 @@ class PlayerSearchService:
                     else:
                         # For team sports, filter by team if specified
                         if team_name:
-                            # Normalize team name for matching
-                            normalized_team = team_name.lower().replace(" ", "_")
-
                             # Get players for this specific team
                             team_players = await self._get_team_players(
                                 league, team_name
