@@ -34,7 +34,25 @@ class StatsImageGenerator:
             wins = int(stats.get('wins', 0) or 0)
             losses = int(stats.get('losses', 0) or 0)
             pushes = int(stats.get('pushes', 0) or 0)
+
+            # Build leaderboard if not provided
             leaderboard = stats.get('leaderboard', [])
+            if (not leaderboard or len(leaderboard) == 0):
+                # Try to build from user_stats if available
+                user_stats = stats.get('user_stats', [])
+                if user_stats and isinstance(user_stats, list):
+                    leaderboard = []
+                    for u in user_stats:
+                        # Use net_units if present, else calculate from bet_won and bet_loss
+                        if u.get('net_units') is not None:
+                            net_units = float(u.get('net_units', 0) or 0.0)
+                        else:
+                            net_units = float(u.get('bet_won', 0) or 0.0) - float(u.get('bet_loss', 0) or 0.0)
+                        leaderboard.append({
+                            'username': u.get('display_name') or u.get('username') or str(u.get('user_id', '?')),
+                            'net_units': net_units
+                        })
+                    leaderboard = sorted(leaderboard, key=lambda x: x['net_units'], reverse=True)[:8]
 
             # Create multi-panel figure
             fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 14))
