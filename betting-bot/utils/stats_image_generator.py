@@ -229,15 +229,16 @@ class StatsImageGenerator:
             logger.error(f"Error generating fallback image: {str(e)}")
             raise
 
-    def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
+    def generate_guild_stats_image(self, stats: Dict, leaderboard: list = None) -> Image.Image:
         logger.info(f"[DEBUG] generate_guild_stats_image called with stats: {stats}")
-        """Generate a flashy guild stats image with charts and the guild's default image if available."""
+        """Generate a busy, readable guild stats image with charts, summary, and top cappers leaderboard."""
         try:
             import os
-            # Create figure with dark theme
-            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
-            fig.patch.set_facecolor('#1a1a1a')
-            
+            # Create figure with dark theme and more subplots for busy look
+            fig = plt.figure(figsize=(18, 12))
+            gs = fig.add_gridspec(3, 4)
+            fig.patch.set_facecolor('#181c24')
+
             # Extract stats
             total_bets = int(stats.get('total_bets', 0) or 0)
             total_cappers = int(stats.get('total_cappers', 0) or 0)
@@ -250,13 +251,9 @@ class StatsImageGenerator:
             if guild_id:
                 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 default_path = os.path.join(base_dir, 'static', 'guilds', guild_id, 'default_image.png')
-                logger.info(f"[DEBUG] Guild ID: {guild_id}")
-                logger.info(f"[DEBUG] Looking for default image at: {default_path}")
-                logger.info(f"[DEBUG] File exists: {os.path.exists(default_path)}")
                 if os.path.exists(default_path):
                     profile_img = Image.open(default_path).convert("RGBA")
-                    profile_img.thumbnail((400, 400), Image.Resampling.LANCZOS)
-                    # Crop to square
+                    profile_img.thumbnail((350, 350), Image.Resampling.LANCZOS)
                     min_side = min(profile_img.size)
                     profile_img = profile_img.crop((
                         (profile_img.width - min_side) // 2,
@@ -264,7 +261,6 @@ class StatsImageGenerator:
                         (profile_img.width + min_side) // 2,
                         (profile_img.height + min_side) // 2
                     ))
-                    # Make it a circle
                     from .stats_image_generator import make_rounded_feathered
                     profile_img_circle = make_rounded_feathered(profile_img)
                 else:
@@ -272,18 +268,18 @@ class StatsImageGenerator:
             else:
                 profile_img_circle = None
 
-            # 1. Guild Overview (top left)
+            # 1. Guild Overview (top left, big)
+            ax1 = fig.add_subplot(gs[0:2, 0:2])
             ax1.axis('off')
             if profile_img_circle is not None:
                 ax1.imshow(profile_img_circle, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
-                ax1.set_title(f"{stats.get('guild_name', 'Guild')}", color='#00ffe7', fontsize=28, fontweight='bold', pad=20)
+                ax1.set_title(f"{stats.get('guild_name', 'Guild')}", color='#00ffe7', fontsize=30, fontweight='bold', pad=20)
             else:
-                # Fallback: show stats as bar chart
                 overview_data = ['Total Bets', 'Total Cappers', 'Total Units']
                 overview_values = [total_bets, total_cappers, total_units]
                 colors_overview = ['#00ff88', '#0088ff', '#ff8800']
                 bars = ax1.bar(overview_data, overview_values, color=colors_overview, alpha=0.8, edgecolor='white', linewidth=2)
-                ax1.set_title('Guild Overview', color='white', fontsize=16, fontweight='bold')
+                ax1.set_title('Guild Overview', color='white', fontsize=18, fontweight='bold')
                 ax1.set_ylabel('Count', color='white')
                 ax1.tick_params(colors='white')
                 for bar, value in zip(bars, overview_values):
@@ -292,6 +288,7 @@ class StatsImageGenerator:
                             str(value), ha='center', va='bottom', color='white', fontweight='bold')
 
             # 2. Net Units Performance (top right)
+            ax2 = fig.add_subplot(gs[0, 2:4])
             ax2.bar(['Net Units'], [net_units], color='#00ff88' if net_units >= 0 else '#ff4444', 
                    alpha=0.8, edgecolor='white', linewidth=2)
             ax2.set_title('Net Units Performance', color='white', fontsize=16, fontweight='bold')
@@ -300,7 +297,8 @@ class StatsImageGenerator:
             ax2.text(0, net_units + (0.01 * abs(net_units) if net_units != 0 else 1),
                     f'{net_units:.2f}', ha='center', va='bottom', color='white', fontweight='bold')
 
-            # 3. Activity Distribution (bottom left)
+            # 3. Activity Distribution (middle right)
+            ax3 = fig.add_subplot(gs[1, 2:4])
             if total_bets > 0:
                 activity_data = ['Bets', 'Cappers']
                 activity_values = [total_bets, total_cappers]
@@ -312,34 +310,64 @@ class StatsImageGenerator:
                         color='white', fontsize=14)
                 ax3.set_title('Activity Distribution', color='white', fontsize=16, fontweight='bold')
 
-            # 4. Summary Stats (bottom right)
+            # 4. Top Cappers Leaderboard (bottom, spans all columns)
+            ax4 = fig.add_subplot(gs[2, :])
             ax4.axis('off')
+            if leaderboard and len(leaderboard) > 0:
+                # Show as a table with color highlights
+                col_labels = ["Rank", "Username", "Net Units", "Win Rate", "ROI", "Total Bets"]
+                table_data = []
+                for idx, capper in enumerate(leaderboard[:8]):
+                    table_data.append([
+                        f"#{idx+1}",
+                        capper.get('username', f"User {capper.get('user_id')}")[:16],
+                        f"{capper.get('net_units', 0):+.2f}",
+                        f"{capper.get('win_rate', 0):.1f}%",
+                        f"{capper.get('roi', 0):.1f}%",
+                        f"{capper.get('total_bets', 0)}"
+                    ])
+                table = ax4.table(cellText=table_data, colLabels=col_labels, loc='center', cellLoc='center', colLoc='center')
+                table.auto_set_font_size(False)
+                table.set_fontsize(12)
+                table.scale(1.2, 1.3)
+                # Color header
+                for key, cell in table.get_celld().items():
+                    if key[0] == 0:
+                        cell.set_facecolor('#222a38')
+                        cell.set_text_props(color='#00ffe7', weight='bold')
+                    elif key[1] == 2:  # Net Units
+                        val = table_data[key[0]-1][2]
+                        cell.set_text_props(color='#00ff88' if '+' in val else '#ff4444')
+                    elif key[1] == 3:  # Win Rate
+                        cell.set_text_props(color='#ffe700')
+                    elif key[1] == 4:  # ROI
+                        cell.set_text_props(color='#00bfff')
+                ax4.set_title('🏆 Top Cappers Leaderboard', color='#00ffe7', fontsize=18, fontweight='bold', pad=10)
+            else:
+                ax4.text(0.5, 0.5, 'No cappers data available', ha='center', va='center', color='white', fontsize=16)
+                ax4.set_title('🏆 Top Cappers Leaderboard', color='#00ffe7', fontsize=18, fontweight='bold', pad=10)
+
+            # 5. Summary Stats (middle left)
+            ax5 = fig.add_subplot(gs[1, 0:2])
+            ax5.axis('off')
             safe_total_bets = float(total_bets or 0)
             safe_total_cappers = float(total_cappers or 0)
             safe_total_units = float(total_units or 0)
             safe_net_units = float(net_units or 0)
             avg_bets_per_capper = safe_total_bets / safe_total_cappers if safe_total_cappers > 0 else 0
             summary_text = f"""
-            🏆 Guild Stats Summary
-
-            📊 Total Bets: {int(safe_total_bets)}
-            👥 Total Cappers: {int(safe_total_cappers)}
-            💰 Total Units Wagered: {safe_total_units:.2f}
-            📈 Net Units: {safe_net_units:.2f}
-
-            🎯 Average Bets per Capper: {avg_bets_per_capper:.1f}
-            """
-            ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
-                    color='white', fontsize=12, fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8))
+            🏆 Guild Stats Summary\n\n📊 Total Bets: {int(safe_total_bets)}\n👥 Total Cappers: {int(safe_total_cappers)}\n💰 Total Units Wagered: {safe_total_units:.2f}\n📈 Net Units: {safe_net_units:.2f}\n🎯 Avg Bets/Capper: {avg_bets_per_capper:.1f}"
+            ax5.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax5.transAxes,
+                    color='white', fontsize=13, fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor='#232b3b', alpha=0.85))
 
             # Adjust layout
-            plt.tight_layout(pad=3.0)
+            plt.tight_layout(pad=2.0)
             
             # Convert to PIL Image
             buf = BytesIO()
             plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
-                       facecolor='#1a1a1a', edgecolor='none')
+                       facecolor='#181c24', edgecolor='none')
             buf.seek(0)
             
             img = Image.open(buf)
