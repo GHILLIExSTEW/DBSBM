@@ -10,7 +10,6 @@ import traceback
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
-from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 import discord
 from discord import ButtonStyle, File, Interaction, Message, SelectOption, TextChannel
@@ -21,6 +20,7 @@ from utils.game_line_image_generator import GameLineImageGenerator
 from utils.image_url_converter import convert_image_path_to_url
 from utils.league_loader import get_all_league_names
 from utils.modals import StraightBetDetailsModal
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -765,16 +765,10 @@ class StraightBetWorkflowView(View):
             await self.edit_message(content=self.get_content(), view=self)
             return
         elif self.current_step == 2:
-            # Step 2: Line type selection
-            self.clear_items()
-            self.add_item(LineTypeSelect(self))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
-        elif self.current_step == 3:
-            # Step 3: Game selection
+            # Step 2: Game selection (skip line type since /gameline implies game_line)
+            self.bet_details["line_type"] = "game_line"  # Set default for gameline command
             league = self.bet_details.get("league", "N/A")
-            line_type = self.bet_details.get("line_type", "game_line")
+            line_type = "game_line"
             logger.info(
                 f"[WORKFLOW TRACE] Fetching games for league: {league}, line_type: {line_type}"
             )
@@ -808,8 +802,8 @@ class StraightBetWorkflowView(View):
                 )
                 self.stop()
                 return
-        elif self.current_step == 4:
-            # Step 4: Team selection or modal (depending on manual entry and sport type)
+        elif self.current_step == 3:
+            # Step 3: Team selection or modal (depending on manual entry and sport type)
             is_manual = self.bet_details.get("is_manual", False)
 
             if is_manual:
@@ -868,8 +862,8 @@ class StraightBetWorkflowView(View):
                     content="Select which team you are betting on:", view=self
                 )
                 return
-        elif self.current_step == 5:
-            # Step 5: Units selection
+        elif self.current_step == 4:
+            # Step 4: Units selection
             self.clear_items()
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
@@ -935,8 +929,9 @@ class StraightBetWorkflowView(View):
                 content=self.get_content(), view=self, file=file_to_send
             )
             return
-        elif self.current_step == 6:
-            # Step 6: Channel selection
+
+        elif self.current_step == 5:
+            # Step 5: Channel selection
             try:
                 # Fetch allowed embed channels from guild settings
                 allowed_channels = []
@@ -1435,12 +1430,8 @@ class StraightBetDetailsModal(Modal):
         self.view_ref = None
         self.view_custom_id_suffix = view_custom_id_suffix or str(uuid.uuid4())
 
-        # Get league config to check sport type
-        from config.leagues import LEAGUE_CONFIG
-
-        league_conf = LEAGUE_CONFIG.get(selected_league_key, {})
-        sport_type = league_conf.get("sport_type", "Team Sport")
-        is_individual_sport = sport_type == "Individual Player"
+        # Add manual entry fields if needed
+        self._add_manual_entry_fields()
 
     def _get_league_specific_title(self, league: str) -> str:
         """Get league-specific modal title."""
@@ -1475,14 +1466,16 @@ class StraightBetDetailsModal(Modal):
         }
         return league_titles.get(league, "🎯 Game Line Bet")
 
-        # Add team/opponent fields for manual entry
+    def _add_manual_entry_fields(self):
+        """Add team/opponent fields for manual entry"""
         if self.is_manual:
             # Get league config to check sport type
             from config.leagues import LEAGUE_CONFIG
+
             league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
             sport_type = league_conf.get("sport_type", "Team Sport")
             is_individual_sport = sport_type == "Individual Player"
-            
+
             if is_individual_sport:
                 # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
                 player_label = league_conf.get("participant_label", "Player")

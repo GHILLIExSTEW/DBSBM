@@ -8,7 +8,6 @@ import os
 import sys
 
 import pytest
-
 from dotenv import load_dotenv
 
 # Add the current directory to the path so we can import our modules

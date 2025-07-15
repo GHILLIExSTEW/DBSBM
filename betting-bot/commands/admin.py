@@ -730,6 +730,7 @@ class AdminCog(commands.Cog):
                 return
 
             from .views.admin_action_view import AdminActionView
+
             view = AdminActionView(self.bot, interaction)
             await interaction.response.send_message(
                 "Select the channel action you want to perform:",

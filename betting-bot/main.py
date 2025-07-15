@@ -274,6 +274,7 @@ class BettingBot(commands.Bot):
             "admin.py",  # Load admin.py first since it contains setup command
             "betting.py",
             "enhanced_player_props.py",  # Enhanced player props command
+            "parlay_betting.py",  # Parlay betting command
             "remove_user.py",
             "setid.py",
             "add_user.py",
