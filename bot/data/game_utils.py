@@ -419,6 +419,9 @@ async def get_normalized_games_for_dropdown(
 
     sport = None
     league_key = None
+    league_name_db = None
+    
+    # First, try to find the league by key (e.g., "ChampionsLeague")
     for key, league_info in LEAGUE_IDS.items():
         if key == league_name:
             sport = league_info.get("sport", "").capitalize()
@@ -431,11 +434,47 @@ async def get_normalized_games_for_dropdown(
             if league_name_db == "MLB":
                 league_name_db = "Major League Baseball"
             logger.info(
-                f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name_db}"
+                f"[get_normalized_games_for_dropdown] Found league by key: sport={sport}, league_key={league_key}, league_name={league_name_db}"
             )
             break
+    
+    # If not found by key, try to find by display name (e.g., "UEFA Champions League")
+    if not sport:
+        for key, league_info in LEAGUE_IDS.items():
+            display_name = (
+                LEAGUE_CONFIG.get(league_info.get("sport", ""), {})
+                .get(key, {})
+                .get("name", key)
+            )
+            if display_name == league_name:
+                sport = league_info.get("sport", "").capitalize()
+                league_key = key
+                league_name_db = display_name
+                if league_name_db == "MLB":
+                    league_name_db = "Major League Baseball"
+                logger.info(
+                    f"[get_normalized_games_for_dropdown] Found league by display name: sport={sport}, league_key={league_key}, league_name={league_name_db}"
+                )
+                break
+    
+    # If still not found, try the reverse mapping from LEAGUE_NAME_NORMALIZATION
+    if not sport:
+        for key, normalized_name in LEAGUE_NAME_NORMALIZATION.items():
+            if normalized_name == league_name:
+                # Find the corresponding league info
+                for league_key_inner, league_info in LEAGUE_IDS.items():
+                    if league_key_inner == key:
+                        sport = league_info.get("sport", "").capitalize()
+                        league_key = key
+                        league_name_db = normalized_name
+                        logger.info(
+                            f"[get_normalized_games_for_dropdown] Found league by normalization: sport={sport}, league_key={league_key}, league_name={league_name_db}"
+                        )
+                        break
+                if sport:
+                    break
 
-    if not sport or not league_name:
+    if not sport or not league_key:
         logger.warning(
             f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}"
         )
@@ -443,8 +482,9 @@ async def get_normalized_games_for_dropdown(
 
     # Build possible league names (abbreviation, full name, and common aliases)
     league_names = set()
-    league_abbr = get_league_abbreviation(league_name)
-    league_names.add(league_name)
+    league_abbr = get_league_abbreviation(league_key)
+    league_names.add(league_name_db)  # Use the display name from database
+    league_names.add(league_key)      # Add the league key
     league_names.add(league_abbr)
     normalized_full = normalize_league_name(league_abbr)
     league_names.add(normalized_full)
@@ -503,10 +543,10 @@ async def get_normalized_games_for_dropdown(
         ORDER BY start_time ASC LIMIT 100
     """
 
-    league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
+    league_id = LEAGUE_ID_MAP.get(league_key, "1")  # Use league_key instead of league_name
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     logger.info(
-        f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name} (league_names={league_names})"
+        f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"
     )
     params = (
         (sport, league_id)
@@ -520,7 +560,7 @@ async def get_normalized_games_for_dropdown(
 
     if not rows:
         logger.warning(
-            f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}"
+            f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_key={league_key}"
         )
         return dropdown_games  # Return just manual entry option
 
@@ -548,7 +588,7 @@ async def get_normalized_games_for_dropdown(
             )
         except Exception as e:
             logger.error(
-                f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}",
+                f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_key={league_key}: {e}",
                 exc_info=True,
             )
             continue
