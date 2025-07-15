@@ -234,23 +234,29 @@ class StatsImageGenerator:
             return img
         except Exception as e:
             logger.error(f"Error generating fallback image: {str(e)}")
-            raise
-
-    def generate_guild_stats_image(self, stats: Dict, leaderboard: list = None) -> Image.Image:
-        logger.info(f"[DEBUG] generate_guild_stats_image called with stats: {stats}")
-        """Generate a busy, readable guild stats image with charts, summary, and top cappers leaderboard."""
         try:
-            import os
-            # Create figure with dark theme and more subplots for busy look
-            fig = plt.figure(figsize=(18, 12))
-            gs = fig.add_gridspec(3, 4)
-            fig.patch.set_facecolor('#181c24')
+            logger.debug("[generate_capper_stats_image] Starting main image generation")
+            # Create figure with dark theme
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 14))
+            fig.patch.set_facecolor('#1a1a1a')
+            # ...existing code...
+            logger.debug("[generate_capper_stats_image] Returning main image")
+            return img
         except Exception as e:
-            logger.error(f"Error initializing matplotlib figure: {str(e)}")
-            return self._generate_fallback_guild_image(stats)
-
-            # Extract stats
-            total_bets = int(stats.get('total_bets', 0) or 0)
+            logger.error(f"Error generating capper stats image: {str(e)}")
+            try:
+                logger.debug("[generate_capper_stats_image] Entering fallback image generation")
+                fallback_img = self._generate_fallback_image(stats, username)
+                logger.debug("[generate_capper_stats_image] Returning fallback image")
+                return fallback_img
+            except Exception as fallback_e:
+                logger.error(f"Error in fallback image: {fallback_e}")
+                # Final fallback: return a blank error image
+                logger.debug("[generate_capper_stats_image] Returning final blank error image")
+                img = Image.new('RGB', (800, 600), color='red')
+                draw = ImageDraw.Draw(img)
+                draw.text((400, 300), "Image Generation Failed", fill='white', anchor="mm")
+                return img
             total_cappers = int(stats.get('total_cappers', 0) or 0)
             total_units = float(stats.get('total_units', 0) or 0.0)
             net_units = float(stats.get('net_units', 0) or 0.0)
