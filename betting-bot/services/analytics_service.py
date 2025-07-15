@@ -1,10 +1,7 @@
 # betting-bot/services/analytics_service.py
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
-
-import discord
+from typing import Any, Dict, List
 
 try:
     from ..utils.errors import AnalyticsServiceError

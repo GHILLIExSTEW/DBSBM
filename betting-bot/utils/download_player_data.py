@@ -1,7 +1,5 @@
 import csv
 import os
-import sqlite3
-from urllib.parse import urlparse
 
 import requests
 
@@ -39,7 +37,7 @@ def save_player_image(player_name, sport, league, team, image_url):
     # Sanitize directory names (replace spaces with underscores and convert to lowercase)
     sport_dir = sport.lower().replace(" ", "_")
     league_dir = league.lower().replace(" ", "_")
-    team_dir = team.lower().replace(" ", "_")
+    team.lower().replace(" ", "_")
     player_name_sanitized = player_name.lower().replace(" ", "_")
 
     # Determine if this is a team sport or an individual sport

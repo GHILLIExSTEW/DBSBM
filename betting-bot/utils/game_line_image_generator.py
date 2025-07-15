@@ -136,7 +136,6 @@ class GameLineImageGenerator:
     ):
         """Generates a game line bet slip image."""
         import os
-        from datetime import datetime, timezone
 
         from config.asset_paths import get_sport_category_for_path
         from config.image_settings import (
@@ -148,11 +147,9 @@ class GameLineImageGenerator:
             IMAGE_WIDTH,
             LINE_FONT_SIZE,
             LOGO_SIZE,
-            ODDS_COLOR,
             ODDS_FONT_SIZE,
             RISK_FONT_SIZE,
             TEAM_FONT_SIZE,
-            TEXT_COLOR,
             VS_FONT_SIZE,
         )
         from PIL import Image, ImageDraw, ImageFont

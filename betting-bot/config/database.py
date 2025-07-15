@@ -1,8 +1,6 @@
 # betting-bot/config/database.py
 import os
 
-from dotenv import load_dotenv
-
 # Ensure dotenv() is called somewhere before this is imported,
 # usually in the main entry point (main.py).
 # Or call it here if this module might be imported before main.py loads it.

@@ -1,11 +1,12 @@
 # This file contains the logic for generating player prop bet images.
-import difflib
 import logging
 import os
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageFont
 
 from utils.asset_loader import asset_loader
+
+logger = logging.getLogger(__name__)
 
 
 class PlayerPropImageGenerator:
@@ -184,7 +185,6 @@ class PlayerPropImageGenerator:
         display_as_risk=None,
     ):
         """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
-        import os
 
         from PIL import Image, ImageDraw, ImageFont
 
@@ -260,7 +260,7 @@ class PlayerPropImageGenerator:
         section_width = image_width // 2 - padding * 1.5
         team_section_center_x = padding + section_width // 2
         player_section_center_x = image_width - padding - section_width // 2
-        center_x = image_width // 2
+        image_width // 2
 
         # Team logo (left)
         team_logo = PlayerPropImageGenerator._load_team_logo(

@@ -3,14 +3,13 @@ Enhanced Player Search Service
 Provides fuzzy search, autocomplete, and caching for player names across leagues.
 """
 
-import asyncio
 import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz
 
 logger = logging.getLogger(__name__)
 

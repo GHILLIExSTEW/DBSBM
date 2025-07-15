@@ -2,7 +2,6 @@ import json
 import os
 import time
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
 

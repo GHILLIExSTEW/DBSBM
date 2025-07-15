@@ -3,9 +3,7 @@ Enhanced Player Prop Modal for Parlays
 Provides improved player search, prop type selection, and validation for parlay legs.
 """
 
-import asyncio
 import logging
-from typing import List, Optional, Dict, Any
 
 import discord
 from config.prop_templates import (
@@ -13,10 +11,8 @@ from config.prop_templates import (
     get_prop_templates_for_league,
     validate_prop_value,
 )
-from discord import app_commands, Interaction, SelectOption
-from discord.ext import commands
-from discord.ui import Modal, TextInput, Select, View, Button
-from discord import ButtonStyle
+from discord import ButtonStyle, Interaction, SelectOption
+from discord.ui import Button, Modal, Select, TextInput, View
 from services.player_search_service import PlayerSearchResult, PlayerSearchService
 
 logger = logging.getLogger(__name__)
@@ -41,27 +37,130 @@ class ParlayEnhancedPlayerPropModal(Modal):
         self.view_custom_id_suffix = view_custom_id_suffix
         self.view_ref = None
         self.bet_details_from_view = bet_details_from_view or {}
-        
+
         # Initialize services
         self.player_search_service = PlayerSearchService(db_manager)
-        
+
         # Get prop templates for this league
         self.prop_templates = get_prop_templates_for_league(league)
         self.prop_groups = get_prop_groups_for_league(league)
-        
-        # Set modal title
-        title = f"Parlay Leg {leg_number} - Player Prop"
+
+        # Set modal title with league-specific terminology
+        title = self._get_league_specific_title(league, leg_number)
         super().__init__(title=title)
-        
+
         # Setup UI components
         self._setup_ui_components()
 
+    def _get_league_specific_title(self, league: str, leg_number: int) -> str:
+        """Get league-specific modal title."""
+        league_titles = {
+            "Formula-1": f"🏎️ Leg {leg_number} - Driver Prop",
+            "PGA": f"⛳ Leg {leg_number} - Golfer Prop",
+            "LPGA": f"⛳ Leg {leg_number} - Golfer Prop",
+            "EuropeanTour": f"⛳ Leg {leg_number} - Golfer Prop",
+            "LIVGolf": f"⛳ Leg {leg_number} - Golfer Prop",
+            "ATP": f"🎾 Leg {leg_number} - Player Prop",
+            "WTA": f"🎾 Leg {leg_number} - Player Prop",
+            "Tennis": f"🎾 Leg {leg_number} - Player Prop",
+            "MMA": f"🥊 Leg {leg_number} - Fighter Prop",
+            "Bellator": f"🥊 Leg {leg_number} - Fighter Prop",
+            "PDC": f"🎯 Leg {leg_number} - Darts Player Prop",
+            "BDO": f"🎯 Leg {leg_number} - Darts Player Prop",
+            "WDF": f"🎯 Leg {leg_number} - Darts Player Prop",
+            "NBA": f"🏀 Leg {leg_number} - Player Prop",
+            "WNBA": f"🏀 Leg {leg_number} - Player Prop",
+            "NFL": f"🏈 Leg {leg_number} - Player Prop",
+            "MLB": f"⚾ Leg {leg_number} - Player Prop",
+            "NHL": f"🏒 Leg {leg_number} - Player Prop",
+            "Soccer": f"⚽ Leg {leg_number} - Player Prop",
+            "EPL": f"⚽ Leg {leg_number} - Player Prop",
+            "LaLiga": f"⚽ Leg {leg_number} - Player Prop",
+            "Bundesliga": f"⚽ Leg {leg_number} - Player Prop",
+            "SerieA": f"⚽ Leg {leg_number} - Player Prop",
+            "Ligue1": f"⚽ Leg {leg_number} - Player Prop",
+            "ChampionsLeague": f"⚽ Leg {leg_number} - Player Prop",
+            "EuropaLeague": f"⚽ Leg {leg_number} - Player Prop",
+            "WorldCup": f"⚽ Leg {leg_number} - Player Prop",
+        }
+        return league_titles.get(league, f"🏀 Leg {leg_number} - Player Prop")
+
+    def _get_participant_label(self, league: str) -> str:
+        """Get league-specific participant label."""
+        labels = {
+            "Formula-1": "Driver",
+            "PGA": "Golfer",
+            "LPGA": "Golfer",
+            "EuropeanTour": "Golfer",
+            "LIVGolf": "Golfer",
+            "ATP": "Player",
+            "WTA": "Player",
+            "Tennis": "Player",
+            "MMA": "Fighter",
+            "Bellator": "Fighter",
+            "PDC": "Darts Player",
+            "BDO": "Darts Player",
+            "WDF": "Darts Player",
+            "NBA": "Player",
+            "WNBA": "Player",
+            "NFL": "Player",
+            "MLB": "Player",
+            "NHL": "Player",
+            "Soccer": "Player",
+            "EPL": "Player",
+            "LaLiga": "Player",
+            "Bundesliga": "Player",
+            "SerieA": "Player",
+            "Ligue1": "Player",
+            "ChampionsLeague": "Player",
+            "EuropaLeague": "Player",
+            "WorldCup": "Player",
+        }
+        return labels.get(league, "Player")
+
+    def _get_participant_placeholder(self, league: str) -> str:
+        """Get league-specific participant placeholder."""
+        placeholders = {
+            "Formula-1": "Search for driver (e.g., Max Verstappen, Lewis Hamilton)",
+            "PGA": "Search for golfer (e.g., Scottie Scheffler, Rory McIlroy)",
+            "LPGA": "Search for golfer (e.g., Nelly Korda, Lydia Ko)",
+            "EuropeanTour": "Search for golfer (e.g., Jon Rahm, Viktor Hovland)",
+            "LIVGolf": "Search for golfer (e.g., Dustin Johnson, Phil Mickelson)",
+            "ATP": "Search for player (e.g., Novak Djokovic, Rafael Nadal)",
+            "WTA": "Search for player (e.g., Iga Swiatek, Aryna Sabalenka)",
+            "Tennis": "Search for player (e.g., Novak Djokovic, Iga Swiatek)",
+            "MMA": "Search for fighter (e.g., Jon Jones, Francis Ngannou)",
+            "Bellator": "Search for fighter (e.g., Patricio Pitbull, Cris Cyborg)",
+            "PDC": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "BDO": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "WDF": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "NBA": "Search for player (e.g., LeBron James, Stephen Curry)",
+            "WNBA": "Search for player (e.g., Breanna Stewart, A'ja Wilson)",
+            "NFL": "Search for player (e.g., Patrick Mahomes, Josh Allen)",
+            "MLB": "Search for player (e.g., Aaron Judge, Shohei Ohtani)",
+            "NHL": "Search for player (e.g., Connor McDavid, Nathan MacKinnon)",
+            "Soccer": "Search for player (e.g., Lionel Messi, Cristiano Ronaldo)",
+            "EPL": "Search for player (e.g., Erling Haaland, Mohamed Salah)",
+            "LaLiga": "Search for player (e.g., Vinicius Jr, Robert Lewandowski)",
+            "Bundesliga": "Search for player (e.g., Harry Kane, Jamal Musiala)",
+            "SerieA": "Search for player (e.g., Lautaro Martinez, Victor Osimhen)",
+            "Ligue1": "Search for player (e.g., Kylian Mbappé, Jonathan David)",
+            "ChampionsLeague": "Search for player (e.g., Erling Haaland, Kylian Mbappé)",
+            "EuropaLeague": "Search for player (e.g., Romelu Lukaku, Tammy Abraham)",
+            "WorldCup": "Search for player (e.g., Lionel Messi, Kylian Mbappé)",
+        }
+        return placeholders.get(league, "Search for player (e.g., Player Name)")
+
     def _setup_ui_components(self):
         """Setup the UI components for the modal."""
+        # Get league-specific labels
+        participant_label = self._get_participant_label(self.league)
+        participant_placeholder = self._get_participant_placeholder(self.league)
+
         # Player search input
         self.player_search = TextInput(
-            label="Search Player",
-            placeholder="Type player name to search (e.g., LeBron James)",
+            label=f"Search {participant_label}",
+            placeholder=participant_placeholder,
             required=True,
             max_length=100,
             custom_id=f"parlay_player_search_{self.view_custom_id_suffix}",
@@ -248,22 +347,24 @@ class ParlayEnhancedPlayerPropModal(Modal):
             return
 
         # Store in current leg construction details
-        self.view_ref.current_leg_construction_details.update({
-            "player_name": bet_data["player_name"],
-            "player_id": bet_data["player_id"],
-            "team_name": bet_data["team_name"],
-            "prop_type": bet_data["prop_type"],
-            "line_value": bet_data["line_value"],
-            "bet_direction": bet_data["bet_direction"],
-            "odds": bet_data["odds"],
-            "odds_str": bet_data["odds_str"],
-            "line": bet_data["line"],
-            "league": bet_data["league"],
-            "bet_type": "player_prop",
-            "home_team_name": bet_data["team_name"],
-            "away_team_name": bet_data["player_name"],  # For player image display
-            "selected_team": bet_data["team_name"],
-        })
+        self.view_ref.current_leg_construction_details.update(
+            {
+                "player_name": bet_data["player_name"],
+                "player_id": bet_data["player_id"],
+                "team_name": bet_data["team_name"],
+                "prop_type": bet_data["prop_type"],
+                "line_value": bet_data["line_value"],
+                "bet_direction": bet_data["bet_direction"],
+                "odds": bet_data["odds"],
+                "odds_str": bet_data["odds_str"],
+                "line": bet_data["line"],
+                "league": bet_data["league"],
+                "bet_type": "player_prop",
+                "home_team_name": bet_data["team_name"],
+                "away_team_name": bet_data["player_name"],  # For player image display
+                "selected_team": bet_data["team_name"],
+            }
+        )
 
     async def _generate_preview_image(self, bet_data: dict):
         """Generate preview image for the parlay leg."""
@@ -313,7 +414,7 @@ class ParlayEnhancedPlayerPropModal(Modal):
 
 class ParlayPlayerSearchView(View):
     """View for player search in parlay player props."""
-    
+
     def __init__(self, bot, db_manager, league: str, leg_number: int = 1):
         super().__init__(timeout=300)
         self.bot = bot
@@ -332,7 +433,7 @@ class ParlayPlayerSearchView(View):
             search_results = await self.player_search_service.get_popular_players(
                 self.league, limit=10
             )
-            
+
             if not search_results:
                 await interaction.response.send_message(
                     f"No players found for {self.league}. Please try a different league.",
@@ -347,7 +448,7 @@ class ParlayPlayerSearchView(View):
                     SelectOption(
                         label=f"{player.name} ({player.team_name})",
                         value=player.player_id,
-                        description=f"{player.team_name} - {player.position or 'N/A'}"
+                        description=f"{player.team_name} - {player.position or 'N/A'}",
                     )
                 )
 
@@ -363,9 +464,9 @@ class ParlayPlayerSearchView(View):
                 selected_player_id = player_select.values[0]
                 selected_player = next(
                     (p for p in search_results if p.player_id == selected_player_id),
-                    None
+                    None,
                 )
-                
+
                 if selected_player:
                     # Store selected player and show prop type selection
                     await self._show_prop_type_selection(interaction, selected_player)
@@ -375,29 +476,31 @@ class ParlayPlayerSearchView(View):
                     )
 
             player_select.callback = player_callback
-            
+
             # Create new view with player selection
             view = View(timeout=300)
             view.add_item(player_select)
             view.add_item(Button(label="Cancel", style=ButtonStyle.secondary))
-            
+
             await interaction.response.edit_message(
-                content=f"**Select a player for Leg {self.leg_number}:**",
-                view=view
+                content=f"**Select a player for Leg {self.leg_number}:**", view=view
             )
 
         except Exception as e:
             logger.error(f"Error in player search: {e}")
             await interaction.response.send_message(
-                "❌ Error searching for players. Please try again.", ephemeral=True,
+                "❌ Error searching for players. Please try again.",
+                ephemeral=True,
             )
 
-    async def _show_prop_type_selection(self, interaction: Interaction, player: PlayerSearchResult):
+    async def _show_prop_type_selection(
+        self, interaction: Interaction, player: PlayerSearchResult
+    ):
         """Show prop type selection after player is chosen."""
         try:
             # Get prop templates for this league
             prop_templates = get_prop_templates_for_league(self.league)
-            
+
             if not prop_templates:
                 await interaction.response.send_message(
                     f"No prop types available for {self.league}.", ephemeral=True
@@ -411,7 +514,7 @@ class ParlayPlayerSearchView(View):
                     SelectOption(
                         label=prop_type.title(),
                         value=prop_type,
-                        description=f"{template.min_value}-{template.max_value} {template.unit}"
+                        description=f"{template.min_value}-{template.max_value} {template.unit}",
                     )
                 )
 
@@ -424,31 +527,27 @@ class ParlayPlayerSearchView(View):
             )
 
             async def prop_callback(interaction: Interaction):
-                selected_prop_type = prop_select.values[0]
-                
+                prop_select.values[0]
+
                 # Show the enhanced modal with pre-filled data
                 modal = ParlayEnhancedPlayerPropModal(
-                    self.bot,
-                    self.db_manager,
-                    self.league,
-                    self.leg_number
+                    self.bot, self.db_manager, self.league, self.leg_number
                 )
-                
+
                 # Pre-fill player name
                 modal.player_search.default = player.name
-                
+
                 await interaction.response.send_modal(modal)
 
             prop_select.callback = prop_callback
-            
+
             # Create new view with prop type selection
             view = View(timeout=300)
             view.add_item(prop_select)
             view.add_item(Button(label="Back", style=ButtonStyle.secondary))
-            
+
             await interaction.response.edit_message(
-                content=f"**Select prop type for {player.name}:**",
-                view=view
+                content=f"**Select prop type for {player.name}:**", view=view
             )
 
         except Exception as e:
@@ -465,10 +564,10 @@ async def setup_parlay_enhanced_player_prop(
     try:
         # Create the search view
         view = ParlayPlayerSearchView(bot, db_manager, league, leg_number)
-        
+
         # Return the view for use in parlay workflow
         return view
-        
+
     except Exception as e:
         logger.error(f"Error setting up parlay enhanced player prop: {e}")
-        return None 
+        return None

@@ -1,7 +1,7 @@
 # betting-bot/commands/remove_user.py
 
 import logging
-from typing import List
+from typing import Optional
 
 import discord
 from discord import Interaction, SelectOption, app_commands

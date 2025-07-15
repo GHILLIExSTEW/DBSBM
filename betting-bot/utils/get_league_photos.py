@@ -14,7 +14,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 try:
-    from config.leagues import LEAGUE_IDS
+    pass
 except ImportError as e:
     print(
         f"CRITICAL ERROR: Could not import LEAGUE_IDS: {e}. "

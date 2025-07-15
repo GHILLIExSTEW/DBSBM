@@ -7,15 +7,11 @@ import logging
 from typing import Optional, Union
 
 import discord
-from config.leagues import LEAGUE_IDS
 from discord import ButtonStyle, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-
-
 from .admin import require_registered_guild
-from .parlay_betting import ParlayBetWorkflowView
 
 # Import from same directory
 from .straight_betting import StraightBetWorkflowView
@@ -225,15 +221,15 @@ class BetTypeView(View):
             self.stop()
 
 
-
-
-
 class BettingCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         logger.info("BettingCog initialized")
 
-    @app_commands.command(name="gameline", description="Place a game line bet (moneyline or over/under).")
+    @app_commands.command(
+        name="gameline",
+        description="🎯 Place a single game bet - moneyline, spread, or over/under",
+    )
     @require_registered_guild()
     async def gameline(self, interaction: Interaction):
         logger.info(

@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Optional, Tuple
 
-from PIL import Image, ImageOps
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 

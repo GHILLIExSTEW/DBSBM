@@ -1,6 +1,5 @@
 """Sync command cog for manually syncing bot commands."""
 
-import asyncio
 import logging
 
 import discord

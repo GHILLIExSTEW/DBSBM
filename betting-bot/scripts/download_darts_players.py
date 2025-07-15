@@ -230,7 +230,7 @@ def main():
     downloader = DartsPlayerDownloader()
 
     try:
-        results = downloader.download_all_darts_players()
+        downloader.download_all_darts_players()
         logger.info("\n🎉 Darts player download completed!")
 
     except KeyboardInterrupt:

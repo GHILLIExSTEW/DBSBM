@@ -4,7 +4,6 @@ Script to rename all files named "logo.png" in the SOCCER leagues folder
 to match their parent directory name.
 """
 
-import os
 import sys
 from pathlib import Path
 

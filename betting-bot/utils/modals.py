@@ -1,11 +1,7 @@
 # REV 1.0.0 - Enhanced betting modals with improved validation and error handling
 # betting-bot/utils/modals.py
-import difflib
-import glob
 import io
 import logging
-import os
-import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -17,14 +13,10 @@ from config.asset_paths import BASE_DIR
 # relative to the 'betting-bot' root when this module is imported.
 from config.leagues import LEAGUE_CONFIG
 from discord.ui import Modal, TextInput
-from PIL import Image
-from rapidfuzz import fuzz, process
 
 from utils.errors import BetServiceError  # Example, if used directly in modal
 
 # Import the correct version of the image generator
-from utils.game_line_image_generator import GameLineImageGenerator
-from utils.parlay_image_generator import ParlayImageGenerator
 
 # Add this mapping at the top of the file (after imports)
 PLAYER_PROP_SPORT_ID_MAP = {
@@ -39,7 +31,6 @@ PLAYER_PROP_SPORT_ID_MAP = {
 # For type hinting the parent view reference without circular imports
 if TYPE_CHECKING:
     from commands.parlay_betting import ParlayBetWorkflowView  # Example
-    from commands.straight_betting import StraightBetWorkflowView
 
     # Add other view types if modals reference them specifically
     # from commands.setid import ImageUploadView # Example for CapperImageURLModal's parent

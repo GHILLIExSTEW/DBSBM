@@ -4,9 +4,8 @@ import asyncio
 import json
 import logging
 import pickle
-from datetime import timedelta
 from functools import wraps
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import aioredis
 

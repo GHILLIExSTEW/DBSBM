@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 class AdminServiceError(Exception):
     """Custom exception for admin service errors."""
 
-    pass
-
 
 class AdminService:
     def __init__(self, bot, db_manager):

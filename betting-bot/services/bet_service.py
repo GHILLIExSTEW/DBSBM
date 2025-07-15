@@ -13,11 +13,11 @@ from aiomysql import IntegrityError
 
 try:
     from ..data.db_manager import DatabaseManager
-    from ..utils.errors import BetServiceError, ValidationError
+    from ..utils.errors import BetServiceError
 except ImportError:
     from data.db_manager import DatabaseManager
 
-    from utils.errors import BetServiceError, ValidationError
+    from utils.errors import BetServiceError
 
 logger = logging.getLogger(__name__)
 

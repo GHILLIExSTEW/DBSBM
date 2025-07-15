@@ -3,7 +3,6 @@
 """Stats command for viewing betting statistics."""
 
 import logging
-import os
 from io import BytesIO  # Needed for sending PIL image
 from typing import Optional  # Add Optional type import
 
@@ -26,7 +25,7 @@ try:
     # from ..data.db_manager import DatabaseManager
 except ImportError:
     # Fallback imports
-    from services.analytics_service import AnalyticsService
+    pass
 
     from utils.stats_image_generator import StatsImageGenerator
 
@@ -74,7 +73,7 @@ class ChannelSelect(Select):
             # Get the stats data and context from the parent view
             stats_data = self.parent_view.stats_data
             is_server = self.parent_view.is_server
-            selected_user_id = self.parent_view.selected_user_id
+            self.parent_view.selected_user_id
             guild = interaction.guild  # Get guild object
 
             if not stats_data:

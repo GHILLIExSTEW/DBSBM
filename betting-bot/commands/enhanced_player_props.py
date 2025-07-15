@@ -4,7 +4,6 @@ Provides advanced player prop betting with search, validation, and modern UI.
 """
 
 import logging
-from typing import Optional
 
 import discord
 from config.leagues import LEAGUE_CONFIG
@@ -24,7 +23,7 @@ class EnhancedPlayerPropsCog(commands.Cog):
 
     @app_commands.command(
         name="playerprops",
-        description="Create advanced player prop bets with search and validation",
+        description="🏀 Place a player performance bet - points, rebounds, assists, etc.",
     )
     @require_registered_guild()
     async def playerprops(self, interaction: discord.Interaction):

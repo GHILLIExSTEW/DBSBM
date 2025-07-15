@@ -6,7 +6,6 @@ based on the LEAGUE_IDS configuration.
 """
 
 import os
-import shutil
 import sys
 from pathlib import Path
 

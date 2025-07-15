@@ -1,8 +1,6 @@
 import logging
 from io import BytesIO
-from typing import Optional
 
-import discord
 from discord import File, Interaction, app_commands
 from discord.ext import commands
 

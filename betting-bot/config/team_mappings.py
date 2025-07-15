@@ -1179,9 +1179,9 @@ TEAM_MAPPINGS = {
     "URI": "rhode_island_rams",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); Football in CAA
     "Richmond Spiders": "richmond_spiders",
     "Richmond": "richmond_spiders",  # Baseball, Basketball (M/W), Soccer (W); Football in CAA, No Volleyball
-    "Saint Joseph’s Hawks": "saint_josephs_hawks",
-    "Saint Joseph’s": "saint_josephs_hawks",
-    "St. Joseph’s": "saint_josephs_hawks",  # Baseball, Basketball (M/W), Soccer (M/W); No Football, No Volleyball
+    "Saint Joseph's Hawks": "saint_josephs_hawks",
+    "Saint Joseph's": "saint_josephs_hawks",
+    "St. Joseph's": "saint_josephs_hawks",  # Baseball, Basketball (M/W), Soccer (M/W); No Football, No Volleyball
     "Saint Louis Billikens": "saint_louis_billikens",
     "Saint Louis": "saint_louis_billikens",
     "SLU": "saint_louis_billikens",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -1205,8 +1205,8 @@ TEAM_MAPPINGS = {
     "Providence": "providence_friars",  # Basketball (M/W), Volleyball (W), Soccer (M/W); No Baseball, No Football
     "Seton Hall Pirates": "seton_hall_pirates",
     "Seton Hall": "seton_hall_pirates",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "St. John’s Red Storm": "st_johns_red_storm",
-    "St. John’s": "st_johns_red_storm",
+    "St. John's Red Storm": "st_johns_red_storm",
+    "St. John's": "st_johns_red_storm",
     "SJU": "st_johns_red_storm",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "UConn Huskies": "uconn_huskies",
     "UConn": "uconn_huskies",
@@ -1257,8 +1257,8 @@ TEAM_MAPPINGS = {
     "Pepperdine": "pepperdine_waves",  # Baseball, Basketball (M/W), Volleyball (M/W), Soccer (W); No Football
     "Portland Pilots": "portland_pilots",
     "Portland": "portland_pilots",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Saint Mary’s Gaels": "saint_marys_gaels",
-    "Saint Mary’s": "saint_marys_gaels",
+    "Saint Mary's Gaels": "saint_marys_gaels",
+    "Saint Mary's": "saint_marys_gaels",
     "SMC": "saint_marys_gaels",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "San Diego Toreros": "san_diego_toreros",
     "San Diego": "san_diego_toreros",
@@ -1509,7 +1509,7 @@ TEAM_MAPPINGS = {
     "Charleston Southern Buccaneers": "charleston_southern_buccaneers",
     "Charleston Southern": "charleston_southern_buccaneers",
     "CSU": "charleston_southern_buccaneers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (W); Football in Big South-OVC
-    "Gardner-Webb Runnin’ Bulldogs": "gardner_webb_runnin_bulldogs",
+    "Gardner-Webb Runnin' Bulldogs": "gardner_webb_runnin_bulldogs",
     "Gardner-Webb": "gardner_webb_runnin_bulldogs",
     "GWU": "gardner_webb_runnin_bulldogs",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); Football in Big South-OVC
     "High Point Panthers": "high_point_panthers",
@@ -1712,8 +1712,8 @@ TEAM_MAPPINGS = {
     "Marist": "marist_red_foxes",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Merrimack Warriors": "merrimack_warriors",
     "Merrimack": "merrimack_warriors",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Mount St. Mary’s Mountaineers": "mount_st_marys_mountaineers",
-    "Mount St. Mary’s": "mount_st_marys_mountaineers",
+    "Mount St. Mary's Mountaineers": "mount_st_marys_mountaineers",
+    "Mount St. Mary's": "mount_st_marys_mountaineers",
     "The Mount": "mount_st_marys_mountaineers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Niagara Purple Eagles": "niagara_purple_eagles",
     "Niagara": "niagara_purple_eagles",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -1723,8 +1723,8 @@ TEAM_MAPPINGS = {
     "Rider": "rider_broncs",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Siena Saints": "siena_saints",
     "Siena": "siena_saints",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Saint Peter’s Peacocks": "saint_peters_peacocks",
-    "Saint Peter’s": "saint_peters_peacocks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "Saint Peter's Peacocks": "saint_peters_peacocks",
+    "Saint Peter's": "saint_peters_peacocks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     # Mid-Eastern Athletic Conference (MEAC)
     "Coppin State Eagles": "coppin_state_eagles",
     "Coppin State": "coppin_state_eagles",  # Baseball, Basketball (M/W), Volleyball (W); No Football, No Soccer
@@ -1863,10 +1863,10 @@ TEAM_MAPPINGS = {
     "Oklahoma Christian Eagles": "oklahoma_christian_eagles",
     "Oklahoma Christian": "oklahoma_christian_eagles",
     "OC": "oklahoma_christian_eagles",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "St. Edward’s Hilltoppers": "st_edwards_hilltoppers",
-    "St. Edward’s": "st_edwards_hilltoppers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "St. Mary’s Rattlers": "st_marys_rattlers",
-    "St. Mary’s": "st_marys_rattlers",
+    "St. Edward's Hilltoppers": "st_edwards_hilltoppers",
+    "St. Edward's": "st_edwards_hilltoppers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "St. Mary's Rattlers": "st_marys_rattlers",
+    "St. Mary's": "st_marys_rattlers",
     "STMU": "st_marys_rattlers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Sul Ross State Lobos": "sul_ross_state_lobos",
     "Sul Ross State": "sul_ross_state_lobos",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W)
@@ -1879,8 +1879,8 @@ TEAM_MAPPINGS = {
     "Texas Permian Basin Falcons": "texas_permian_basin_falcons",
     "Texas Permian Basin": "texas_permian_basin_falcons",
     "UTPB": "texas_permian_basin_falcons",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
-    "Texas Woman’s Pioneers": "texas_womans_pioneers",
-    "Texas Woman’s": "texas_womans_pioneers",
+    "Texas Woman's Pioneers": "texas_womans_pioneers",
+    "Texas Woman's": "texas_womans_pioneers",
     "TWU": "texas_womans_pioneers",  # Basketball (W), Volleyball (W); No Baseball, No Football, No Soccer (M)
     "UT Tyler Patriots": "ut_tyler_patriots",
     "UT Tyler": "ut_tyler_patriots",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -1989,8 +1989,8 @@ TEAM_MAPPINGS = {
     "Pace": "pace_setters",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Saint Anselm Hawks": "saint_anselm_hawks",
     "Saint Anselm": "saint_anselm_hawks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Saint Michael’s Purple Knights": "saint_michaels_purple_knights",
-    "Saint Michael’s": "saint_michaels_purple_knights",
+    "Saint Michael's Purple Knights": "saint_michaels_purple_knights",
+    "Saint Michael's": "saint_michaels_purple_knights",
     "SMC": "saint_michaels_purple_knights",  # Baseball, Basketball (M/W), Soccer (M/W); No Football, No Volleyball
     "Saint Rose Golden Knights": "saint_rose_golden_knights",
     "Saint Rose": "saint_rose_golden_knights",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -2054,7 +2054,7 @@ TEAM_MAPPINGS = {
     "OBU": "oklahoma_baptist_bison",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Ouachita Baptist Tigers": "ouachita_baptist_tigers",
     "Ouachita Baptist": "ouachita_baptist_tigers",
-    "OBU": "ouachita_baptist_tigers",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
+    "OBU_OUACHITA": "ouachita_baptist_tigers",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Southeastern Oklahoma State Savage Storm": "southeastern_oklahoma_state_savage_storm",
     "Southeastern Oklahoma State": "southeastern_oklahoma_state_savage_storm",
     "SEOSU": "southeastern_oklahoma_state_savage_storm",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
@@ -2083,15 +2083,15 @@ TEAM_MAPPINGS = {
     "Northwest Nazarene Nighthawks": "northwest_nazarene_nighthawks",
     "Northwest Nazarene": "northwest_nazarene_nighthawks",
     "NNU": "northwest_nazarene_nighthawks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Saint Martin’s Saints": "saint_martins_saints",
-    "Saint Martin’s": "saint_martins_saints",
-    "SMU": "saint_martins_saints",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "Saint Martin's Saints": "saint_martins_saints",
+    "Saint Martin's": "saint_martins_saints",
+    "SMU_SAINT_MARTINS": "saint_martins_saints",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Seattle Pacific Falcons": "seattle_pacific_falcons",
     "Seattle Pacific": "seattle_pacific_falcons",
     "SPU": "seattle_pacific_falcons",  # Basketball (M/W), Volleyball (W), Soccer (M/W); No Baseball, No Football
     "Simon Fraser Red Leafs": "simon_fraser_red_leafs",
     "Simon Fraser": "simon_fraser_red_leafs",
-    "SFU": "simon_fraser_red_leafs",  # Basketball (M/W), Volleyball (W), Soccer (M/W); No Baseball, No Football
+    "SFU_SIMON_FRASER": "simon_fraser_red_leafs",  # Basketball (M/W), Volleyball (W), Soccer (M/W); No Baseball, No Football
     "Western Oregon Wolves": "western_oregon_wolves",
     "Western Oregon": "western_oregon_wolves",
     "WOU": "western_oregon_wolves",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
@@ -2107,7 +2107,7 @@ TEAM_MAPPINGS = {
     "UCO": "central_oklahoma_bronchos",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Emporia State Hornets": "emporia_state_hornets",
     "Emporia State": "emporia_state_hornets",
-    "ESU": "emporia_state_hornets",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
+    "ESU_EMPORIA": "emporia_state_hornets",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Fort Hays State Tigers": "fort_hays_state_tigers",
     "Fort Hays State": "fort_hays_state_tigers",
     "FHSU": "fort_hays_state_tigers",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
@@ -2122,16 +2122,16 @@ TEAM_MAPPINGS = {
     "UNK": "nebraska_kearney_lopers",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Northeastern State RiverHawks": "northeastern_state_riverhawks",
     "Northeastern State": "northeastern_state_riverhawks",
-    "NSU": "northeastern_state_riverhawks",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
+    "NSU_NORTHEASTERN": "northeastern_state_riverhawks",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Northwest Missouri State Bearcats": "northwest_missouri_state_bearcats",
     "Northwest Missouri State": "northwest_missouri_state_bearcats",
     "NWMSU": "northwest_missouri_state_bearcats",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Pittsburg State Gorillas": "pittsburg_state_gorillas",
     "Pittsburg State": "pittsburg_state_gorillas",
-    "PSU": "pittsburg_state_gorillas",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    "PSU_PITTSBURG": "pittsburg_state_gorillas",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Rogers State Hillcats": "rogers_state_hillcats",
     "Rogers State": "rogers_state_hillcats",
-    "RSU": "rogers_state_hillcats",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "RSU_ROGERS": "rogers_state_hillcats",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Washburn Ichabods": "washburn_ichabods",
     "Washburn": "washburn_ichabods",
     "WU": "washburn_ichabods",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
@@ -2148,7 +2148,7 @@ TEAM_MAPPINGS = {
     "Fairmont State": "fairmont_state_falcons",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Frostburg State Bobcats": "frostburg_state_bobcats",
     "Frostburg State": "frostburg_state_bobcats",
-    "FSU": "frostburg_state_bobcats",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
+    "FSU_FROSTBURG": "frostburg_state_bobcats",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Glenville State Pioneers": "glenville_state_pioneers",
     "Glenville State": "glenville_state_pioneers",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Notre Dame Falcons": "notre_dame_falcons",
@@ -2188,28 +2188,28 @@ TEAM_MAPPINGS = {
     "UMD": "minnesota_duluth_bulldogs",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Minnesota State Mavericks": "minnesota_state_mavericks",
     "Minnesota State": "minnesota_state_mavericks",
-    "MSU": "minnesota_state_mavericks",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
+    "MSU_MINNESOTA": "minnesota_state_mavericks",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     "Minnesota State Moorhead Dragons": "minnesota_state_moorhead_dragons",
     "Minnesota State Moorhead": "minnesota_state_moorhead_dragons",
     "MSUM": "minnesota_state_moorhead_dragons",  # Basketball (M/W), Volleyball (W), Football; No Baseball, No Soccer
     "Northern State Wolves": "northern_state_wolves",
     "Northern State": "northern_state_wolves",
-    "NSU": "northern_state_wolves",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    "NSU_NORTHERN": "northern_state_wolves",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Sioux Falls Cougars": "sioux_falls_cougars",
     "Sioux Falls": "sioux_falls_cougars",
-    "USF": "sioux_falls_cougars",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    "USF_SIOUX_FALLS": "sioux_falls_cougars",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Southwest Minnesota State Mustangs": "southwest_minnesota_state_mustangs",
     "Southwest Minnesota State": "southwest_minnesota_state_mustangs",
     "SMSU": "southwest_minnesota_state_mustangs",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "St. Cloud State Huskies": "st_cloud_state_huskies",
     "St. Cloud State": "st_cloud_state_huskies",
-    "SCSU": "st_cloud_state_huskies",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
+    "SCSU_ST_CLOUD": "st_cloud_state_huskies",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Wayne State Wildcats": "wayne_state_wildcats",
     "Wayne State (NE)": "wayne_state_wildcats",
     "WSC": "wayne_state_wildcats",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Winona State Warriors": "winona_state_warriors",
     "Winona State": "winona_state_warriors",
-    "WSU": "winona_state_warriors",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
+    "WSU_WINONA": "winona_state_warriors",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (W); No Soccer (M)
     # Pacific West Conference (PacWest)
     "Academy of Art Urban Knights": "academy_of_art_urban_knights",
     "Academy of Art": "academy_of_art_urban_knights",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -2228,11 +2228,11 @@ TEAM_MAPPINGS = {
     "Fresno Pacific Sunbirds": "fresno_pacific_sunbirds",
     "Fresno Pacific": "fresno_pacific_sunbirds",
     "FPU": "fresno_pacific_sunbirds",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Hawai’i Hilo Vulcans": "hawaii_hilo_vulcans",
-    "Hawai’i Hilo": "hawaii_hilo_vulcans",
+    "Hawai'i Hilo Vulcans": "hawaii_hilo_vulcans",
+    "Hawai'i Hilo": "hawaii_hilo_vulcans",
     "UHH": "hawaii_hilo_vulcans",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
-    "Hawai’i Pacific Sharks": "hawaii_pacific_sharks",
-    "Hawai’i Pacific": "hawaii_pacific_sharks",
+    "Hawai'i Pacific Sharks": "hawaii_pacific_sharks",
+    "Hawai'i Pacific": "hawaii_pacific_sharks",
     "HPU": "hawaii_pacific_sharks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Point Loma Nazarene Sea Lions": "point_loma_nazarene_sea_lions",
     "Point Loma Nazarene": "point_loma_nazarene_sea_lions",
@@ -2250,10 +2250,10 @@ TEAM_MAPPINGS = {
     "CSC": "chadron_state_eagles",  # Basketball (M/W), Volleyball (W), Football; No Baseball, No Soccer
     "Colorado Christian Cougars": "colorado_christian_cougars",
     "Colorado Christian": "colorado_christian_cougars",
-    "CCU": "colorado_christian_cougars",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "CCU_COLORADO": "colorado_christian_cougars",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Colorado Mesa Mavericks": "colorado_mesa_mavericks",
     "Colorado Mesa": "colorado_mesa_mavericks",
-    "CMU": "colorado_mesa_mavericks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "CMU_COLORADO": "colorado_mesa_mavericks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Colorado Mines Orediggers": "colorado_mines_orediggers",
     "Colorado Mines": "colorado_mines_orediggers",
     "CSM": "colorado_mines_orediggers",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
@@ -2271,7 +2271,7 @@ TEAM_MAPPINGS = {
     "NMHU": "new_mexico_highlands_cowboys",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     "Regis Rangers": "regis_rangers",
     "Regis": "regis_rangers",
-    "RU": "regis_rangers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "RU_REGIS": "regis_rangers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "South Dakota Mines Hardrockers": "south_dakota_mines_hardrockers",
     "South Dakota Mines": "south_dakota_mines_hardrockers",
     "SDSMT": "south_dakota_mines_hardrockers",  # Basketball (M/W), Volleyball (W), Football; No Baseball, No Soccer
@@ -2280,11 +2280,11 @@ TEAM_MAPPINGS = {
     "UC Colorado Springs": "uccs_mountain_lions",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Western Colorado Mountaineers": "western_colorado_mountaineers",
     "Western Colorado": "western_colorado_mountaineers",
-    "WCU": "western_colorado_mountaineers",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    "WCU_WESTERN": "western_colorado_mountaineers",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
     # South Atlantic Conference (SAC)
     "Anderson Trojans": "anderson_trojans",
     "Anderson (SC)": "anderson_trojans",
-    "AU": "anderson_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "AU_ANDERSON": "anderson_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Carson-Newman Eagles": "carson_newman_eagles",
     "Carson-Newman": "carson_newman_eagles",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Catawba Indians": "catawba_indians",
@@ -2301,7 +2301,7 @@ TEAM_MAPPINGS = {
     "Limestone": "limestone_saints",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Lincoln Memorial Railsplitters": "lincoln_memorial_railsplitters",
     "Lincoln Memorial": "lincoln_memorial_railsplitters",
-    "LMU": "lincoln_memorial_railsplitters",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "LMU_LINCOLN": "lincoln_memorial_railsplitters",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Mars Hill Lions": "mars_hill_lions",
     "Mars Hill": "mars_hill_lions",  # Baseball, Basketball (M/W), Volleyball (W), Football, Soccer (M/W)
     "Newberry Wolves": "newberry_wolves",
@@ -2331,7 +2331,7 @@ TEAM_MAPPINGS = {
     "Lynn": "lynn_fighting_knights",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Nova Southeastern Sharks": "nova_southeastern_sharks",
     "Nova Southeastern": "nova_southeastern_sharks",
-    "NSU": "nova_southeastern_sharks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "NSU_NOVA": "nova_southeastern_sharks",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Palm Beach Atlantic Sailfish": "palm_beach_atlantic_sailfish",
     "Palm Beach Atlantic": "palm_beach_atlantic_sailfish",
     "PBA": "palm_beach_atlantic_sailfish",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
@@ -2341,7 +2341,7 @@ TEAM_MAPPINGS = {
     "Saint Leo": "saint_leo_lions",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Tampa Spartans": "tampa_spartans",
     "Tampa": "tampa_spartans",
-    "UT": "tampa_spartans",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
+    "UT_TAMPA": "tampa_spartans",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     # Independents or Smaller Affiliations
     "Bluefield State Big Blue": "bluefield_state_big_blue",
     "Bluefield State": "bluefield_state_big_blue",  # Baseball, Basketball (M/W), Volleyball (W); No Football, No Soccer
@@ -2353,7 +2353,7 @@ TEAM_MAPPINGS = {
     "Salem (WV)": "salem_tigers",  # Baseball, Basketball (M/W), Volleyball (W), Soccer (M/W); No Football
     "Virginia State Trojans": "virginia_state_trojans",
     "Virginia State": "virginia_state_trojans",
-    "VSU": "virginia_state_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    "VSU_VIRGINIA": "virginia_state_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
 }
 
 

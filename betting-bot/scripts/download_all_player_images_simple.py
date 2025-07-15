@@ -94,11 +94,11 @@ def main():
             downloader = downloader_class()
 
             if sport == "tennis":
-                results = downloader.download_all_tennis_players()
+                downloader.download_all_tennis_players()
             elif sport == "darts":
-                results = downloader.download_all_darts_players()
+                downloader.download_all_darts_players()
             elif sport == "golf":
-                results = downloader.download_all_golf_players()
+                downloader.download_all_golf_players()
 
             logger.info(f"✅ {sport} download completed successfully")
             successful_sports.append(sport)

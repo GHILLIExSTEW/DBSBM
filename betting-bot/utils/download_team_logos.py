@@ -24,7 +24,6 @@ from PIL import Image, UnidentifiedImageError
 try:
     from config.asset_paths import (
         DEFAULT_FALLBACK_CATEGORY,
-        SPORT_CATEGORIES,
         get_sport_category_for_path,
     )
     from config.leagues import LEAGUE_IDS  # Contains league name to sport mapping

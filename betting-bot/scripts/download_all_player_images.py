@@ -7,7 +7,6 @@ Can run all sports or individual ones based on command line arguments.
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
 from pathlib import Path

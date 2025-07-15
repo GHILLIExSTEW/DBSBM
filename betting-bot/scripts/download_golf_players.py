@@ -238,7 +238,7 @@ def main():
     downloader = GolfPlayerDownloader()
 
     try:
-        results = downloader.download_all_golf_players()
+        downloader.download_all_golf_players()
         logger.info("\n🎉 Golf player download completed!")
 
     except KeyboardInterrupt:

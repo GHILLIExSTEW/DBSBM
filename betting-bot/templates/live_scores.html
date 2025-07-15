@@ -56,7 +56,7 @@
                     {% else %}
                     <span class="text-blue-600">● {{ game.status|title }}</span>
                     {% endif %}
-                    
+
                     {% if game.odds %}
                     <span class="ml-4">
                         {% if game.odds.get('home_ml') %}
@@ -80,4 +80,4 @@
     </div>
     {% endif %}
 </div>
-{% endblock %} 
+{% endblock %}

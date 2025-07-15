@@ -369,4 +369,4 @@ Pre-commit hooks for code quality:
 For technical support or questions about the API, please refer to:
 - [GitHub Issues](https://github.com/your-repo/issues)
 - [Documentation](https://docs.your-domain.com)
-- [Discord Server](https://discord.gg/your-server) 
+- [Discord Server](https://discord.gg/your-server)

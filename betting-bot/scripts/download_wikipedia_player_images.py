@@ -5,7 +5,6 @@ Downloads player images from Wikipedia for darts, tennis, and golf.
 Organizes images in the same format as existing player images.
 """
 
-import csv
 import json
 import logging
 import os
@@ -434,7 +433,7 @@ def main():
     downloader = WikipediaPlayerImageDownloader()
 
     try:
-        results = downloader.download_all_sports()
+        downloader.download_all_sports()
         logger.info("Wikipedia player image download completed successfully!")
 
     except KeyboardInterrupt:

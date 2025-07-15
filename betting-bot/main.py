@@ -5,13 +5,13 @@ import signal
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Union
 
 import aiohttp
 import discord
 from api.sports_api import SportsAPI
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
 from services.live_game_channel_service import LiveGameChannelService
 

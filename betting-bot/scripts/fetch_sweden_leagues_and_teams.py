@@ -59,7 +59,7 @@ def main():
 
     for league_info in leagues:
         league = league_info["league"]
-        country = league_info["country"]
+        league_info["country"]
         league_id = league["id"]
         league_name = league["name"]
         league_logo = league["logo"]

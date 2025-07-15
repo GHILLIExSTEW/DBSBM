@@ -293,7 +293,7 @@ def main():
     downloader = TennisPlayerDownloader()
 
     try:
-        results = downloader.download_all_tennis_players()
+        downloader.download_all_tennis_players()
         logger.info("\n🎉 Tennis player download completed!")
 
     except KeyboardInterrupt:

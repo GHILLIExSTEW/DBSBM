@@ -3,13 +3,11 @@ import os
 from io import BytesIO
 from typing import Dict, List
 
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.patches import FancyBboxPatch
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
 

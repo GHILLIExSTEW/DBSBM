@@ -3,9 +3,7 @@ Enhanced Player Prop Modal
 Provides improved player search, prop type selection, and validation.
 """
 
-import asyncio
 import logging
-from typing import List, Optional
 
 import discord
 from config.prop_templates import (
@@ -13,9 +11,7 @@ from config.prop_templates import (
     get_prop_templates_for_league,
     validate_prop_value,
 )
-from discord import app_commands
-from discord.ext import commands
-from services.player_search_service import PlayerSearchResult, PlayerSearchService
+from services.player_search_service import PlayerSearchService
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +32,121 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
         self.prop_templates = get_prop_templates_for_league(league)
         self.prop_groups = get_prop_groups_for_league(league)
 
+        # Set league-specific title
+        self.title = self._get_league_specific_title(league)
+
         # Initialize UI components
         self._setup_ui_components()
 
+    def _get_league_specific_title(self, league: str) -> str:
+        """Get league-specific modal title."""
+        league_titles = {
+            "Formula-1": "🏎️ Driver Prop Bet",
+            "PGA": "⛳ Golfer Prop Bet",
+            "LPGA": "⛳ Golfer Prop Bet",
+            "EuropeanTour": "⛳ Golfer Prop Bet",
+            "LIVGolf": "⛳ Golfer Prop Bet",
+            "ATP": "🎾 Player Prop Bet",
+            "WTA": "🎾 Player Prop Bet",
+            "Tennis": "🎾 Player Prop Bet",
+            "MMA": "🥊 Fighter Prop Bet",
+            "Bellator": "🥊 Fighter Prop Bet",
+            "PDC": "🎯 Darts Player Prop Bet",
+            "BDO": "🎯 Darts Player Prop Bet",
+            "WDF": "🎯 Darts Player Prop Bet",
+            "NBA": "🏀 Player Prop Bet",
+            "WNBA": "🏀 Player Prop Bet",
+            "NFL": "🏈 Player Prop Bet",
+            "MLB": "⚾ Player Prop Bet",
+            "NHL": "🏒 Player Prop Bet",
+            "Soccer": "⚽ Player Prop Bet",
+            "EPL": "⚽ Player Prop Bet",
+            "LaLiga": "⚽ Player Prop Bet",
+            "Bundesliga": "⚽ Player Prop Bet",
+            "SerieA": "⚽ Player Prop Bet",
+            "Ligue1": "⚽ Player Prop Bet",
+            "ChampionsLeague": "⚽ Player Prop Bet",
+            "EuropaLeague": "⚽ Player Prop Bet",
+            "WorldCup": "⚽ Player Prop Bet",
+        }
+        return league_titles.get(league, "🏀 Player Prop Bet")
+
+    def _get_participant_label(self, league: str) -> str:
+        """Get league-specific participant label."""
+        labels = {
+            "Formula-1": "Driver",
+            "PGA": "Golfer",
+            "LPGA": "Golfer",
+            "EuropeanTour": "Golfer",
+            "LIVGolf": "Golfer",
+            "ATP": "Player",
+            "WTA": "Player",
+            "Tennis": "Player",
+            "MMA": "Fighter",
+            "Bellator": "Fighter",
+            "PDC": "Darts Player",
+            "BDO": "Darts Player",
+            "WDF": "Darts Player",
+            "NBA": "Player",
+            "WNBA": "Player",
+            "NFL": "Player",
+            "MLB": "Player",
+            "NHL": "Player",
+            "Soccer": "Player",
+            "EPL": "Player",
+            "LaLiga": "Player",
+            "Bundesliga": "Player",
+            "SerieA": "Player",
+            "Ligue1": "Player",
+            "ChampionsLeague": "Player",
+            "EuropaLeague": "Player",
+            "WorldCup": "Player",
+        }
+        return labels.get(league, "Player")
+
+    def _get_participant_placeholder(self, league: str) -> str:
+        """Get league-specific participant placeholder."""
+        placeholders = {
+            "Formula-1": "Search for driver (e.g., Max Verstappen, Lewis Hamilton)",
+            "PGA": "Search for golfer (e.g., Scottie Scheffler, Rory McIlroy)",
+            "LPGA": "Search for golfer (e.g., Nelly Korda, Lydia Ko)",
+            "EuropeanTour": "Search for golfer (e.g., Jon Rahm, Viktor Hovland)",
+            "LIVGolf": "Search for golfer (e.g., Dustin Johnson, Phil Mickelson)",
+            "ATP": "Search for player (e.g., Novak Djokovic, Rafael Nadal)",
+            "WTA": "Search for player (e.g., Iga Swiatek, Aryna Sabalenka)",
+            "Tennis": "Search for player (e.g., Novak Djokovic, Iga Swiatek)",
+            "MMA": "Search for fighter (e.g., Jon Jones, Francis Ngannou)",
+            "Bellator": "Search for fighter (e.g., Patricio Pitbull, Cris Cyborg)",
+            "PDC": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "BDO": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "WDF": "Search for darts player (e.g., Michael van Gerwen, Peter Wright)",
+            "NBA": "Search for player (e.g., LeBron James, Stephen Curry)",
+            "WNBA": "Search for player (e.g., Breanna Stewart, A'ja Wilson)",
+            "NFL": "Search for player (e.g., Patrick Mahomes, Josh Allen)",
+            "MLB": "Search for player (e.g., Aaron Judge, Shohei Ohtani)",
+            "NHL": "Search for player (e.g., Connor McDavid, Nathan MacKinnon)",
+            "Soccer": "Search for player (e.g., Lionel Messi, Cristiano Ronaldo)",
+            "EPL": "Search for player (e.g., Erling Haaland, Mohamed Salah)",
+            "LaLiga": "Search for player (e.g., Vinicius Jr, Robert Lewandowski)",
+            "Bundesliga": "Search for player (e.g., Harry Kane, Jamal Musiala)",
+            "SerieA": "Search for player (e.g., Lautaro Martinez, Victor Osimhen)",
+            "Ligue1": "Search for player (e.g., Kylian Mbappé, Jonathan David)",
+            "ChampionsLeague": "Search for player (e.g., Erling Haaland, Kylian Mbappé)",
+            "EuropaLeague": "Search for player (e.g., Romelu Lukaku, Tammy Abraham)",
+            "WorldCup": "Search for player (e.g., Lionel Messi, Kylian Mbappé)",
+        }
+        return placeholders.get(league, "Search for player (e.g., Player Name)")
+
     def _setup_ui_components(self):
         """Setup the UI components for the modal."""
+        # Get league-specific labels
+        participant_label = self._get_participant_label(self.league)
+        participant_placeholder = self._get_participant_placeholder(self.league)
+
         # Player search input
         self.player_search = discord.ui.TextInput(
-            label="Search Player",
-            placeholder="Type player name to search...",
+            label=f"Search {participant_label}",
+            placeholder=participant_placeholder,
             style=discord.TextStyle.short,
             required=True,
             max_length=100,

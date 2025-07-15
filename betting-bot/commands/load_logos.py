@@ -95,7 +95,7 @@ def process_and_save_logo(
                 current_script_commands_dir
             )  # .../betting-bot
 
-            potential_assets_dir = os.path.join(betting_bot_dir, "assets")
+            os.path.join(betting_bot_dir, "assets")
             potential_static_dir = os.path.join(betting_bot_dir, "static")
 
             final_save_root = potential_static_dir

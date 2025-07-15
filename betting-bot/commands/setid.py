@@ -3,11 +3,10 @@
 import logging
 import os
 from io import BytesIO
-from typing import Optional
 
 import discord
 import requests  # Keep requests for URL fetching
-from discord import Attachment, Interaction, Member, app_commands
+from discord import Interaction, Member, app_commands
 from discord.ext import commands  # Import commands for Cog
 from discord.ui import (  # Corrected import for button decorator
     Button,

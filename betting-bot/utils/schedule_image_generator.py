@@ -1,6 +1,5 @@
 """Schedule image generator for displaying upcoming games."""
 
-import difflib
 import logging
 import os
 from datetime import datetime
@@ -8,12 +7,9 @@ from typing import Dict, List, Optional
 
 import pytz
 from config.asset_paths import get_sport_category_for_path
-from config.team_mappings import normalize_team_name
-from data.game_utils import normalize_team_name_any_league
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.asset_loader import asset_loader
-from utils.league_dictionaries.baseball import TEAM_FULL_NAMES as league_dict
 
 logger = logging.getLogger(__name__)
 

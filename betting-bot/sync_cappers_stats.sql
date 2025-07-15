@@ -3,12 +3,12 @@
 -- based on the actual bet results from unit_records
 
 UPDATE cappers c
-SET 
+SET
     bet_won = (
         SELECT COUNT(*)
         FROM unit_records ur
         JOIN bets b ON ur.bet_serial = b.bet_serial
-        WHERE b.user_id = c.user_id 
+        WHERE b.user_id = c.user_id
         AND b.guild_id = c.guild_id
         AND b.status = 'won'
     ),
@@ -16,7 +16,7 @@ SET
         SELECT COUNT(*)
         FROM unit_records ur
         JOIN bets b ON ur.bet_serial = b.bet_serial
-        WHERE b.user_id = c.user_id 
+        WHERE b.user_id = c.user_id
         AND b.guild_id = c.guild_id
         AND b.status = 'lost'
     ),
@@ -24,15 +24,15 @@ SET
         SELECT COUNT(*)
         FROM unit_records ur
         JOIN bets b ON ur.bet_serial = b.bet_serial
-        WHERE b.user_id = c.user_id 
+        WHERE b.user_id = c.user_id
         AND b.guild_id = c.guild_id
         AND b.status = 'push'
     ),
     updated_at = UTC_TIMESTAMP()
 WHERE EXISTS (
-    SELECT 1 
+    SELECT 1
     FROM unit_records ur
     JOIN bets b ON ur.bet_serial = b.bet_serial
-    WHERE b.user_id = c.user_id 
+    WHERE b.user_id = c.user_id
     AND b.guild_id = c.guild_id
-); 
+);

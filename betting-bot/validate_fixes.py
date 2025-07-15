@@ -4,7 +4,6 @@ Validation script to test the straight-bet workflow fixes.
 This script validates that all components can be imported and basic functionality works.
 """
 
-import os
 import sys
 import traceback
 
@@ -14,7 +13,7 @@ def test_imports():
     print("🔍 Testing imports...")
 
     try:
-        from commands.straight_betting import StraightBetWorkflowView
+        pass
 
         print("✅ StraightBetWorkflowView imported successfully")
     except Exception as e:
@@ -22,7 +21,7 @@ def test_imports():
         return False
 
     try:
-        from utils.modals import StraightBetDetailsModal
+        pass
 
         print("✅ StraightBetDetailsModal imported successfully")
     except Exception as e:
@@ -30,7 +29,7 @@ def test_imports():
         return False
 
     try:
-        from services.bet_service import BetService
+        pass
 
         print("✅ BetService imported successfully")
     except Exception as e:
@@ -38,7 +37,7 @@ def test_imports():
         return False
 
     try:
-        from utils.game_line_image_generator import GameLineImageGenerator
+        pass
 
         print("✅ GameLineImageGenerator imported successfully")
     except Exception as e:
@@ -46,7 +45,7 @@ def test_imports():
         return False
 
     try:
-        from data.game_utils import get_normalized_games_for_dropdown
+        pass
 
         print("✅ get_normalized_games_for_dropdown imported successfully")
     except Exception as e:

@@ -6,7 +6,6 @@ Simple script to download FIFA Club World Cup team logos from existing data.
 import asyncio
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 

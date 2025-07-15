@@ -1,6 +1,3 @@
-from PIL import Image, ImageDraw
-
-
 class ParlayImageGenerator:
     def __init__(self, fonts, padding):
         self.fonts = fonts

@@ -193,7 +193,7 @@ class LiveGameChannelService:
         status = bet.get("status", "scheduled")
         score = bet.get("score", "0:0")
         start_time = bet.get("start_time")
-        api_game_id = bet.get("api_game_id")
+        bet.get("api_game_id")
         new_name = self._format_channel_name(home, away, status, score, start_time)
         if channel.name != new_name[:100]:
             try:

@@ -5,22 +5,11 @@
 import logging
 import os
 from functools import wraps
-from io import BytesIO
-from typing import List, Optional
+from typing import List
 
 import discord
-import requests
-from discord import (
-    Interaction,
-    Role,
-    SelectOption,
-    TextChannel,
-    VoiceChannel,
-    app_commands,
-)
+from discord import Interaction, Role, TextChannel, app_commands
 from discord.ext import commands  # Import commands for Cog
-from discord.ui import Modal, Select, TextInput, View
-from PIL import Image
 
 # Use relative imports (assuming commands/ is sibling to services/, utils/)
 try:
@@ -28,12 +17,9 @@ try:
     from ..services.admin_service import (  # Explicitly import AdminService type hint if needed
         AdminService,
     )
-    from ..utils.errors import AdminServiceError
 except ImportError:
     # Fallbacks
-    from services.admin_service import AdminService
-
-    from utils.errors import AdminServiceError
+    pass
 
 
 logger = logging.getLogger(__name__)
@@ -414,7 +400,6 @@ class GuildSettingsView(discord.ui.View):
     async def start_selection(self):
         """Start the selection process"""
         # This method is now just a placeholder since we handle the setup in setup_command
-        pass
 
     async def process_next_selection(
         self, interaction: discord.Interaction, initial: bool = False
@@ -744,6 +729,7 @@ class AdminCog(commands.Cog):
                 )
                 return
 
+            from .views.admin_action_view import AdminActionView
             view = AdminActionView(self.bot, interaction)
             await interaction.response.send_message(
                 "Select the channel action you want to perform:",

@@ -165,4 +165,4 @@ If you encounter issues:
 1. Check the log files for detailed error messages
 2. Verify your API key is valid and has sufficient quota
 3. Ensure all required directories and files exist
-4. Check your internet connection for logo downloads 
+4. Check your internet connection for logo downloads

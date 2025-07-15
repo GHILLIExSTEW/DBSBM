@@ -49,4 +49,4 @@ By participating in this project, you agree to abide by our Code of Conduct.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same terms as the project. 
+By contributing, you agree that your contributions will be licensed under the same terms as the project.

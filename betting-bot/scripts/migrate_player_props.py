@@ -6,7 +6,6 @@ Sets up the enhanced player props database schema and migrates existing data.
 
 import asyncio
 import logging
-import os
 import sys
 from pathlib import Path
 

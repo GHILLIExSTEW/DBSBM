@@ -1,6 +1,5 @@
 import logging
 import os
-from datetime import datetime
 
 import discord
 from discord import Interaction, Member, app_commands

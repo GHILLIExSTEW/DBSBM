@@ -6,41 +6,21 @@
 import io
 import json
 import logging
-import os
 import traceback
 import uuid
-from datetime import datetime, timedelta, timezone
-from io import BytesIO
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
-import aiohttp
 import discord
-import pytz
-import requests
-from api.sports_api import SportsAPI
-from config.leagues import LEAGUE_CONFIG
-from data.db_manager import DatabaseManager
-from data.game_utils import get_normalized_games_for_dropdown
-from discord import (
-    ButtonStyle,
-    Embed,
-    File,
-    Interaction,
-    Message,
-    SelectOption,
-    TextChannel,
-    Webhook,
-)
+from discord import ButtonStyle, File, Interaction, Message, SelectOption, TextChannel
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from utils.errors import BetServiceError, GameNotFoundError, ValidationError
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.image_url_converter import convert_image_path_to_url
 from utils.league_loader import get_all_league_names
 from utils.modals import StraightBetDetailsModal
-from utils.parlay_image_generator import ParlayImageGenerator
-
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +164,7 @@ class LineTypeSelect(Select):
 
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
-        from datetime import datetime
+        pass
 
         import pytz
 
@@ -1137,7 +1117,7 @@ class StraightBetWorkflowView(View):
                     )
 
                 # Regenerate the bet slip image with the real bet_serial
-                bet_type = details.get("line_type", "game_line")
+                details.get("line_type", "game_line")
                 league = details.get("league", "N/A")
                 home_team = details.get("home_team_name", details.get("team", "N/A"))
                 away_team = details.get(
@@ -1371,10 +1351,8 @@ class StraightBetWorkflowView(View):
                 if bet_slip_image_bytes:
                     self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
                     self.preview_image_bytes.seek(0)
-                    bet_slip_image = bet_slip_image_bytes
                 else:
                     self.preview_image_bytes = None
-                    bet_slip_image = None
             elif bet_type == "player_prop":
                 generator = PlayerPropImageGenerator(
                     guild_id=self.original_interaction.guild_id
@@ -1384,7 +1362,7 @@ class StraightBetWorkflowView(View):
                     player_name = line.split(" - ")[0] if " - " in line else line
                 team_name = home_team
                 league = self.bet_details.get("league", "N/A")
-                odds_str = str(self.bet_details.get("odds_str", "")).strip()
+                str(self.bet_details.get("odds_str", "")).strip()
                 # Do NOT append odds to the line for player prop straight bets
                 bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                     player_name=player_name or team_name,
@@ -1403,12 +1381,10 @@ class StraightBetWorkflowView(View):
                 if bet_slip_image_bytes:
                     self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
                     self.preview_image_bytes.seek(0)
-                    bet_slip_image = bet_slip_image_bytes
                 else:
                     self.preview_image_bytes = None
-                    bet_slip_image = None
             else:
-                bet_slip_image = None
+                pass
         except Exception as e:
             logger.exception(
                 f"Error generating bet slip image after units selection: {e}"
@@ -1449,7 +1425,9 @@ class StraightBetDetailsModal(Modal):
         is_manual: bool = False,
         view_custom_id_suffix: str = "",
     ):
-        super().__init__(title="Enter Bet Details")
+        # Get league-specific title
+        title = self._get_league_specific_title(selected_league_key)
+        super().__init__(title=title)
         self.line_type = line_type
         self.selected_league_key = selected_league_key
         self.bet_details = bet_details_from_view.copy() if bet_details_from_view else {}
@@ -1464,10 +1442,47 @@ class StraightBetDetailsModal(Modal):
         sport_type = league_conf.get("sport_type", "Team Sport")
         is_individual_sport = sport_type == "Individual Player"
 
-
+    def _get_league_specific_title(self, league: str) -> str:
+        """Get league-specific modal title."""
+        league_titles = {
+            "Formula-1": "🏎️ Game Line Bet",
+            "PGA": "⛳ Game Line Bet",
+            "LPGA": "⛳ Game Line Bet",
+            "EuropeanTour": "⛳ Game Line Bet",
+            "LIVGolf": "⛳ Game Line Bet",
+            "ATP": "🎾 Game Line Bet",
+            "WTA": "🎾 Game Line Bet",
+            "Tennis": "🎾 Game Line Bet",
+            "MMA": "🥊 Game Line Bet",
+            "Bellator": "🥊 Game Line Bet",
+            "PDC": "🎯 Game Line Bet",
+            "BDO": "🎯 Game Line Bet",
+            "WDF": "🎯 Game Line Bet",
+            "NBA": "🏀 Game Line Bet",
+            "WNBA": "🏀 Game Line Bet",
+            "NFL": "🏈 Game Line Bet",
+            "MLB": "⚾ Game Line Bet",
+            "NHL": "🏒 Game Line Bet",
+            "Soccer": "⚽ Game Line Bet",
+            "EPL": "⚽ Game Line Bet",
+            "LaLiga": "⚽ Game Line Bet",
+            "Bundesliga": "⚽ Game Line Bet",
+            "SerieA": "⚽ Game Line Bet",
+            "Ligue1": "⚽ Game Line Bet",
+            "ChampionsLeague": "⚽ Game Line Bet",
+            "EuropaLeague": "⚽ Game Line Bet",
+            "WorldCup": "⚽ Game Line Bet",
+        }
+        return league_titles.get(league, "🎯 Game Line Bet")
 
         # Add team/opponent fields for manual entry
-        if is_manual:
+        if self.is_manual:
+            # Get league config to check sport type
+            from config.leagues import LEAGUE_CONFIG
+            league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
+            sport_type = league_conf.get("sport_type", "Team Sport")
+            is_individual_sport = sport_type == "Individual Player"
+            
             if is_individual_sport:
                 # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
                 player_label = league_conf.get("participant_label", "Player")
@@ -1475,7 +1490,7 @@ class StraightBetDetailsModal(Modal):
                     "team_placeholder", "e.g., Player Name"
                 )
                 # League-specific player suggestions
-                if selected_league_key in [
+                if self.selected_league_key in [
                     "PDC",
                     "BDO",
                     "WDF",
@@ -1489,18 +1504,18 @@ class StraightBetDetailsModal(Modal):
                     "Masters",
                 ]:
                     player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
-                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                     player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
-                elif selected_league_key in [
+                elif self.selected_league_key in [
                     "PGA",
                     "LPGA",
                     "EuropeanTour",
                     "LIVGolf",
                 ]:
                     player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
-                elif selected_league_key in ["MMA", "Bellator"]:
+                elif self.selected_league_key in ["MMA", "Bellator"]:
                     player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
-                elif selected_league_key == "Formula-1":
+                elif self.selected_league_key == "Formula-1":
                     player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
                 self.player_input = TextInput(
                     label=player_label,
@@ -1509,13 +1524,13 @@ class StraightBetDetailsModal(Modal):
                     custom_id=f"player_input_{self.view_custom_id_suffix}",
                 )
                 self.add_item(self.player_input)
-                if line_type == "game_line":
+                if self.line_type == "game_line":
                     opponent_label = league_conf.get("opponent_label", "Opponent")
                     opponent_placeholder = league_conf.get(
                         "opponent_placeholder", "e.g., Opponent Name"
                     )
                     # League-specific opponent suggestions
-                    if selected_league_key in [
+                    if self.selected_league_key in [
                         "PDC",
                         "BDO",
                         "WDF",
@@ -1529,18 +1544,18 @@ class StraightBetDetailsModal(Modal):
                         "Masters",
                     ]:
                         opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
-                    elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                    elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                         opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
-                    elif selected_league_key in [
+                    elif self.selected_league_key in [
                         "PGA",
                         "LPGA",
                         "EuropeanTour",
                         "LIVGolf",
                     ]:
                         opponent_placeholder = "e.g., Rory McIlroy, Lydia Ko"
-                    elif selected_league_key in ["MMA", "Bellator"]:
+                    elif self.selected_league_key in ["MMA", "Bellator"]:
                         opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
-                    elif selected_league_key == "Formula-1":
+                    elif self.selected_league_key == "Formula-1":
                         opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
                     self.opponent_input = TextInput(
                         label=opponent_label,
@@ -1552,16 +1567,16 @@ class StraightBetDetailsModal(Modal):
             else:
                 # For team sports, show team and opponent (existing logic)
                 self.team_input = TextInput(
-                    label="Team",
-                    placeholder="Enter your team (e.g., Yankees)",
+                    label="Your Team",
+                    placeholder="e.g., Yankees, Lakers, Chiefs",
                     required=True,
                     custom_id=f"team_input_{self.view_custom_id_suffix}",
                 )
                 self.add_item(self.team_input)
-                if line_type == "game_line":
+                if self.line_type == "game_line":
                     self.opponent_input = TextInput(
-                        label="Opponent",
-                        placeholder="Enter opponent team (e.g., Red Sox)",
+                        label="Opponent Team",
+                        placeholder="e.g., Red Sox, Celtics, Bills",
                         required=True,
                         custom_id=f"opponent_input_{self.view_custom_id_suffix}",
                     )
@@ -1569,8 +1584,8 @@ class StraightBetDetailsModal(Modal):
 
         # Add line input
         self.line_input = TextInput(
-            label="Line (e.g., -110, +150, Over 2.5)",
-            placeholder="Enter the line",
+            label="Bet Line",
+            placeholder="e.g., -110, +150, Over 2.5, Under 1.5",
             required=True,
             custom_id=f"line_input_{self.view_custom_id_suffix}",
         )
@@ -1578,8 +1593,8 @@ class StraightBetDetailsModal(Modal):
 
         # Add odds input
         self.odds_input = TextInput(
-            label="Odds (e.g., -110, +150)",
-            placeholder="Enter the odds",
+            label="Odds",
+            placeholder="e.g., -110, +150, +200",
             required=True,
             custom_id=f"odds_input_{self.view_custom_id_suffix}",
         )
@@ -1648,7 +1663,6 @@ class StraightBetDetailsModal(Modal):
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
 
-
             line = self.line_input.value.strip()[:100] or "Line"
             odds_str = self.odds_input.value.strip()[:100] or "0"
             # Validate odds format
@@ -1703,7 +1717,6 @@ class StraightBetDetailsModal(Modal):
                 logging.error(
                     f"[StraightBetDetailsModal] Failed to generate preview image: {e}\n{traceback.format_exc()}"
                 )
-                preview_file = None
                 preview_bytes = None
 
             # Set preview image bytes on the view for use in go_next

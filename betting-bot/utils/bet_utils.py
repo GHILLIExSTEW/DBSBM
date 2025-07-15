@@ -2,7 +2,6 @@
 # Stub for calculate_parlay_payout used in parlay betting
 
 import logging
-from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

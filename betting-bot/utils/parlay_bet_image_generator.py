@@ -1,8 +1,7 @@
-import difflib
 import logging
 import os
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont
 
 from utils.asset_loader import asset_loader
 
@@ -67,7 +66,6 @@ class ParlayBetImageGenerator:
         Each leg in `legs` should be a dict with keys:
           - 'bet_type' ('game_line' or 'player_prop'), 'league', 'home_team', 'away_team', 'selected_team', 'line', 'player_name' (if player prop)
         """
-        import os
 
         from PIL import Image
 
@@ -164,7 +162,7 @@ class ParlayBetImageGenerator:
             return buffer.getvalue()
 
     def _draw_leg(self, draw, image, leg, y, image_width):
-        from PIL import Image, ImageDraw
+        pass
 
         bet_type = str(leg.get("bet_type", "game_line") or "")
         league = str(leg.get("league", "") or "")
@@ -342,7 +340,6 @@ class ParlayBetImageGenerator:
             payout_text = "Units: X"
         else:
             from utils.bet_utils import (
-                calculate_profit_from_odds,
                 determine_risk_win_display_auto,
                 format_units_display,
             )

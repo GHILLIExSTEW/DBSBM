@@ -1,25 +1,20 @@
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from data.game_utils import (
-    get_league_abbreviation,
-    normalize_team_name,
-    sanitize_team_name,
-)
+from data.game_utils import get_league_abbreviation, normalize_team_name
+
+logger = logging.getLogger(__name__)
 
 try:
     from ..config.database_mysql import (
         MYSQL_DB,
         MYSQL_HOST,
         MYSQL_PASSWORD,
-        MYSQL_POOL_MAX_SIZE,
-        MYSQL_POOL_MIN_SIZE,
         MYSQL_PORT,
         MYSQL_USER,
     )
@@ -28,8 +23,6 @@ except ImportError:
         MYSQL_DB,
         MYSQL_HOST,
         MYSQL_PASSWORD,
-        MYSQL_POOL_MAX_SIZE,
-        MYSQL_POOL_MIN_SIZE,
         MYSQL_PORT,
         MYSQL_USER,
     )
@@ -38,8 +31,6 @@ if not MYSQL_DB:
     logger.critical("CRITICAL ERROR: MYSQL_DB environment variable is not set.")
     logger.critical("Please set MYSQL_DB in your .env file or environment variables.")
     logger.critical("Example: MYSQL_DB=betting_bot")
-
-logger = logging.getLogger(__name__)
 logging.getLogger("aiomysql").setLevel(logging.WARNING)
 
 
@@ -466,7 +457,6 @@ class DatabaseManager:
                         )
 
                     # --- Bets Table ---
-                    bets_table_created = False
                     if not await self.table_exists(conn, "bets"):
                         await cursor.execute(
                             """
@@ -510,7 +500,6 @@ class DatabaseManager:
                         """
                         )
                         logger.info("Table 'bets' created.")
-                        bets_table_created = True
 
                         await self._check_and_add_column(
                             cursor,
@@ -1440,7 +1429,7 @@ class DatabaseManager:
             (api_game_id,),
         )
         if not src:
-            raise BetServiceError(f"No api_games row for {api_game_id}")
+            raise ValueError(f"No api_games row for {api_game_id}")
 
         # Insert USING api_game_id as the PK
         insert_q = """

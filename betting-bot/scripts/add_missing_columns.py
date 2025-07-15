@@ -5,7 +5,6 @@ Add missing columns to bets table for enhanced player props.
 
 import asyncio
 import logging
-import os
 import sys
 from pathlib import Path
 

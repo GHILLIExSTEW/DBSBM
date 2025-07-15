@@ -49,4 +49,4 @@ We regularly release security updates. It is strongly recommended to:
 3. Regularly check for new releases
 4. Apply security patches promptly
 
-For more information about our security practices, please contact security@yourcompany.com 
+For more information about our security practices, please contact security@yourcompany.com

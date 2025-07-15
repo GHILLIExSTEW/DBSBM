@@ -360,7 +360,7 @@ def main():
     downloader = WikipediaImageDownloader()
 
     try:
-        results = downloader.download_all_sports()
+        downloader.download_all_sports()
         logger.info("\n🎉 Wikipedia player image download completed!")
 
     except KeyboardInterrupt:

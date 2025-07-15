@@ -4,19 +4,18 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Set
+from datetime import datetime, timezone
+from typing import Dict, Optional
 
 import discord
-from discord import VoiceChannel
 
 try:
     from ..data.cache_manager import CacheManager
-    from ..utils.errors import ServiceError, VoiceError
+    from ..utils.errors import ServiceError
 except ImportError:
     from data.cache_manager import CacheManager
 
-    from utils.errors import ServiceError, VoiceError
+    from utils.errors import ServiceError
 
 logger = logging.getLogger(__name__)
 

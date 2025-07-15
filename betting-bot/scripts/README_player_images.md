@@ -197,4 +197,4 @@ Required packages:
 - `requests`
 - `Pillow` (PIL)
 - `pathlib` (built-in)
-- `urllib` (built-in) 
+- `urllib` (built-in)

@@ -5,9 +5,7 @@ import logging
 import os
 from typing import Optional, Tuple
 
-import unidecode
 from PIL import Image, ImageFont
-from rapidfuzz import process
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +116,6 @@ class AssetLoader:
         """
         # Import here to avoid circular imports
         from config.asset_paths import get_sport_category_for_path
-        from data.game_utils import normalize_team_name_any_league
 
         # Normalize team name
         normalized_team = self._normalize_team_name(team_name, league)
@@ -257,7 +254,7 @@ class AssetLoader:
             return None
 
         league_name = league_info.get("name", league_code)
-        league_sport = league_info.get("sport", sport)
+        league_info.get("sport", sport)
 
         # Get sport category if not provided
         if not sport:

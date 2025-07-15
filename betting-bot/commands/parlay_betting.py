@@ -3,40 +3,30 @@
 """Parlay betting workflow for placing multi-leg bets."""
 
 import io
-import json
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import discord
-from config.asset_paths import get_sport_category_for_path
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from config.team_mappings import normalize_team_name
+from config.leagues import LEAGUE_CONFIG
 from data.game_utils import get_normalized_games_for_dropdown
 from discord import (
     ButtonStyle,
-    Embed,
     File,
     Interaction,
     Message,
     SelectOption,
     TextChannel,
-    Webhook,
     app_commands,
 )
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
-from PIL import Image, ImageDraw, ImageFont
 
-from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
-from utils.errors import BetServiceError, GameNotFoundError, ValidationError
-from utils.formatters import format_parlay_bet_details_embed
-from utils.image_url_converter import convert_image_path_to_url
+from utils.errors import ValidationError
 from utils.league_loader import get_all_league_names
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
-from utils.validators import validate_units
+
 from .admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
@@ -731,13 +721,21 @@ class BetDetailsModal(Modal):
             elif self.is_manual and self.line_type == "player_prop":
                 # For enhanced player props, we'll handle this in a separate modal
                 # Just store the basic info for now
-                self.view_ref.current_leg_construction_details["line_type"] = "player_prop"
-                self.view_ref.current_leg_construction_details["league"] = self.view_ref.current_leg_construction_details.get("league", "")
+                self.view_ref.current_leg_construction_details[
+                    "line_type"
+                ] = "player_prop"
+                self.view_ref.current_leg_construction_details[
+                    "league"
+                ] = self.view_ref.current_leg_construction_details.get("league", "")
             elif self.line_type == "player_prop":
                 # For enhanced player props, we'll handle this in a separate modal
                 # Just store the basic info for now
-                self.view_ref.current_leg_construction_details["line_type"] = "player_prop"
-                self.view_ref.current_leg_construction_details["league"] = self.view_ref.current_leg_construction_details.get("league", "")
+                self.view_ref.current_leg_construction_details[
+                    "line_type"
+                ] = "player_prop"
+                self.view_ref.current_leg_construction_details[
+                    "league"
+                ] = self.view_ref.current_leg_construction_details.get("league", "")
 
             line = self.line_input.value.strip()
             if not line:
@@ -1268,10 +1266,13 @@ class TeamSelect(Select):
         line_type = self.parent_view.current_leg_construction_details.get(
             "line_type", "game_line"
         )
-        
+
         # Use enhanced player prop modal for player props
         if line_type == "player_prop":
-            from commands.parlay_enhanced_player_prop_modal import ParlayEnhancedPlayerPropModal
+            from commands.parlay_enhanced_player_prop_modal import (
+                ParlayEnhancedPlayerPropModal,
+            )
+
             modal = ParlayEnhancedPlayerPropModal(
                 self.parent_view.bot,
                 self.parent_view.bot.db_manager,
@@ -1631,7 +1632,10 @@ class ParlayBetWorkflowView(View):
                     # For individual sports, skip team selection and go directly to modal
                     if line_type == "player_prop":
                         # Use enhanced player prop modal
-                        from commands.parlay_enhanced_player_prop_modal import ParlayEnhancedPlayerPropModal
+                        from commands.parlay_enhanced_player_prop_modal import (
+                            ParlayEnhancedPlayerPropModal,
+                        )
+
                         modal = ParlayEnhancedPlayerPropModal(
                             self.bot,
                             self.bot.db_manager,
@@ -1651,7 +1655,7 @@ class ParlayBetWorkflowView(View):
                             bet_details_from_view=self.current_leg_construction_details,
                         )
                         modal.view_ref = self
-                    
+
                     if not interaction.response.is_done():
                         await interaction.response.send_modal(modal)
                         await self.edit_message_for_current_leg(
@@ -2053,7 +2057,6 @@ class ParlayBetWorkflowView(View):
                 )
         except Exception as e:
             logger.exception(f"Error generating final parlay image: {e}")
-            discord_file_to_send = None
         # If there is a PlayerPropBetDetailsModal or similar, ensure its on_submit does the same as parlay/straight:
         # Always generate preview image with units=1.0 for the first units selection, attach to edit_message.
         # If not present, this is a placeholder for future consistency.
@@ -2064,25 +2067,32 @@ class ParlayCog(commands.Cog):
         self.bot = bot
         logging.info("ParlayCog initialized")
 
-    @app_commands.command(name="parlay", description="Create a multi-leg parlay bet (game lines and player props)")
+    @app_commands.command(
+        name="parlay",
+        description="🎲 Create a multi-leg parlay - combine multiple bets for bigger payouts",
+    )
     @require_registered_guild()
     async def parlay(self, interaction: Interaction):
-        logging.info(f"/parlay command invoked by {interaction.user} (ID: {interaction.user.id})")
+        logging.info(
+            f"/parlay command invoked by {interaction.user} (ID: {interaction.user.id})"
+        )
         try:
             view = ParlayBetWorkflowView(interaction, self.bot)
             logging.debug("ParlayBetWorkflowView initialized successfully.")
             await interaction.response.send_message(
                 "Let's build your parlay! Add legs (game lines or player props) and finalize when ready:",
                 view=view,
-                ephemeral=True
+                ephemeral=True,
             )
             view.message = await interaction.original_response()
             logging.info("/parlay command response sent successfully.")
         except Exception as e:
             logging.error(f"Error in /parlay command: {e}", exc_info=True)
             await interaction.response.send_message(
-                "❌ An error occurred while processing your parlay request.", ephemeral=True
+                "❌ An error occurred while processing your parlay request.",
+                ephemeral=True,
             )
+
 
 async def setup(bot: commands.Bot):
     logging.info("Setting up parlay commands...")

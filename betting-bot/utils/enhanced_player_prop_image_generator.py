@@ -4,14 +4,11 @@ Creates improved bet slip images with better styling, prop type icons, and perfo
 """
 
 import logging
-import os
-import textwrap
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 import requests
-from config.prop_templates import format_prop_line, get_prop_templates_for_league
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 from utils.asset_loader import AssetLoader
 

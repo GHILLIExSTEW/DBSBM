@@ -1,15 +1,9 @@
 import logging
 import os
-from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 
 import aiohttp
-from config.leagues import (
-    ENDPOINTS,
-    LEAGUE_IDS,
-    LEAGUE_SEASON_STARTS,
-    get_current_season,
-)
+from config.leagues import ENDPOINTS, LEAGUE_IDS, get_current_season
 from dotenv import load_dotenv
 
 load_dotenv()

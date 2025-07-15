@@ -1,13 +1,14 @@
 # utils/helpers.py
 # Utility functions for NCAA validation, logo processing, and Darts players
 
-from typing import List, Optional
-from PIL import Image
 import io
+import os
+from typing import List, Optional
+
 import requests
 import thesportsdb
-from config.leagues import LEAGUE_IDS, CFL_TEAMS, AFL_TEAMS
-
+from config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
+from PIL import Image
 
 # NCAA teams list (661 Division I and II teams, abridged for brevity)
 NCAA_TEAMS = [

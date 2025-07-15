@@ -22,8 +22,7 @@ BASE_DIR = SCRIPT_DIR.parent
 sys.path.insert(0, str(BASE_DIR))
 
 try:
-    from config.asset_paths import get_sport_category_for_path
-    from config.leagues import ENDPOINTS, LEAGUE_IDS
+    from config.leagues import ENDPOINTS
     from config.team_mappings import normalize_team_name
     from data.db_manager import DatabaseManager
 except ImportError as e:
@@ -329,7 +328,7 @@ async def insert_games_to_db(games: List[Dict], db_manager, season: int = 2025):
     for game in games:
         try:
             fixture = game.get("fixture", {})
-            league = game.get("league", {})
+            game.get("league", {})
             teams = game.get("teams", {})
             home = teams.get("home", {})
             away = teams.get("away", {})

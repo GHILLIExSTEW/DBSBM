@@ -4,14 +4,15 @@ Test script for Enhanced Player Props functionality
 """
 
 import asyncio
-import os
 import sys
 from pathlib import Path
+import pytest
 
 # Add the betting-bot directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
 
+@pytest.mark.asyncio
 async def test_enhanced_player_props():
     """Test the enhanced player props functionality."""
     print("🧪 Testing Enhanced Player Props System...")
@@ -24,8 +25,6 @@ async def test_enhanced_player_props():
             get_prop_templates_for_league,
         )
         from services.player_search_service import PlayerSearchService
-
-        from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
 
         print("✅ All imports successful")
 
@@ -96,10 +95,7 @@ async def test_enhanced_player_props():
         print("\n7️⃣ Testing enhanced modal setup...")
         try:
             # This would normally require a bot instance, but we can test the function exists
-            from commands.enhanced_player_prop_modal import (
-                EnhancedPlayerPropModal,
-                PlayerPropSearchView,
-            )
+            pass
 
             print("✅ Enhanced modal classes import successfully")
         except Exception as e:

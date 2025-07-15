@@ -1,24 +1,11 @@
 # REV 1.0.0 - Enhanced logging for game fetching and normalization
-import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-import pytz
-from config.asset_paths import get_sport_category_for_path
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 
-from utils.league_dictionaries.darts import PLAYER_FULL_NAMES as DARTS_PLAYER_NAMES
-
 # Import all league dictionaries
-from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
-from utils.league_dictionaries.nba import TEAM_FULL_NAMES as NBA_TEAM_NAMES
-from utils.league_dictionaries.ncaab import TEAM_FULL_NAMES as NCAAB_TEAM_NAMES
-from utils.league_dictionaries.ncaaf import TEAM_FULL_NAMES as NCAAF_TEAM_NAMES
-from utils.league_dictionaries.nfl import TEAM_FULL_NAMES as NFL_TEAM_NAMES
-from utils.league_dictionaries.nhl import TEAM_FULL_NAMES as NHL_TEAM_NAMES
-from utils.league_dictionaries.soccer import TEAM_FULL_NAMES as SOCCER_TEAM_NAMES
-from utils.league_dictionaries.tennis import TENNIS_LEAGUES
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +63,7 @@ LEAGUE_FILE_KEY_MAP = {
     "Ryder Cup": "RyderCup",
     "Presidents Cup": "PresidentsCup",
     "Bellator MMA": "Bellator",
-    "TENNIS": ["WTP", "ATP", "WTA"],
+    "TENNIS_CATEGORY": ["WTP", "ATP", "WTA"],
     "ESPORTS": ["CSGO", "VALORANT", "LOL", "DOTA 2", "PUBG", "COD"],
     "OTHER_SPORTS": ["OTHER_SPORTS"],
 }
