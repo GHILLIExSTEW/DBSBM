@@ -1,6 +1,8 @@
 """
 Enhanced Player Prop Modal
 Provides improved player search, prop type selection, and validation.
+
+VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
 """
 
 import logging
@@ -364,7 +366,7 @@ class PlayerPropSearchView(discord.ui.View):
                 "Please enter a player name to search for (e.g., 'Messi', 'Ronaldo', 'Haaland'):",
                 ephemeral=True,
             )
-            
+
             # For now, we'll show popular players for this league
             search_results = await self.player_search_service.get_popular_players(
                 self.league, limit=15

@@ -1,6 +1,8 @@
 """
 Enhanced Player Prop Modal for Parlays
 Provides improved player search, prop type selection, and validation for parlay legs.
+
+VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
 """
 
 import logging
@@ -463,7 +465,11 @@ class ParlayPlayerSearchView(View):
             async def player_callback(interaction: Interaction):
                 selected_player_name = player_select.values[0]
                 selected_player = next(
-                    (p for p in search_results if p.player_name == selected_player_name),
+                    (
+                        p
+                        for p in search_results
+                        if p.player_name == selected_player_name
+                    ),
                     None,
                 )
 

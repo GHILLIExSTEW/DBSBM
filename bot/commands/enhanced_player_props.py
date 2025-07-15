@@ -1,6 +1,8 @@
 """
 Enhanced Player Props Command
-Provides advanced player prop betting with search, validation, and modern UI.
+Provides a modern, user-friendly interface for creating player prop bets.
+
+VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
 """
 
 import io
