@@ -157,12 +157,10 @@ class PlayerPropsWorkflowView(View):
                 return
         elif self.current_step == 3:
             # Step 3: Team selection
-            from commands.straight_betting import CancelButton, TeamSelect
-
             home_team = self.bet_details.get("home_team_name", "")
             away_team = self.bet_details.get("away_team_name", "")
             self.clear_items()
-            self.add_item(TeamSelect(self, home_team, away_team))
+            self.add_item(PlayerPropTeamSelect(self, home_team, away_team))
             self.add_item(CancelButton(self))
             await self.edit_message(
                 content="Select which team's players you want to bet on:", view=self
@@ -825,6 +823,56 @@ class GameSelectionView(View):
             await interaction.response.send_message(
                 f"❌ **Error:** {str(e)}", ephemeral=True
             )
+
+
+class PlayerPropTeamSelect(Select):
+    """Team selector specifically for player props."""
+    
+    def __init__(self, parent_view: "PlayerPropsWorkflowView", home_team: str, away_team: str):
+        self.parent_view = parent_view
+        options = [
+            SelectOption(label=home_team[:100], value=home_team[:100]),
+            SelectOption(label=away_team[:100], value=away_team[:100]),
+        ]
+        super().__init__(
+            placeholder="Which team's players do you want to bet on?",
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: Interaction):
+        selected_team = self.values[0]
+        home_team = self.parent_view.bet_details.get("home_team_name", "")
+        away_team = self.parent_view.bet_details.get("away_team_name", "")
+        
+        if selected_team == home_team:
+            opponent = away_team
+        else:
+            opponent = home_team
+            
+        self.parent_view.bet_details["team"] = selected_team
+        self.parent_view.bet_details["opponent"] = opponent
+        
+        logger.info(f"[PLAYER PROPS TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}")
+        
+        # Move to next step (player/prop selection)
+        await interaction.response.defer()
+        await self.parent_view.go_next(interaction)
+
+
+class CancelButton(Button):
+    """Cancel button for player props workflow."""
+    
+    def __init__(self, parent_view: "PlayerPropsWorkflowView"):
+        super().__init__(style=ButtonStyle.red, label="Cancel")
+        self.parent_view = parent_view
+
+    async def callback(self, interaction: Interaction):
+        await interaction.response.edit_message(
+            content="❌ Player props workflow cancelled.", view=None
+        )
+        self.parent_view.stop()
 
 
 class TeamSelectionView(View):
