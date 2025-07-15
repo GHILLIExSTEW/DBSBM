@@ -24,31 +24,97 @@ def make_rounded_feathered(img):
 class StatsImageGenerator:
 
     def generate_guild_stats_image(self, stats: Dict) -> Image.Image:
-        """Generate a stats image for the guild/server."""
+        """Generate a visually rich stats image for the guild/server."""
         try:
-            # Create figure with dark theme
-            fig, ax = plt.subplots(figsize=(12, 8))
-            fig.patch.set_facecolor('#1a1a1a')
-            ax.axis('off')
+            # Extract stats
+            total_bets = int(stats.get('total_bets', 0) or 0)
+            total_cappers = int(stats.get('total_cappers', 0) or 0)
+            total_units = float(stats.get('total_units', 0) or 0.0)
+            net_units = float(stats.get('net_units', 0) or 0.0)
+            wins = int(stats.get('wins', 0) or 0)
+            losses = int(stats.get('losses', 0) or 0)
+            pushes = int(stats.get('pushes', 0) or 0)
+            leaderboard = stats.get('leaderboard', [])
 
-            # Prepare stats text
+            # Create multi-panel figure
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 14))
+            fig.patch.set_facecolor('#1a1a1a')
+
+            # 1. Leaderboard (Top Left)
+            ax1.set_facecolor('#232b3b')
+            if leaderboard and len(leaderboard) > 0:
+                names = [c.get('username', f"User {c.get('user_id','?')}") for c in leaderboard[:8]]
+                units = [float(c.get('net_units', 0) or 0.0) for c in leaderboard[:8]]
+                colors = ['#00ff88' if u >= 0 else '#ff4444' for u in units]
+                bars = ax1.barh(names, units, color=colors, alpha=0.85, edgecolor='white', linewidth=2)
+                ax1.set_title('Leaderboard (Top 8 by Net Units)', color='#00ffe7', fontsize=24, fontweight='bold')
+                for bar, value in zip(bars, units):
+                    ax1.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2., f'{value:.2f}',
+                             ha='left', va='center', color='white', fontweight='bold', fontsize=16)
+                ax1.tick_params(colors='white', labelsize=14)
+            else:
+                ax1.text(0.5, 0.5, 'No leaderboard data', ha='center', va='center', color='white', fontsize=18, transform=ax1.transAxes)
+                ax1.set_title('Leaderboard', color='#00ffe7', fontsize=24, fontweight='bold')
+            ax1.spines[:].set_color('white')
+
+            # 2. Pie Chart (Top Right) - Win/Loss/Push
+            ax2.set_facecolor('#232b3b')
+            pie_labels = []
+            pie_values = []
+            pie_colors = []
+            if wins > 0:
+                pie_labels.append('Wins')
+                pie_values.append(wins)
+                pie_colors.append('#00ff88')
+            if losses > 0:
+                pie_labels.append('Losses')
+                pie_values.append(losses)
+                pie_colors.append('#ff4444')
+            if pushes > 0:
+                pie_labels.append('Pushes')
+                pie_values.append(pushes)
+                pie_colors.append('#ffaa00')
+            if sum(pie_values) > 0:
+                wedges, texts, autotexts = ax2.pie(
+                    pie_values, labels=pie_labels, colors=pie_colors, autopct='%1.1f%%',
+                    startangle=90, textprops={'color':'white', 'fontsize':16}, wedgeprops={'linewidth':2, 'edgecolor':'white'})
+                ax2.set_title('Win/Loss/Push Distribution', color='#00ffe7', fontsize=22, fontweight='bold')
+            else:
+                ax2.text(0.5, 0.5, 'No win/loss data', ha='center', va='center', color='#00ffe7', fontsize=18, transform=ax2.transAxes)
+                ax2.set_title('Win/Loss/Push Distribution', color='#00ffe7', fontsize=22, fontweight='bold')
+            ax2.spines[:].set_color('white')
+
+            # 3. Bar Chart (Bottom Left) - Bets & Units
+            ax3.set_facecolor('#232b3b')
+            bar_labels = ['Total Bets', 'Total Cappers', 'Total Units']
+            bar_values = [total_bets, total_cappers, total_units]
+            bar_colors = ['#2196f3', '#ff9800', '#4caf50']
+            bars = ax3.bar(bar_labels, bar_values, color=bar_colors, alpha=0.85, edgecolor='white', linewidth=2)
+            for bar, value in zip(bars, bar_values):
+                ax3.text(bar.get_x() + bar.get_width()/2., value + 0.1, str(value), ha='center', va='bottom', color='white', fontweight='bold', fontsize=16)
+            ax3.set_title('Server Overview', color='#00ffe7', fontsize=22, fontweight='bold')
+            ax3.tick_params(colors='white', labelsize=14)
+            ax3.spines[:].set_color('white')
+
+            # 4. Summary Box (Bottom Right)
+            ax4.axis('off')
             summary_lines = [
                 "Server Stats Summary",
                 "",
-                f"Total Bets: {stats.get('total_bets', 0)}",
-                f"Total Cappers: {stats.get('total_cappers', 0)}",
-                f"Total Units Wagered: {stats.get('total_units', 0)}",
-                f"Net Units: {stats.get('net_units', 0)}"
+                f"Total Bets: {total_bets}",
+                f"Total Cappers: {total_cappers}",
+                f"Total Units Wagered: {total_units}",
+                f"Net Units: {net_units}"
             ]
             summary_text = "\n".join(summary_lines)
             bbox_props = dict(boxstyle="round,pad=1.0", facecolor='#111', alpha=0.95, edgecolor='#00ffe7', linewidth=3)
-            ax.text(
+            ax4.text(
                 0.5, 0.5, summary_text,
                 ha='center', va='center',
                 fontsize=28, color='#ffffff',
                 fontweight='bold',
                 bbox=bbox_props,
-                transform=ax.transAxes
+                transform=ax4.transAxes
             )
 
             plt.tight_layout(pad=3.0)
