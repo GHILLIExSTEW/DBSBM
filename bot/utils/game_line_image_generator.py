@@ -193,12 +193,24 @@ class GameLineImageGenerator:
         league_cap = league.capitalize()
         league_lower = league.lower()
         sport_category = get_sport_category_for_path(league_upper)
-        league_dir_variants = [league_upper, league_cap, league_lower]
-        logo_file_variants = [
-            league_upper + ".png",
-            league_cap + ".png",
-            league_lower + ".png",
-        ]
+        
+        # Special handling for UEFA Champions League to match team folder structure
+        if league_upper == "UEFA CHAMPIONS LEAGUE" or league == "ChampionsLeague":
+            league_dir_variants = ["uefa champions league", league_upper, league_cap, league_lower]
+            logo_file_variants = [
+                "uefa champions league.png",
+                league_upper + ".png",
+                league_cap + ".png",
+                league_lower + ".png",
+            ]
+        else:
+            league_dir_variants = [league_upper, league_cap, league_lower]
+            logo_file_variants = [
+                league_upper + ".png",
+                league_cap + ".png",
+                league_lower + ".png",
+            ]
+        
         league_logo_path = None
         for dir_variant in league_dir_variants:
             dir_path = f"bot/static/logos/leagues/{sport_category}/{dir_variant}"
@@ -207,6 +219,7 @@ class GameLineImageGenerator:
                     candidate_path = os.path.join(dir_path, file_variant)
                     if os.path.exists(candidate_path):
                         league_logo_path = candidate_path
+                        logger.info(f"[IMAGE GENERATOR] Found league logo: {league_logo_path}")
                         break
                 if league_logo_path:
                     break
