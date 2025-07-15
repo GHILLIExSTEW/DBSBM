@@ -45,6 +45,15 @@ class EnhancedPlayerPropsCog(commands.Cog):
                 interaction, self.bot, message_to_control=None
             )
 
+            # Send the initial message as ephemeral
+            await interaction.response.send_message(
+                "Starting player props workflow...", view=view, ephemeral=True
+            )
+            
+            # Retrieve and assign the message object
+            view.message = await interaction.original_response()
+            
+            # Start the workflow
             await view.start_flow(interaction)
 
         except Exception as e:
