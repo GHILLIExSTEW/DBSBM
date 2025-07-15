@@ -2055,11 +2055,133 @@ class ParlayBetWorkflowView(View):
                 logger.warning(
                     f"Parlay bet {bet_id}: Failed to generate bet slip image."
                 )
+
+            # Post the bet to the selected channel
+            try:
+                post_channel_id = details.get("channel_id")
+                post_channel = (
+                    self.bot.get_channel(post_channel_id) if post_channel_id else None
+                )
+                if not post_channel or not isinstance(post_channel, TextChannel):
+                    raise ValueError(
+                        f"Invalid channel <#{post_channel_id}> for bet posting."
+                    )
+
+                # Get capper data for webhook
+                capper_data = await self.bot.db_manager.fetch_one(
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    (interaction.guild_id, interaction.user.id),
+                )
+                webhook_username = (
+                    capper_data.get("display_name")
+                    if capper_data and capper_data.get("display_name")
+                    else interaction.user.display_name
+                )
+                webhook_avatar_url = None
+                if capper_data and capper_data.get("image_path"):
+                    from utils.image_url_converter import convert_image_path_to_url
+
+                    webhook_avatar_url = convert_image_path_to_url(
+                        capper_data["image_path"]
+                    )
+
+                # Fetch member_role for mention
+                member_role_id = None
+                guild_settings = await self.bot.db_manager.fetch_one(
+                    "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                    (str(interaction.guild_id),),
+                )
+                if guild_settings and guild_settings.get("member_role"):
+                    member_role_id = guild_settings["member_role"]
+
+                # Post the bet slip image to the channel using a webhook
+                if member_role_id:
+                    content = f"<@&{member_role_id}>"
+                else:
+                    content = None
+
+                # Create or find webhook
+                webhooks = await post_channel.webhooks()
+                target_webhook = None
+                for webhook in webhooks:
+                    if webhook.name == "Bet Bot":
+                        target_webhook = webhook
+                        break
+                if not target_webhook:
+                    target_webhook = await post_channel.create_webhook(name="Bet Bot")
+
+                try:
+                    webhook_message = await target_webhook.send(
+                        content=content,
+                        file=discord_file_to_send,
+                        username=webhook_username,
+                        avatar_url=webhook_avatar_url,
+                        wait=True,
+                    )
+                except Exception as e:
+                    logger.error(f"Exception during parlay webhook.send: {e}")
+                    await self.edit_message_for_current_leg(
+                        interaction,
+                        content="Error: Failed to post parlay bet message via webhook (send failed).",
+                        view=None,
+                    )
+                    self.stop()
+                    return
+                if not webhook_message:
+                    logger.error(
+                        "Parlay webhook.send returned None (no message object). Possible permission or Discord API error."
+                    )
+                    await self.edit_message_for_current_leg(
+                        interaction,
+                        content="Error: Parlay bet message could not be posted (no message returned from webhook).",
+                        view=None,
+                    )
+                    self.stop()
+                    return
+
+                # Save message_id and channel_id in the bets table
+                if bet_service:
+                    try:
+                        await bet_service.update_parlay_bet_channel(
+                            bet_serial=details["bet_serial"],
+                            channel_id=webhook_message.channel.id,
+                            message_id=webhook_message.id,
+                        )
+                        logger.info(
+                            f"Updated parlay bet {details['bet_serial']} with message_id {webhook_message.id} and channel_id {webhook_message.channel.id}"
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to update parlay bet with message_id: {e}"
+                        )
+
+                await self.edit_message_for_current_leg(
+                    interaction,
+                    content="✅ Parlay bet posted successfully!",
+                    view=None,
+                    file=None,
+                )
+                self.stop()
+
+            except Exception as e:
+                logger.error(
+                    f"[submit_bet] Failed to post parlay bet: {str(e)}", exc_info=True
+                )
+                await self.edit_message_for_current_leg(
+                    interaction,
+                    content=f"❌ Failed to post parlay bet: {str(e)}",
+                    view=None,
+                )
+                self.stop()
+
         except Exception as e:
             logger.exception(f"Error generating final parlay image: {e}")
-        # If there is a PlayerPropBetDetailsModal or similar, ensure its on_submit does the same as parlay/straight:
-        # Always generate preview image with units=1.0 for the first units selection, attach to edit_message.
-        # If not present, this is a placeholder for future consistency.
+            await self.edit_message_for_current_leg(
+                interaction,
+                content=f"❌ Error generating parlay image: {str(e)}",
+                view=None,
+            )
+            self.stop()
 
 
 class ParlayCog(commands.Cog):
