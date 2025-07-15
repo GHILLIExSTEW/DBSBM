@@ -187,8 +187,15 @@ class StatsImageGenerator:
             
         except Exception as e:
             logger.error(f"Error generating capper stats image: {str(e)}")
-            # Fallback to simple image if matplotlib fails
-            return self._generate_fallback_image(stats, username)
+            try:
+                return self._generate_fallback_image(stats, username)
+            except Exception as fallback_e:
+                logger.error(f"Error in fallback image: {fallback_e}")
+                # Final fallback: return a blank error image
+                img = Image.new('RGB', (800, 600), color='red')
+                draw = ImageDraw.Draw(img)
+                draw.text((400, 300), "Image Generation Failed", fill='white', anchor="mm")
+                return img
 
     def _generate_fallback_image(self, stats: Dict, username: str) -> Image.Image:
         """Fallback image generation if matplotlib fails."""
