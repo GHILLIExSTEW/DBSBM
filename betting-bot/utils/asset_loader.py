@@ -165,12 +165,31 @@ class AssetLoader:
             logger.info(f"Found exact logo match: {logo_path}")
             return self.load_image(logo_path)
 
-        # Try mascot-only (last word of mapped name)
+        # Try mascot-only (last word)
         mascot = filename_team.split("_")[-1]
         mascot_path = os.path.join(logo_dir, f"{mascot}.png")
         if os.path.exists(mascot_path):
             logger.info(f"Found mascot-only logo match: {mascot_path}")
             return self.load_image(mascot_path)
+
+        # Try city-only (first word)
+        city = filename_team.split("_")[0]
+        city_path = os.path.join(logo_dir, f"{city}.png")
+        if os.path.exists(city_path):
+            logger.info(f"Found city-only logo match: {city_path}")
+            return self.load_image(city_path)
+
+        # Try fuzzy matching
+        candidates = [f for f in os.listdir(logo_dir) if f.endswith(".png")]
+        candidate_names = [os.path.splitext(f)[0] for f in candidates]
+        import difflib
+        matches = difflib.get_close_matches(
+            filename_team, candidate_names, n=1, cutoff=0.7
+        )
+        if matches:
+            match_path = os.path.join(logo_dir, f"{matches[0]}.png")
+            logger.info(f"Found fuzzy logo match: {match_path}")
+            return self.load_image(match_path)
 
         # Fallback to default logo
         logger.warning(f"No logo found for team '{team_name}' in league '{league}'")
