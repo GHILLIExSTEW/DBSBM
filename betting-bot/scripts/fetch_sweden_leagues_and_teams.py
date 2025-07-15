@@ -1,8 +1,9 @@
-import os
-import requests
 import json
+import os
 from pathlib import Path
 from time import sleep
+
+import requests
 
 # --- CONFIG ---
 API_KEY = os.getenv("API_SPORTS_KEY")

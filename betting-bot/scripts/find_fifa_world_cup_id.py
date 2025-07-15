@@ -3,12 +3,13 @@
 Script to find the correct FIFA World Cup ID by searching through available leagues.
 """
 
+import asyncio
+import logging
 import os
 import sys
-import asyncio
-import aiohttp
-import logging
 from pathlib import Path
+
+import aiohttp
 
 # Add the parent directory to sys.path for imports
 SCRIPT_DIR = Path(__file__).parent

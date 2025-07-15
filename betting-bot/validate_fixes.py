@@ -4,8 +4,8 @@ Validation script to test the straight-bet workflow fixes.
 This script validates that all components can be imported and basic functionality works.
 """
 
-import sys
 import os
+import sys
 import traceback
 
 

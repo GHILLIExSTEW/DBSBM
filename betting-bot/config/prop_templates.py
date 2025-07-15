@@ -3,19 +3,22 @@ Prop Type Templates Configuration
 Defines available prop types for each league with labels, placeholders, and validation rules.
 """
 
-from typing import Dict, List, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List
+
 
 @dataclass
 class PropTemplate:
     """Template for a specific prop type."""
+
     label: str
     placeholder: str
     unit: str
     min_value: float = 0.0
     max_value: float = 999.9
     decimal_places: int = 1
-    validation_regex: str = r'^\d+(\.\d+)?$'
+    validation_regex: str = r"^\d+(\.\d+)?$"
+
 
 # Prop type templates for each league
 PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
@@ -26,7 +29,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="points",
             min_value=0.0,
             max_value=100.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "rebounds": PropTemplate(
             label="Rebounds",
@@ -34,7 +37,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="rebounds",
             min_value=0.0,
             max_value=30.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "assists": PropTemplate(
             label="Assists",
@@ -42,7 +45,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="assists",
             min_value=0.0,
             max_value=20.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "threes": PropTemplate(
             label="3-Pointers Made",
@@ -50,7 +53,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="3-pointers",
             min_value=0.0,
             max_value=15.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "steals": PropTemplate(
             label="Steals",
@@ -58,7 +61,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="steals",
             min_value=0.0,
             max_value=10.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "blocks": PropTemplate(
             label="Blocks",
@@ -66,7 +69,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="blocks",
             min_value=0.0,
             max_value=10.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "turnovers": PropTemplate(
             label="Turnovers",
@@ -74,7 +77,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="turnovers",
             min_value=0.0,
             max_value=10.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "minutes": PropTemplate(
             label="Minutes Played",
@@ -82,10 +85,9 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="minutes",
             min_value=0.0,
             max_value=48.0,
-            decimal_places=1
-        )
+            decimal_places=1,
+        ),
     },
-    
     "NFL": {
         "passing_yards": PropTemplate(
             label="Passing Yards",
@@ -93,7 +95,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="yards",
             min_value=0.0,
             max_value=600.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "rushing_yards": PropTemplate(
             label="Rushing Yards",
@@ -101,7 +103,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="yards",
             min_value=0.0,
             max_value=200.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "receiving_yards": PropTemplate(
             label="Receiving Yards",
@@ -109,7 +111,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="yards",
             min_value=0.0,
             max_value=300.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "receptions": PropTemplate(
             label="Receptions",
@@ -117,7 +119,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="receptions",
             min_value=0.0,
             max_value=20.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "touchdowns": PropTemplate(
             label="Touchdowns",
@@ -125,7 +127,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="touchdowns",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "passing_touchdowns": PropTemplate(
             label="Passing TDs",
@@ -133,7 +135,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="touchdowns",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "rushing_touchdowns": PropTemplate(
             label="Rushing TDs",
@@ -141,7 +143,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="touchdowns",
             min_value=0.0,
             max_value=3.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "interceptions": PropTemplate(
             label="Interceptions",
@@ -149,10 +151,9 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="interceptions",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
-        )
+            decimal_places=1,
+        ),
     },
-    
     "MLB": {
         "hits": PropTemplate(
             label="Hits",
@@ -160,7 +161,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="hits",
             min_value=0.0,
             max_value=6.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "home_runs": PropTemplate(
             label="Home Runs",
@@ -168,7 +169,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="home runs",
             min_value=0.0,
             max_value=3.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "rbis": PropTemplate(
             label="RBIs",
@@ -176,7 +177,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="RBIs",
             min_value=0.0,
             max_value=8.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "runs": PropTemplate(
             label="Runs",
@@ -184,7 +185,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="runs",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "strikeouts": PropTemplate(
             label="Strikeouts",
@@ -192,7 +193,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="strikeouts",
             min_value=0.0,
             max_value=15.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "walks": PropTemplate(
             label="Walks",
@@ -200,7 +201,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="walks",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "innings_pitched": PropTemplate(
             label="Innings Pitched",
@@ -208,10 +209,9 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="innings",
             min_value=0.0,
             max_value=9.0,
-            decimal_places=1
-        )
+            decimal_places=1,
+        ),
     },
-    
     "NHL": {
         "goals": PropTemplate(
             label="Goals",
@@ -219,7 +219,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="goals",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "assists": PropTemplate(
             label="Assists",
@@ -227,7 +227,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="assists",
             min_value=0.0,
             max_value=5.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "points": PropTemplate(
             label="Points",
@@ -235,7 +235,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="points",
             min_value=0.0,
             max_value=8.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "shots": PropTemplate(
             label="Shots on Goal",
@@ -243,7 +243,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="shots",
             min_value=0.0,
             max_value=10.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "saves": PropTemplate(
             label="Saves",
@@ -251,7 +251,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="saves",
             min_value=0.0,
             max_value=50.0,
-            decimal_places=1
+            decimal_places=1,
         ),
         "penalty_minutes": PropTemplate(
             label="Penalty Minutes",
@@ -259,9 +259,9 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             unit="minutes",
             min_value=0.0,
             max_value=10.0,
-            decimal_places=1
-        )
-    }
+            decimal_places=1,
+        ),
+    },
 }
 
 # League-specific prop type groupings
@@ -271,48 +271,52 @@ LEAGUE_PROP_GROUPS: Dict[str, Dict[str, List[str]]] = {
         "Rebounding": ["rebounds"],
         "Playmaking": ["assists", "turnovers"],
         "Defense": ["steals", "blocks"],
-        "Playing Time": ["minutes"]
+        "Playing Time": ["minutes"],
     },
     "NFL": {
         "Passing": ["passing_yards", "passing_touchdowns", "interceptions"],
         "Rushing": ["rushing_yards", "rushing_touchdowns"],
         "Receiving": ["receiving_yards", "receptions"],
-        "Scoring": ["touchdowns"]
+        "Scoring": ["touchdowns"],
     },
     "MLB": {
         "Batting": ["hits", "home_runs", "rbis", "runs", "walks"],
-        "Pitching": ["strikeouts", "innings_pitched"]
+        "Pitching": ["strikeouts", "innings_pitched"],
     },
     "NHL": {
         "Scoring": ["goals", "assists", "points"],
         "Shooting": ["shots"],
         "Goaltending": ["saves"],
-        "Penalties": ["penalty_minutes"]
-    }
+        "Penalties": ["penalty_minutes"],
+    },
 }
+
 
 def get_prop_templates_for_league(league: str) -> Dict[str, PropTemplate]:
     """Get prop templates for a specific league."""
     return PROP_TEMPLATES.get(league.upper(), {})
 
+
 def get_prop_groups_for_league(league: str) -> Dict[str, List[str]]:
     """Get prop type groups for a specific league."""
     return LEAGUE_PROP_GROUPS.get(league.upper(), {})
+
 
 def validate_prop_value(league: str, prop_type: str, value: float) -> bool:
     """Validate a prop value against the template constraints."""
     templates = get_prop_templates_for_league(league)
     if prop_type not in templates:
         return False
-    
+
     template = templates[prop_type]
     return template.min_value <= value <= template.max_value
+
 
 def format_prop_line(league: str, prop_type: str, value: float) -> str:
     """Format a prop line value according to the template."""
     templates = get_prop_templates_for_league(league)
     if prop_type not in templates:
         return str(value)
-    
+
     template = templates[prop_type]
-    return f"{value:.{template.decimal_places}f} {template.unit}" 
+    return f"{value:.{template.decimal_places}f} {template.unit}"

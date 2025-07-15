@@ -1,9 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-import pytz
 from typing import Dict, Optional, Set
+
 import discord
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +15,9 @@ class LiveGameChannelService:
         self.db = db_manager
         self.running = False
         self._update_task: Optional[asyncio.Task] = None
-        self.guild_game_channels: Dict[int, Dict[str, int]] = (
-            {}
-        )  # guild_id -> {api_game_id: channel_id}
+        self.guild_game_channels: Dict[
+            int, Dict[str, int]
+        ] = {}  # guild_id -> {api_game_id: channel_id}
         self.cleanup_tasks: Set[asyncio.Task] = set()
 
     async def start(self):

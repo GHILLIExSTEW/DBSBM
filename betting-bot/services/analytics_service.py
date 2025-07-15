@@ -1,9 +1,10 @@
 # betting-bot/services/analytics_service.py
 
-import discord
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+import discord
 
 try:
     from ..utils.errors import AnalyticsServiceError
@@ -77,7 +78,7 @@ class AnalyticsService:
             # For ROI, we need total units risked (staked).
             total_risked_result = await self.db.fetch_one(
                 """
-                SELECT COALESCE(SUM(units), 0) as total_risked 
+                SELECT COALESCE(SUM(units), 0) as total_risked
                 FROM bets
                 WHERE guild_id = %s AND user_id = %s
                 AND status IN ('won', 'lost', 'push')
@@ -208,15 +209,15 @@ class AnalyticsService:
                     SUM(CASE WHEN b.status = 'lost' THEN 1 ELSE 0 END) as losses,
                     COALESCE(SUM(ur.monthly_result_value), 0.0) as net_units,
                     COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0.0) as total_risked,
-                    CASE 
-                        WHEN SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN 1 ELSE 0 END) > 0 
+                    CASE
+                        WHEN SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN 1 ELSE 0 END) > 0
                         THEN (SUM(CASE WHEN b.status = 'won' THEN 1 ELSE 0 END) * 100.0) / SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN 1 ELSE 0 END)
-                        ELSE 0.0 
+                        ELSE 0.0
                     END as win_rate,
-                    CASE 
-                        WHEN COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0.0) > 0 
+                    CASE
+                        WHEN COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0.0) > 0
                         THEN (COALESCE(SUM(ur.monthly_result_value), 0.0) / COALESCE(SUM(CASE WHEN b.status IN ('won', 'lost', 'push') THEN b.units ELSE 0 END), 0.0)) * 100.0
-                        ELSE 0.0 
+                        ELSE 0.0
                     END as roi
                 FROM bets b
                 LEFT JOIN unit_records ur ON b.bet_serial = ur.bet_serial

@@ -2,18 +2,20 @@
 
 """Service for managing user data and balances."""
 
-import discord
-from typing import Dict, Optional, List, Any
 import logging
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import discord
 
 try:
-    from ..data.cache_manager import CacheManager
-    from ..utils.errors import UserServiceError, InsufficientUnitsError
     from ..config.settings import USER_CACHE_TTL
+    from ..data.cache_manager import CacheManager
+    from ..utils.errors import InsufficientUnitsError, UserServiceError
 except ImportError:
     from data.cache_manager import CacheManager
-    from utils.errors import UserServiceError, InsufficientUnitsError
+
+    from utils.errors import InsufficientUnitsError, UserServiceError
 
     USER_CACHE_TTL = 3600  # Default TTL (1 hour)
 

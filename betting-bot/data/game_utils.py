@@ -1,23 +1,24 @@
 # REV 1.0.0 - Enhanced logging for game fetching and normalization
-from typing import List, Dict, Any
-from datetime import datetime, timezone, timedelta
 import json
 import logging
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
+
 import pytz
+from config.asset_paths import get_sport_category_for_path
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+
+from utils.league_dictionaries.darts import PLAYER_FULL_NAMES as DARTS_PLAYER_NAMES
 
 # Import all league dictionaries
 from utils.league_dictionaries.mlb import TEAM_FULL_NAMES as MLB_TEAM_NAMES
 from utils.league_dictionaries.nba import TEAM_FULL_NAMES as NBA_TEAM_NAMES
+from utils.league_dictionaries.ncaab import TEAM_FULL_NAMES as NCAAB_TEAM_NAMES
+from utils.league_dictionaries.ncaaf import TEAM_FULL_NAMES as NCAAF_TEAM_NAMES
 from utils.league_dictionaries.nfl import TEAM_FULL_NAMES as NFL_TEAM_NAMES
 from utils.league_dictionaries.nhl import TEAM_FULL_NAMES as NHL_TEAM_NAMES
-from utils.league_dictionaries.ncaaf import TEAM_FULL_NAMES as NCAAF_TEAM_NAMES
-from utils.league_dictionaries.ncaab import TEAM_FULL_NAMES as NCAAB_TEAM_NAMES
 from utils.league_dictionaries.soccer import TEAM_FULL_NAMES as SOCCER_TEAM_NAMES
 from utils.league_dictionaries.tennis import TENNIS_LEAGUES
-from utils.league_dictionaries.darts import PLAYER_FULL_NAMES as DARTS_PLAYER_NAMES
-
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from config.asset_paths import get_sport_category_for_path
 
 logger = logging.getLogger(__name__)
 
@@ -502,8 +503,8 @@ async def get_normalized_games_for_dropdown(
     query = f"""
         SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
         FROM api_games
-        WHERE sport = %s 
-        AND league_id = %s 
+        WHERE sport = %s
+        AND league_id = %s
         AND (UPPER(league_name) IN ({league_name_placeholders}))
         AND status NOT IN ({status_placeholders})
         ORDER BY start_time ASC LIMIT 100

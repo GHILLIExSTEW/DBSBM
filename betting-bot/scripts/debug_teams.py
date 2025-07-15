@@ -3,12 +3,13 @@
 Debug script to check what teams are returned by FIFA World Cup API
 """
 
+import asyncio
+import json
 import os
 import sys
-import asyncio
-import aiohttp
-import json
 from pathlib import Path
+
+import aiohttp
 
 # Add the parent directory to sys.path for imports
 SCRIPT_DIR = Path(__file__).parent

@@ -55,4 +55,4 @@ toml>=0.10.0
 
 # Utilities
 click>=8.1.0
-tqdm>=4.65.0 
+tqdm>=4.65.0

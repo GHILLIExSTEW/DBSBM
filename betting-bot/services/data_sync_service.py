@@ -1,16 +1,17 @@
 """Service for synchronizing external data with the database."""
 
-import logging
 import asyncio
+import json
+import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
-import aiohttp
-import json
-import os
-from dotenv import load_dotenv
-from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
-from dateutil import parser
 from zoneinfo import ZoneInfo
+
+import aiohttp
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from dateutil import parser
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
@@ -51,13 +52,14 @@ def safe_get(obj, *keys, default=""):
 
 
 try:
+    from ..config.api_settings import API_ENABLED, API_HOSTS
     from ..data.cache_manager import CacheManager
     from ..utils.errors import DataSyncError
-    from ..config.api_settings import API_ENABLED, API_HOSTS
 except ImportError:
-    from data.cache_manager import CacheManager
-    from utils.errors import DataSyncError
     from config.api_settings import API_ENABLED, API_HOSTS
+    from data.cache_manager import CacheManager
+
+    from utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
 

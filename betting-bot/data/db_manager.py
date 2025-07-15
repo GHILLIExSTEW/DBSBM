@@ -1,36 +1,37 @@
-import aiomysql
-import logging
-from typing import Optional, List, Dict, Any, Union, Tuple
-import os
 import asyncio
 import json
+import logging
+import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import aiomysql
 from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from data.game_utils import (
     get_league_abbreviation,
-    sanitize_team_name,
     normalize_team_name,
+    sanitize_team_name,
 )
-from datetime import datetime, timezone
 
 try:
     from ..config.database_mysql import (
+        MYSQL_DB,
         MYSQL_HOST,
+        MYSQL_PASSWORD,
+        MYSQL_POOL_MAX_SIZE,
+        MYSQL_POOL_MIN_SIZE,
         MYSQL_PORT,
         MYSQL_USER,
-        MYSQL_PASSWORD,
-        MYSQL_DB,
-        MYSQL_POOL_MIN_SIZE,
-        MYSQL_POOL_MAX_SIZE,
     )
 except ImportError:
     from config.database_mysql import (
+        MYSQL_DB,
         MYSQL_HOST,
+        MYSQL_PASSWORD,
+        MYSQL_POOL_MAX_SIZE,
+        MYSQL_POOL_MIN_SIZE,
         MYSQL_PORT,
         MYSQL_USER,
-        MYSQL_PASSWORD,
-        MYSQL_DB,
-        MYSQL_POOL_MIN_SIZE,
-        MYSQL_POOL_MAX_SIZE,
     )
 
 if not MYSQL_DB:
@@ -1009,10 +1010,10 @@ class DatabaseManager:
 
             query = """
                 INSERT INTO games (
-                    id, sport, league_id, league_name, home_team_name, away_team_name, 
+                    id, sport, league_id, league_name, home_team_name, away_team_name,
                     start_time, status, created_at, updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, 
+                    %s, %s, %s, %s, %s, %s, %s, %s,
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 ) ON DUPLICATE KEY UPDATE
                     sport = VALUES(sport),
@@ -1287,8 +1288,8 @@ class DatabaseManager:
         query = """
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
             FROM api_games
-            WHERE sport = %s 
-            AND league_id = %s 
+            WHERE sport = %s
+            AND league_id = %s
             AND UPPER(league_name) = UPPER(%s)
             AND start_time >= %s
             AND status NOT IN (%s, %s, %s, %s, %s)

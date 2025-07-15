@@ -1,6 +1,7 @@
-import requests
-import os
 import json
+import os
+
+import requests
 
 API_SPORTS_KEY = os.getenv("API_SPORTS_KEY")
 if not API_SPORTS_KEY:

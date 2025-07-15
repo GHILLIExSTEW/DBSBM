@@ -1,8 +1,10 @@
 # This file contains the logic for generating player prop bet images.
-from PIL import Image, ImageDraw, ImageFont
-import os
 import difflib
 import logging
+import os
+
+from PIL import Image, ImageDraw, ImageFont
+
 from utils.asset_loader import asset_loader
 
 
@@ -182,8 +184,9 @@ class PlayerPropImageGenerator:
         display_as_risk=None,
     ):
         """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
-        from PIL import Image, ImageDraw, ImageFont
         import os
+
+        from PIL import Image, ImageDraw, ImageFont
 
         # Layout and font sizes match game line bet slip
         image_width, image_height = 600, 400
@@ -347,8 +350,8 @@ class PlayerPropImageGenerator:
 
         # Risk/Units (yellow, lock icons) - move below odds
         from utils.bet_utils import (
-            determine_risk_win_display_auto,
             calculate_profit_from_odds,
+            determine_risk_win_display_auto,
             format_units_display,
         )
 

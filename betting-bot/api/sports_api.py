@@ -2,15 +2,16 @@
 # api/sports_api.py
 # Service for fetching sports data from TheSportsDB API
 
-import logging
-import aiohttp
 import asyncio
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta, timezone
 import json
+import logging
 import os
-from dotenv import load_dotenv
 import time
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+import aiohttp
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()

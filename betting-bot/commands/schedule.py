@@ -1,12 +1,13 @@
 """Schedule command for viewing upcoming games."""
 
 import logging
+import os
+from datetime import datetime, timedelta
+
 import discord
+import pytz
 from discord import app_commands
 from discord.ext import commands
-from datetime import datetime, timedelta
-import pytz
-import os
 from dotenv import load_dotenv
 
 from utils.schedule_image_generator import ScheduleImageGenerator
@@ -52,7 +53,7 @@ class ScheduleCog(commands.Cog):
 
             # Build the query for upcoming games
             query = """
-                SELECT 
+                SELECT
                     ag.api_game_id,
                     ag.home_team_name,
                     ag.away_team_name,

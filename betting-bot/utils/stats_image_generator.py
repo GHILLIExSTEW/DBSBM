@@ -1,14 +1,15 @@
 import logging
-from typing import Dict, List
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.patches import FancyBboxPatch
-import numpy as np
 from io import BytesIO
+from typing import Dict, List
+
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.patches import FancyBboxPatch
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,6 @@ def make_rounded_feathered(img):
 
 
 class StatsImageGenerator:
-
     def __init__(self):
         self.font_path = os.path.join(
             os.path.dirname(__file__), "..", "static", "fonts", "arial.ttf"

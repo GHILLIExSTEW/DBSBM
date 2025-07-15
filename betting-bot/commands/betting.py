@@ -3,22 +3,22 @@
 
 """Main betting command for placing straight or parlay bets."""
 
-import discord
-from discord import app_commands, ButtonStyle, Interaction, SelectOption
-from discord.ext import commands
-from discord.ui import View, Select, Button
 import logging
 from typing import Optional, Union
 
+import discord
+from config.leagues import LEAGUE_IDS
+from discord import ButtonStyle, Interaction, SelectOption, app_commands
+from discord.ext import commands
+from discord.ui import Button, Select, View
+
+
+
+from .admin import require_registered_guild
+from .parlay_betting import ParlayBetWorkflowView
+
 # Import from same directory
 from .straight_betting import StraightBetWorkflowView
-from .parlay_betting import ParlayBetWorkflowView
-from config.leagues import LEAGUE_IDS
-from utils.player_prop_image_generator import PlayerPropImageGenerator
-from utils.game_line_image_generator import (
-    generate_player_prop_bet_image as generate_game_line_image,
-)
-from .admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class BetTypeSelect(Select):
             SelectOption(
                 label="Straight",
                 value="straight",
-                description="Moneyline, over/under, or player prop",
+                description="Moneyline or over/under",
             ),
             SelectOption(
                 label="Parlay",
@@ -221,10 +221,6 @@ class BetTypeView(View):
                 await view.start_flow(
                     interaction_from_select
                 )  # Pass the interaction for consistency
-            elif bet_type == "player_prop":
-                logger.debug("Initializing PlayerPropBetWorkflowView")
-                view = PlayerPropBetWorkflowView(self.original_interaction, self.bot)
-                await view.start_flow(interaction_from_select)
 
             logger.debug(f"{bet_type} bet workflow started successfully")
         except Exception as e:
@@ -245,52 +241,7 @@ class BetTypeView(View):
             self.stop()
 
 
-class PlayerPropBetWorkflowView(View):
-    def __init__(self, interaction: Interaction, bot: commands.Bot):
-        super().__init__(timeout=600)
-        self.original_interaction = interaction
-        self.bot = bot
-        self.message: Optional[
-            Union[discord.WebhookMessage, discord.InteractionMessage]
-        ] = None
-        logger.debug(
-            f"PlayerPropBetWorkflowView initialized for user {interaction.user} (ID: {interaction.user.id})"
-        )
 
-    async def start_flow(self, interaction: Interaction):
-        try:
-            # Example data for player prop bet
-            player_name = "John Doe"
-            player_picture_path = "betting-bot/assets/player_pictures/john_doe.png"
-            team_name = "Team A"
-            team_logo_path = "betting-bot/assets/logos/team_a_logo.png"
-            line = "Over 20.5 Points"
-            units = "5"
-            output_path = "/workspaces/DBSBM/generated_player_prop_bet.png"
-
-            # Generate the player prop bet image
-            PlayerPropImageGenerator().generate_player_prop_bet_image(
-                player_name,
-                player_picture_path,
-                team_name,
-                team_logo_path,
-                line,
-                units,
-                output_path,
-            )
-            logger.info(f"Player prop bet image generated and saved to {output_path}")
-
-            # Send the image to the user
-            await interaction.response.send_message(
-                content="Player Prop Bet Slip:",
-                file=discord.File(output_path),
-                ephemeral=True,
-            )
-        except Exception as e:
-            logger.error(f"Error in PlayerPropBetWorkflowView: {e}", exc_info=True)
-            await interaction.response.send_message(
-                f"❌ Failed to generate player prop bet slip: {str(e)}", ephemeral=True
-            )
 
 
 class BettingCog(commands.Cog):
@@ -298,11 +249,11 @@ class BettingCog(commands.Cog):
         self.bot = bot
         logger.info("BettingCog initialized")
 
-    @app_commands.command(name="bet", description="Place a bet (straight or parlay).")
+    @app_commands.command(name="gameline", description="Place a game line bet (moneyline or over/under).")
     @require_registered_guild()
-    async def bet(self, interaction: Interaction):
+    async def gameline(self, interaction: Interaction):
         logger.info(
-            f"/bet command invoked by {interaction.user} (ID: {interaction.user.id})"
+            f"/gameline command invoked by {interaction.user} (ID: {interaction.user.id})"
         )
         try:
             view = BetTypeView(interaction, self.bot)
@@ -313,9 +264,9 @@ class BettingCog(commands.Cog):
             )
             # Retrieve and assign the message object
             view.message = await interaction.original_response()
-            logger.info("/bet command response sent successfully.")
+            logger.info("/gameline command response sent successfully.")
         except Exception as e:
-            logger.error(f"Error in /bet command: {e}", exc_info=True)
+            logger.error(f"Error in /gameline command: {e}", exc_info=True)
             await interaction.response.send_message(
                 "❌ An error occurred while processing your request.", ephemeral=True
             )

@@ -1,6 +1,7 @@
-import requests
-import os
 import json
+import os
+
+import requests
 
 ODDS_API_KEY = os.getenv("ODDS_API_KEY")
 if not ODDS_API_KEY:

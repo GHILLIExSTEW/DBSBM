@@ -1,11 +1,12 @@
 """Centralized asset loading utilities with proper error handling."""
 
-import os
-import logging
-from typing import Optional, Tuple
-from PIL import Image, ImageFont
 import difflib
+import logging
+import os
+from typing import Optional, Tuple
+
 import unidecode
+from PIL import Image, ImageFont
 from rapidfuzz import process
 
 logger = logging.getLogger(__name__)
@@ -246,8 +247,8 @@ class AssetLoader:
         Returns:
             PIL Image object or None if no logo found
         """
-        from config.leagues import LEAGUE_IDS
         from config.asset_paths import get_sport_category_for_path
+        from config.leagues import LEAGUE_IDS
 
         # Get league info from LEAGUE_IDS
         league_info = LEAGUE_IDS.get(league_code.upper())

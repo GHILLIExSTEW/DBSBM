@@ -1,10 +1,10 @@
 # REV 1.0.0 - Enhanced bet service with improved bet creation and management
 """Service for managing bets and handling bet-related reactions."""
 
+import asyncio
 import json
 import logging
-import asyncio
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Union
 from zoneinfo import ZoneInfo
 
@@ -16,6 +16,7 @@ try:
     from ..utils.errors import BetServiceError, ValidationError
 except ImportError:
     from data.db_manager import DatabaseManager
+
     from utils.errors import BetServiceError, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class BetService:
             expiration_datetime = datetime.now(EDT) - timedelta(hours=24)
             query = """
                 DELETE FROM bets
-                WHERE status = 'pending' 
+                WHERE status = 'pending'
                 AND COALESCE(expiration_time, created_at) < %s
             """
             result = await self.db_manager.execute(query, (expiration_datetime,))
@@ -83,7 +84,7 @@ class BetService:
             query_select = """
                 SELECT bet_serial, guild_id, user_id
                 FROM bets
-                WHERE confirmed = 0 
+                WHERE confirmed = 0
                 AND created_at < %s
             """
             expired_bets = await self.db_manager.fetch_all(query_select, (cutoff_time,))
@@ -686,9 +687,9 @@ class BetService:
 
                 update_time = datetime.now(timezone.utc)
                 status_query = """
-                    UPDATE bets 
-                    SET status = %s, 
-                        result_value = %s, 
+                    UPDATE bets
+                    SET status = %s,
+                        result_value = %s,
                         bet_won = CASE WHEN %s = 'won' THEN 1 ELSE 0 END,
                         bet_loss = CASE WHEN %s = 'lost' THEN 1 ELSE 0 END,
                         updated_at = %s
@@ -764,27 +765,27 @@ class BetService:
 
                 # Update cappers table with win/loss/push counts
                 capper_update_query = """
-                    UPDATE cappers 
-                    SET 
+                    UPDATE cappers
+                    SET
                         bet_won = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s 
-                            AND b2.guild_id = %s 
+                            WHERE b2.user_id = %s
+                            AND b2.guild_id = %s
                             AND b2.status = 'won'
                         ),
                         bet_loss = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s 
-                            AND b2.guild_id = %s 
+                            WHERE b2.user_id = %s
+                            AND b2.guild_id = %s
                             AND b2.status = 'lost'
                         ),
                         bet_push = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s 
-                            AND b2.guild_id = %s 
+                            WHERE b2.user_id = %s
+                            AND b2.guild_id = %s
                             AND b2.status = 'push'
                         ),
                         updated_at = UTC_TIMESTAMP()

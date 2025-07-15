@@ -1,12 +1,13 @@
 # services/api_service.py
 # Service module for handling API-Sports API calls
 
-from typing import List, Dict, Optional
-from api.sports_api import APISportsFetcher
-import os
-from dotenv import load_dotenv
 import logging
+import os
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from api.sports_api import APISportsFetcher
+from dotenv import load_dotenv
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")

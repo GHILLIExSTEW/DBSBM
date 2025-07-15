@@ -135,26 +135,27 @@ class GameLineImageGenerator:
         display_as_risk=None,
     ):
         """Generates a game line bet slip image."""
-        from PIL import Image, ImageDraw, ImageFont
-        from datetime import datetime, timezone
         import os
+        from datetime import datetime, timezone
+
         from config.asset_paths import get_sport_category_for_path
         from config.image_settings import (
-            IMAGE_WIDTH,
-            IMAGE_HEIGHT,
             BACKGROUND_COLOR,
             DEFAULT_PADDING,
-            LOGO_SIZE,
+            FOOTER_FONT_SIZE,
             HEADER_FONT_SIZE,
-            TEAM_FONT_SIZE,
-            VS_FONT_SIZE,
+            IMAGE_HEIGHT,
+            IMAGE_WIDTH,
             LINE_FONT_SIZE,
+            LOGO_SIZE,
+            ODDS_COLOR,
             ODDS_FONT_SIZE,
             RISK_FONT_SIZE,
-            FOOTER_FONT_SIZE,
+            TEAM_FONT_SIZE,
             TEXT_COLOR,
-            ODDS_COLOR,
+            VS_FONT_SIZE,
         )
+        from PIL import Image, ImageDraw, ImageFont
 
         image_width, image_height = IMAGE_WIDTH, IMAGE_HEIGHT
         bg_color = BACKGROUND_COLOR
@@ -336,8 +337,8 @@ class GameLineImageGenerator:
 
         # Risk/Units (yellow, lock icons)
         from utils.bet_utils import (
-            determine_risk_win_display_auto,
             calculate_profit_from_odds,
+            determine_risk_win_display_auto,
             format_units_display,
         )
 

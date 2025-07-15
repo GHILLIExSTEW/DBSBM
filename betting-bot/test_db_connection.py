@@ -6,6 +6,7 @@ Test script to verify database connection and cappers table
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Add the current directory to the path so we can import our modules

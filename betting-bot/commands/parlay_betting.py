@@ -2,39 +2,41 @@
 
 """Parlay betting workflow for placing multi-leg bets."""
 
-import discord
-from discord import (
-    app_commands,
-    ButtonStyle,
-    Interaction,
-    SelectOption,
-    TextChannel,
-    File,
-    Embed,
-    Webhook,
-    Message,
-)
-from discord.ui import View, Select, Modal, TextInput, Button
-import logging
-from typing import Optional, List, Dict, Union, Any
-from datetime import datetime, timezone
 import io
-import uuid
-import os
 import json
-from discord.ext import commands
-from utils.errors import BetServiceError, ValidationError, GameNotFoundError
+import logging
+import os
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Union
+
+import discord
 from config.asset_paths import get_sport_category_for_path
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from config.team_mappings import normalize_team_name
 from data.game_utils import get_normalized_games_for_dropdown
-from utils.validators import validate_units
-from utils.formatters import format_parlay_bet_details_embed
-from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
-from utils.parlay_bet_image_generator import ParlayBetImageGenerator
-from config.leagues import LEAGUE_IDS, LEAGUE_CONFIG
-from utils.image_url_converter import convert_image_path_to_url
+from discord import (
+    ButtonStyle,
+    Embed,
+    File,
+    Interaction,
+    Message,
+    SelectOption,
+    TextChannel,
+    Webhook,
+    app_commands,
+)
+from discord.ext import commands
+from discord.ui import Button, Modal, Select, TextInput, View
 from PIL import Image, ImageDraw, ImageFont
+
+from utils.bet_utils import calculate_parlay_payout, fetch_next_bet_serial
+from utils.errors import BetServiceError, GameNotFoundError, ValidationError
+from utils.formatters import format_parlay_bet_details_embed
+from utils.image_url_converter import convert_image_path_to_url
 from utils.league_loader import get_all_league_names
+from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+from utils.validators import validate_units
 
 logger = logging.getLogger(__name__)
 
@@ -252,9 +254,9 @@ class LineTypeSelect(Select):
             logger.debug(
                 f"[LineTypeSelect] Callback triggered. Value: {self.values[0]}"
             )
-            self.parent_view.current_leg_construction_details["line_type"] = (
-                self.values[0]
-            )
+            self.parent_view.current_leg_construction_details[
+                "line_type"
+            ] = self.values[0]
             logger.debug(
                 f"Parlay Leg - Line Type selected: {self.values[0]} by user {interaction.user.id}"
             )
@@ -736,17 +738,17 @@ class BetDetailsModal(Modal):
                     self.player_name_input.value.strip()[:100] or "Player"
                 )
                 # For player props, also set away_team_name to player name for right-side label
-                self.view_ref.current_leg_construction_details["away_team_name"] = (
-                    self.view_ref.current_leg_construction_details["player_name"]
-                )
+                self.view_ref.current_leg_construction_details[
+                    "away_team_name"
+                ] = self.view_ref.current_leg_construction_details["player_name"]
             elif self.line_type == "player_prop":
                 # For non-manual, ensure player_name is set and used as away_team_name
                 self.view_ref.current_leg_construction_details["player_name"] = (
                     self.player_name_input.value.strip()[:100] or "Player"
                 )
-                self.view_ref.current_leg_construction_details["away_team_name"] = (
-                    self.view_ref.current_leg_construction_details["player_name"]
-                )
+                self.view_ref.current_leg_construction_details[
+                    "away_team_name"
+                ] = self.view_ref.current_leg_construction_details["player_name"]
 
             line = self.line_input.value.strip()
             if not line:
@@ -794,22 +796,24 @@ class BetDetailsModal(Modal):
                 }
 
                 if self.line_type == "player_prop":
-                    leg_data["player_name"] = (
-                        self.view_ref.current_leg_construction_details.get(
-                            "player_name", ""
-                        )
+                    leg_data[
+                        "player_name"
+                    ] = self.view_ref.current_leg_construction_details.get(
+                        "player_name", ""
                     )
                     # For player props, keep the home team as the selected team
-                    leg_data["home_team"] = (
-                        self.view_ref.current_leg_construction_details.get("team", "")
-                    )
-                    leg_data["away_team"] = (
-                        self.view_ref.current_leg_construction_details.get(
-                            "player_name", ""
-                        )
+                    leg_data[
+                        "home_team"
+                    ] = self.view_ref.current_leg_construction_details.get("team", "")
+                    leg_data[
+                        "away_team"
+                    ] = self.view_ref.current_leg_construction_details.get(
+                        "player_name", ""
                     )  # This will be replaced with player image
-                    leg_data["selected_team"] = (
-                        self.view_ref.current_leg_construction_details.get("team", "")
+                    leg_data[
+                        "selected_team"
+                    ] = self.view_ref.current_leg_construction_details.get(
+                        "team", ""
                     )  # Keep the team as selected
 
                 # Generate preview with just this leg

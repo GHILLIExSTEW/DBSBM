@@ -4,10 +4,10 @@ Runner script for FIFA World Cup data fetch.
 This script provides a simple interface to run the FIFA World Cup data fetcher.
 """
 
-import os
-import sys
 import asyncio
 import logging
+import os
+import sys
 from pathlib import Path
 
 # Add the parent directory to sys.path for imports

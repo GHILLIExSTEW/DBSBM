@@ -4,16 +4,17 @@ Darts Player Image Downloader
 Downloads PDC and BDO player images from Wikipedia.
 """
 
+import json
+import logging
 import os
 import sys
-import requests
 import time
-import json
 import urllib.parse
-import logging
-from pathlib import Path
-from PIL import Image
 from io import BytesIO
+from pathlib import Path
+
+import requests
+from PIL import Image
 
 # Add the parent directory to the path to import config modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

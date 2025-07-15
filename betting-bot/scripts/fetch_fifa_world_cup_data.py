@@ -4,16 +4,17 @@ FIFA World Cup Data Fetcher
 Fetches teams, logos, and other data for FIFA World Cup from API-Sports.
 """
 
+import asyncio
+import csv
+import json
+import logging
 import os
 import sys
-import json
-import asyncio
-import aiohttp
-import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
-import csv
+
+import aiohttp
 
 # Add the parent directory to sys.path for imports
 SCRIPT_DIR = Path(__file__).parent
@@ -21,9 +22,9 @@ BASE_DIR = SCRIPT_DIR.parent
 sys.path.insert(0, str(BASE_DIR))
 
 try:
-    from config.leagues import LEAGUE_IDS, ENDPOINTS
-    from config.team_mappings import normalize_team_name
     from config.asset_paths import get_sport_category_for_path
+    from config.leagues import ENDPOINTS, LEAGUE_IDS
+    from config.team_mappings import normalize_team_name
     from data.db_manager import DatabaseManager
 except ImportError as e:
     print(f"CRITICAL ERROR: Could not import required modules: {e}")

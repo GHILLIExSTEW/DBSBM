@@ -1,17 +1,18 @@
 """Service for managing game data and interactions with sports APIs."""
 
-import discord
-from discord import app_commands
-from typing import Dict, List, Optional, Tuple, Any
-import logging
-from datetime import datetime, timedelta, timezone
-import json
-import aiohttp
 import asyncio
-import sys
+import json
+import logging
 import os
-from dotenv import load_dotenv
+import sys
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
+
+import aiohttp
+import discord
 import pytz
+from discord import app_commands
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
@@ -19,25 +20,27 @@ API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY not found in .env file")
 
+from api.sports_api import SportsAPI
+
 # Absolute imports
 from config.api_settings import (
     API_ENABLED,
     API_HOSTS,
-    API_TIMEOUT,
     API_RETRY_ATTEMPTS,
     API_RETRY_DELAY,
+    API_TIMEOUT,
 )
-from utils.errors import (
-    GameServiceError,
-    APIError,
-    GameDataError,
-    LeagueNotFoundError,
-    ScheduleError,
-    ConfigurationError,
-)
-from api.sports_api import SportsAPI
 from data.cache_manager import CacheManager
 from services.data_sync_service import DataSyncService
+
+from utils.errors import (
+    APIError,
+    ConfigurationError,
+    GameDataError,
+    GameServiceError,
+    LeagueNotFoundError,
+    ScheduleError,
+)
 
 # Load environment variables for RUN_API_FETCH_ON_START
 RUN_API_FETCH_ON_START = os.getenv("RUN_API_FETCH_ON_START", "false").lower() == "true"

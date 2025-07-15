@@ -1,19 +1,20 @@
-import os
-import sys
-import logging
-import discord
-from discord.ext import commands
-from discord import app_commands
-from dotenv import load_dotenv
 import asyncio
-from typing import Optional, Union
-import subprocess
-from datetime import datetime, timezone
-from discord.ext import tasks
+import logging
+import os
 import signal
-from api.sports_api import SportsAPI
+import subprocess
+import sys
+from datetime import datetime, timezone
+from typing import Optional, Union
+
 import aiohttp
+import discord
+from api.sports_api import SportsAPI
+from discord import app_commands
+from discord.ext import commands, tasks
+from dotenv import load_dotenv
 from services.live_game_channel_service import LiveGameChannelService
+
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.parlay_image_generator import ParlayImageGenerator
 from utils.player_prop_image_generator import PlayerPropImageGenerator
@@ -66,10 +67,11 @@ from data.db_manager import DatabaseManager
 from services.admin_service import AdminService
 from services.analytics_service import AnalyticsService
 from services.bet_service import BetService
-from services.user_service import UserService
-from services.voice_service import VoiceService
 from services.data_sync_service import DataSyncService
 from services.game_service import GameService
+from services.user_service import UserService
+from services.voice_service import VoiceService
+
 from commands.sync_cog import setup_sync_cog
 
 # --- Environment Variable Validation ---
@@ -324,7 +326,7 @@ class BettingBot(commands.Bot):
 
                 # Get all guilds from the table
                 guilds_query = """
-                    SELECT guild_id, is_paid, subscription_level 
+                    SELECT guild_id, is_paid, subscription_level
                     FROM guild_settings
                 """
                 guilds = await self.db_manager.fetch_all(guilds_query)
@@ -345,7 +347,7 @@ class BettingBot(commands.Bot):
                     if is_paid and subscription_level != "premium":
                         await self.db_manager.execute(
                             """
-                            UPDATE guild_settings 
+                            UPDATE guild_settings
                             SET subscription_level = 'premium'
                             WHERE guild_id = %s
                             """,

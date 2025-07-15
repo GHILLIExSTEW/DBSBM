@@ -4,10 +4,11 @@ Script to fetch American football teams from API-Sports
 Uses the v1 API with league and season parameters
 """
 
-import os
 import json
-import requests
+import os
 from datetime import datetime
+
+import requests
 
 
 def fetch_american_football_teams():

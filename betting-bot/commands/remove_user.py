@@ -1,11 +1,12 @@
 # betting-bot/commands/remove_user.py
 
-import discord
-from discord import app_commands, Interaction, SelectOption
-from discord.ext import commands  # Import commands for Cog
-from discord.ui import View, Select
 import logging
 from typing import List
+
+import discord
+from discord import Interaction, SelectOption, app_commands
+from discord.ext import commands  # Import commands for Cog
+from discord.ui import Select, View
 
 # import aiosqlite # Remove direct driver import
 

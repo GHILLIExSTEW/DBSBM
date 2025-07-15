@@ -1,8 +1,9 @@
 import csv
 import os
-import requests
 import sqlite3
 from urllib.parse import urlparse
+
+import requests
 
 # Configuration
 CSV_FILE = os.path.join(

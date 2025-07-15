@@ -1,24 +1,26 @@
 # REV 1.0.0 - Enhanced betting modals with improved validation and error handling
 # betting-bot/utils/modals.py
-import discord
-from discord.ui import Modal, TextInput
-import logging
-from typing import Optional, Dict, Any, TYPE_CHECKING
-import io
-from datetime import datetime, timezone
-import os
-from PIL import Image
-import glob
-from rapidfuzz import process, fuzz
-import time
 import difflib
+import glob
+import io
+import logging
+import os
+import time
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+import discord
+from config.asset_paths import BASE_DIR
 
 # Import your project's configurations and utilities
 # Adjust these paths if your config/utils structure is different
 # relative to the 'betting-bot' root when this module is imported.
 from config.leagues import LEAGUE_CONFIG
+from discord.ui import Modal, TextInput
+from PIL import Image
+from rapidfuzz import fuzz, process
+
 from utils.errors import BetServiceError  # Example, if used directly in modal
-from config.asset_paths import BASE_DIR
 
 # Import the correct version of the image generator
 from utils.game_line_image_generator import GameLineImageGenerator
@@ -36,8 +38,8 @@ PLAYER_PROP_SPORT_ID_MAP = {
 
 # For type hinting the parent view reference without circular imports
 if TYPE_CHECKING:
-    from commands.straight_betting import StraightBetWorkflowView
     from commands.parlay_betting import ParlayBetWorkflowView  # Example
+    from commands.straight_betting import StraightBetWorkflowView
 
     # Add other view types if modals reference them specifically
     # from commands.setid import ImageUploadView # Example for CapperImageURLModal's parent
@@ -508,19 +510,19 @@ class StraightBetDetailsModal(Modal):
             if hasattr(self, "team_input"):
                 self.view_ref.bet_details["team"] = self.team_input.value.strip()
             if hasattr(self, "opponent_input"):
-                self.view_ref.bet_details["opponent"] = (
-                    self.opponent_input.value.strip()
-                )
+                self.view_ref.bet_details[
+                    "opponent"
+                ] = self.opponent_input.value.strip()
             if hasattr(self, "player_input"):
-                self.view_ref.bet_details["player_name"] = (
-                    self.player_input.value.strip()
-                )
+                self.view_ref.bet_details[
+                    "player_name"
+                ] = self.player_input.value.strip()
                 # For individual sports, set team to player name for consistency
                 self.view_ref.bet_details["team"] = self.player_input.value.strip()
             if hasattr(self, "player_name_input"):
-                self.view_ref.bet_details["player_name"] = (
-                    self.player_name_input.value.strip()
-                )
+                self.view_ref.bet_details[
+                    "player_name"
+                ] = self.player_name_input.value.strip()
 
         # Generate preview image
         try:
@@ -600,8 +602,8 @@ def get_player_image(
     player_name: str, team: str, league_key: str
 ) -> tuple[Optional[str], str]:
     """Get player image path using fuzzy matching, and return the normalized display name."""
-    import os
     import difflib
+    import os
 
     try:
         # Get sport_id from mapping

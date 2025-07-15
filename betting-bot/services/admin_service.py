@@ -3,10 +3,11 @@
 """Service for handling administrative commands and tasks."""
 
 import logging
-import discord
-from discord.ext import commands
-from discord import app_commands
 from typing import Dict, Optional
+
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +92,8 @@ class AdminService:
         try:
             result = await self.db_manager.fetch_one(
                 """
-                SELECT is_paid, subscription_level 
-                FROM guild_settings 
+                SELECT is_paid, subscription_level
+                FROM guild_settings
                 WHERE guild_id = %s
                 """,
                 guild_id,
@@ -114,7 +115,7 @@ class AdminService:
                 if result.get("subscription_level") != "premium":
                     await self.db_manager.execute(
                         """
-                        UPDATE guild_settings 
+                        UPDATE guild_settings
                         SET subscription_level = 'premium'
                         WHERE guild_id = %s
                         """,
@@ -151,7 +152,7 @@ class AdminService:
                 # Update existing settings
                 await self.db_manager.execute(
                     """
-                    UPDATE guild_settings 
+                    UPDATE guild_settings
                     SET embed_channel_1 = %s,
                         embed_channel_2 = %s,
                         command_channel_1 = %s,
@@ -285,7 +286,7 @@ class AdminService:
 
             values.append(guild_id)  # Add guild_id for WHERE clause
             query = f"""
-                UPDATE guild_settings 
+                UPDATE guild_settings
                 SET {', '.join(set_clauses)}, updated_at = CURRENT_TIMESTAMP
                 WHERE guild_id = %s
             """

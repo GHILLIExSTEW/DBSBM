@@ -1,7 +1,8 @@
 """Configuration for asset paths and directory structure."""
 
-import os
 import logging
+import os
+
 from .leagues import LEAGUE_CONFIG
 
 logger = logging.getLogger(__name__)

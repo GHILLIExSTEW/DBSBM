@@ -1,16 +1,17 @@
 """Metrics collection system for monitoring system performance."""
 
 import asyncio
+import json
 import logging
-import time
-import psutil
 import os
-from typing import Dict, Any, List, Optional
+import time
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import defaultdict, deque
-import json
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

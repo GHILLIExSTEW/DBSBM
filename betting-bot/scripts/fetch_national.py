@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 API_KEY = "59d5fa03fb6bd373f9ee6cac5f39c689"  # <-- Replace with your actual API key

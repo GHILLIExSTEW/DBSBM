@@ -2,16 +2,18 @@
 
 """Stats command for viewing betting statistics."""
 
-import discord
-from discord import app_commands, Interaction, SelectOption, File
-from discord.ext import commands  # Import commands for Cog
-from discord.ui import View, Select
 import logging
 import os
 from io import BytesIO  # Needed for sending PIL image
 from typing import Optional  # Add Optional type import
-from .admin import require_registered_guild
+
+import discord
+from discord import File, Interaction, SelectOption, app_commands
+from discord.ext import commands  # Import commands for Cog
+from discord.ui import Select, View
 from PIL import Image  # Added for PIL Image handling
+
+from .admin import require_registered_guild
 
 # Use relative imports
 try:
@@ -25,6 +27,7 @@ try:
 except ImportError:
     # Fallback imports
     from services.analytics_service import AnalyticsService
+
     from utils.stats_image_generator import StatsImageGenerator
 
     # from data.db_manager import DatabaseManager
@@ -148,9 +151,9 @@ class StatsView(View):
         self.selected_profile_image_url = None  # Store selected profile image path/url
         # Placeholder for the select component - will be added by populate_cappers
         self.capper_select: Optional[Select] = None
-        self.channel_select: Optional[ChannelSelect] = (
-            None  # To hold the channel select later
-        )
+        self.channel_select: Optional[
+            ChannelSelect
+        ] = None  # To hold the channel select later
 
     async def update_message(
         self, interaction: Optional[Interaction] = None, content: Optional[str] = None

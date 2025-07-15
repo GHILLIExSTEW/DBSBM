@@ -1,6 +1,6 @@
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ class SubscriptionService:
         try:
             return await self.db_manager.fetch_one(
                 """
-                SELECT * FROM subscriptions 
-                WHERE guild_id = %s AND is_active = TRUE 
+                SELECT * FROM subscriptions
+                WHERE guild_id = %s AND is_active = TRUE
                 ORDER BY end_date DESC LIMIT 1
                 """,
                 guild_id,
@@ -63,8 +63,8 @@ class SubscriptionService:
             # Mark current subscription as inactive
             await self.db_manager.execute(
                 """
-                UPDATE subscriptions 
-                SET is_active = FALSE 
+                UPDATE subscriptions
+                SET is_active = FALSE
                 WHERE guild_id = %s AND is_active = TRUE
                 """,
                 guild_id,
@@ -131,8 +131,8 @@ class SubscriptionService:
 
             await self.db_manager.execute(
                 """
-                UPDATE subscriptions 
-                SET end_date = %s 
+                UPDATE subscriptions
+                SET end_date = %s
                 WHERE guild_id = %s AND is_active = TRUE
                 """,
                 new_end_date,

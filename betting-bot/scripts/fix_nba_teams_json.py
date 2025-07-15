@@ -1,5 +1,5 @@
-import re
 import json
+import re
 
 INPUT_PATH = "betting-bot/data/basketball_nba_teams.json"
 OUTPUT_PATH = "betting-bot/data/basketball_nba_teams.json"

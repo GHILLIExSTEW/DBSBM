@@ -85,7 +85,7 @@
 ```
 ✅ All imports successful
 ✅ NBA templates: 8 prop types
-✅ NFL templates: 8 prop types  
+✅ NFL templates: 8 prop types
 ✅ MLB templates: 7 prop types
 ✅ NHL templates: 6 prop types
 ✅ NBA prop groups: ['Scoring', 'Rebounding', 'Playmaking', 'Defense', 'Playing Time']
@@ -134,4 +134,4 @@ If you encounter any issues:
 
 ---
 
-**🎉 Congratulations! Your enhanced player props system is ready to use!** 
+**🎉 Congratulations! Your enhanced player props system is ready to use!**

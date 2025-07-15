@@ -1,9 +1,10 @@
-import requests
-import os
 import json
+import os
 import time
 from pathlib import Path
 from urllib.parse import quote
+
+import requests
 
 # API Configuration
 API_SPORTS_KEY = os.getenv("API_SPORTS_KEY")

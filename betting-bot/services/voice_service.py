@@ -2,19 +2,21 @@
 
 """Service for managing voice channel updates for unit statistics."""
 
-import discord
-import logging
-from typing import Dict, List, Optional, Set, Any
-from datetime import datetime, timedelta, timezone
 import asyncio
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Set
+
+import discord
 from discord import VoiceChannel
 
 try:
     from ..data.cache_manager import CacheManager
-    from ..utils.errors import VoiceError, ServiceError
+    from ..utils.errors import ServiceError, VoiceError
 except ImportError:
     from data.cache_manager import CacheManager
-    from utils.errors import VoiceError, ServiceError
+
+    from utils.errors import ServiceError, VoiceError
 
 logger = logging.getLogger(__name__)
 

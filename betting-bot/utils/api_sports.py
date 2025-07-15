@@ -1,15 +1,16 @@
-import aiohttp
-import os
-from dotenv import load_dotenv
 import logging
+import os
+from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
-from datetime import datetime, timezone, date
+
+import aiohttp
 from config.leagues import (
+    ENDPOINTS,
     LEAGUE_IDS,
     LEAGUE_SEASON_STARTS,
-    ENDPOINTS,
     get_current_season,
 )
+from dotenv import load_dotenv
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")

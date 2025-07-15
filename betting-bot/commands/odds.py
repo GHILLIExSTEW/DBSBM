@@ -1,11 +1,12 @@
+import logging
+import os
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
-import aiohttp
-import os
-from datetime import datetime, timedelta
-import logging
-from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +122,10 @@ class Odds(commands.Cog):
             if not db_manager:
                 raise Exception("Database manager not available")
             query = """
-                SELECT 
+                SELECT
                     api_game_id, sport, league_id, season, home_team_name, away_team_name, start_time, status
-                FROM api_games 
-                ORDER BY start_time ASC 
+                FROM api_games
+                ORDER BY start_time ASC
                 LIMIT 100
             """
             games = await db_manager.fetch_all(query)

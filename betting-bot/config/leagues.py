@@ -1,8 +1,8 @@
 import os
-import requests
-from dotenv import load_dotenv
 from datetime import datetime
 
+import requests
+from dotenv import load_dotenv
 
 LEAGUE_CONFIG = {
     # Basketball

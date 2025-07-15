@@ -1,7 +1,9 @@
-from PIL import Image, ImageDraw, ImageFont
-import os
 import difflib
 import logging
+import os
+
+from PIL import Image, ImageDraw, ImageFont
+
 from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
@@ -65,8 +67,9 @@ class ParlayBetImageGenerator:
         Each leg in `legs` should be a dict with keys:
           - 'bet_type' ('game_line' or 'player_prop'), 'league', 'home_team', 'away_team', 'selected_team', 'line', 'player_name' (if player prop)
         """
-        from PIL import Image
         import os
+
+        from PIL import Image
 
         # Defensive: ensure legs is a list, not None
         if legs is None:
@@ -339,8 +342,8 @@ class ParlayBetImageGenerator:
             payout_text = "Units: X"
         else:
             from utils.bet_utils import (
-                determine_risk_win_display_auto,
                 calculate_profit_from_odds,
+                determine_risk_win_display_auto,
                 format_units_display,
             )
 
@@ -368,8 +371,9 @@ class ParlayBetImageGenerator:
         risk_width = draw.textlength(payout_text, font=self.font_bold)
 
         # Load lock icon
-        from PIL import Image
         import os
+
+        from PIL import Image
 
         lock_icon_path = "betting-bot/static/lock_icon.png"
         lock_icon = None

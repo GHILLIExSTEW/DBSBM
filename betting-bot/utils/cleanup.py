@@ -44,8 +44,8 @@ class CleanupTasks:
         try:
             cutoff_time = datetime.utcnow() - timedelta(minutes=5)
             query = """
-                DELETE FROM bets 
-                WHERE confirmed = 0 
+                DELETE FROM bets
+                WHERE confirmed = 0
                 AND created_at < %s
             """
             result = await self.db_manager.execute(query, (cutoff_time,))

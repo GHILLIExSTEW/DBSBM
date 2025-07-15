@@ -1,5 +1,6 @@
 # betting-bot/config/database_mysql.py
 import os
+
 from dotenv import load_dotenv
 
 # Load .env file from the betting-bot directory

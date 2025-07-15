@@ -3,13 +3,14 @@
 Simple script to download FIFA Club World Cup team logos from existing data.
 """
 
+import asyncio
+import json
+import logging
 import os
 import sys
-import asyncio
-import aiohttp
-import logging
-import json
 from pathlib import Path
+
+import aiohttp
 
 # Add the parent directory to sys.path for imports
 SCRIPT_DIR = Path(__file__).parent

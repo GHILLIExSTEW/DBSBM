@@ -3,48 +3,44 @@
 
 """Straight betting workflow for placing single bets."""
 
-import discord
-from discord import (
-    ButtonStyle,
-    Interaction,
-    SelectOption,
-    TextChannel,
-    File,
-    Embed,
-    Webhook,
-    Message,
-)
-from discord.ui import View, Select, Modal, TextInput, Button
-import logging
-from typing import Optional, List, Dict, Union, Any
-from datetime import datetime, timezone, timedelta
 import io
-import os
-from discord.ext import commands
-from io import BytesIO
-import traceback
 import json
+import logging
+import os
+import traceback
+import uuid
+from datetime import datetime, timedelta, timezone
+from io import BytesIO
+from typing import Any, Dict, List, Optional, Union
+
 import aiohttp
+import discord
 import pytz
 import requests
-from data.db_manager import DatabaseManager
-
-from data.game_utils import get_normalized_games_for_dropdown
-from utils.league_loader import get_all_league_names
-
-from utils.errors import (
-    BetServiceError,
-    ValidationError,
-    GameNotFoundError,
-)
-from utils.modals import StraightBetDetailsModal
-from config.leagues import LEAGUE_CONFIG
 from api.sports_api import SportsAPI
+from config.leagues import LEAGUE_CONFIG
+from data.db_manager import DatabaseManager
+from data.game_utils import get_normalized_games_for_dropdown
+from discord import (
+    ButtonStyle,
+    Embed,
+    File,
+    Interaction,
+    Message,
+    SelectOption,
+    TextChannel,
+    Webhook,
+)
+from discord.ext import commands
+from discord.ui import Button, Modal, Select, TextInput, View
+
+from utils.errors import BetServiceError, GameNotFoundError, ValidationError
 from utils.game_line_image_generator import GameLineImageGenerator
-from utils.player_prop_image_generator import PlayerPropImageGenerator
-from utils.parlay_image_generator import ParlayImageGenerator
 from utils.image_url_converter import convert_image_path_to_url
-import uuid
+from utils.league_loader import get_all_league_names
+from utils.modals import StraightBetDetailsModal
+from utils.parlay_image_generator import ParlayImageGenerator
+
 
 logger = logging.getLogger(__name__)
 
@@ -167,11 +163,6 @@ class LineTypeSelect(Select):
                 value="game_line"[:100],
                 description="Moneyline or game over/under",
             ),
-            SelectOption(
-                label="Player Prop"[:100],
-                value="player_prop"[:100],
-                description="Bet on player performance",
-            ),
         ]
         super().__init__(
             placeholder="Select Line Type...",
@@ -181,11 +172,8 @@ class LineTypeSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        # Force update line_type to ensure correct preview for player prop
-        if self.values[0] == "player_prop":
-            self.parent_view.bet_details["line_type"] = "player_prop"
-        else:
-            self.parent_view.bet_details["line_type"] = self.values[0]
+        # Set line type for game line
+        self.parent_view.bet_details["line_type"] = self.values[0]
         logger.debug(
             f"Line Type selected: {self.parent_view.bet_details['line_type']} by user {interaction.user.id}"
         )
@@ -197,6 +185,7 @@ class LineTypeSelect(Select):
 class GameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         from datetime import datetime
+
         import pytz
 
         game_options = []
@@ -701,22 +690,13 @@ class StraightBetWorkflowView(View):
 
     async def get_bet_slip_generator(
         self,
-    ) -> Union[GameLineImageGenerator, PlayerPropImageGenerator]:
-        bet_type = self.bet_details.get("line_type", "game_line")
-        if bet_type == "player_prop":
-            if not self.bet_slip_generator or not isinstance(
-                self.bet_slip_generator, PlayerPropImageGenerator
-            ):
-                self.bet_slip_generator = PlayerPropImageGenerator(
-                    guild_id=self.original_interaction.guild_id
-                )
-        else:
-            if not self.bet_slip_generator or not isinstance(
-                self.bet_slip_generator, GameLineImageGenerator
-            ):
-                self.bet_slip_generator = GameLineImageGenerator(
-                    guild_id=self.original_interaction.guild_id
-                )
+    ) -> GameLineImageGenerator:
+        if not self.bet_slip_generator or not isinstance(
+            self.bet_slip_generator, GameLineImageGenerator
+        ):
+            self.bet_slip_generator = GameLineImageGenerator(
+                guild_id=self.original_interaction.guild_id
+            )
         return self.bet_slip_generator
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
@@ -957,39 +937,7 @@ class StraightBetWorkflowView(View):
                         self.preview_image_bytes.seek(0)
                     else:
                         self.preview_image_bytes = None
-                elif bet_type == "player_prop":
-                    from utils.player_prop_image_generator import (
-                        PlayerPropImageGenerator,
-                    )
 
-                    generator = PlayerPropImageGenerator(
-                        guild_id=self.original_interaction.guild_id
-                    )
-                    player_name = self.bet_details.get("player_name")
-                    if not player_name and line:
-                        player_name = line.split(" - ")[0] if " - " in line else line
-                    team_name = home_team
-                    league = self.bet_details.get("league", "N/A")
-                    odds_str = str(self.bet_details.get("odds_str", "")).strip()
-                    bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                        player_name=player_name or team_name,
-                        team_name=team_name,
-                        league=league,
-                        line=line,
-                        units=1.0,
-                        output_path=None,
-                        bet_id=bet_id,
-                        timestamp=timestamp,
-                        guild_id=str(self.original_interaction.guild_id),
-                        odds=odds,
-                        units_display_mode="auto",
-                        display_as_risk=False,
-                    )
-                    if bet_slip_image_bytes:
-                        self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                        self.preview_image_bytes.seek(0)
-                    else:
-                        self.preview_image_bytes = None
                 else:
                     self.preview_image_bytes = None
             except Exception as e:
@@ -1516,62 +1464,51 @@ class StraightBetDetailsModal(Modal):
         sport_type = league_conf.get("sport_type", "Team Sport")
         is_individual_sport = sport_type == "Individual Player"
 
-        # Add player input only once for player_prop or manual individual sport
-        player_input_added = False
-        if line_type == "player_prop":
-            self.player_input = TextInput(
-                label="Player Name",
-                placeholder="Enter player name",
-                required=True,
-                custom_id=f"player_input_{self.view_custom_id_suffix}",
-            )
-            self.add_item(self.player_input)
-            player_input_added = True
+
 
         # Add team/opponent fields for manual entry
         if is_manual:
             if is_individual_sport:
                 # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
-                if not player_input_added:
-                    player_label = league_conf.get("participant_label", "Player")
-                    player_placeholder = league_conf.get(
-                        "team_placeholder", "e.g., Player Name"
-                    )
-                    # League-specific player suggestions
-                    if selected_league_key in [
-                        "PDC",
-                        "BDO",
-                        "WDF",
-                        "PremierLeagueDarts",
-                        "WorldMatchplay",
-                        "WorldGrandPrix",
-                        "UKOpen",
-                        "GrandSlam",
-                        "PlayersChampionship",
-                        "EuropeanChampionship",
-                        "Masters",
-                    ]:
-                        player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
-                    elif selected_league_key in ["ATP", "WTA", "Tennis"]:
-                        player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
-                    elif selected_league_key in [
-                        "PGA",
-                        "LPGA",
-                        "EuropeanTour",
-                        "LIVGolf",
-                    ]:
-                        player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
-                    elif selected_league_key in ["MMA", "Bellator"]:
-                        player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
-                    elif selected_league_key == "Formula-1":
-                        player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
-                    self.player_input = TextInput(
-                        label=player_label,
-                        placeholder=player_placeholder,
-                        required=True,
-                        custom_id=f"player_input_{self.view_custom_id_suffix}",
-                    )
-                    self.add_item(self.player_input)
+                player_label = league_conf.get("participant_label", "Player")
+                player_placeholder = league_conf.get(
+                    "team_placeholder", "e.g., Player Name"
+                )
+                # League-specific player suggestions
+                if selected_league_key in [
+                    "PDC",
+                    "BDO",
+                    "WDF",
+                    "PremierLeagueDarts",
+                    "WorldMatchplay",
+                    "WorldGrandPrix",
+                    "UKOpen",
+                    "GrandSlam",
+                    "PlayersChampionship",
+                    "EuropeanChampionship",
+                    "Masters",
+                ]:
+                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
+                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
+                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
+                elif selected_league_key in [
+                    "PGA",
+                    "LPGA",
+                    "EuropeanTour",
+                    "LIVGolf",
+                ]:
+                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
+                elif selected_league_key in ["MMA", "Bellator"]:
+                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
+                elif selected_league_key == "Formula-1":
+                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
+                self.player_input = TextInput(
+                    label=player_label,
+                    placeholder=player_placeholder,
+                    required=True,
+                    custom_id=f"player_input_{self.view_custom_id_suffix}",
+                )
+                self.add_item(self.player_input)
                 if line_type == "game_line":
                     opponent_label = league_conf.get("opponent_label", "Opponent")
                     opponent_placeholder = league_conf.get(
@@ -1665,9 +1602,6 @@ class StraightBetDetailsModal(Modal):
             self.view_ref.current_step = 4  # Ensure next step is units selection
             await self.view_ref.go_next(interaction)
         try:
-            # --- FORCE line_type for player prop modal ---
-            if self.line_type == "player_prop":
-                self.bet_details["line_type"] = "player_prop"
             # Get values from inputs
             if self.is_manual:
                 # Get league config to check sport type
@@ -1697,11 +1631,7 @@ class StraightBetDetailsModal(Modal):
                         self.bet_details["away_team_name"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
-                    elif self.line_type == "player_prop":
-                        # For player props, also set away_team_name to player name for right-side label
-                        self.bet_details["away_team_name"] = self.bet_details[
-                            "player_name"
-                        ]
+
                 else:
                     # For team sports, use team and opponent (existing logic)
                     self.bet_details["team"] = (
@@ -1717,20 +1647,8 @@ class StraightBetDetailsModal(Modal):
                         self.bet_details["away_team_name"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
-                    elif self.line_type == "player_prop":
-                        self.bet_details["player_name"] = (
-                            self.player_input.value.strip()[:100] or "Player"
-                        )
-                        # For player props, also set away_team_name to player name for right-side label
-                        self.bet_details["away_team_name"] = self.bet_details[
-                            "player_name"
-                        ]
-            elif self.line_type == "player_prop":
-                # For non-manual, ensure player_name is set and used as away_team_name
-                self.bet_details["player_name"] = (
-                    self.player_input.value.strip()[:100] or "Player"
-                )
-                self.bet_details["away_team_name"] = self.bet_details["player_name"]
+
+
             line = self.line_input.value.strip()[:100] or "Line"
             odds_str = self.odds_input.value.strip()[:100] or "0"
             # Validate odds format
@@ -1752,16 +1670,10 @@ class StraightBetDetailsModal(Modal):
                     "home_team", self.view_ref.bet_details.get("team", "Team")
                 )[:100]
             if "away_team_name" not in self.bet_details:
-                # For player props, away_team_name should be player_name
-                if self.bet_details.get("line_type") == "player_prop":
-                    self.bet_details["away_team_name"] = self.bet_details.get(
-                        "player_name", "Player"
-                    )[:100]
-                else:
-                    self.bet_details["away_team_name"] = self.view_ref.bet_details.get(
-                        "away_team",
-                        self.view_ref.bet_details.get("opponent", "Opponent"),
-                    )[:100]
+                self.bet_details["away_team_name"] = self.view_ref.bet_details.get(
+                    "away_team",
+                    self.view_ref.bet_details.get("opponent", "Opponent"),
+                )[:100]
             if "team" not in self.bet_details:
                 self.bet_details["team"] = self.view_ref.bet_details.get(
                     "team", self.bet_details.get("home_team_name", "Team")
@@ -1772,39 +1684,19 @@ class StraightBetDetailsModal(Modal):
             preview_file = None
             preview_bytes = None
             try:
-                # --- Use correct generator based on line_type ---
-                if self.bet_details.get("line_type") == "player_prop":
-                    generator = PlayerPropImageGenerator(
-                        guild_id=self.view_ref.original_interaction.guild_id
-                    )
-                    image_bytes = generator.generate_player_prop_bet_image(
-                        player_name=self.bet_details.get(
-                            "player_name", self.bet_details.get("team", "")
-                        ),
-                        team_name=self.bet_details.get("team", ""),
-                        league=self.bet_details.get("league", ""),
-                        line=line,
-                        units=1.0,
-                        output_path=None,
-                        bet_id=None,
-                        timestamp=None,
-                        guild_id=str(self.view_ref.original_interaction.guild_id),
-                        odds=odds,
-                    )
-                else:
-                    generator = GameLineImageGenerator(
-                        guild_id=self.view_ref.original_interaction.guild_id
-                    )
-                    image_bytes = generator.generate_bet_slip_image(
-                        league=self.bet_details.get("league", ""),
-                        home_team=self.bet_details.get("home_team_name", ""),
-                        away_team=self.bet_details.get("away_team_name", ""),
-                        line=line,
-                        odds=odds_str,
-                        units=1.0,
-                        selected_team=self.bet_details.get("team", ""),
-                        output_path=None,
-                    )
+                generator = GameLineImageGenerator(
+                    guild_id=self.view_ref.original_interaction.guild_id
+                )
+                image_bytes = generator.generate_bet_slip_image(
+                    league=self.bet_details.get("league", ""),
+                    home_team=self.bet_details.get("home_team_name", ""),
+                    away_team=self.bet_details.get("away_team_name", ""),
+                    line=line,
+                    odds=odds_str,
+                    units=1.0,
+                    selected_team=self.bet_details.get("team", ""),
+                    output_path=None,
+                )
                 preview_bytes = image_bytes
                 preview_file = File(io.BytesIO(image_bytes), filename="bet_preview.png")
             except Exception as e:

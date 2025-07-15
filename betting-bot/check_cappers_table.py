@@ -6,6 +6,7 @@ Check the actual structure of the cappers table
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Add the current directory to the path so we can import our modules
@@ -60,7 +61,7 @@ async def check_cappers_table():
                     try:
                         await cursor.execute(
                             """
-                            ALTER TABLE cappers 
+                            ALTER TABLE cappers
                             ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                         """
                         )

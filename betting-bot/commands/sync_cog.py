@@ -1,10 +1,11 @@
 """Sync command cog for manually syncing bot commands."""
 
+import asyncio
 import logging
+
 import discord
 from discord import app_commands
 from discord.ext import commands
-import asyncio
 
 logger = logging.getLogger(__name__)
 

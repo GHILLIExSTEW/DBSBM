@@ -1,21 +1,23 @@
 # betting-bot/commands/setid.py
 
+import logging
+import os
+from io import BytesIO
+from typing import Optional
+
 import discord
-from discord import app_commands, Interaction, Member, Attachment
+import requests  # Keep requests for URL fetching
+from discord import Attachment, Interaction, Member, app_commands
 from discord.ext import commands  # Import commands for Cog
-from discord.ui import (
+from discord.ui import (  # Corrected import for button decorator
+    Button,
     Modal,
     TextInput,
     View,
-    Button,
     button,
-)  # Corrected import for button decorator
-import logging
-import os
-import requests  # Keep requests for URL fetching
-from io import BytesIO
+)
 from PIL import Image  # Keep Pillow for image processing
-from typing import Optional
+
 from .admin import require_registered_guild
 
 # Use relative imports

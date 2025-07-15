@@ -1,6 +1,7 @@
 """Validation utilities for betting commands."""
 
-from typing import Union, Optional
+from typing import Optional, Union
+
 from utils.errors import ValidationError
 
 

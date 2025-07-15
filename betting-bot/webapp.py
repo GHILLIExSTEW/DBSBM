@@ -1,4 +1,5 @@
 import os
+
 from flask import Flask
 
 # Serve everything under the 'static' directory at /static/...

@@ -5,11 +5,11 @@ This script analyzes and optimizes database performance.
 """
 
 import asyncio
+import logging
 import os
 import sys
-import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -66,9 +66,9 @@ class DatabaseOptimizer:
             # Get table size
             table_size = await self.db_manager.fetch_one(
                 """
-                SELECT 
+                SELECT
                     ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
-                FROM information_schema.tables 
+                FROM information_schema.tables
                 WHERE table_schema = %s AND table_name = %s
                 """,
                 (self.db_manager.db_name, table_name),
@@ -77,11 +77,11 @@ class DatabaseOptimizer:
             # Get index information
             indexes = await self.db_manager.fetch_all(
                 """
-                SELECT 
+                SELECT
                     index_name,
                     column_name,
                     cardinality
-                FROM information_schema.statistics 
+                FROM information_schema.statistics
                 WHERE table_schema = %s AND table_name = %s
                 ORDER BY index_name, seq_in_index
                 """,
@@ -167,12 +167,12 @@ class DatabaseOptimizer:
             # Get unused indexes
             unused_indexes = await self.db_manager.fetch_all(
                 """
-                SELECT 
+                SELECT
                     table_name,
                     index_name,
                     cardinality
-                FROM information_schema.statistics 
-                WHERE table_schema = %s 
+                FROM information_schema.statistics
+                WHERE table_schema = %s
                 AND cardinality = 0
                 ORDER BY table_name, index_name
                 """,
@@ -182,12 +182,12 @@ class DatabaseOptimizer:
             # Get duplicate indexes
             duplicate_indexes = await self.db_manager.fetch_all(
                 """
-                SELECT 
+                SELECT
                     table_name,
                     GROUP_CONCAT(index_name) as indexes,
                     COUNT(*) as count
-                FROM information_schema.statistics 
-                WHERE table_schema = %s 
+                FROM information_schema.statistics
+                WHERE table_schema = %s
                 GROUP BY table_name, column_name
                 HAVING COUNT(*) > 1
                 """,
@@ -228,8 +228,8 @@ class DatabaseOptimizer:
                     # Check if index already exists
                     existing = await self.db_manager.fetch_one(
                         """
-                        SELECT COUNT(*) as count 
-                        FROM information_schema.statistics 
+                        SELECT COUNT(*) as count
+                        FROM information_schema.statistics
                         WHERE table_schema = %s AND table_name = %s AND index_name = %s
                         """,
                         (self.db_manager.db_name, table, index_name),

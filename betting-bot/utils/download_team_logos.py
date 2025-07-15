@@ -1,6 +1,6 @@
 # download_team_logos.py
-import sys
 import os
+import sys
 
 # --- Path Setup ---
 # SCRIPT_DIR is the directory where this script (download_team_logos.py) lives: betting-bot/utils/
@@ -14,16 +14,17 @@ if BASE_DIR not in sys.path:
 
 # Now your regular imports should work
 import csv
-import requests
-import time
 import logging
+import time
 from io import BytesIO
+
+import requests
 from PIL import Image, UnidentifiedImageError
 
 try:
     from config.asset_paths import (
-        SPORT_CATEGORIES,
         DEFAULT_FALLBACK_CATEGORY,
+        SPORT_CATEGORIES,
         get_sport_category_for_path,
     )
     from config.leagues import LEAGUE_IDS  # Contains league name to sport mapping

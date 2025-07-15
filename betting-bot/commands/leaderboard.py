@@ -1,10 +1,11 @@
 import logging
-import discord
-from discord import app_commands
-from discord.ext import commands
-from discord import Interaction, File
-from typing import Optional
 from io import BytesIO
+from typing import Optional
+
+import discord
+from discord import File, Interaction, app_commands
+from discord.ext import commands
+
 from utils.stats_image_generator import StatsImageGenerator
 
 logger = logging.getLogger(__name__)

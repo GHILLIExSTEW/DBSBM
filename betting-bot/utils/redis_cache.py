@@ -4,10 +4,11 @@ import asyncio
 import json
 import logging
 import pickle
-from typing import Any, Optional, Dict, List
-from functools import wraps
-import aioredis
 from datetime import timedelta
+from functools import wraps
+from typing import Any, Dict, List, Optional
+
+import aioredis
 
 logger = logging.getLogger(__name__)
 

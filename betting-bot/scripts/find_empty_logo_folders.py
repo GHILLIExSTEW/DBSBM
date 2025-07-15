@@ -4,9 +4,9 @@ Find Empty Logo Folders
 Scans static/logos/leagues/ and static/logos/teams/ for empty subfolders.
 Outputs a list and a JSON file of empty folders.
 """
+import json
 import os
 from pathlib import Path
-import json
 
 LEAGUES_ROOT = Path("static/logos/leagues/")
 TEAMS_ROOT = Path("static/logos/teams/")

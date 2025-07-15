@@ -1,7 +1,8 @@
-import requests
 import json
 import os
 from datetime import datetime
+
+import requests
 
 
 def fetch_nba_teams():
@@ -55,9 +56,7 @@ def fetch_nba_teams():
             if "response" in data:
                 print(f"📊 Found {len(data['response'])} teams in the response")
                 if data["response"]:
-                    print(
-                        f"📋 First team: {data['response'][0].get('name', 'Unknown')}"
-                    )
+                    print(f"📋 First team: {data['response'][0].get('name', 'Unknown')}")
 
             return data
 

@@ -1,9 +1,10 @@
-import logging
 import asyncio
-from typing import Optional
+import logging
 from datetime import datetime, timedelta
+from typing import Optional
+
 import aiosqlite
-from discord import VoiceChannel, Client
+from discord import Client, VoiceChannel
 
 logger = logging.getLogger(__name__)
 

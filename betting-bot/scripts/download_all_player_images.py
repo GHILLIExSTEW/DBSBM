@@ -5,11 +5,11 @@ Downloads player images from Wikipedia for darts, tennis, and golf.
 Can run all sports or individual ones based on command line arguments.
 """
 
-import os
-import sys
 import argparse
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 # Configure logging

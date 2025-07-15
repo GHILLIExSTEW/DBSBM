@@ -5,19 +5,20 @@ Downloads player images from Wikipedia for darts, tennis, and golf.
 Runs the downloader classes directly instead of using subprocess.
 """
 
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
 from pathlib import Path
 
 # Add the parent directory to the path to import config modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the downloader classes
-from scripts.download_tennis_players import TennisPlayerDownloader
 from scripts.download_darts_players import DartsPlayerDownloader
 from scripts.download_golf_players import GolfPlayerDownloader
+
+# Import the downloader classes
+from scripts.download_tennis_players import TennisPlayerDownloader
 
 # Configure logging
 logging.basicConfig(

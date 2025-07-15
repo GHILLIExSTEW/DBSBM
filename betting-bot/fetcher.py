@@ -1,23 +1,23 @@
-import os
-import aiohttp
 import asyncio
 import json
 import logging
-import aiomysql
+import os
+import sys
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from zoneinfo import ZoneInfo
-from dotenv import load_dotenv
-import sys
 
+import aiohttp
+import aiomysql
+from api.sports_api import SportsAPI
 from config.leagues import (
+    ENDPOINTS,
     LEAGUE_IDS,
     LEAGUE_SEASON_STARTS,
-    ENDPOINTS,
-    get_current_season,
     get_auto_season_year,
+    get_current_season,
 )
-from api.sports_api import SportsAPI
+from dotenv import load_dotenv
 
 # Configure logging to file and console
 try:
@@ -77,7 +77,7 @@ logger.info("Database configuration found")
 try:
     sys.path.append(os.path.join(os.path.dirname(__file__), "utils"))
     logger.info("Attempting to import utils.api_sports")
-    from utils.api_sports import LEAGUE_IDS, ENDPOINTS, ENDPOINTS_MAP
+    from utils.api_sports import ENDPOINTS, ENDPOINTS_MAP, LEAGUE_IDS
 
     logger.info("Successfully imported LEAGUE_IDS, ENDPOINTS, and ENDPOINTS_MAP")
 except ImportError as e:
@@ -447,9 +447,9 @@ async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    INSERT INTO api_games 
-                    (api_game_id, id, sport, league_id, league_name, home_team_id, away_team_id, 
-                     home_team_name, away_team_name, start_time, status, score, 
+                    INSERT INTO api_games
+                    (api_game_id, id, sport, league_id, league_name, home_team_id, away_team_id,
+                     home_team_name, away_team_name, start_time, status, score,
                      venue, referee, raw_json, fetched_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
@@ -791,10 +791,10 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
                     async with conn.cursor(aiomysql.DictCursor) as cur:
                         await cur.execute(
                             """
-                            SELECT DISTINCT ag.api_game_id, ag.sport, ag.league_id 
+                            SELECT DISTINCT ag.api_game_id, ag.sport, ag.league_id
                             FROM bets b
                             JOIN api_games ag ON b.api_game_id = ag.api_game_id
-                            WHERE b.confirmed = 1 
+                            WHERE b.confirmed = 1
                             AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Game Finished', 'Final')
                         """
                         )

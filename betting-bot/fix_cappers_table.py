@@ -6,6 +6,7 @@ Fix the cappers table by adding missing columns
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
 
 # Add the current directory to the path so we can import our modules
@@ -49,7 +50,7 @@ async def fix_cappers_table():
                     try:
                         await cursor.execute(
                             """
-                            ALTER TABLE cappers 
+                            ALTER TABLE cappers
                             ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         """
                         )
@@ -65,7 +66,7 @@ async def fix_cappers_table():
                     try:
                         await cursor.execute(
                             """
-                            ALTER TABLE cappers 
+                            ALTER TABLE cappers
                             ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                         """
                         )

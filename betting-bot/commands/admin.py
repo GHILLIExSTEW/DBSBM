@@ -2,35 +2,37 @@
 
 """Admin commands for server setup and management."""
 
-import discord
-from discord import (
-    app_commands,
-    Interaction,
-    SelectOption,
-    TextChannel,
-    Role,
-    VoiceChannel,
-)
-from discord.ext import commands  # Import commands for Cog
-from discord.ui import View, Select, Modal, TextInput
 import logging
 import os
-from typing import Optional, List
-import requests
-from PIL import Image
-from io import BytesIO
 from functools import wraps
+from io import BytesIO
+from typing import List, Optional
+
+import discord
+import requests
+from discord import (
+    Interaction,
+    Role,
+    SelectOption,
+    TextChannel,
+    VoiceChannel,
+    app_commands,
+)
+from discord.ext import commands  # Import commands for Cog
+from discord.ui import Modal, Select, TextInput, View
+from PIL import Image
 
 # Use relative imports (assuming commands/ is sibling to services/, utils/)
 try:
     # Services will be accessed via self.bot.<service_name>
-    from ..services.admin_service import (
+    from ..services.admin_service import (  # Explicitly import AdminService type hint if needed
         AdminService,
-    )  # Explicitly import AdminService type hint if needed
+    )
     from ..utils.errors import AdminServiceError
 except ImportError:
     # Fallbacks
     from services.admin_service import AdminService
+
     from utils.errors import AdminServiceError
 
 
@@ -643,8 +645,8 @@ class AdminCog(commands.Cog):
             if not existing_settings:
                 await self.bot.db_manager.execute(
                     """
-                    INSERT INTO guild_settings 
-                    (guild_id, is_paid, subscription_level) 
+                    INSERT INTO guild_settings
+                    (guild_id, is_paid, subscription_level)
                     VALUES (%s, 0, 'initial')
                     """,
                     interaction.guild_id,

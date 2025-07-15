@@ -7,13 +7,13 @@ from io import BytesIO
 from typing import Optional
 
 import discord
+
+# Import directly from utils
+from config.asset_paths import get_sport_category_for_path
 from discord import Attachment, Interaction, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 from PIL import Image
-
-# Import directly from utils
-from config.asset_paths import get_sport_category_for_path
 
 logger = logging.getLogger(__name__)
 

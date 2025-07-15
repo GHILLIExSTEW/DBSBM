@@ -1,11 +1,12 @@
 """Image optimization utilities for asset management."""
 
-import os
-import logging
-from typing import Optional, Tuple
-from PIL import Image, ImageOps
 import hashlib
+import logging
+import os
 from pathlib import Path
+from typing import Optional, Tuple
+
+from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
