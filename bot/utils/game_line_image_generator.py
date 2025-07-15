@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 def generate_player_prop_bet_image(
     player_name,
     player_picture_path,
