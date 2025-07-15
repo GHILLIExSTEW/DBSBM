@@ -13,19 +13,21 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.leagues import LEAGUE_IDS
 
+
 def sanitize_filename(name):
     """Convert a league name to a safe directory name."""
-    name = name.replace('/', '_')
-    name = name.replace('\\', '_')
-    name = name.replace(':', '_')
-    name = name.replace('*', '_')
-    name = name.replace('?', '_')
-    name = name.replace('"', '_')
-    name = name.replace('<', '_')
-    name = name.replace('>', '_')
-    name = name.replace('|', '_')
-    name = name.replace(' ', '_')
+    name = name.replace("/", "_")
+    name = name.replace("\\", "_")
+    name = name.replace(":", "_")
+    name = name.replace("*", "_")
+    name = name.replace("?", "_")
+    name = name.replace('"', "_")
+    name = name.replace("<", "_")
+    name = name.replace(">", "_")
+    name = name.replace("|", "_")
+    name = name.replace(" ", "_")
     return name
+
 
 def rename_soccer_team_dirs():
     """Rename all team directories in SOCCER to match full league names."""
@@ -51,7 +53,7 @@ def rename_soccer_team_dirs():
             print(f"  ⚠️  No league info found for {league_code}")
             skipped_dirs += 1
             continue
-        league_name = league_info.get('name', league_code)
+        league_name = league_info.get("name", league_code)
         new_dir_name = sanitize_filename(league_name)
         new_dir_path = league_dir.parent / new_dir_name
         if league_dir.name == new_dir_name:
@@ -79,6 +81,7 @@ def rename_soccer_team_dirs():
     else:
         print(f"\n⚠️  Completed with {errors} errors.")
 
+
 def main():
     print("🔄 Starting SOCCER team directory renaming process...")
     try:
@@ -89,5 +92,6 @@ def main():
         print(f"\n❌ Unexpected error: {e}")
         sys.exit(1)
 
+
 if __name__ == "__main__":
-    main() 
+    main()

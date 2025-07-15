@@ -10,7 +10,6 @@ WORLDCUP_TEAMS = {
     "usa": "United States",
     "canada": "Canada",
     "mexico": "Mexico",
-    
     # South America
     "argentina": "Argentina",
     "brazil": "Brazil",
@@ -22,7 +21,6 @@ WORLDCUP_TEAMS = {
     "peru": "Peru",
     "venezuela": "Venezuela",
     "bolivia": "Bolivia",
-    
     # Europe
     "england": "England",
     "france": "France",
@@ -52,7 +50,6 @@ WORLDCUP_TEAMS = {
     "greece": "Greece",
     "turkey": "Turkey",
     "russia": "Russia",
-    
     # Africa
     "morocco": "Morocco",
     "senegal": "Senegal",
@@ -150,7 +147,6 @@ WORLDCUP_TEAMS = {
     "tanzania": "Tanzania",
     "burundi": "Burundi",
     "rwanda": "Rwanda",
-    
     # Asia
     "japan": "Japan",
     "south korea": "South Korea",
@@ -233,7 +229,6 @@ WORLDCUP_TEAMS = {
     "solomon islands": "Solomon Islands",
     "new zealand": "New Zealand",
     "australia": "Australia",
-    
     # Oceania
     "new zealand": "New Zealand",
     "australia": "Australia",
@@ -261,7 +256,6 @@ WORLDCUP_TEAMS = {
     "pitcairn islands": "Pitcairn Islands",
     "easter island": "Easter Island",
     "hawaii": "Hawaii",
-    
     # Caribbean
     "jamaica": "Jamaica",
     "haiti": "Haiti",
@@ -528,7 +522,6 @@ CHAMPIONS_LEAGUE_TEAMS = {
     "man utd": "Manchester United",
     "tottenham": "Tottenham Hotspur",
     "tottenham hotspur": "Tottenham Hotspur",
-    
     # Spanish teams
     "barcelona": "Barcelona",
     "real madrid": "Real Madrid",
@@ -536,7 +529,6 @@ CHAMPIONS_LEAGUE_TEAMS = {
     "sevilla": "Sevilla",
     "valencia": "Valencia",
     "villarreal": "Villarreal",
-    
     # German teams
     "bayern munich": "Bayern Munich",
     "borussia dortmund": "Borussia Dortmund",
@@ -544,7 +536,6 @@ CHAMPIONS_LEAGUE_TEAMS = {
     "rb leipzig": "RB Leipzig",
     "leipzig": "RB Leipzig",
     "bayer leverkusen": "Bayer Leverkusen",
-    
     # Italian teams
     "ac milan": "AC Milan",
     "milan": "AC Milan",
@@ -554,14 +545,12 @@ CHAMPIONS_LEAGUE_TEAMS = {
     "napoli": "Napoli",
     "roma": "Roma",
     "lazio": "Lazio",
-    
     # French teams
     "paris saint-germain": "Paris Saint-Germain",
     "psg": "Paris Saint-Germain",
     "lyon": "Lyon",
     "marseille": "Marseille",
     "monaco": "Monaco",
-    
     # Other European teams
     "ajax": "Ajax",
     "porto": "Porto",
@@ -654,4 +643,4 @@ TEAM_FULL_NAMES = {
     **LIGUE1_TEAMS,
     **CHAMPIONS_LEAGUE_TEAMS,
     **EUROPA_LEAGUE_TEAMS,
-} 
+}

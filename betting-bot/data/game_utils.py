@@ -264,56 +264,64 @@ def sanitize_team_name(name: str, max_length: int = 30) -> str:
 def normalize_team_name(team_name: str, sport: str = None, league: str = None) -> str:
     """
     Normalize a team name using the appropriate league dictionary.
-    
+
     Args:
         team_name (str): The team name to normalize
         sport (str, optional): The sport (e.g., 'baseball', 'football')
         league (str, optional): The league (e.g., 'MLB', 'NFL')
-        
+
     Returns:
         str: The normalized team name
     """
     if not team_name:
         return team_name
-        
+
     # Convert to lowercase for matching
     team_name_lower = team_name.lower()
-    
+
     # Get the appropriate team name dictionary based on sport and league
     team_dict = {}
     if sport and league:
-        if sport.lower() == 'baseball' and league.upper() == 'MLB':
+        if sport.lower() == "baseball" and league.upper() == "MLB":
             from utils.league_dictionaries.team_mappings import MLB_TEAM_NAMES
+
             team_dict = MLB_TEAM_NAMES
-        elif sport.lower() == 'football' and league.upper() == 'NFL':
+        elif sport.lower() == "football" and league.upper() == "NFL":
             from utils.league_dictionaries.team_mappings import NFL_TEAM_NAMES
+
             team_dict = NFL_TEAM_NAMES
-        elif sport.lower() == 'basketball' and league.upper() == 'NBA':
+        elif sport.lower() == "basketball" and league.upper() == "NBA":
             from utils.league_dictionaries.team_mappings import NBA_TEAM_NAMES
+
             team_dict = NBA_TEAM_NAMES
-        elif sport.lower() == 'hockey' and league.upper() == 'NHL':
+        elif sport.lower() == "hockey" and league.upper() == "NHL":
             from utils.league_dictionaries.team_mappings import NHL_TEAM_NAMES
+
             team_dict = NHL_TEAM_NAMES
-        elif sport.lower() == 'soccer' and league.upper() == 'EPL':
+        elif sport.lower() == "soccer" and league.upper() == "EPL":
             from utils.league_dictionaries.team_mappings import EPL_TEAM_NAMES
+
             team_dict = EPL_TEAM_NAMES
-    
+
     # If we have a team dictionary, try to find a match
     if team_dict:
         # First try exact match
         if team_name_lower in team_dict:
             return team_dict[team_name_lower]
-            
+
         # Try fuzzy matching
         import difflib
-        matches = difflib.get_close_matches(team_name_lower, team_dict.keys(), n=1, cutoff=0.75)
+
+        matches = difflib.get_close_matches(
+            team_name_lower, team_dict.keys(), n=1, cutoff=0.75
+        )
         if matches:
             return team_dict[matches[0]]
-    
+
     # If no match found or no dictionary available, handle special cases
-    if team_name_lower.startswith('st '):
+    if team_name_lower.startswith("st "):
         return f"St. {team_name[3:].title()}"
-    
+
     # Return title case as fallback
     return team_name.title()
 
@@ -322,36 +330,40 @@ def normalize_team_name_any_league(team_name: str) -> str:
     """
     Normalize a team name without requiring sport and league parameters.
     This is a wrapper around normalize_team_name that tries common sports and leagues.
-    
+
     Args:
         team_name (str): The team name to normalize
-        
+
     Returns:
         str: The normalized team name
     """
     if not team_name:
         return team_name
-        
+
     # Try each major sport and league combination
     sports_and_leagues = [
-        ('baseball', 'MLB'),
-        ('football', 'NFL'),
-        ('basketball', 'NBA'),
-        ('hockey', 'NHL'),
-        ('soccer', 'EPL')
+        ("baseball", "MLB"),
+        ("football", "NFL"),
+        ("basketball", "NBA"),
+        ("hockey", "NHL"),
+        ("soccer", "EPL"),
     ]
-    
+
     for sport, league in sports_and_leagues:
         normalized = normalize_team_name(team_name, sport, league)
         if normalized != team_name:
             return normalized
-            
+
     # If no sport/league combination worked, return the original name
     return team_name
 
 
 async def insert_games(
-    db_manager, league_id: str, games: List[Dict[str, Any]], sport: str, league_name: str
+    db_manager,
+    league_id: str,
+    games: List[Dict[str, Any]],
+    sport: str,
+    league_name: str,
 ) -> None:
     """Insert or update games into the api_games table."""
     logger.info(f"Inserting/updating {len(games)} games for league_id={league_id}")
@@ -383,7 +395,10 @@ async def insert_games(
             )
             await db_manager.execute(query, args)
         except Exception as e:
-            logger.error(f"Error inserting game with api_game_id={game.get('api_game_id')}: {e}", exc_info=True)
+            logger.error(
+                f"Error inserting game with api_game_id={game.get('api_game_id')}: {e}",
+                exc_info=True,
+            )
     logger.info(f"Completed inserting/updating games for league_id={league_id}")
 
 
@@ -391,35 +406,47 @@ async def get_normalized_games_for_dropdown(
     db_manager, league_name: str, season: int = None
 ) -> List[Dict[str, Any]]:
     """Fetch and normalize games for a league from the api_games table for use in a bet dropdown."""
-    logger.info(f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}")
-    
-    dropdown_games = [{
-        'id': 'manual',
-        'api_game_id': 'manual',
-        'home_team': 'Manual Entry',
-        'away_team': 'Manual Entry',
-        'start_time': datetime.now(timezone.utc),
-        'status': 'Manual',
-        'home_team_name': 'Manual Entry',
-        'away_team_name': 'Manual Entry',
-    }]
-    
+    logger.info(
+        f"[get_normalized_games_for_dropdown] Starting fetch for league_name={league_name}, season={season}"
+    )
+
+    dropdown_games = [
+        {
+            "id": "manual",
+            "api_game_id": "manual",
+            "home_team": "Manual Entry",
+            "away_team": "Manual Entry",
+            "start_time": datetime.now(timezone.utc),
+            "status": "Manual",
+            "home_team_name": "Manual Entry",
+            "away_team_name": "Manual Entry",
+        }
+    ]
+
     sport = None
     league_key = None
     for key, league_info in LEAGUE_IDS.items():
         if key == league_name:
-            sport = league_info.get('sport', '').capitalize()
+            sport = league_info.get("sport", "").capitalize()
             league_key = key
-            league_name_db = LEAGUE_CONFIG.get(league_info.get('sport', ''), {}).get(key, {}).get('name', key)
+            league_name_db = (
+                LEAGUE_CONFIG.get(league_info.get("sport", ""), {})
+                .get(key, {})
+                .get("name", key)
+            )
             if league_name_db == "MLB":
                 league_name_db = "Major League Baseball"
-            logger.info(f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name_db}")
+            logger.info(
+                f"[get_normalized_games_for_dropdown] Found league info: sport={sport}, league_key={league_key}, league_name={league_name_db}"
+            )
             break
-    
+
     if not sport or not league_name:
-        logger.warning(f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}")
+        logger.warning(
+            f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}"
+        )
         return dropdown_games
-    
+
     # Build possible league names (abbreviation, full name, and common aliases)
     league_names = set()
     league_abbr = get_league_abbreviation(league_name)
@@ -432,15 +459,15 @@ async def get_normalized_games_for_dropdown(
         league_names.update(["WorldCup", "FIFA World Cup", "FIFA Club World Cup"])
     # Add more common aliases for major leagues
     aliases = {
-        'NBA': ['NBA', 'National Basketball Association'],
-        'NHL': ['NHL', 'National Hockey League'],
-        'NFL': ['NFL', 'National Football League'],
-        'MLB': ['MLB', 'Major League Baseball'],
-        'WNBA': ['WNBA', "Women's National Basketball Association"],
-        'EPL': ['EPL', 'English Premier League'],
-        'MLS': ['MLS', 'Major League Soccer'],
-        'NCAAF': ['NCAA Football', 'NCAAF'],
-        'NCAAB': ['NCAA Basketball', 'NCAAB'],
+        "NBA": ["NBA", "National Basketball Association"],
+        "NHL": ["NHL", "National Hockey League"],
+        "NFL": ["NFL", "National Football League"],
+        "MLB": ["MLB", "Major League Baseball"],
+        "WNBA": ["WNBA", "Women's National Basketball Association"],
+        "EPL": ["EPL", "English Premier League"],
+        "MLS": ["MLS", "Major League Soccer"],
+        "NCAAF": ["NCAA Football", "NCAAF"],
+        "NCAAB": ["NCAA Basketball", "NCAAB"],
     }
     for key, names in aliases.items():
         if league_abbr == key or league_name == key or normalized_full == key:
@@ -449,14 +476,29 @@ async def get_normalized_games_for_dropdown(
 
     # Define finished statuses based on sport
     if sport.lower() == "baseball":
-        finished_statuses = ["Match Finished", "Finished", "FT", "Game Finished", "Final"]
+        finished_statuses = [
+            "Match Finished",
+            "Finished",
+            "FT",
+            "Game Finished",
+            "Final",
+        ]
     else:
-        finished_statuses = ["Match Finished", "Finished", "FT", "Ended", "Game Finished", "Final"]
-    logger.info(f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}")
+        finished_statuses = [
+            "Match Finished",
+            "Finished",
+            "FT",
+            "Ended",
+            "Game Finished",
+            "Final",
+        ]
+    logger.info(
+        f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}"
+    )
 
     # Dynamically build the correct number of %s for the NOT IN and IN clauses
-    status_placeholders = ', '.join(['%s'] * len(finished_statuses))
-    league_name_placeholders = ', '.join(['%s'] * len(league_names))
+    status_placeholders = ", ".join(["%s"] * len(finished_statuses))
+    league_name_placeholders = ", ".join(["%s"] * len(league_names))
     query = f"""
         SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
         FROM api_games
@@ -466,39 +508,58 @@ async def get_normalized_games_for_dropdown(
         AND status NOT IN ({status_placeholders})
         ORDER BY start_time ASC LIMIT 100
     """
-    
+
     league_id = LEAGUE_ID_MAP.get(league_name, "1")  # Default to 1 for MLB if not found
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
-    logger.info(f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name} (league_names={league_names})")
-    params = (sport, league_id) + tuple([name.upper() for name in league_names]) + tuple(finished_statuses)
+    logger.info(
+        f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_name} (league_names={league_names})"
+    )
+    params = (
+        (sport, league_id)
+        + tuple([name.upper() for name in league_names])
+        + tuple(finished_statuses)
+    )
     rows = await db_manager.fetch_all(query, params)
-    logger.info(f"[get_normalized_games_for_dropdown] Found {len(rows) if rows else 0} games")
-    
+    logger.info(
+        f"[get_normalized_games_for_dropdown] Found {len(rows) if rows else 0} games"
+    )
+
     if not rows:
-        logger.warning(f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}")
+        logger.warning(
+            f"[get_normalized_games_for_dropdown] No active games found for sport={sport}, league_id={league_id}, league_name={league_name}"
+        )
         return dropdown_games  # Return just manual entry option
 
     for row in rows:
         try:
             # Always use league-specific normalization for all leagues
-            home_team = normalize_team_name(row['home_team_name'], sport, league_key)
-            away_team = normalize_team_name(row['away_team_name'], sport, league_key)
-            logger.info(f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}")
+            home_team = normalize_team_name(row["home_team_name"], sport, league_key)
+            away_team = normalize_team_name(row["away_team_name"], sport, league_key)
+            logger.info(
+                f"[get_normalized_games_for_dropdown] Normalized teams {row['home_team_name']} -> {home_team}, {row['away_team_name']} -> {away_team}"
+            )
             game_data = {
-                'id': row['id'],
-                'api_game_id': str(row['api_game_id']),
-                'home_team': home_team,
-                'away_team': away_team,
-                'start_time': row['start_time'],
-                'status': row['status'],
-                'home_team_name': home_team,
-                'away_team_name': away_team,
+                "id": row["id"],
+                "api_game_id": str(row["api_game_id"]),
+                "home_team": home_team,
+                "away_team": away_team,
+                "start_time": row["start_time"],
+                "status": row["status"],
+                "home_team_name": home_team,
+                "away_team_name": away_team,
             }
             dropdown_games.append(game_data)
-            logger.info(f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}")
+            logger.info(
+                f"[get_normalized_games_for_dropdown] Added game to dropdown: {game_data}"
+            )
         except Exception as e:
-            logger.error(f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}", exc_info=True)
+            logger.error(
+                f"[get_normalized_games_for_dropdown] Error processing game data for league_id={league_id}, sport={sport}, league_name={league_name}: {e}",
+                exc_info=True,
+            )
             continue
-    
-    logger.info(f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)")
+
+    logger.info(
+        f"[get_normalized_games_for_dropdown] Returning {len(dropdown_games)} normalized games for dropdown (including manual entry)"
+    )
     return dropdown_games

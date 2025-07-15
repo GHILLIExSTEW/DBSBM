@@ -4,10 +4,15 @@ from dotenv import load_dotenv
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime, timezone, date
-from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season
+from config.leagues import (
+    LEAGUE_IDS,
+    LEAGUE_SEASON_STARTS,
+    ENDPOINTS,
+    get_current_season,
+)
 
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
+API_KEY = os.getenv("API_KEY")
 logger = logging.getLogger(__name__)
 
 # API-Sports endpoints
@@ -27,7 +32,7 @@ ENDPOINTS = {
     "mma": "https://v1.mma.api-sports.io",
     # Note: tennis, golf, and darts APIs may not be available
     # "tennis": "https://v1.tennis.api-sports.io",
-    # "golf": "https://v1.golf.api-sports.io", 
+    # "golf": "https://v1.golf.api-sports.io",
     # "darts": "https://v1.darts.api-sports.io",
 }
 
@@ -45,7 +50,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "odds": "/odds"
+        "odds": "/odds",
     },
     "baseball": {
         "base": "https://v1.baseball.api-sports.io",
@@ -60,7 +65,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "basketball": {
         "base": "https://v1.basketball.api-sports.io",
@@ -75,7 +80,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "nba": {
         "base": "https://v1.basketball.api-sports.io",
@@ -90,7 +95,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "football": {
         "base": "https://v3.football.api-sports.io",
@@ -125,7 +130,7 @@ ENDPOINTS_MAP = {
         "fixtures_lineups": "/fixtures/lineups",
         "fixtures_odds": "/fixtures/odds",
         "fixtures_predictions": "/fixtures/predictions",
-        "fixtures_sidelined": "/fixtures/sidelined"
+        "fixtures_sidelined": "/fixtures/sidelined",
     },
     "formula-1": {
         "base": "https://v1.formula-1.api-sports.io",
@@ -139,7 +144,7 @@ ENDPOINTS_MAP = {
         "status": "/status",
         "countries": "/countries",
         "timezone": "/timezone",
-        "odds": "/odds"
+        "odds": "/odds",
     },
     "american-football": {
         "base": "https://v1.american-football.api-sports.io",
@@ -154,7 +159,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "handball": {
         "base": "https://v1.handball.api-sports.io",
@@ -169,7 +174,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "hockey": {
         "base": "https://v1.hockey.api-sports.io",
@@ -184,7 +189,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "mma": {
         "base": "https://v1.mma.api-sports.io",
@@ -196,7 +201,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "odds": "/odds",
         "status": "/status",
-        "timezone": "/timezone"
+        "timezone": "/timezone",
     },
     "nfl": {
         "base": "https://v1.american-football.api-sports.io",
@@ -211,7 +216,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "rugby": {
         "base": "https://v1.rugby.api-sports.io",
@@ -226,7 +231,7 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
+        "events": "/events",
     },
     "volleyball": {
         "base": "https://v1.volleyball.api-sports.io",
@@ -241,9 +246,10 @@ ENDPOINTS_MAP = {
         "countries": "/countries",
         "timezone": "/timezone",
         "status": "/status",
-        "events": "/events"
-    }
+        "events": "/events",
+    },
 }
+
 
 class APISportsClient:
     def __init__(self):
@@ -265,12 +271,16 @@ class APISportsClient:
         if not self.session:
             self.session = aiohttp.ClientSession()
 
-        headers = {'x-apisports-key': self.api_key}
+        headers = {"x-apisports-key": self.api_key}
         try:
-            async with self.session.get(endpoint, headers=headers, params=params) as resp:
+            async with self.session.get(
+                endpoint, headers=headers, params=params
+            ) as resp:
                 if resp.status != 200:
                     error_text = await resp.text()
-                    raise Exception(f"API request failed with status {resp.status}: {error_text}")
+                    raise Exception(
+                        f"API request failed with status {resp.status}: {error_text}"
+                    )
                 return await resp.json()
         except Exception as e:
             logger.error(f"Error making API request to {endpoint}: {str(e)}")
@@ -290,13 +300,13 @@ class APISportsClient:
 
         endpoint = f"{base_endpoint}/{'fixtures' if sport == 'football' else 'games'}"
         params = {
-            'league': league_id,
-            'date': date,
-            'season': get_current_season(league)
+            "league": league_id,
+            "date": date,
+            "season": get_current_season(league),
         }
 
         data = await self._make_request(endpoint, params)
-        return data.get('response', [])
+        return data.get("response", [])
 
     async def get_teams(self, league: str) -> List[Dict]:
         """Get teams for a specific league."""
@@ -311,13 +321,10 @@ class APISportsClient:
             raise ValueError(f"Unsupported sport: {sport}")
 
         endpoint = f"{base_endpoint}/teams"
-        params = {
-            'league': league_id,
-            'season': get_current_season(league)
-        }
+        params = {"league": league_id, "season": get_current_season(league)}
 
         data = await self._make_request(endpoint, params)
-        return data.get('response', [])
+        return data.get("response", [])
 
     async def get_standings(self, league: str) -> List[Dict]:
         """Get standings for a specific league."""
@@ -332,13 +339,10 @@ class APISportsClient:
             raise ValueError(f"Unsupported sport: {sport}")
 
         endpoint = f"{base_endpoint}/standings"
-        params = {
-            'league': league_id,
-            'season': get_current_season(league)
-        }
+        params = {"league": league_id, "season": get_current_season(league)}
 
         data = await self._make_request(endpoint, params)
-        return data.get('response', [])
+        return data.get("response", [])
 
     def build_full_url(self, sport: str, operation: str) -> str:
         """Build a full URL for a given sport and operation."""
@@ -353,14 +357,17 @@ class APISportsClient:
         league_info = LEAGUE_IDS.get(league)
         if not league_info:
             raise ValueError(f"Unsupported league: {league}")
-        full_url = self.build_full_url(league_info["sport"], "fixtures" if league_info["sport"] == "football" else "games")
+        full_url = self.build_full_url(
+            league_info["sport"],
+            "fixtures" if league_info["sport"] == "football" else "games",
+        )
         params = {
-            'league': league_info["id"],
-            'date': date,
-            'season': get_current_season(league)
+            "league": league_info["id"],
+            "date": date,
+            "season": get_current_season(league),
         }
         data = await self._make_request(full_url, params)
-        return data.get('response', [])
+        return data.get("response", [])
 
     async def get_teams_with_full_url(self, league: str) -> List[Dict]:
         """Get teams for a specific league using the full URL."""
@@ -368,12 +375,9 @@ class APISportsClient:
         if not league_info:
             raise ValueError(f"Unsupported league: {league}")
         full_url = self.build_full_url(league_info["sport"], "teams")
-        params = {
-            'league': league_info["id"],
-            'season': get_current_season(league)
-        }
+        params = {"league": league_info["id"], "season": get_current_season(league)}
         data = await self._make_request(full_url, params)
-        return data.get('response', [])
+        return data.get("response", [])
 
     async def get_standings_with_full_url(self, league: str) -> List[Dict]:
         """Get standings for a specific league using the full URL."""
@@ -381,9 +385,6 @@ class APISportsClient:
         if not league_info:
             raise ValueError(f"Unsupported league: {league}")
         full_url = self.build_full_url(league_info["sport"], "standings")
-        params = {
-            'league': league_info["id"],
-            'season': get_current_season(league)
-        }
+        params = {"league": league_info["id"], "season": get_current_season(league)}
         data = await self._make_request(full_url, params)
-        return data.get('response', [])
+        return data.get("response", [])

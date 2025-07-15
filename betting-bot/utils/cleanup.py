@@ -5,6 +5,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
 class CleanupTasks:
     def __init__(self, db_manager):
         self.db_manager = db_manager
@@ -49,6 +50,8 @@ class CleanupTasks:
             """
             result = await self.db_manager.execute(query, (cutoff_time,))
             if result.rowcount > 0:
-                logger.info(f"Deleted {result.rowcount} unconfirmed bets older than 5 minutes")
+                logger.info(
+                    f"Deleted {result.rowcount} unconfirmed bets older than 5 minutes"
+                )
         except Exception as e:
-            logger.error(f"Error cleaning up unconfirmed bets: {e}") 
+            logger.error(f"Error cleaning up unconfirmed bets: {e}")

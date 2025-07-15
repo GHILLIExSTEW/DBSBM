@@ -21,7 +21,7 @@ category_to_subdomain = {
     "NBA": "basketball",  # NBA is a league under basketball
     "NFL": "american-football",  # NFL is a league under american-football
     "Rugby": "rugby",
-    "Volleyball": "volleyball"
+    "Volleyball": "volleyball",
 }
 
 categories = [
@@ -36,7 +36,7 @@ categories = [
     "NBA",
     "NFL",
     "Rugby",
-    "Volleyball"
+    "Volleyball",
 ]
 
 headers = {"x-apisports-key": API_SPORTS_KEY}
@@ -58,14 +58,16 @@ for category in categories:
     for league_info in data.get("response", []):
         league = league_info.get("league", {})
         country = league_info.get("country", {})
-        leagues.append({
-            "league_id": league.get("id"),
-            "name": league.get("name"),
-            "type": league.get("type"),
-            "country": country.get("name"),
-            "country_code": country.get("code"),
-            "season": SEASON,
-        })
+        leagues.append(
+            {
+                "league_id": league.get("id"),
+                "name": league.get("name"),
+                "type": league.get("type"),
+                "country": country.get("name"),
+                "country_code": country.get("code"),
+                "season": SEASON,
+            }
+        )
     with open(f"{category.lower()}_leagues_{SEASON}.json", "w", encoding="utf-8") as f:
         json.dump(leagues, f, indent=2, ensure_ascii=False)
-    print(f"Saved {len(leagues)} leagues to {category.lower()}_leagues_{SEASON}.json") 
+    print(f"Saved {len(leagues)} leagues to {category.lower()}_leagues_{SEASON}.json")

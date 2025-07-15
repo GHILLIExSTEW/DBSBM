@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 EDT = ZoneInfo("America/New_York")
 
+
 class BetService:
     def __init__(self, bot, db_manager: DatabaseManager):
         """Initialize the BetService.
@@ -96,10 +97,16 @@ class BetService:
             deleted_count = 0
             for bet in expired_bets:
                 bet_serial_int = int(bet["bet_serial"])
-                logger.debug(f"Attempting to clean up unconfirmed bet: {bet_serial_int}")
+                logger.debug(
+                    f"Attempting to clean up unconfirmed bet: {bet_serial_int}"
+                )
                 try:
-                    delete_query = "DELETE FROM bets WHERE bet_serial = %s AND confirmed = 0"
-                    rowcount, _ = await self.db_manager.execute(delete_query, (bet_serial_int,))
+                    delete_query = (
+                        "DELETE FROM bets WHERE bet_serial = %s AND confirmed = 0"
+                    )
+                    rowcount, _ = await self.db_manager.execute(
+                        delete_query, (bet_serial_int,)
+                    )
                     if rowcount is not None and rowcount > 0:
                         logger.info(
                             f"Successfully cleaned up unconfirmed bet {bet_serial_int} for user {bet['user_id']} "
@@ -111,14 +118,18 @@ class BetService:
                             f"Did not delete bet {bet_serial_int}. It might have been confirmed or deleted already."
                         )
                 except Exception as e:
-                    logger.error(f"Failed to clean up bet {bet_serial_int}: {e}", exc_info=True)
+                    logger.error(
+                        f"Failed to clean up bet {bet_serial_int}: {e}", exc_info=True
+                    )
                     continue
 
             logger.info(f"Finished cleanup. Deleted {deleted_count} unconfirmed bets.")
         except Exception as e:
             logger.error(f"Error in cleanup_unconfirmed_bets: {e}", exc_info=True)
 
-    async def confirm_bet(self, bet_serial: int, message_id: int, channel_id: int) -> bool:
+    async def confirm_bet(
+        self, bet_serial: int, message_id: int, channel_id: int
+    ) -> bool:
         """Mark a bet as confirmed and store message_id."""
         try:
             query = """
@@ -128,16 +139,21 @@ class BetService:
                     channel_id = %s
                 WHERE bet_serial = %s AND confirmed = 0
             """
-            rowcount, _ = await self.db_manager.execute(query, (message_id, channel_id, bet_serial))
+            rowcount, _ = await self.db_manager.execute(
+                query, (message_id, channel_id, bet_serial)
+            )
             if rowcount is not None and rowcount > 0:
-                logger.info(f"Bet {bet_serial} confirmed with message {message_id} in channel {channel_id}.")
+                logger.info(
+                    f"Bet {bet_serial} confirmed with message {message_id} in channel {channel_id}."
+                )
                 return True
             else:
                 logger.warning(
                     f"Failed to confirm bet {bet_serial}. Rowcount: {rowcount}. May already be confirmed or deleted."
                 )
                 existing = await self.db_manager.fetch_one(
-                    "SELECT confirmed, message_id, channel_id FROM bets WHERE bet_serial = %s", (bet_serial,)
+                    "SELECT confirmed, message_id, channel_id FROM bets WHERE bet_serial = %s",
+                    (bet_serial,),
                 )
                 if (
                     existing
@@ -162,7 +178,9 @@ class BetService:
             game_id = await self.db_manager.fetchval(query, (api_game_id,))
             return game_id
         except Exception as e:
-            logger.error(f"Error retrieving game_id for api_game_id {api_game_id}: {str(e)}")
+            logger.error(
+                f"Error retrieving game_id for api_game_id {api_game_id}: {str(e)}"
+            )
             return None
 
     async def create_straight_bet(
@@ -178,27 +196,37 @@ class BetService:
         line: str,
         api_game_id: str,
         channel_id: int,
-        confirmed: int = 0
+        confirmed: int = 0,
     ) -> int:
         """Create a straight bet record."""
-        logger.info(f"[BET INSERT] Starting bet creation with args: guild_id={guild_id}, user_id={user_id}, league={league}, bet_type={bet_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}")
+        logger.info(
+            f"[BET INSERT] Starting bet creation with args: guild_id={guild_id}, user_id={user_id}, league={league}, bet_type={bet_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}"
+        )
         try:
             internal_game_id = None
             if api_game_id and api_game_id != "manual":
                 try:
-                    logger.info(f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}")
+                    logger.info(
+                        f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}"
+                    )
                     game_exists = await self.db_manager.fetch_one(
                         "SELECT id FROM api_games WHERE api_game_id = %s",
-                        (api_game_id,)
+                        (api_game_id,),
                     )
                     if not game_exists:
-                        logger.warning(f"[BET INSERT] Game with api_game_id {api_game_id} not found in api_games table")
+                        logger.warning(
+                            f"[BET INSERT] Game with api_game_id {api_game_id} not found in api_games table"
+                        )
                         raise BetServiceError(f"Game with ID {api_game_id} not found")
-                    logger.info(f"[BET INSERT] Game found, getting/creating internal game record")
+                    logger.info(
+                        f"[BET INSERT] Game found, getting/creating internal game record"
+                    )
                     internal_game_id = await self._get_or_create_game(api_game_id)
                     logger.info(f"[BET INSERT] Internal game_id: {internal_game_id}")
                 except BetServiceError as e:
-                    logger.warning(f"[BET INSERT] Could not get/create game for api_game_id {api_game_id}: {e}")
+                    logger.warning(
+                        f"[BET INSERT] Could not get/create game for api_game_id {api_game_id}: {e}"
+                    )
                     raise
             else:
                 logger.info("[BET INSERT] Manual entry bet - setting game_id to NULL")
@@ -214,7 +242,7 @@ class BetService:
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
             logger.info(f"[BET INSERT] Prepared bet_details JSON: {bet_details_json}")
-            
+
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
@@ -251,20 +279,36 @@ class BetService:
             )
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
             rowcount, last_id = await self.db_manager.execute(query, args)
-            logger.info(f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}")
-            
-            if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
-                logger.info(f"[BET INSERT] Straight bet created successfully with bet_serial: {last_id}")
+            logger.info(
+                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
+            )
+
+            if (
+                rowcount is not None
+                and rowcount > 0
+                and last_id is not None
+                and last_id > 0
+            ):
+                logger.info(
+                    f"[BET INSERT] Straight bet created successfully with bet_serial: {last_id}"
+                )
                 # --- No longer insert into unit_records table here ---
                 return last_id
             else:
                 logger.error(f"[BET INSERT] Failed to create straight bet record.")
                 return None
         except IntegrityError as e:
-            logger.error(f"[BET INSERT] Database integrity error creating straight bet: {e}", exc_info=True)
-            raise BetServiceError(f"Failed to create bet due to database error: {str(e)}")
+            logger.error(
+                f"[BET INSERT] Database integrity error creating straight bet: {e}",
+                exc_info=True,
+            )
+            raise BetServiceError(
+                f"Failed to create bet due to database error: {str(e)}"
+            )
         except Exception as e:
-            logger.error(f"[BET INSERT] Exception during straight bet insert: {e}", exc_info=True)
+            logger.error(
+                f"[BET INSERT] Exception during straight bet insert: {e}", exc_info=True
+            )
             raise BetServiceError(f"Failed to create bet: {str(e)}")
 
     async def create_parlay_bet(
@@ -277,33 +321,45 @@ class BetService:
         channel_id: Optional[int] = None,
         game_start: Optional[datetime] = None,
         expiration_time: Optional[datetime] = None,
-        confirmed: int = 0
+        confirmed: int = 0,
     ) -> Optional[int]:
         """Create a parlay bet, populating all relevant fields based on the new schema."""
-        logger.info(f"[BET INSERT] Attempting to create parlay bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, legs_data={legs_data}, units={units}, channel_id={channel_id}, game_start={game_start}, expiration_time={expiration_time}, confirmed={confirmed}")
+        logger.info(
+            f"[BET INSERT] Attempting to create parlay bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, legs_data={legs_data}, units={units}, channel_id={channel_id}, game_start={game_start}, expiration_time={expiration_time}, confirmed={confirmed}"
+        )
         if not legs_data:
             logger.error("Cannot create parlay bet with no legs.")
             return None
         try:
             for leg in legs_data:
-                api_game_id = leg.get('api_game_id')
-                if api_game_id and api_game_id != 'Other':
+                api_game_id = leg.get("api_game_id")
+                if api_game_id and api_game_id != "Other":
                     game_exists = await self.db_manager.fetch_one(
                         "SELECT id FROM api_games WHERE api_game_id = %s",
-                        (api_game_id,)
+                        (api_game_id,),
                     )
                     if not game_exists:
-                        logger.error(f"API Game ID {api_game_id} not found in api_games table")
-                        raise BetServiceError(f"Game ID {api_game_id} not found in database")
-                    logger.debug(f"Validated API Game ID {api_game_id} exists in database")
+                        logger.error(
+                            f"API Game ID {api_game_id} not found in api_games table"
+                        )
+                        raise BetServiceError(
+                            f"Game ID {api_game_id} not found in database"
+                        )
+                    logger.debug(
+                        f"Validated API Game ID {api_game_id} exists in database"
+                    )
             total_odds = self._calculate_parlay_odds(legs_data)
             if total_odds == 0.0 and len(legs_data) > 0:
-                logger.warning(f"Calculated parlay odds are 0.0 for legs: {legs_data}. Proceeding with 0 odds.")
+                logger.warning(
+                    f"Calculated parlay odds are 0.0 for legs: {legs_data}. Proceeding with 0 odds."
+                )
             internal_bet_details_dict = {
                 "legs_info": legs_data,
                 "calculated_total_odds": total_odds,
                 "game_start_iso": game_start.isoformat() if game_start else None,
-                "expiration_time_iso": expiration_time.isoformat() if expiration_time else None,
+                "expiration_time_iso": (
+                    expiration_time.isoformat() if expiration_time else None
+                ),
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
             num_legs = len(legs_data)
@@ -335,9 +391,18 @@ class BetService:
             )
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
             rowcount, last_id = await self.db_manager.execute(query, args)
-            logger.info(f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}")
-            if rowcount is not None and rowcount > 0 and last_id is not None and last_id > 0:
-                logger.info(f"Parlay bet created successfully with bet_serial: {last_id} and {num_legs} legs.")
+            logger.info(
+                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
+            )
+            if (
+                rowcount is not None
+                and rowcount > 0
+                and last_id is not None
+                and last_id > 0
+            ):
+                logger.info(
+                    f"Parlay bet created successfully with bet_serial: {last_id} and {num_legs} legs."
+                )
                 return last_id
             else:
                 logger.error(
@@ -345,7 +410,9 @@ class BetService:
                 )
                 return None
         except Exception as e:
-            logger.error(f"[BET INSERT] Exception during parlay bet insert: {e}", exc_info=True)
+            logger.error(
+                f"[BET INSERT] Exception during parlay bet insert: {e}", exc_info=True
+            )
             return None
 
     def _calculate_parlay_odds(self, legs: List[Dict]) -> float:
@@ -358,12 +425,16 @@ class BetService:
             for leg in legs:
                 odds_val = leg.get("odds")
                 if odds_val is None:
-                    logger.warning(f"Skipping leg in parlay calculation due to missing 'odds': {leg}")
+                    logger.warning(
+                        f"Skipping leg in parlay calculation due to missing 'odds': {leg}"
+                    )
                     continue
                 try:
                     current_odds = float(odds_val)
                 except (ValueError, TypeError):
-                    logger.error(f"Invalid odds format for leg in parlay calculation: {leg}. Odds: '{odds_val}'")
+                    logger.error(
+                        f"Invalid odds format for leg in parlay calculation: {leg}. Odds: '{odds_val}'"
+                    )
                     return 0.0
 
                 if current_odds == 0:
@@ -376,14 +447,18 @@ class BetService:
                 total_decimal_odds *= decimal_leg
 
             if total_decimal_odds <= 1.0:
-                logger.warning(f"Total decimal odds for parlay is <= 1.0 ({total_decimal_odds}). Legs: {legs}")
+                logger.warning(
+                    f"Total decimal odds for parlay is <= 1.0 ({total_decimal_odds}). Legs: {legs}"
+                )
                 return 0.0
 
             if total_decimal_odds >= 2.0:
                 american_odds = (total_decimal_odds - 1.0) * 100.0
             else:
                 if total_decimal_odds == 1.0:
-                    logger.warning(f"Cannot convert parlay decimal odds of 1.0 back to American. Legs: {legs}")
+                    logger.warning(
+                        f"Cannot convert parlay decimal odds of 1.0 back to American. Legs: {legs}"
+                    )
                     return 100.0
                 american_odds = -100.0 / (total_decimal_odds - 1.0)
             return round(american_odds)
@@ -391,26 +466,39 @@ class BetService:
             logger.error(f"Error calculating parlay odds: {e}", exc_info=True)
             return 0.0
 
-    async def update_straight_bet_channel(self, bet_serial: int, channel_id: int, message_id: int):
+    async def update_straight_bet_channel(
+        self, bet_serial: int, channel_id: int, message_id: int
+    ):
         """Update the channel ID and message ID for a straight bet and mark as confirmed."""
-        logger.debug(f"Updating channel_id to {channel_id} and message_id to {message_id} for bet {bet_serial}")
+        logger.debug(
+            f"Updating channel_id to {channel_id} and message_id to {message_id} for bet {bet_serial}"
+        )
         try:
             query = """
                 UPDATE bets
                 SET channel_id = %s, message_id = %s, confirmed = 1
                 WHERE bet_serial = %s
             """
-            rowcount, _ = await self.db_manager.execute(query, (channel_id, message_id, bet_serial))
+            rowcount, _ = await self.db_manager.execute(
+                query, (channel_id, message_id, bet_serial)
+            )
             if rowcount is not None and rowcount > 0:
-                logger.debug(f"Bet {bet_serial} channel and message ID updated and confirmed.")
+                logger.debug(
+                    f"Bet {bet_serial} channel and message ID updated and confirmed."
+                )
             else:
-                logger.warning(f"Did not update channel/message for bet {bet_serial}. Rowcount: {rowcount}")
+                logger.warning(
+                    f"Did not update channel/message for bet {bet_serial}. Rowcount: {rowcount}"
+                )
         except Exception as e:
-            logger.error(f"Failed to update channel/message for bet {bet_serial}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to update channel/message for bet {bet_serial}: {e}",
+                exc_info=True,
+            )
 
     async def update_bet(self, bet_serial: int, **kwargs):
         """Update a bet's details.
-        
+
         Args:
             bet_serial: The serial number of the bet to update
             **kwargs: The fields to update and their new values
@@ -428,37 +516,52 @@ class BetService:
                 SET {set_clause}
                 WHERE bet_serial = %s
             """
-            
+
             # Add bet_serial to the end of the values tuple
             values = tuple(kwargs.values()) + (bet_serial,)
-            
+
             rowcount, _ = await self.db_manager.execute(query, values)
             if rowcount is not None and rowcount > 0:
                 logger.info(f"Successfully updated bet {bet_serial}")
                 return True
             else:
-                logger.warning(f"No rows updated for bet {bet_serial}. Rowcount: {rowcount}")
+                logger.warning(
+                    f"No rows updated for bet {bet_serial}. Rowcount: {rowcount}"
+                )
                 return False
         except Exception as e:
             logger.error(f"Failed to update bet {bet_serial}: {e}", exc_info=True)
             raise BetServiceError(f"Could not update bet {bet_serial}: {str(e)}")
 
-    async def update_parlay_bet_channel(self, bet_serial: int, channel_id: int, message_id: int):
+    async def update_parlay_bet_channel(
+        self, bet_serial: int, channel_id: int, message_id: int
+    ):
         """Update the channel ID and message ID for a parlay bet and mark as confirmed."""
-        logger.debug(f"Updating channel_id to {channel_id} and message_id to {message_id} for parlay bet {bet_serial}")
+        logger.debug(
+            f"Updating channel_id to {channel_id} and message_id to {message_id} for parlay bet {bet_serial}"
+        )
         try:
             query = """
                 UPDATE bets
                 SET channel_id = %s, message_id = %s, confirmed = 1
                 WHERE bet_serial = %s AND bet_type = 'parlay'
             """
-            rowcount, _ = await self.db_manager.execute(query, (channel_id, message_id, bet_serial))
+            rowcount, _ = await self.db_manager.execute(
+                query, (channel_id, message_id, bet_serial)
+            )
             if rowcount is not None and rowcount > 0:
-                logger.debug(f"Parlay bet {bet_serial} channel and message ID updated and confirmed.")
+                logger.debug(
+                    f"Parlay bet {bet_serial} channel and message ID updated and confirmed."
+                )
             else:
-                logger.warning(f"Did not update channel/message for parlay bet {bet_serial}. Rowcount: {rowcount}")
+                logger.warning(
+                    f"Did not update channel/message for parlay bet {bet_serial}. Rowcount: {rowcount}"
+                )
         except Exception as e:
-            logger.error(f"Failed to update channel/message for parlay bet {bet_serial}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to update channel/message for parlay bet {bet_serial}: {e}",
+                exc_info=True,
+            )
 
     async def delete_bet(self, bet_serial: int):
         """Delete a bet and its associated data from the database."""
@@ -475,7 +578,9 @@ class BetService:
                 }
                 logger.info(f"Bet {bet_serial} deleted successfully.")
             else:
-                logger.warning(f"Bet {bet_serial} not found for deletion or delete failed. Rowcount: {rowcount}")
+                logger.warning(
+                    f"Bet {bet_serial} not found for deletion or delete failed. Rowcount: {rowcount}"
+                )
                 self.pending_reactions = {
                     msg_id: data
                     for msg_id, data in self.pending_reactions.items()
@@ -492,14 +597,20 @@ class BetService:
 
         message_id = payload.message_id
         if not payload.guild_id:
-            logger.debug(f"Reaction on message {message_id} without guild_id, cannot process.")
+            logger.debug(
+                f"Reaction on message {message_id} without guild_id, cannot process."
+            )
             return
 
-        logger.debug(f"Handling reaction add for message {message_id} by user {payload.user_id} in guild {payload.guild_id}")
+        logger.debug(
+            f"Handling reaction add for message {message_id} by user {payload.user_id} in guild {payload.guild_id}"
+        )
 
         try:
             bet_lookup_query = "SELECT bet_serial, user_id, guild_id, status FROM bets WHERE message_id = %s AND guild_id = %s"
-            bet_context = await self.db_manager.fetch_one(bet_lookup_query, (message_id, payload.guild_id))
+            bet_context = await self.db_manager.fetch_one(
+                bet_lookup_query, (message_id, payload.guild_id)
+            )
 
             if not bet_context:
                 return
@@ -534,12 +645,19 @@ class BetService:
 
             if emoji_str in resolve_emoji_map:
                 member = payload.member
-                if not (payload.user_id == original_user_id or (member and member.guild_permissions.manage_messages)):
-                    logger.warning(f"User {payload.user_id} (not owner or admin) tried to resolve bet {bet_serial}.")
+                if not (
+                    payload.user_id == original_user_id
+                    or (member and member.guild_permissions.manage_messages)
+                ):
+                    logger.warning(
+                        f"User {payload.user_id} (not owner or admin) tried to resolve bet {bet_serial}."
+                    )
                     return
 
                 new_status = resolve_emoji_map[emoji_str]
-                new_result_description = f"Resolved as {new_status} by user {payload.user_id} via reaction."
+                new_result_description = (
+                    f"Resolved as {new_status} by user {payload.user_id} via reaction."
+                )
 
                 if current_bet_status not in ["pending", "live"]:
                     logger.warning(
@@ -547,17 +665,23 @@ class BetService:
                     )
                     return
 
-                logger.info(f"Attempting to resolve bet {bet_serial} as '{new_status}' by user {payload.user_id}")
+                logger.info(
+                    f"Attempting to resolve bet {bet_serial} as '{new_status}' by user {payload.user_id}"
+                )
 
                 bet_data_query = """
                     SELECT guild_id, user_id, units, odds, league, bet_type, bet_details, game_start, created_at
                     FROM bets
                     WHERE bet_serial = %s
                 """
-                bet_data = await self.db_manager.fetch_one(bet_data_query, (bet_serial,))
+                bet_data = await self.db_manager.fetch_one(
+                    bet_data_query, (bet_serial,)
+                )
 
                 if not bet_data:
-                    logger.error(f"Cannot resolve bet: Bet {bet_serial} data not found after initial context.")
+                    logger.error(
+                        f"Cannot resolve bet: Bet {bet_serial} data not found after initial context."
+                    )
                     return
 
                 update_time = datetime.now(timezone.utc)
@@ -596,11 +720,19 @@ class BetService:
                 )
 
                 if rowcount is None or rowcount == 0:
-                    logger.error(f"Failed to update status/result for bet {bet_serial} to {new_status}.")
+                    logger.error(
+                        f"Failed to update status/result for bet {bet_serial} to {new_status}."
+                    )
                     return
-                logger.info(f"Bet {bet_serial} status updated to '{new_status}', result_value to {calculated_result_value:.2f}")
+                logger.info(
+                    f"Bet {bet_serial} status updated to '{new_status}', result_value to {calculated_result_value:.2f}"
+                )
 
-                record_period_date = bet_data.get("game_start") or bet_data.get("created_at") or update_time
+                record_period_date = (
+                    bet_data.get("game_start")
+                    or bet_data.get("created_at")
+                    or update_time
+                )
                 year = record_period_date.year
                 month = record_period_date.month
 
@@ -626,7 +758,9 @@ class BetService:
                     update_time,
                 )
                 await self.db_manager.execute(unit_query, unit_params)
-                logger.info(f"Unit record updated for bet {bet_serial}. Result Value: {calculated_result_value:.2f}")
+                logger.info(
+                    f"Unit record updated for bet {bet_serial}. Result Value: {calculated_result_value:.2f}"
+                )
 
                 # Update cappers table with win/loss/push counts
                 capper_update_query = """
@@ -657,19 +791,36 @@ class BetService:
                     WHERE user_id = %s AND guild_id = %s
                 """
                 capper_params = (
-                    bet_data["user_id"], bet_data["guild_id"],  # For won count
-                    bet_data["user_id"], bet_data["guild_id"],  # For lost count  
-                    bet_data["user_id"], bet_data["guild_id"],  # For push count
-                    bet_data["user_id"], bet_data["guild_id"]   # WHERE clause
+                    bet_data["user_id"],
+                    bet_data["guild_id"],  # For won count
+                    bet_data["user_id"],
+                    bet_data["guild_id"],  # For lost count
+                    bet_data["user_id"],
+                    bet_data["guild_id"],  # For push count
+                    bet_data["user_id"],
+                    bet_data["guild_id"],  # WHERE clause
                 )
                 await self.db_manager.execute(capper_update_query, capper_params)
-                logger.info(f"Cappers table updated for user {bet_data['user_id']} in guild {bet_data['guild_id']}")
+                logger.info(
+                    f"Cappers table updated for user {bet_data['user_id']} in guild {bet_data['guild_id']}"
+                )
 
-                if hasattr(self.bot, "voice_service") and hasattr(self.bot.voice_service, "update_on_bet_resolve"):
-                    asyncio.create_task(self.bot.voice_service.update_on_bet_resolve(bet_data["guild_id"]))
-                    logger.debug(f"Triggered voice channel update for guild {bet_data['guild_id']}")
+                if hasattr(self.bot, "voice_service") and hasattr(
+                    self.bot.voice_service, "update_on_bet_resolve"
+                ):
+                    asyncio.create_task(
+                        self.bot.voice_service.update_on_bet_resolve(
+                            bet_data["guild_id"]
+                        )
+                    )
+                    logger.debug(
+                        f"Triggered voice channel update for guild {bet_data['guild_id']}"
+                    )
         except Exception as e:
-            logger.error(f"Failed to handle reaction add for message {message_id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to handle reaction add for message {message_id}: {e}",
+                exc_info=True,
+            )
 
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         """Handle a reaction removed from a bet slip message."""
@@ -679,11 +830,17 @@ class BetService:
             return
 
         message_id = payload.message_id
-        logger.debug(f"Handling reaction remove for message {message_id} by user {payload.user_id} in guild {payload.guild_id}")
+        logger.debug(
+            f"Handling reaction remove for message {message_id} by user {payload.user_id} in guild {payload.guild_id}"
+        )
 
         try:
-            bet_lookup_query = "SELECT bet_serial FROM bets WHERE message_id = %s AND guild_id = %s"
-            bet_context = await self.db_manager.fetch_one(bet_lookup_query, (message_id, payload.guild_id))
+            bet_lookup_query = (
+                "SELECT bet_serial FROM bets WHERE message_id = %s AND guild_id = %s"
+            )
+            bet_context = await self.db_manager.fetch_one(
+                bet_lookup_query, (message_id, payload.guild_id)
+            )
 
             if not bet_context:
                 return
@@ -703,7 +860,10 @@ class BetService:
             params = (bet_serial, payload.user_id, emoji_str, message_id)
             await self.db_manager.execute(query, params)
         except Exception as e:
-            logger.error(f"Failed to handle reaction remove for message {message_id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to handle reaction remove for message {message_id}: {e}",
+                exc_info=True,
+            )
 
     async def _get_or_create_game(self, api_game_id: str) -> int:
         # 1) look up in games
@@ -718,7 +878,7 @@ class BetService:
             SELECT sport, league_id, home_team_name, away_team_name, start_time, status
             FROM api_games WHERE api_game_id = %s
             """,
-            (api_game_id,)
+            (api_game_id,),
         )
         if not src:
             raise BetServiceError(f"No api_games row for {api_game_id}")
@@ -737,8 +897,10 @@ class BetService:
                 src["away_team_name"],
                 src["start_time"],
                 src["status"],
-            )
+            ),
         )
         if last_id is None:
-            raise BetServiceError(f"Failed to create game record for api_game_id {api_game_id}")
+            raise BetServiceError(
+                f"Failed to create game record for api_game_id {api_game_id}"
+            )
         return last_id

@@ -7,6 +7,7 @@ from discord import VoiceChannel, Client
 
 logger = logging.getLogger(__name__)
 
+
 class VoiceChannelUpdater:
     async def reinitialize_pending_bets(self):
         """Check the bets table for any rows with status 'pending' and reinitialize them for reaction monitoring."""
@@ -23,9 +24,12 @@ class VoiceChannelUpdater:
                 for bet in pending_bets:
                     # TODO: Replace this with your actual reinitialization logic
                     # Example: self.monitor_reactions_for_bet(bet)
-                    logger.info(f"Reinitializing reaction monitoring for pending bet: {bet}")
+                    logger.info(
+                        f"Reinitializing reaction monitoring for pending bet: {bet}"
+                    )
         except Exception as e:
             logger.error(f"Error reinitializing pending bets: {str(e)}")
+
     def __init__(self, bot: Client, db_path: str):
         self.bot = bot
         self.db_path = db_path
@@ -74,19 +78,23 @@ class VoiceChannelUpdater:
 
                 for guild in guilds:
                     guild_id, voice_channel_id, yearly_channel_id, is_paid = guild
-                    
+
                     if not is_paid:
                         continue
 
                     # Update monthly channel if configured
                     if voice_channel_id:
                         monthly_total = await self._get_monthly_total(db, guild_id)
-                        await self._update_channel_name(voice_channel_id, f"Monthly Units: {monthly_total}")
+                        await self._update_channel_name(
+                            voice_channel_id, f"Monthly Units: {monthly_total}"
+                        )
 
                     # Update yearly channel if configured
                     if yearly_channel_id:
                         yearly_total = await self._get_yearly_total(db, guild_id)
-                        await self._update_channel_name(yearly_channel_id, f"Yearly Units: {yearly_total}")
+                        await self._update_channel_name(
+                            yearly_channel_id, f"Yearly Units: {yearly_total}"
+                        )
 
         except Exception as e:
             logger.error(f"Error updating voice channels: {str(e)}")
@@ -102,7 +110,7 @@ class VoiceChannelUpdater:
                     FROM guild_settings
                     WHERE guild_id = ?
                     """,
-                    (guild_id,)
+                    (guild_id,),
                 ) as cursor:
                     guild = await cursor.fetchone()
 
@@ -114,33 +122,45 @@ class VoiceChannelUpdater:
                 # Update monthly channel if configured
                 if voice_channel_id:
                     monthly_total = await self._get_monthly_total(db, guild_id)
-                    await self._update_channel_name(voice_channel_id, f"Monthly Units: {monthly_total}")
+                    await self._update_channel_name(
+                        voice_channel_id, f"Monthly Units: {monthly_total}"
+                    )
 
                 # Update yearly channel if configured
                 if yearly_channel_id:
                     yearly_total = await self._get_yearly_total(db, guild_id)
-                    await self._update_channel_name(yearly_channel_id, f"Yearly Units: {yearly_total}")
+                    await self._update_channel_name(
+                        yearly_channel_id, f"Yearly Units: {yearly_total}"
+                    )
 
         except Exception as e:
             logger.error(f"Error updating voice channels on bet resolve: {str(e)}")
 
-    async def _get_monthly_total(self, db: aiosqlite.Connection, guild_id: int) -> float:
+    async def _get_monthly_total(
+        self, db: aiosqlite.Connection, guild_id: int
+    ) -> float:
         """Get the total units for the current month."""
         try:
             now = datetime.utcnow()
             # Debug logging for monthly total calculation
-            logger.info(f"Calculating monthly total for guild_id={guild_id}, year={now.year}, month={now.month}")
+            logger.info(
+                f"Calculating monthly total for guild_id={guild_id}, year={now.year}, month={now.month}"
+            )
             async with db.execute(
                 """
                 SELECT COALESCE(SUM(monthly_result_value), 0.0) as total
                 FROM unit_records
                 WHERE guild_id = ? AND year = ? AND month = ?
                 """,
-                (guild_id, now.year, now.month)
+                (guild_id, now.year, now.month),
             ) as cursor:
                 result = await cursor.fetchone()
-                logger.info(f"Monthly total query result for guild_id={guild_id}: {result}")
-                return result['total'] if result and result['total'] is not None else 0.0
+                logger.info(
+                    f"Monthly total query result for guild_id={guild_id}: {result}"
+                )
+                return (
+                    result["total"] if result and result["total"] is not None else 0.0
+                )
         except Exception as e:
             logger.error(f"Error getting monthly total: {str(e)}")
             return 0.0
@@ -149,17 +169,19 @@ class VoiceChannelUpdater:
         """Get the total units for the current year."""
         try:
             now = datetime.utcnow()
-            
+
             async with db.execute(
                 """
                 SELECT COALESCE(SUM(result_value), 0.0) as total
                 FROM unit_records
                 WHERE guild_id = ? AND year = ?
                 """,
-                (guild_id, now.year)
+                (guild_id, now.year),
             ) as cursor:
                 result = await cursor.fetchone()
-                return result['total'] if result and result['total'] is not None else 0.0
+                return (
+                    result["total"] if result and result["total"] is not None else 0.0
+                )
         except Exception as e:
             logger.error(f"Error getting yearly total: {str(e)}")
             return 0.0
@@ -188,7 +210,7 @@ class VoiceChannelUpdater:
 
                 for guild in guilds:
                     guild_id, voice_channel_id, yearly_channel_id, is_paid = guild
-                    
+
                     if not is_paid:
                         continue
 
@@ -199,12 +221,14 @@ class VoiceChannelUpdater:
                         SET monthly_result_value = 0
                         WHERE guild_id = ?
                         """,
-                        (guild_id,)
+                        (guild_id,),
                     )
 
                     # Update voice channel to show reset
                     if voice_channel_id:
-                        await self._update_channel_name(voice_channel_id, "Monthly Units: 0")
+                        await self._update_channel_name(
+                            voice_channel_id, "Monthly Units: 0"
+                        )
 
                 await db.commit()
         except Exception as e:
@@ -225,7 +249,7 @@ class VoiceChannelUpdater:
 
                 for guild in guilds:
                     guild_id, yearly_channel_id, is_paid = guild
-                    
+
                     if not is_paid:
                         continue
 
@@ -240,7 +264,7 @@ class VoiceChannelUpdater:
                             lifetime_units = lifetime_units + ?
                         WHERE guild_id = ?
                         """,
-                        (yearly_total, yearly_total, guild_id)
+                        (yearly_total, yearly_total, guild_id),
                     )
 
                     # Reset yearly total
@@ -250,13 +274,15 @@ class VoiceChannelUpdater:
                         SET total_result_value = 0
                         WHERE guild_id = ?
                         """,
-                        (guild_id,)
+                        (guild_id,),
                     )
 
                     # Update voice channel to show reset
                     if yearly_channel_id:
-                        await self._update_channel_name(yearly_channel_id, "Yearly Units: 0")
+                        await self._update_channel_name(
+                            yearly_channel_id, "Yearly Units: 0"
+                        )
 
                 await db.commit()
         except Exception as e:
-            logger.error(f"Error handling year end: {str(e)}") 
+            logger.error(f"Error handling year end: {str(e)}")

@@ -5,24 +5,49 @@ import difflib
 import logging
 from utils.asset_loader import asset_loader
 
+
 class PlayerPropImageGenerator:
     def __init__(self, font_dir="betting-bot/assets/fonts", guild_id=None):
         self.font_dir = font_dir
         self.guild_id = guild_id
-        self.font_regular = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 28)
-        self.font_bold = ImageFont.truetype(os.path.join(font_dir, "Roboto-Bold.ttf"), 36)
-        self.font_small = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 22)
-        self.font_mini = ImageFont.truetype(os.path.join(font_dir, "Roboto-Regular.ttf"), 18)
-        self.font_huge = ImageFont.truetype(os.path.join(font_dir, "Roboto-Bold.ttf"), 48)
+        self.font_regular = ImageFont.truetype(
+            os.path.join(font_dir, "Roboto-Regular.ttf"), 28
+        )
+        self.font_bold = ImageFont.truetype(
+            os.path.join(font_dir, "Roboto-Bold.ttf"), 36
+        )
+        self.font_small = ImageFont.truetype(
+            os.path.join(font_dir, "Roboto-Regular.ttf"), 22
+        )
+        self.font_mini = ImageFont.truetype(
+            os.path.join(font_dir, "Roboto-Regular.ttf"), 18
+        )
+        self.font_huge = ImageFont.truetype(
+            os.path.join(font_dir, "Roboto-Bold.ttf"), 48
+        )
 
-    def draw_player_prop_section(self, img, draw, image_width, display_vs, home_logo, away_logo, player_name, player_image, player_team, home_team, away_team, regenerate_logo):
+    def draw_player_prop_section(
+        self,
+        img,
+        draw,
+        image_width,
+        display_vs,
+        home_logo,
+        away_logo,
+        player_name,
+        player_image,
+        player_team,
+        home_team,
+        away_team,
+        regenerate_logo,
+    ):
         y_base = 85
         logo_size = (120, 120)
         player_img_max_size = (90, 90)  # Dynamically constrain player image
         text_y_offset = logo_size[1] + 16  # Adjusted for better spacing
         team_name_font = self.font_m_18
         player_name_font = self.font_b_24
-        text_color = 'white'
+        text_color = "white"
         center_x = image_width // 2
         section_width = image_width // 2 - self.padding * 1.5
         home_section_center_x = self.padding + section_width // 2
@@ -38,13 +63,13 @@ class PlayerPropImageGenerator:
                 right_name = home_team
         else:
             # fallback to display_vs split
-            if ' vs ' in display_vs.lower():
-                parts = display_vs.split(' vs ')
+            if " vs " in display_vs.lower():
+                parts = display_vs.split(" vs ")
                 left_name = parts[0].strip()
                 right_name = parts[1].strip()
             else:
                 left_name = display_vs.strip()
-                right_name = ''
+                right_name = ""
 
         y_base_images = y_base
         y_base += logo_size[1] + 16  # Adjusted for better spacing
@@ -53,14 +78,26 @@ class PlayerPropImageGenerator:
         left_name_w, left_name_h = draw.textsize(left_name, font=team_name_font)
         left_name_x = home_section_center_x - left_name_w // 2
         left_name_y = y_base_images - left_name_h - 8
-        draw.text((left_name_x, left_name_y), left_name, font=team_name_font, fill=text_color, anchor="lt")
+        draw.text(
+            (left_name_x, left_name_y),
+            left_name,
+            font=team_name_font,
+            fill=text_color,
+            anchor="lt",
+        )
 
         # Draw right (opponent) name above right image
         if right_name:
             right_name_w, right_name_h = draw.textsize(right_name, font=team_name_font)
             right_name_x = player_section_center_x - right_name_w // 2
             right_name_y = y_base_images - right_name_h - 8
-            draw.text((right_name_x, right_name_y), right_name, font=team_name_font, fill=text_color, anchor="lt")
+            draw.text(
+                (right_name_x, right_name_y),
+                right_name,
+                font=team_name_font,
+                fill=text_color,
+                anchor="lt",
+            )
 
         # Draw player's team logo on the left
         if regenerate_logo:
@@ -76,9 +113,15 @@ class PlayerPropImageGenerator:
                 logo_to_draw = home_logo
             if logo_to_draw:
                 try:
-                    home_logo_resized = logo_to_draw.resize(logo_size, Image.Resampling.LANCZOS)
+                    home_logo_resized = logo_to_draw.resize(
+                        logo_size, Image.Resampling.LANCZOS
+                    )
                     home_logo_x = home_section_center_x - logo_size[0] // 2
-                    img.paste(home_logo_resized, (int(home_logo_x), int(y_base_images)), home_logo_resized)
+                    img.paste(
+                        home_logo_resized,
+                        (int(home_logo_x), int(y_base_images)),
+                        home_logo_resized,
+                    )
                 except Exception as e:
                     logger.error(f"Error pasting team logo: {e}")
 
@@ -86,18 +129,30 @@ class PlayerPropImageGenerator:
         if player_image:
             try:
                 player_image_copy = player_image.copy()
-                player_image_copy.thumbnail(player_img_max_size, Image.Resampling.LANCZOS)
+                player_image_copy.thumbnail(
+                    player_img_max_size, Image.Resampling.LANCZOS
+                )
                 player_img_w, player_img_h = player_image_copy.size
                 player_image_x = player_section_center_x - player_img_w // 2
                 player_image_y = int(y_base_images + (logo_size[1] - player_img_h) // 2)
-                img.paste(player_image_copy, (int(player_image_x), int(player_image_y)), player_image_copy)
+                img.paste(
+                    player_image_copy,
+                    (int(player_image_x), int(player_image_y)),
+                    player_image_copy,
+                )
             except Exception as e:
                 logger.error(f"Error pasting player image: {e}")
 
         # Draw player name below the images (centered)
         player_name_w, player_name_h = draw.textsize(player_name, font=player_name_font)
         player_name_x = center_x - player_name_w // 2
-        draw.text((player_name_x, y_base + text_y_offset), player_name, font=player_name_font, fill=text_color, anchor="lt")
+        draw.text(
+            (player_name_x, y_base + text_y_offset),
+            player_name,
+            font=player_name_font,
+            fill=text_color,
+            anchor="lt",
+        )
 
         return y_base + text_y_offset + 20  # Return y position for next section
 
@@ -106,14 +161,30 @@ class PlayerPropImageGenerator:
         return asset_loader.load_team_logo(team_name, league, guild_id)
 
     @staticmethod
-    def _load_player_image(player_name: str, team_name: str, league: str, guild_id: str = None):
+    def _load_player_image(
+        player_name: str, team_name: str, league: str, guild_id: str = None
+    ):
         return asset_loader.load_player_image(player_name, team_name, league, guild_id)
 
     @staticmethod
-    def generate_player_prop_bet_image(player_name, team_name, league, line, units, output_path=None, bet_id=None, timestamp=None, guild_id=None, odds=None, units_display_mode='auto', display_as_risk=None):
+    def generate_player_prop_bet_image(
+        player_name,
+        team_name,
+        league,
+        line,
+        units,
+        output_path=None,
+        bet_id=None,
+        timestamp=None,
+        guild_id=None,
+        odds=None,
+        units_display_mode="auto",
+        display_as_risk=None,
+    ):
         """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
         from PIL import Image, ImageDraw, ImageFont
         import os
+
         # Layout and font sizes match game line bet slip
         image_width, image_height = 600, 400
         bg_color = "#232733"
@@ -129,12 +200,18 @@ class PlayerPropImageGenerator:
         lock_icon_path = "betting-bot/static/lock_icon.png"
         font_dir = "betting-bot/assets/fonts"
         font_bold = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size)
-        font_bold_team = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", team_font_size)
-        font_bold_player = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", player_font_size)
+        font_bold_team = ImageFont.truetype(
+            f"{font_dir}/Roboto-Bold.ttf", team_font_size
+        )
+        font_bold_player = ImageFont.truetype(
+            f"{font_dir}/Roboto-Bold.ttf", player_font_size
+        )
         font_line = ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", line_font_size)
         font_odds = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size)
         font_risk = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size)
-        font_footer = ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", footer_font_size)
+        font_footer = ImageFont.truetype(
+            f"{font_dir}/Roboto-Regular.ttf", footer_font_size
+        )
 
         image = Image.new("RGB", (image_width, image_height), bg_color)
         draw = ImageDraw.Draw(image)
@@ -144,10 +221,13 @@ class PlayerPropImageGenerator:
         league_upper = league.upper()
         league_lower = league.lower()
         from config.asset_paths import get_sport_category_for_path
+
         sport_category = get_sport_category_for_path(league_upper)
         league_logo_path = f"betting-bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.png"
         try:
-            league_logo = Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
+            league_logo = (
+                Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
+            )
         except Exception:
             league_logo = None
         header_text = f"{league_upper} - Player Prop"
@@ -168,7 +248,9 @@ class PlayerPropImageGenerator:
         else:
             text_x = block_x
             text_y = block_y
-        draw.text((text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt")
+        draw.text(
+            (text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt"
+        )
 
         # Teams/Player Section
         y_base = 85
@@ -178,40 +260,68 @@ class PlayerPropImageGenerator:
         center_x = image_width // 2
 
         # Team logo (left)
-        team_logo = PlayerPropImageGenerator._load_team_logo(team_name, league, guild_id)
+        team_logo = PlayerPropImageGenerator._load_team_logo(
+            team_name, league, guild_id
+        )
         if team_logo:
-            team_logo_resized = team_logo.convert('RGBA').resize(logo_size)
+            team_logo_resized = team_logo.convert("RGBA").resize(logo_size)
             team_logo_x = int(team_section_center_x - logo_size[0] // 2)
             image.paste(team_logo_resized, (team_logo_x, y_base), team_logo_resized)
 
         # Player image (right)
-        player_image, display_name = PlayerPropImageGenerator._load_player_image(player_name, team_name, league, guild_id)
+        player_image, display_name = PlayerPropImageGenerator._load_player_image(
+            player_name, team_name, league, guild_id
+        )
         if player_image:
-            player_image_resized = player_image.convert('RGBA').resize(logo_size)
+            player_image_resized = player_image.convert("RGBA").resize(logo_size)
             player_image_x = int(player_section_center_x - logo_size[0] // 2)
-            image.paste(player_image_resized, (player_image_x, y_base), player_image_resized)
+            image.paste(
+                player_image_resized, (player_image_x, y_base), player_image_resized
+            )
 
         # Team name (left, white)
         team_name_w, _ = font_bold_team.getbbox(team_name)[2:]
         team_name_x = team_section_center_x - team_name_w // 2
         team_name_y = y_base + logo_size[1] + 8
-        draw.text((team_name_x, team_name_y), team_name, font=font_bold_team, fill="white", anchor="lt")
+        draw.text(
+            (team_name_x, team_name_y),
+            team_name,
+            font=font_bold_team,
+            fill="white",
+            anchor="lt",
+        )
 
         # Player name (right, white)
         player_name_w, _ = font_bold_player.getbbox(display_name)[2:]
         player_name_x = player_section_center_x - player_name_w // 2
         player_name_y = y_base + logo_size[1] + 8
-        draw.text((player_name_x, player_name_y), display_name, font=font_bold_player, fill="white", anchor="lt")
+        draw.text(
+            (player_name_x, player_name_y),
+            display_name,
+            font=font_bold_player,
+            fill="white",
+            anchor="lt",
+        )
 
         # Line (centered below)
         line_text = str(line)
         line_w, line_h = font_line.getbbox(line_text)[2:]
         line_y = team_name_y + 32
-        draw.text(((image_width - line_w) // 2, line_y), line_text, font=font_line, fill="white", anchor="lt")
+        draw.text(
+            ((image_width - line_w) // 2, line_y),
+            line_text,
+            font=font_line,
+            fill="white",
+            anchor="lt",
+        )
 
         # Separator line above odds
         sep_above_odds_y = line_y + line_h + 18
-        draw.line([(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)], fill="#aaaaaa", width=1)
+        draw.line(
+            [(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)],
+            fill="#aaaaaa",
+            width=1,
+        )
 
         # Odds (displayed between separator and units line)
         odds_val = None
@@ -219,27 +329,45 @@ class PlayerPropImageGenerator:
         if odds is not None:
             try:
                 odds_val = float(odds)
-                odds_text = f"{int(odds_val):+d}" if odds_val > 0 else f"{int(odds_val):d}"
+                odds_text = (
+                    f"{int(odds_val):+d}" if odds_val > 0 else f"{int(odds_val):d}"
+                )
             except Exception:
                 odds_text = ""
         odds_w, odds_h = font_odds.getbbox(odds_text)[2:] if odds_text else (0, 0)
         odds_y = sep_above_odds_y + 24
         if odds_text:
-            draw.text(((image_width - odds_w) // 2, odds_y), odds_text, font=font_odds, fill="#FFD700", anchor="lt")
+            draw.text(
+                ((image_width - odds_w) // 2, odds_y),
+                odds_text,
+                font=font_odds,
+                fill="#FFD700",
+                anchor="lt",
+            )
 
         # Risk/Units (yellow, lock icons) - move below odds
-        from utils.bet_utils import determine_risk_win_display_auto, calculate_profit_from_odds, format_units_display
-        
-        profit = calculate_profit_from_odds(odds_val, units) if odds_val is not None else 0.0
+        from utils.bet_utils import (
+            determine_risk_win_display_auto,
+            calculate_profit_from_odds,
+            format_units_display,
+        )
+
+        profit = (
+            calculate_profit_from_odds(odds_val, units) if odds_val is not None else 0.0
+        )
         unit_label = "Unit" if units <= 1 else "Units"
-        
-        if units_display_mode == 'manual' and display_as_risk is not None:
+
+        if units_display_mode == "manual" and display_as_risk is not None:
             payout_text = format_units_display(units, display_as_risk, unit_label)
         else:
             # Auto mode: intelligent determination based on odds and profit ratio
-            if units_display_mode == 'auto':
-                display_as_risk_auto = determine_risk_win_display_auto(odds_val or 0, units, profit)
-                payout_text = format_units_display(units, display_as_risk_auto, unit_label)
+            if units_display_mode == "auto":
+                display_as_risk_auto = determine_risk_win_display_auto(
+                    odds_val or 0, units, profit
+                )
+                payout_text = format_units_display(
+                    units, display_as_risk_auto, unit_label
+                )
             else:
                 # Fallback to old logic for backward compatibility
                 if profit < 1.0:
@@ -254,11 +382,29 @@ class PlayerPropImageGenerator:
         except Exception:
             lock_icon = None
         if lock_icon:
-            image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon)
-            draw.text(((image_width - payout_w) // 2, payout_y), payout_text, font=font_risk, fill="#FFD700", anchor="lt")
-            image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), lock_icon)
+            image.paste(
+                lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon
+            )
+            draw.text(
+                ((image_width - payout_w) // 2, payout_y),
+                payout_text,
+                font=font_risk,
+                fill="#FFD700",
+                anchor="lt",
+            )
+            image.paste(
+                lock_icon,
+                ((image_width - payout_w) // 2 + payout_w + 8, payout_y),
+                lock_icon,
+            )
         else:
-            draw.text(((image_width - payout_w) // 2, payout_y), payout_text, font=font_risk, fill="#FFD700", anchor="lt")
+            draw.text(
+                ((image_width - payout_w) // 2, payout_y),
+                payout_text,
+                font=font_risk,
+                fill="#FFD700",
+                anchor="lt",
+            )
 
         # Footer (bet id and timestamp)
         footer_padding = 12
@@ -276,7 +422,12 @@ class PlayerPropImageGenerator:
         # Draw timestamp bottom right
         ts_bbox = font_footer.getbbox(timestamp_text)
         ts_width = ts_bbox[2] - ts_bbox[0]
-        draw.text((image_width - padding - ts_width, footer_y), timestamp_text, font=font_footer, fill="#888888")
+        draw.text(
+            (image_width - padding - ts_width, footer_y),
+            timestamp_text,
+            font=font_footer,
+            fill="#888888",
+        )
 
         # Save or return as bytes
         if output_path:
@@ -284,6 +435,7 @@ class PlayerPropImageGenerator:
             return None
         else:
             import io
+
             buffer = io.BytesIO()
             image.save(buffer, format="PNG")
             buffer.seek(0)

@@ -1,8 +1,9 @@
 import json
 
+
 def create_nba_teams_final():
     """Create the complete NBA teams JSON file with proper formatting"""
-    
+
     # Create the NBA teams data structure
     nba_teams = {
         "get": "teams/",
@@ -20,23 +21,11 @@ def create_nba_teams_final():
                 "allStar": False,
                 "nbaFranchise": True,
                 "leagues": {
-                    "standard": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    },
-                    "vegas": {
-                        "conference": "summer",
-                        "division": None
-                    },
-                    "utah": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    },
-                    "sacramento": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    }
-                }
+                    "standard": {"conference": "East", "division": "Southeast"},
+                    "vegas": {"conference": "summer", "division": None},
+                    "utah": {"conference": "East", "division": "Southeast"},
+                    "sacramento": {"conference": "East", "division": "Southeast"},
+                },
             },
             {
                 "id": 2,
@@ -48,23 +37,11 @@ def create_nba_teams_final():
                 "allStar": False,
                 "nbaFranchise": True,
                 "leagues": {
-                    "standard": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    },
-                    "vegas": {
-                        "conference": "summer",
-                        "division": None
-                    },
-                    "utah": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    },
-                    "sacramento": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    }
-                }
+                    "standard": {"conference": "East", "division": "Atlantic"},
+                    "vegas": {"conference": "summer", "division": None},
+                    "utah": {"conference": "East", "division": "Atlantic"},
+                    "sacramento": {"conference": "East", "division": "Atlantic"},
+                },
             },
             {
                 "id": 4,
@@ -76,23 +53,11 @@ def create_nba_teams_final():
                 "allStar": False,
                 "nbaFranchise": True,
                 "leagues": {
-                    "standard": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    },
-                    "vegas": {
-                        "conference": "summer",
-                        "division": None
-                    },
-                    "utah": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    },
-                    "sacramento": {
-                        "conference": "East",
-                        "division": "Atlantic"
-                    }
-                }
+                    "standard": {"conference": "East", "division": "Atlantic"},
+                    "vegas": {"conference": "summer", "division": None},
+                    "utah": {"conference": "East", "division": "Atlantic"},
+                    "sacramento": {"conference": "East", "division": "Atlantic"},
+                },
             },
             {
                 "id": 5,
@@ -104,23 +69,11 @@ def create_nba_teams_final():
                 "allStar": False,
                 "nbaFranchise": True,
                 "leagues": {
-                    "standard": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    },
-                    "vegas": {
-                        "conference": "summer",
-                        "division": None
-                    },
-                    "utah": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    },
-                    "sacramento": {
-                        "conference": "East",
-                        "division": "Southeast"
-                    }
-                }
+                    "standard": {"conference": "East", "division": "Southeast"},
+                    "vegas": {"conference": "summer", "division": None},
+                    "utah": {"conference": "East", "division": "Southeast"},
+                    "sacramento": {"conference": "East", "division": "Southeast"},
+                },
             },
             {
                 "id": 6,
@@ -132,34 +85,25 @@ def create_nba_teams_final():
                 "allStar": False,
                 "nbaFranchise": True,
                 "leagues": {
-                    "standard": {
-                        "conference": "East",
-                        "division": "Central"
-                    },
-                    "vegas": {
-                        "conference": "summer",
-                        "division": None
-                    },
-                    "utah": {
-                        "conference": "East",
-                        "division": "Central"
-                    },
-                    "sacramento": {
-                        "conference": "East",
-                        "division": "Central"
-                    }
-                }
-            }
-        ]
+                    "standard": {"conference": "East", "division": "Central"},
+                    "vegas": {"conference": "summer", "division": None},
+                    "utah": {"conference": "East", "division": "Central"},
+                    "sacramento": {"conference": "East", "division": "Central"},
+                },
+            },
+        ],
     }
-    
+
     # Write the properly formatted JSON
-    with open('betting-bot/data/basketball_nba_teams.json', 'w', encoding='utf-8') as f:
+    with open("betting-bot/data/basketball_nba_teams.json", "w", encoding="utf-8") as f:
         json.dump(nba_teams, f, indent=2, ensure_ascii=False)
-    
-    print(f"Successfully created NBA teams JSON with {len(nba_teams['response'])} teams!")
+
+    print(
+        f"Successfully created NBA teams JSON with {len(nba_teams['response'])} teams!"
+    )
     print("File saved as: betting-bot/data/basketball_nba_teams.json")
     print("You can now add the remaining teams following this exact format.")
 
+
 if __name__ == "__main__":
-    create_nba_teams_final() 
+    create_nba_teams_final()

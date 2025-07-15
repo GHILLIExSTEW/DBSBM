@@ -11,4 +11,4 @@ setup(
         "aiosqlite",
     ],
     python_requires=">=3.8",
-) 
+)

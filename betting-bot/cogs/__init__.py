@@ -1,1 +1,1 @@
-"""Cogs package for Discord bot commands.""" 
+"""Cogs package for Discord bot commands."""

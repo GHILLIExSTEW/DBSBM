@@ -15,27 +15,35 @@ import pytz
 
 # Load environment variables
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
+API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY not found in .env file")
 
 # Absolute imports
 from config.api_settings import (
-    API_ENABLED, API_HOSTS, API_TIMEOUT,
-    API_RETRY_ATTEMPTS, API_RETRY_DELAY
+    API_ENABLED,
+    API_HOSTS,
+    API_TIMEOUT,
+    API_RETRY_ATTEMPTS,
+    API_RETRY_DELAY,
 )
 from utils.errors import (
-    GameServiceError, APIError, GameDataError, LeagueNotFoundError,
-    ScheduleError, ConfigurationError
+    GameServiceError,
+    APIError,
+    GameDataError,
+    LeagueNotFoundError,
+    ScheduleError,
+    ConfigurationError,
 )
 from api.sports_api import SportsAPI
 from data.cache_manager import CacheManager
 from services.data_sync_service import DataSyncService
 
 # Load environment variables for RUN_API_FETCH_ON_START
-RUN_API_FETCH_ON_START = os.getenv('RUN_API_FETCH_ON_START', 'false').lower() == 'true'
+RUN_API_FETCH_ON_START = os.getenv("RUN_API_FETCH_ON_START", "false").lower() == "true"
 
 logger = logging.getLogger(__name__)
+
 
 class GameService:
     def __init__(self, sports_api, db_manager):
@@ -56,7 +64,9 @@ class GameService:
         try:
             self.running = True
             # No periodic sync task; fetcher.py handles game syncing
-            self.logger.info("GameService started successfully, relying on fetcher.py for game syncing")
+            self.logger.info(
+                "GameService started successfully, relying on fetcher.py for game syncing"
+            )
             return True
         except Exception as e:
             self.logger.error(f"Error starting GameService: {e}")
@@ -89,8 +99,10 @@ class GameService:
 
     async def fetch_and_save_daily_games(self):
         """Fetch and save daily games for all leagues (deprecated; use fetcher.py)."""
-        self.logger.warning("fetch_and_save_daily_games called; this method is deprecated. Use fetcher.py for game syncing.")
-        return {'total_games_saved': 0, 'errors': ['Method deprecated; use fetcher.py']}
+        self.logger.warning(
+            "fetch_and_save_daily_games called; this method is deprecated. Use fetcher.py for game syncing."
+        )
+        return {"total_games_saved": 0, "errors": ["Method deprecated; use fetcher.py"]}
 
     async def get_game_details(self, league: str, game_id: str) -> Optional[Dict]:
         """Get details for a specific game."""
@@ -129,7 +141,14 @@ class GameService:
             logger.error(f"Error getting team logo: {str(e)}")
             return None
 
-    async def get_league_schedule(self, sport: str, league_id: str, start_date: datetime, end_date: datetime, season: int = None) -> List[Dict]:
+    async def get_league_schedule(
+        self,
+        sport: str,
+        league_id: str,
+        start_date: datetime,
+        end_date: datetime,
+        season: int = None,
+    ) -> List[Dict]:
         """Get schedule for a league between start_date and end_date."""
         try:
             endpoint_map = {
@@ -142,33 +161,41 @@ class GameService:
                 "american-football": "https://v1.american-football.api-sports.io/games",
                 "nfl": "https://v1.american-football.api-sports.io/games",
                 "hockey": "https://v1.hockey.api-sports.io/games",
-                "nhl": "https://v1.hockey.api-sports.io/games"
+                "nhl": "https://v1.hockey.api-sports.io/games",
             }
-            
+
             endpoint = endpoint_map.get(sport.lower())
             if not endpoint:
                 logger.error(f"Unsupported sport: {sport}")
                 return []
 
-            headers = {'x-apisports-key': API_KEY}
+            headers = {"x-apisports-key": API_KEY}
             params = {
-                'league': str(league_id),
-                'season': str(season) if season else str(datetime.now(timezone.utc).year),
-                'from': start_date.strftime('%Y-%m-%d'),
-                'to': end_date.strftime('%Y-%m-%d')
+                "league": str(league_id),
+                "season": (
+                    str(season) if season else str(datetime.now(timezone.utc).year)
+                ),
+                "from": start_date.strftime("%Y-%m-%d"),
+                "to": end_date.strftime("%Y-%m-%d"),
             }
 
             logger.info(f"Querying API: {endpoint} with params: {params}")
             async with aiohttp.ClientSession() as session:
-                async with session.get(endpoint, headers=headers, params=params) as resp:
+                async with session.get(
+                    endpoint, headers=headers, params=params
+                ) as resp:
                     if resp.status != 200:
                         error_text = await resp.text()
-                        logger.error(f"API request failed with status {resp.status}: {error_text}")
+                        logger.error(
+                            f"API request failed with status {resp.status}: {error_text}"
+                        )
                         return []
                     response_data = await resp.json()
 
-            games = response_data.get('response', [])
-            logger.info(f"Found {len(games)} games for {sport} league {league_id} season {season}")
+            games = response_data.get("response", [])
+            logger.info(
+                f"Found {len(games)} games for {sport} league {league_id} season {season}"
+            )
             return games
 
         except Exception as e:

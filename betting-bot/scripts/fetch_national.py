@@ -8,6 +8,7 @@ SEASON = 2025
 API_URL = f"https://v1.baseball.api-sports.io/games?season={SEASON}&team={TEAM_ID}"
 HEADERS = {"x-apisports-key": API_KEY}
 
+
 def download_image(url, save_path):
     try:
         resp = requests.get(url, timeout=10)
@@ -20,6 +21,7 @@ def download_image(url, save_path):
             print(f"Failed to download {url}: {resp.status_code}")
     except Exception as e:
         print(f"Error downloading {url}: {e}")
+
 
 def main():
     resp = requests.get(API_URL, headers=HEADERS)
@@ -42,6 +44,7 @@ def main():
                 team_dir = f"betting-bot/static/logos/teams/{SPORT}/"
                 team_path = os.path.join(team_dir, f"{team_name}.png")
                 download_image(team_logo, team_path)
+
 
 if __name__ == "__main__":
     main()

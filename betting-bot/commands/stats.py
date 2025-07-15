@@ -4,14 +4,14 @@
 
 import discord
 from discord import app_commands, Interaction, SelectOption, File
-from discord.ext import commands # Import commands for Cog
+from discord.ext import commands  # Import commands for Cog
 from discord.ui import View, Select
 import logging
 import os
-from io import BytesIO # Needed for sending PIL image
-from typing import Optional # Add Optional type import
+from io import BytesIO  # Needed for sending PIL image
+from typing import Optional  # Add Optional type import
 from .admin import require_registered_guild
-from PIL import Image # Added for PIL Image handling
+from PIL import Image  # Added for PIL Image handling
 
 # Use relative imports
 try:
@@ -19,35 +19,40 @@ try:
     # Services will be accessed via self.bot.<service_name>
     # from ..services.analytics_service import AnalyticsService # Not needed if accessed via bot
     from ..utils.stats_image_generator import StatsImageGenerator
+
     # Import db_manager only for type hint if needed by View
     # from ..data.db_manager import DatabaseManager
 except ImportError:
     # Fallback imports
     from services.analytics_service import AnalyticsService
     from utils.stats_image_generator import StatsImageGenerator
+
     # from data.db_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
 # --- UI Components for Stats Command ---
 
+
 # Optional: Define ChannelSelect here if needed by StatsView for sending image
 class ChannelSelect(Select):
     def __init__(self, channels: list, parent_view):
-        self.parent_view = parent_view # Store reference to parent StatsView
+        self.parent_view = parent_view  # Store reference to parent StatsView
         options = [
             SelectOption(
                 label=f"#{channel.name}",
                 value=str(channel.id),
-                description=f"ID: {channel.id}"[:100]  # Ensure description length limit
+                description=f"ID: {channel.id}"[
+                    :100
+                ],  # Ensure description length limit
             )
-            for channel in channels[:25] # Limit options
+            for channel in channels[:25]  # Limit options
         ]
         super().__init__(
             placeholder="Select a channel to send stats image to...",
             options=options,
             min_values=1,
-            max_values=1
+            max_values=1,
         )
 
     async def callback(self, interaction: Interaction):
@@ -58,31 +63,41 @@ class ChannelSelect(Select):
             channel_id = int(self.values[0])
             channel = interaction.guild.get_channel(channel_id)
             if not channel or not isinstance(channel, discord.TextChannel):
-                 await interaction.followup.send("❌ Invalid channel selected.", ephemeral=True)
-                 return
+                await interaction.followup.send(
+                    "❌ Invalid channel selected.", ephemeral=True
+                )
+                return
 
             # Get the stats data and context from the parent view
             stats_data = self.parent_view.stats_data
             is_server = self.parent_view.is_server
             selected_user_id = self.parent_view.selected_user_id
-            guild = interaction.guild # Get guild object
+            guild = interaction.guild  # Get guild object
 
             if not stats_data:
-                 await interaction.followup.send("❌ Stats data not found. Please select a capper/server first.", ephemeral=True)
-                 return
+                await interaction.followup.send(
+                    "❌ Stats data not found. Please select a capper/server first.",
+                    ephemeral=True,
+                )
+                return
 
             # Generate the stats image
-            image_generator = StatsImageGenerator() # Assumes StatsImageGenerator doesn't need bot/db
+            image_generator = (
+                StatsImageGenerator()
+            )  # Assumes StatsImageGenerator doesn't need bot/db
             if is_server:
-                stats_data['guild_id'] = str(interaction.guild_id)
+                stats_data["guild_id"] = str(interaction.guild_id)
                 img = image_generator.generate_guild_stats_image(stats_data)
             else:
                 # Fetch username and profile_image_url for the capper
                 # For now, use user_id as username if not available
                 username = self.parent_view.selected_username
                 profile_image_url = self.parent_view.selected_profile_image_url
-                img = await image_generator.generate_capper_stats_image(stats_data, username, profile_image_url)
+                img = await image_generator.generate_capper_stats_image(
+                    stats_data, username, profile_image_url
+                )
             from io import BytesIO
+
             img_buffer = BytesIO()
             img.save(img_buffer, format="PNG")
             img_buffer.seek(0)
@@ -93,14 +108,13 @@ class ChannelSelect(Select):
                 # img_buffer.seek(0) # Already reset above
                 await channel.send(file=file)
                 await interaction.followup.send(
-                    f"✅ Statistics image sent to {channel.mention}",
-                    ephemeral=True
+                    f"✅ Statistics image sent to {channel.mention}", ephemeral=True
                 )
             else:
-                 # Handle image generation failure
-                 await interaction.followup.send(
-                      "❌ Failed to generate statistics image.", ephemeral=True
-                 )
+                # Handle image generation failure
+                await interaction.followup.send(
+                    "❌ Failed to generate statistics image.", ephemeral=True
+                )
 
             # Disable the select after use
             self.disabled = True
@@ -112,20 +126,21 @@ class ChannelSelect(Select):
             logger.exception(f"Error sending stats to channel: {e}")
             await interaction.followup.send(
                 "❌ Failed to send statistics image. Check logs for details.",
-                ephemeral=True
+                ephemeral=True,
             )
         finally:
             # Re-enable the select? Or maybe just remove the view
             # This part depends on desired UX
-             pass
+            pass
+
 
 class StatsView(View):
     def __init__(self, bot: commands.Bot, db_manager, interaction: Interaction):
-        super().__init__(timeout=300) # 5 minute timeout
+        super().__init__(timeout=300)  # 5 minute timeout
         self.bot = bot
-        self.db = db_manager # Use the shared db_manager
-        self.analytics_service = bot.analytics_service # Access via bot
-        self.original_interaction = interaction # Store original interaction
+        self.db = db_manager  # Use the shared db_manager
+        self.analytics_service = bot.analytics_service  # Access via bot
+        self.original_interaction = interaction  # Store original interaction
         self.stats_data = None
         self.is_server = False
         self.selected_user_id = None
@@ -133,23 +148,31 @@ class StatsView(View):
         self.selected_profile_image_url = None  # Store selected profile image path/url
         # Placeholder for the select component - will be added by populate_cappers
         self.capper_select: Optional[Select] = None
-        self.channel_select: Optional[ChannelSelect] = None # To hold the channel select later
+        self.channel_select: Optional[ChannelSelect] = (
+            None  # To hold the channel select later
+        )
 
-    async def update_message(self, interaction: Optional[Interaction] = None, content: Optional[str] = None):
-         """Helper to edit the original interaction message."""
-         target_interaction = interaction or self.original_interaction
-         if target_interaction and not target_interaction.response.is_done():
-             # This should not happen if called after initial response/deferral
-             logger.warning("Attempted to edit message before initial response.")
-             return
-         try:
-             # Default content if none provided
-             message_content = content or self.message_content or "Processing..."
-             await target_interaction.edit_original_response(content=message_content, view=self)
-         except discord.NotFound:
-              logger.warning("Original interaction message for StatsView not found (timed out or deleted).")
-         except Exception as e:
-              logger.error(f"Failed to edit original StatsView message: {e}")
+    async def update_message(
+        self, interaction: Optional[Interaction] = None, content: Optional[str] = None
+    ):
+        """Helper to edit the original interaction message."""
+        target_interaction = interaction or self.original_interaction
+        if target_interaction and not target_interaction.response.is_done():
+            # This should not happen if called after initial response/deferral
+            logger.warning("Attempted to edit message before initial response.")
+            return
+        try:
+            # Default content if none provided
+            message_content = content or self.message_content or "Processing..."
+            await target_interaction.edit_original_response(
+                content=message_content, view=self
+            )
+        except discord.NotFound:
+            logger.warning(
+                "Original interaction message for StatsView not found (timed out or deleted)."
+            )
+        except Exception as e:
+            logger.error(f"Failed to edit original StatsView message: {e}")
 
     async def populate_cappers(self):
         """Populate the select menu with cappers from the guild."""
@@ -159,7 +182,7 @@ class StatsView(View):
                 """
                 SELECT user_id FROM cappers WHERE guild_id = %s
                 """,
-                [self.original_interaction.guild_id]
+                [self.original_interaction.guild_id],
             )
 
             options = []
@@ -168,71 +191,93 @@ class StatsView(View):
                 SelectOption(
                     label="📊 Server Stats",
                     value="server",
-                    description="View overall server statistics"
+                    description="View overall server statistics",
                 )
             )
 
             # Add cappers
             fetched_users = 0
             for capper in cappers:
-                 if fetched_users >= 24: break # Limit options in Select menu (25 total max)
-                 user = self.original_interaction.guild.get_member(capper['user_id']) # Try cache first
-                 if not user: # Fetch if not in cache
-                      try: user = await self.original_interaction.guild.fetch_member(capper['user_id'])
-                      except discord.NotFound: continue # Skip if member left
-                      except discord.Forbidden: continue # Skip if cannot fetch
-                      except Exception as e:
-                           logger.warning(f"Error fetching member {capper['user_id']}: {e}")
-                           continue
-                 if user:
-                      options.append(
-                           SelectOption(
-                                label=user.display_name[:100], # Limit label length
-                                value=str(capper['user_id']),
-                                description=f"View {user.display_name}'s stats"[:100] # Limit desc length
-                           )
-                      )
-                      fetched_users += 1
+                if fetched_users >= 24:
+                    break  # Limit options in Select menu (25 total max)
+                user = self.original_interaction.guild.get_member(
+                    capper["user_id"]
+                )  # Try cache first
+                if not user:  # Fetch if not in cache
+                    try:
+                        user = await self.original_interaction.guild.fetch_member(
+                            capper["user_id"]
+                        )
+                    except discord.NotFound:
+                        continue  # Skip if member left
+                    except discord.Forbidden:
+                        continue  # Skip if cannot fetch
+                    except Exception as e:
+                        logger.warning(
+                            f"Error fetching member {capper['user_id']}: {e}"
+                        )
+                        continue
+                if user:
+                    options.append(
+                        SelectOption(
+                            label=user.display_name[:100],  # Limit label length
+                            value=str(capper["user_id"]),
+                            description=f"View {user.display_name}'s stats"[
+                                :100
+                            ],  # Limit desc length
+                        )
+                    )
+                    fetched_users += 1
 
-
-            if len(options) <= 1: # Only server option means no cappers found/fetched
+            if len(options) <= 1:  # Only server option means no cappers found/fetched
                 await self.original_interaction.response.send_message(
                     "No authorized cappers found in this server to display stats for.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
-                self.stop() # Stop the view if no options
+                self.stop()  # Stop the view if no options
                 return
 
             # Create and add the select menu
-            self.capper_select = Select(placeholder="Select a Capper or 'Server Stats'", options=options)
-            self.capper_select.callback = self.capper_select_callback # Assign callback
+            self.capper_select = Select(
+                placeholder="Select a Capper or 'Server Stats'", options=options
+            )
+            self.capper_select.callback = self.capper_select_callback  # Assign callback
             self.add_item(self.capper_select)
 
         except Exception as e:
-            logger.exception(f"Error populating cappers for guild {self.original_interaction.guild_id}: {e}")
+            logger.exception(
+                f"Error populating cappers for guild {self.original_interaction.guild_id}: {e}"
+            )
             # Try to send error message
             if not self.original_interaction.response.is_done():
-                 await self.original_interaction.response.send_message("❌ Error fetching cappers.", ephemeral=True)
+                await self.original_interaction.response.send_message(
+                    "❌ Error fetching cappers.", ephemeral=True
+                )
             else:
-                 await self.original_interaction.followup.send("❌ Error fetching cappers.", ephemeral=True)
-            self.stop() # Stop view on error
-
+                await self.original_interaction.followup.send(
+                    "❌ Error fetching cappers.", ephemeral=True
+                )
+            self.stop()  # Stop view on error
 
     async def capper_select_callback(self, interaction: Interaction):
         """Callback for when a capper/server is selected."""
         try:
-             # Acknowledge interaction quickly
-            await interaction.response.defer(ephemeral=True, thinking=True) # Thinking state
+            # Acknowledge interaction quickly
+            await interaction.response.defer(
+                ephemeral=True, thinking=True
+            )  # Thinking state
 
-            self.clear_items() # Clear old selects/buttons
-            selection = interaction.data['values'][0]
-            
+            self.clear_items()  # Clear old selects/buttons
+            selection = interaction.data["values"][0]
+
             # Initialize variables
             profile_image_url = None
             username = None
 
             if selection == "server":
-                self.stats_data = await self.analytics_service.get_guild_stats(interaction.guild_id)
+                self.stats_data = await self.analytics_service.get_guild_stats(
+                    interaction.guild_id
+                )
                 self.is_server = True
                 self.selected_user_id = None
                 username = interaction.guild.name
@@ -241,63 +286,78 @@ class StatsView(View):
                 stats_title = f"📊 Server Stats for {interaction.guild.name}"
             else:
                 self.selected_user_id = int(selection)
-                self.stats_data = await self.analytics_service.get_user_stats(interaction.guild_id, self.selected_user_id)
+                self.stats_data = await self.analytics_service.get_user_stats(
+                    interaction.guild_id, self.selected_user_id
+                )
                 self.is_server = False
-                
+
                 # Get capper info from database
                 capper_info = await self.db.fetch_one(
                     "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
-                    (interaction.guild_id, self.selected_user_id)
+                    (interaction.guild_id, self.selected_user_id),
                 )
-                
+
                 if capper_info:
-                    username = capper_info.get('display_name', f"User {self.selected_user_id}")
-                    image_path = capper_info.get('image_path')
-                    
+                    username = capper_info.get(
+                        "display_name", f"User {self.selected_user_id}"
+                    )
+                    image_path = capper_info.get("image_path")
+
                     # Always pass the raw image_path; let the image generator handle local vs URL
                     profile_image_url = image_path
                     self.selected_username = username
                     self.selected_profile_image_url = profile_image_url
-                    
+
                     stats_title = f"📊 Stats for {username}"
                 else:
                     # Fallback to Discord user info
-                    user = interaction.guild.get_member(self.selected_user_id) or await interaction.guild.fetch_member(self.selected_user_id)
-                    username = user.display_name if user else f"User {self.selected_user_id}"
+                    user = interaction.guild.get_member(
+                        self.selected_user_id
+                    ) or await interaction.guild.fetch_member(self.selected_user_id)
+                    username = (
+                        user.display_name if user else f"User {self.selected_user_id}"
+                    )
                     profile_image_url = None
                     self.selected_username = username
                     self.selected_profile_image_url = None
                     stats_title = f"📊 Stats for {username}"
 
-
             if not self.stats_data:
-                 await interaction.followup.send("❌ Could not retrieve statistics data.", ephemeral=True)
-                 self.stop()
-                 return
+                await interaction.followup.send(
+                    "❌ Could not retrieve statistics data.", ephemeral=True
+                )
+                self.stop()
+                return
 
             # Generate the stats image
             image_generator = StatsImageGenerator()
             from io import BytesIO
+
             if self.is_server:
                 # Use the guild stats image generator (sync, so run in executor if needed)
                 loop = None
                 try:
                     import asyncio
+
                     loop = asyncio.get_running_loop()
                 except Exception:
                     pass
-                img = await loop.run_in_executor(
-                    None,
-                    lambda: image_generator.generate_guild_stats_image(self.stats_data)
-                ) if loop else image_generator.generate_guild_stats_image(self.stats_data)
+                img = (
+                    await loop.run_in_executor(
+                        None,
+                        lambda: image_generator.generate_guild_stats_image(
+                            self.stats_data
+                        ),
+                    )
+                    if loop
+                    else image_generator.generate_guild_stats_image(self.stats_data)
+                )
                 img_buffer = BytesIO()
                 img.save(img_buffer, format="PNG")
                 img_buffer.seek(0)
             else:
                 img: Image.Image = await image_generator.generate_capper_stats_image(
-                    self.stats_data,
-                    username,
-                    profile_image_url
+                    self.stats_data, username, profile_image_url
                 )
                 img_buffer = BytesIO()
                 img.save(img_buffer, format="PNG")
@@ -308,35 +368,40 @@ class StatsView(View):
                 img_buffer.seek(0)
                 file = File(img_buffer, filename="stats.png")
                 # Add channel selection
-                valid_channels = [ch for ch in interaction.guild.text_channels if ch.permissions_for(interaction.user).send_messages]
+                valid_channels = [
+                    ch
+                    for ch in interaction.guild.text_channels
+                    if ch.permissions_for(interaction.user).send_messages
+                ]
                 if valid_channels:
-                     self.channel_select = ChannelSelect(valid_channels, self)
-                     self.add_item(self.channel_select)
-                     await interaction.followup.send(
-                          content=f"{stats_title}\nSelect a channel to send this image to:",
-                          file=file,
-                          view=self,
-                          ephemeral=True
-                     )
+                    self.channel_select = ChannelSelect(valid_channels, self)
+                    self.add_item(self.channel_select)
+                    await interaction.followup.send(
+                        content=f"{stats_title}\nSelect a channel to send this image to:",
+                        file=file,
+                        view=self,
+                        ephemeral=True,
+                    )
                 else:
-                     # No channels to send to, just show image
-                     await interaction.followup.send(
-                          content=stats_title,
-                          file=file,
-                          view=None, # No further actions needed
-                          ephemeral=True
-                     )
+                    # No channels to send to, just show image
+                    await interaction.followup.send(
+                        content=stats_title,
+                        file=file,
+                        view=None,  # No further actions needed
+                        ephemeral=True,
+                    )
 
             else:
-                 await interaction.followup.send("❌ Failed to generate statistics image.", ephemeral=True)
-                 self.stop()
-
+                await interaction.followup.send(
+                    "❌ Failed to generate statistics image.", ephemeral=True
+                )
+                self.stop()
 
         except Exception as e:
             logger.exception(f"Error in stats selection callback: {e}")
             await interaction.followup.send(
                 "❌ An error occurred while generating statistics. Please try again later.",
-                ephemeral=True
+                ephemeral=True,
             )
             self.stop()
 
@@ -349,37 +414,49 @@ class StatsCog(commands.Cog):
         # Example: self.analytics_service = bot.analytics_service
         # Example: self.db_manager = bot.db_manager
 
-    @app_commands.command(name="stats", description="View betting statistics for cappers or the server.")
+    @app_commands.command(
+        name="stats", description="View betting statistics for cappers or the server."
+    )
     @require_registered_guild()
     async def stats(self, interaction: Interaction):
         """Displays betting statistics via an interactive view."""
-        logger.info(f"Stats command initiated by {interaction.user} in guild {interaction.guild_id}")
+        logger.info(
+            f"Stats command initiated by {interaction.user} in guild {interaction.guild_id}"
+        )
         try:
-             # Access db_manager attached to bot instance
-            if not hasattr(self.bot, 'db_manager'):
-                 logger.error("db_manager not found on bot instance.")
-                 await interaction.response.send_message("❌ Bot is not properly configured (DB Error).", ephemeral=True)
-                 return
+            # Access db_manager attached to bot instance
+            if not hasattr(self.bot, "db_manager"):
+                logger.error("db_manager not found on bot instance.")
+                await interaction.response.send_message(
+                    "❌ Bot is not properly configured (DB Error).", ephemeral=True
+                )
+                return
 
             view = StatsView(self.bot, self.bot.db_manager, interaction)
-            await view.populate_cappers() # Fetch cappers and populate select
+            await view.populate_cappers()  # Fetch cappers and populate select
 
             # Only send initial message if populate_cappers didn't already respond (e.g., with an error)
             if not interaction.response.is_done():
-                 if view.children: # Check if select menu was added successfully
-                      await interaction.response.send_message(
-                           "Select a capper or 'Server Stats' to view statistics:",
-                           view=view,
-                           ephemeral=True
-                      )
-                 # else: # populate_cappers already sent an error message or stopped view
-                 #    pass
+                if view.children:  # Check if select menu was added successfully
+                    await interaction.response.send_message(
+                        "Select a capper or 'Server Stats' to view statistics:",
+                        view=view,
+                        ephemeral=True,
+                    )
+                # else: # populate_cappers already sent an error message or stopped view
+                #    pass
 
         except Exception as e:
-            logger.exception(f"Error initiating stats command for {interaction.user}: {e}")
+            logger.exception(
+                f"Error initiating stats command for {interaction.user}: {e}"
+            )
             if not interaction.response.is_done():
-                await interaction.response.send_message("❌ An error occurred while starting the stats command.", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ An error occurred while starting the stats command.",
+                    ephemeral=True,
+                )
             # Cannot use followup if initial response wasn't sent
+
 
 # The setup function for the extension
 async def setup(bot: commands.Bot):

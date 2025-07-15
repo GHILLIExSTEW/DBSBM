@@ -7,13 +7,16 @@ import discord
 
 logger = logging.getLogger(__name__)
 
+
 class LiveGameChannelService:
     def __init__(self, bot: discord.Client, db_manager):
         self.bot = bot
         self.db = db_manager
         self.running = False
         self._update_task: Optional[asyncio.Task] = None
-        self.guild_game_channels: Dict[int, Dict[str, int]] = {}  # guild_id -> {api_game_id: channel_id}
+        self.guild_game_channels: Dict[int, Dict[str, int]] = (
+            {}
+        )  # guild_id -> {api_game_id: channel_id}
         self.cleanup_tasks: Set[asyncio.Task] = set()
 
     async def start(self):
@@ -42,7 +45,9 @@ class LiveGameChannelService:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error("Error in live game channel update loop: %s", e, exc_info=True)
+                logger.error(
+                    "Error in live game channel update loop: %s", e, exc_info=True
+                )
                 await asyncio.sleep(15)
 
     async def update_all_live_game_channels(self):
@@ -69,7 +74,7 @@ class LiveGameChannelService:
             AND (b.bet_type = 'game_line' OR l.bet_type = 'game_line')
             AND g.status NOT IN ('finished', 'Match Finished', 'Final', 'Ended')
             """,
-            (guild_id,)
+            (guild_id,),
         )
         guild = self.bot.get_guild(guild_id)
         if not guild:
@@ -78,16 +83,20 @@ class LiveGameChannelService:
         if guild_id not in self.guild_game_channels:
             self.guild_game_channels[guild_id] = {}
         tracked = self.guild_game_channels[guild_id]
-        finished_statuses = {s.lower() for s in ['finished', 'match finished', 'final', 'ended']}
+        finished_statuses = {
+            s.lower() for s in ["finished", "match finished", "final", "ended"]
+        }
         # Remove finished games from tracked
         to_remove = []
         for api_game_id, channel_id in tracked.items():
             # Find the bet in bets
-            bet = next((b for b in bets if b['api_game_id'] == api_game_id), None)
-            if bet and bet.get('status', '').strip().lower() in finished_statuses:
+            bet = next((b for b in bets if b["api_game_id"] == api_game_id), None)
+            if bet and bet.get("status", "").strip().lower() in finished_statuses:
                 to_remove.append(api_game_id)
         for api_game_id in to_remove:
-            logger.info(f"Removing finished game {api_game_id} from tracking for guild {guild_id}")
+            logger.info(
+                f"Removing finished game {api_game_id} from tracking for guild {guild_id}"
+            )
             tracked.pop(api_game_id, None)
         for bet in bets:
             api_game_id = bet["api_game_id"]
@@ -105,7 +114,9 @@ class LiveGameChannelService:
         # Cleanup finished games
         await self._cleanup_finished_channels(guild, tracked)
 
-    async def _create_live_game_channel(self, guild: discord.Guild, bet: dict) -> Optional[discord.TextChannel]:
+    async def _create_live_game_channel(
+        self, guild: discord.Guild, bet: dict
+    ) -> Optional[discord.TextChannel]:
         """Create a live game update channel for a bet."""
         home = bet.get("home_team_name", "Home")
         away = bet.get("away_team_name", "Away")
@@ -114,25 +125,52 @@ class LiveGameChannelService:
         start_time = bet.get("start_time")
         api_game_id = bet.get("api_game_id")
         name = self._format_channel_name(home, away, status, score, start_time)
-        overwrites = {guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False)}
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(
+                read_messages=True, send_messages=False
+            )
+        }
 
         try:
             channel = await guild.create_text_channel(
-                name=name[:100], overwrites=overwrites, reason="Live game update channel"
+                name=name[:100],
+                overwrites=overwrites,
+                reason="Live game update channel",
             )
-            logger.info("Created live game channel %s for game %s in guild %s", channel.name, api_game_id, guild.id)
+            logger.info(
+                "Created live game channel %s for game %s in guild %s",
+                channel.name,
+                api_game_id,
+                guild.id,
+            )
             return channel
         except discord.errors.Forbidden:
-            logger.error("Missing permissions to create channel in guild %s. Ensure the bot has 'Manage Channels' permission.", guild.id)
+            logger.error(
+                "Missing permissions to create channel in guild %s. Ensure the bot has 'Manage Channels' permission.",
+                guild.id,
+            )
             return None
         except discord.errors.HTTPException as http_err:
-            logger.error("HTTPException occurred while creating channel for game %s in guild %s: %s", api_game_id, guild.id, http_err)
+            logger.error(
+                "HTTPException occurred while creating channel for game %s in guild %s: %s",
+                api_game_id,
+                guild.id,
+                http_err,
+            )
             return None
         except Exception as e:
-            logger.error("Unexpected error while creating live game channel for game %s in guild %s: %s", api_game_id, guild.id, e, exc_info=True)
+            logger.error(
+                "Unexpected error while creating live game channel for game %s in guild %s: %s",
+                api_game_id,
+                guild.id,
+                e,
+                exc_info=True,
+            )
             return None
 
-    async def _update_channel_name(self, guild: discord.Guild, channel_id: int, bet: dict):
+    async def _update_channel_name(
+        self, guild: discord.Guild, channel_id: int, bet: dict
+    ):
         """Update the name of a live game channel."""
         channel = guild.get_channel(channel_id)
         if not channel:
@@ -142,7 +180,12 @@ class LiveGameChannelService:
                 logger.warning("Channel %s not found in guild %s", channel_id, guild.id)
                 return
             except Exception as e:
-                logger.error("Failed to fetch channel %s in guild %s: %s", channel_id, guild.id, e)
+                logger.error(
+                    "Failed to fetch channel %s in guild %s: %s",
+                    channel_id,
+                    guild.id,
+                    e,
+                )
                 return
         home = bet.get("home_team_name", "Home")
         away = bet.get("away_team_name", "Away")
@@ -154,16 +197,32 @@ class LiveGameChannelService:
         if channel.name != new_name[:100]:
             try:
                 await channel.edit(name=new_name[:100], reason="Update live game score")
-                logger.debug("Updated channel %s name to %s in guild %s", channel_id, new_name[:100], guild.id)
+                logger.debug(
+                    "Updated channel %s name to %s in guild %s",
+                    channel_id,
+                    new_name[:100],
+                    guild.id,
+                )
             except discord.errors.Forbidden:
-                logger.error("Missing permissions to edit channel %s in guild %s", channel_id, guild.id)
+                logger.error(
+                    "Missing permissions to edit channel %s in guild %s",
+                    channel_id,
+                    guild.id,
+                )
             except Exception as e:
-                logger.error("Failed to update channel %s name in guild %s: %s", channel_id, guild.id, e)
+                logger.error(
+                    "Failed to update channel %s name in guild %s: %s",
+                    channel_id,
+                    guild.id,
+                    e,
+                )
 
-    def _format_channel_name(self, home: str, away: str, status: str, score: str, start_time: Optional[str]) -> str:
+    def _format_channel_name(
+        self, home: str, away: str, status: str, score: str, start_time: Optional[str]
+    ) -> str:
         """Format the channel name based on game status."""
-        home_abbr = (home[:3].upper() if home and isinstance(home, str) else "HME")
-        away_abbr = (away[:3].upper() if away and isinstance(away, str) else "AWY")
+        home_abbr = home[:3].upper() if home and isinstance(home, str) else "HME"
+        away_abbr = away[:3].upper() if away and isinstance(away, str) else "AWY"
         if status.lower() in ("not started", "scheduled"):
             try:
                 dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
@@ -177,7 +236,9 @@ class LiveGameChannelService:
                 return f"{home_abbr}-Vs-{away_abbr}-{score}"
             return f"{home_abbr}-Vs-{away_abbr}-Live"
 
-    async def _cleanup_finished_channels(self, guild: discord.Guild, tracked: Dict[str, int]):
+    async def _cleanup_finished_channels(
+        self, guild: discord.Guild, tracked: Dict[str, int]
+    ):
         """Cleanup channels for finished games."""
         finished_games = await self.db.fetch_all(
             """
@@ -201,12 +262,21 @@ class LiveGameChannelService:
                     dt = now
                 delay = max(0, (dt + timedelta(hours=1) - now).total_seconds())
                 task = asyncio.create_task(
-                    self._delete_channel_later(guild, channel_id, delay, api_game_id, tracked)
+                    self._delete_channel_later(
+                        guild, channel_id, delay, api_game_id, tracked
+                    )
                 )
                 self.cleanup_tasks.add(task)
                 task.add_done_callback(lambda t: self.cleanup_tasks.discard(t))
 
-    async def _delete_channel_later(self, guild: discord.Guild, channel_id: int, delay: float, api_game_id: str, tracked: Dict[str, int]):
+    async def _delete_channel_later(
+        self,
+        guild: discord.Guild,
+        channel_id: int,
+        delay: float,
+        api_game_id: str,
+        tracked: Dict[str, int],
+    ):
         """Delete a channel after a delay."""
         await asyncio.sleep(delay)
         channel = guild.get_channel(channel_id)
@@ -214,17 +284,39 @@ class LiveGameChannelService:
             try:
                 channel = await guild.fetch_channel(channel_id)
             except discord.errors.NotFound:
-                logger.warning("Channel %s not found for deletion in guild %s", channel_id, guild.id)
+                logger.warning(
+                    "Channel %s not found for deletion in guild %s",
+                    channel_id,
+                    guild.id,
+                )
                 tracked.pop(api_game_id, None)
                 return
             except Exception as e:
-                logger.error("Failed to fetch channel %s for deletion in guild %s: %s", channel_id, guild.id, e)
+                logger.error(
+                    "Failed to fetch channel %s for deletion in guild %s: %s",
+                    channel_id,
+                    guild.id,
+                    e,
+                )
                 return
         try:
-            await channel.delete(reason="Game finished, deleting live update channel after 1 hour")
-            logger.info("Deleted live game channel %s for game %s in guild %s", channel_id, api_game_id, guild.id)
+            await channel.delete(
+                reason="Game finished, deleting live update channel after 1 hour"
+            )
+            logger.info(
+                "Deleted live game channel %s for game %s in guild %s",
+                channel_id,
+                api_game_id,
+                guild.id,
+            )
         except discord.errors.Forbidden:
-            logger.error("Missing permissions to delete channel %s in guild %s", channel_id, guild.id)
+            logger.error(
+                "Missing permissions to delete channel %s in guild %s",
+                channel_id,
+                guild.id,
+            )
         except Exception as e:
-            logger.error("Failed to delete channel %s in guild %s: %s", channel_id, guild.id, e)
+            logger.error(
+                "Failed to delete channel %s in guild %s: %s", channel_id, guild.id, e
+            )
         tracked.pop(api_game_id, None)

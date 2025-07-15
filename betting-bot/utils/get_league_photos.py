@@ -18,7 +18,7 @@ except ImportError as e:
     print(
         f"CRITICAL ERROR: Could not import LEAGUE_IDS: {e}. "
         f"Ensure config/leagues.py exists in {BASE_DIR}/config/.",
-        file=sys.stderr
+        file=sys.stderr,
     )
     sys.exit(1)
 
@@ -39,8 +39,9 @@ CORRECTED_LEAGUE_IDS = {
     "MMA": {"id": "1", "sport": "mma", "name": "UFC"},
     "WNBA": {"id": "13", "sport": "basketball", "name": "WNBA"},
     "AFL": {"id": "1", "sport": "afl", "name": "AFL"},
-    "EuroLeague": {"id": "1", "sport": "basketball", "name": "EuroLeague"}
+    "EuroLeague": {"id": "1", "sport": "basketball", "name": "EuroLeague"},
 }
+
 
 def fetch_and_save_league_data(json_output_path):
     """
@@ -59,14 +60,17 @@ def fetch_and_save_league_data(json_output_path):
         response.raise_for_status()
         data = response.json()
 
-        with open(json_output_path, 'w', encoding='utf-8') as f:
+        with open(json_output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         print(f"Raw JSON saved to {json_output_path}")
 
         return data
 
     except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e}. Status Code: {response.status_code}. Response: {response.text}", file=sys.stderr)
+        print(
+            f"HTTP Error: {e}. Status Code: {response.status_code}. Response: {response.text}",
+            file=sys.stderr,
+        )
         return None
     except requests.exceptions.RequestException as e:
         print(f"Network Error: {e}. Check your internet connection.", file=sys.stderr)
@@ -74,6 +78,7 @@ def fetch_and_save_league_data(json_output_path):
     except ValueError as e:
         print(f"JSON Decode Error: {e}. Response: {response.text}", file=sys.stderr)
         return None
+
 
 def fetch_league_badge(league_id, retries=3, delay=1.0):
     """
@@ -95,18 +100,34 @@ def fetch_league_badge(league_id, retries=3, delay=1.0):
             data = response.json()
             badge = data.get("leagues", [{}])[0].get("strBadge", "")
             if not badge:
-                print(f"No badge URL for league ID {league_id}. Response: {data}", file=sys.stderr)
+                print(
+                    f"No badge URL for league ID {league_id}. Response: {data}",
+                    file=sys.stderr,
+                )
             return badge
         except requests.exceptions.HTTPError as e:
-            print(f"Attempt {attempt + 1}/{retries} - HTTP Error for league ID {league_id}: {e}. Status: {response.status_code}", file=sys.stderr)
+            print(
+                f"Attempt {attempt + 1}/{retries} - HTTP Error for league ID {league_id}: {e}. Status: {response.status_code}",
+                file=sys.stderr,
+            )
         except requests.exceptions.RequestException as e:
-            print(f"Attempt {attempt + 1}/{retries} - Network Error for league ID {league_id}: {e}", file=sys.stderr)
+            print(
+                f"Attempt {attempt + 1}/{retries} - Network Error for league ID {league_id}: {e}",
+                file=sys.stderr,
+            )
         except ValueError as e:
-            print(f"Attempt {attempt + 1}/{retries} - JSON Decode Error for league ID {league_id}: {e}", file=sys.stderr)
+            print(
+                f"Attempt {attempt + 1}/{retries} - JSON Decode Error for league ID {league_id}: {e}",
+                file=sys.stderr,
+            )
         if attempt < retries - 1:
             time.sleep(delay)
-    print(f"Failed to fetch badge for league ID {league_id} after {retries} attempts.", file=sys.stderr)
+    print(
+        f"Failed to fetch badge for league ID {league_id} after {retries} attempts.",
+        file=sys.stderr,
+    )
     return ""
+
 
 def normalize_and_save_csv(data, csv_output_path):
     """
@@ -140,20 +161,20 @@ def normalize_and_save_csv(data, csv_output_path):
         print("No valid leagues with IDs in LEAGUE_IDS.", file=sys.stderr)
         return False
 
-    df['logo_path'] = ''
+    df["logo_path"] = ""
 
     print(f"Fetching badge URLs for {len(df)} leagues...")
     badge_count = 0
     for idx, row in df.iterrows():
-        league_id = row['idLeague']
+        league_id = row["idLeague"]
         badge_url = fetch_league_badge(league_id)
-        df.at[idx, 'logo_path'] = badge_url
+        df.at[idx, "logo_path"] = badge_url
         if badge_url:
             badge_count += 1
         print(f"League: {row['strLeague']}, ID: {league_id}, Badge: {badge_url}")
         time.sleep(0.6)  # Rate limit: 100 requests/minute
 
-    df = df[['strLeague', 'logo_path']].rename(columns={'strLeague': 'league'})
+    df = df[["strLeague", "logo_path"]].rename(columns={"strLeague": "league"})
 
     print(f"Processed {len(df)} leagues, {badge_count} with badge URLs")
 
@@ -161,9 +182,10 @@ def normalize_and_save_csv(data, csv_output_path):
         print("Warning: No valid league data after processing.", file=sys.stderr)
         return False
 
-    df.to_csv(csv_output_path, index=False, encoding='utf-8')
+    df.to_csv(csv_output_path, index=False, encoding="utf-8")
     print(f"CSV saved to {csv_output_path} with {len(df)} leagues")
     return True
+
 
 def main():
     output_dir = Path(BASE_DIR) / "static"
@@ -177,6 +199,7 @@ def main():
         normalize_and_save_csv(data, csv_output_path)
     else:
         print("Failed to retrieve league data. No CSV generated.", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

@@ -29,15 +29,17 @@ data = response.json()
 teams = []
 for team in data.get("response", []):
     t = team["team"]
-    teams.append({
-        "api_sports_id": t["id"],
-        "name": t["name"],
-        "code": t.get("code"),
-        "country": t.get("country"),
-        "logo": t.get("logo"),
-    })
+    teams.append(
+        {
+            "api_sports_id": t["id"],
+            "name": t["name"],
+            "code": t.get("code"),
+            "country": t.get("country"),
+            "logo": t.get("logo"),
+        }
+    )
 
 with open(f"{SPORT}_league_{LEAGUE_ID}_teams.json", "w", encoding="utf-8") as f:
     json.dump(teams, f, indent=2, ensure_ascii=False)
 
-print(f"Saved {len(teams)} teams to {SPORT}_league_{LEAGUE_ID}_teams.json") 
+print(f"Saved {len(teams)} teams to {SPORT}_league_{LEAGUE_ID}_teams.json")

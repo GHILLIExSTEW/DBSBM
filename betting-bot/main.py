@@ -21,10 +21,16 @@ from utils.player_prop_image_generator import PlayerPropImageGenerator
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
 log_level = getattr(logging, log_level_str, logging.INFO)
-log_format = os.getenv("LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+log_format = os.getenv(
+    "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # This is betting-bot/
 log_file_name = "bot_activity.log"
-log_file_path = os.path.join(BASE_DIR, "logs", log_file_name) if not os.path.isabs(os.getenv("LOG_FILE", "")) else os.getenv("LOG_FILE", os.path.join(BASE_DIR, "logs", log_file_name))
+log_file_path = (
+    os.path.join(BASE_DIR, "logs", log_file_name)
+    if not os.path.isabs(os.getenv("LOG_FILE", ""))
+    else os.getenv("LOG_FILE", os.path.join(BASE_DIR, "logs", log_file_name))
+)
 
 log_dir = os.path.dirname(log_file_path)
 if log_dir and not os.path.exists(log_dir):
@@ -83,23 +89,34 @@ OPTIONAL_ENV_VARS = {
 }
 missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
 if missing_vars:
-    logger.critical("Missing required environment variables: %s", ", ".join(missing_vars))
+    logger.critical(
+        "Missing required environment variables: %s", ", ".join(missing_vars)
+    )
     sys.exit("Missing required environment variables")
 
 # Get test guild ID
-TEST_GUILD_ID = int(REQUIRED_ENV_VARS["TEST_GUILD_ID"]) if REQUIRED_ENV_VARS["TEST_GUILD_ID"] else None
+TEST_GUILD_ID = (
+    int(REQUIRED_ENV_VARS["TEST_GUILD_ID"])
+    if REQUIRED_ENV_VARS["TEST_GUILD_ID"]
+    else None
+)
 logger.info(f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
 
 # --- Path for the logo download script and flag file ---
 LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_team_logos.py")
 LOGO_DOWNLOAD_FLAG_FILE = os.path.join(BASE_DIR, "data", ".logos_downloaded_flag")
 
+
 async def run_one_time_logo_download():
     """Checks if logos have been downloaded and runs the download script if not."""
     if not os.path.exists(LOGO_DOWNLOAD_FLAG_FILE):
-        logger.info("First server start or flag file missing: Attempting to download team logos...")
+        logger.info(
+            "First server start or flag file missing: Attempting to download team logos..."
+        )
         if not os.path.exists(LOGO_DOWNLOAD_SCRIPT_PATH):
-            logger.error("Logo download script not found at: %s", LOGO_DOWNLOAD_SCRIPT_PATH)
+            logger.error(
+                "Logo download script not found at: %s", LOGO_DOWNLOAD_SCRIPT_PATH
+            )
             return
 
         try:
@@ -125,26 +142,47 @@ async def run_one_time_logo_download():
                     f.write(datetime.now(timezone.utc).isoformat())
                 logger.info("Created flag file: %s", LOGO_DOWNLOAD_FLAG_FILE)
             else:
-                logger.error("Logo download script failed. Return code: %d", process.returncode)
+                logger.error(
+                    "Logo download script failed. Return code: %d", process.returncode
+                )
         except Exception as e:
-            logger.error("Error running one-time logo download task: %s", e, exc_info=True)
+            logger.error(
+                "Error running one-time logo download task: %s", e, exc_info=True
+            )
     else:
-        logger.info("Logos already downloaded (flag file '%s' exists). Skipping download.", LOGO_DOWNLOAD_FLAG_FILE)
+        logger.info(
+            "Logos already downloaded (flag file '%s' exists). Skipping download.",
+            LOGO_DOWNLOAD_FLAG_FILE,
+        )
+
 
 # --- Path for the player data download script and flag file ---
-PLAYER_DATA_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_player_data.py")
-PLAYER_DATA_DOWNLOAD_FLAG_FILE = os.path.join(BASE_DIR, "data", ".players_downloaded_flag")
+PLAYER_DATA_DOWNLOAD_SCRIPT_PATH = os.path.join(
+    BASE_DIR, "utils", "download_player_data.py"
+)
+PLAYER_DATA_DOWNLOAD_FLAG_FILE = os.path.join(
+    BASE_DIR, "data", ".players_downloaded_flag"
+)
+
 
 async def run_one_time_player_data_download():
     """Checks if player data has been downloaded and runs the download script if not."""
     if not os.path.exists(PLAYER_DATA_DOWNLOAD_FLAG_FILE):
-        logger.info("First server start or flag file missing: Attempting to download player data...")
+        logger.info(
+            "First server start or flag file missing: Attempting to download player data..."
+        )
         if not os.path.exists(PLAYER_DATA_DOWNLOAD_SCRIPT_PATH):
-            logger.error("Player data download script not found at: %s", PLAYER_DATA_DOWNLOAD_SCRIPT_PATH)
+            logger.error(
+                "Player data download script not found at: %s",
+                PLAYER_DATA_DOWNLOAD_SCRIPT_PATH,
+            )
             return
 
         try:
-            logger.info("Executing %s to download player data...", PLAYER_DATA_DOWNLOAD_SCRIPT_PATH)
+            logger.info(
+                "Executing %s to download player data...",
+                PLAYER_DATA_DOWNLOAD_SCRIPT_PATH,
+            )
             process = await asyncio.create_subprocess_exec(
                 sys.executable,
                 PLAYER_DATA_DOWNLOAD_SCRIPT_PATH,
@@ -157,20 +195,33 @@ async def run_one_time_player_data_download():
             if stdout:
                 logger.info("Player Data Script STDOUT:\n%s", stdout.decode().strip())
             if stderr:
-                logger.warning("Player Data Script STDERR:\n%s", stderr.decode().strip())
+                logger.warning(
+                    "Player Data Script STDERR:\n%s", stderr.decode().strip()
+                )
 
             if process.returncode == 0:
                 logger.info("Player data download script finished (Return Code: 0).")
-                os.makedirs(os.path.dirname(PLAYER_DATA_DOWNLOAD_FLAG_FILE), exist_ok=True)
+                os.makedirs(
+                    os.path.dirname(PLAYER_DATA_DOWNLOAD_FLAG_FILE), exist_ok=True
+                )
                 with open(PLAYER_DATA_DOWNLOAD_FLAG_FILE, "w") as f:
                     f.write(datetime.now(timezone.utc).isoformat())
                 logger.info("Created flag file: %s", PLAYER_DATA_DOWNLOAD_FLAG_FILE)
             else:
-                logger.error("Player data download script failed. Return code: %d", process.returncode)
+                logger.error(
+                    "Player data download script failed. Return code: %d",
+                    process.returncode,
+                )
         except Exception as e:
-            logger.error("Error running one-time player data download task: %s", e, exc_info=True)
+            logger.error(
+                "Error running one-time player data download task: %s", e, exc_info=True
+            )
     else:
-        logger.info("Player data already downloaded (flag file '%s' exists). Skipping download.", PLAYER_DATA_DOWNLOAD_FLAG_FILE)
+        logger.info(
+            "Player data already downloaded (flag file '%s' exists). Skipping download.",
+            PLAYER_DATA_DOWNLOAD_FLAG_FILE,
+        )
+
 
 # --- Bot Definition ---
 class BettingBot(commands.Bot):
@@ -179,7 +230,9 @@ class BettingBot(commands.Bot):
         intents.message_content = True
         intents.members = True
         intents.reactions = True
-        super().__init__(command_prefix=commands.when_mentioned_or("/"), intents=intents)
+        super().__init__(
+            command_prefix=commands.when_mentioned_or("/"), intents=intents
+        )
         self.db_manager = DatabaseManager()
         self.db = self.db_manager
         self.admin_service = AdminService(self, self.db_manager)
@@ -195,14 +248,22 @@ class BettingBot(commands.Bot):
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
 
-    async def get_bet_slip_generator(self, guild_id: int, bet_type: str = "game_line") -> Union[GameLineImageGenerator, ParlayImageGenerator, PlayerPropImageGenerator]:
+    async def get_bet_slip_generator(
+        self, guild_id: int, bet_type: str = "game_line"
+    ) -> Union[GameLineImageGenerator, ParlayImageGenerator, PlayerPropImageGenerator]:
         if guild_id not in self.bet_slip_generators:
             if bet_type == "parlay":
-                self.bet_slip_generators[guild_id] = ParlayImageGenerator(guild_id=guild_id)
+                self.bet_slip_generators[guild_id] = ParlayImageGenerator(
+                    guild_id=guild_id
+                )
             elif bet_type == "player_prop":
-                self.bet_slip_generators[guild_id] = PlayerPropImageGenerator(guild_id=guild_id)
+                self.bet_slip_generators[guild_id] = PlayerPropImageGenerator(
+                    guild_id=guild_id
+                )
             else:
-                self.bet_slip_generators[guild_id] = GameLineImageGenerator(guild_id=guild_id)
+                self.bet_slip_generators[guild_id] = GameLineImageGenerator(
+                    guild_id=guild_id
+                )
         return self.bet_slip_generators[guild_id]
 
     async def load_extensions(self):
@@ -210,6 +271,7 @@ class BettingBot(commands.Bot):
         cog_files = [
             "admin.py",  # Load admin.py first since it contains setup command
             "betting.py",
+            "enhanced_player_props.py",  # Enhanced player props command
             "remove_user.py",
             "setid.py",
             "add_user.py",
@@ -229,7 +291,9 @@ class BettingBot(commands.Bot):
                     loaded_commands.append(extension)
                     logger.info("Successfully loaded extension: %s", extension)
                 except Exception as e:
-                    logger.error("Failed to load extension %s: %s", extension, e, exc_info=True)
+                    logger.error(
+                        "Failed to load extension %s: %s", extension, e, exc_info=True
+                    )
             else:
                 logger.warning("Command file not found: %s", file_path)
         logger.info("Total loaded extensions: %s", loaded_commands)
@@ -245,95 +309,107 @@ class BettingBot(commands.Bot):
                 if not all_commands:
                     logger.error("No commands found")
                     raise Exception("No commands found")
-                
+
                 # Get setup command
                 setup_command = self.tree.get_command("setup")
                 if not setup_command:
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
-                
+
                 # Clear all commands and add setup command globally
                 self.tree.clear_commands(guild=None)
                 self.tree.add_command(setup_command, guild=None)
                 await self.tree.sync()
                 logger.info("Global setup command synced")
-                
+
                 # Get all guilds from the table
                 guilds_query = """
                     SELECT guild_id, is_paid, subscription_level 
                     FROM guild_settings
                 """
                 guilds = await self.db_manager.fetch_all(guilds_query)
-                
+
                 # Get all guild IDs that are in the database
-                db_guild_ids = {guild['guild_id'] for guild in guilds}
-                
+                db_guild_ids = {guild["guild_id"] for guild in guilds}
+
                 # Sync commands to each guild in the table
                 for guild in guilds:
-                    guild_id = guild['guild_id']
-                    is_paid = guild['is_paid']
-                    subscription_level = 'premium' if is_paid else 'initial'
-                    logger.debug(f"Processing guild {guild_id} (type: {type(guild_id)}) with subscription {subscription_level}")
-                    
+                    guild_id = guild["guild_id"]
+                    is_paid = guild["is_paid"]
+                    subscription_level = "premium" if is_paid else "initial"
+                    logger.debug(
+                        f"Processing guild {guild_id} (type: {type(guild_id)}) with subscription {subscription_level}"
+                    )
+
                     # Update subscription level if needed
-                    if is_paid and subscription_level != 'premium':
+                    if is_paid and subscription_level != "premium":
                         await self.db_manager.execute(
                             """
                             UPDATE guild_settings 
                             SET subscription_level = 'premium'
                             WHERE guild_id = %s
                             """,
-                            (guild_id,)
+                            (guild_id,),
                         )
-                    
+
                     guild_obj = discord.Object(id=guild_id)
-                    
+
                     # Clear existing commands for this guild
                     self.tree.clear_commands(guild=guild_obj)
-                    
+
                     # Special handling for test guild - only add restricted commands
-                    logger.debug(f"Checking guild {guild_id} against TEST_GUILD_ID {TEST_GUILD_ID} (types: {type(guild_id)} vs {type(TEST_GUILD_ID)})")
+                    logger.debug(
+                        f"Checking guild {guild_id} against TEST_GUILD_ID {TEST_GUILD_ID} (types: {type(guild_id)} vs {type(TEST_GUILD_ID)})"
+                    )
                     if guild_id == TEST_GUILD_ID:
                         restricted_commands = ["load_logos", "down", "up"]
                         for cmd_name in restricted_commands:
                             cmd = self.tree.get_command(cmd_name)
                             if cmd:
                                 self.tree.add_command(cmd, guild=guild_obj)
-                        logger.info(f"Synced restricted commands to test guild {guild_id}")
+                        logger.info(
+                            f"Synced restricted commands to test guild {guild_id}"
+                        )
                     else:
                         # Add all commands except setup, load_logos, and maintenance commands to the guild
                         for cmd in all_commands:
                             if cmd.name not in ("setup", "load_logos", "down", "up"):
                                 self.tree.add_command(cmd, guild=guild_obj)
-                        logger.info(f"Synced commands to guild {guild_id} (subscription: {subscription_level})")
-                    
+                        logger.info(
+                            f"Synced commands to guild {guild_id} (subscription: {subscription_level})"
+                        )
+
                     # Sync commands to this guild
                     await self.tree.sync(guild=guild_obj)
-                
+
                 # Handle test guild if it's not in the database
                 if TEST_GUILD_ID and TEST_GUILD_ID not in db_guild_ids:
-                    logger.info(f"Test guild {TEST_GUILD_ID} not in database, syncing restricted commands")
+                    logger.info(
+                        f"Test guild {TEST_GUILD_ID} not in database, syncing restricted commands"
+                    )
                     test_guild_obj = discord.Object(id=TEST_GUILD_ID)
                     self.tree.clear_commands(guild=test_guild_obj)
-                    
+
                     restricted_commands = ["load_logos", "down", "up"]
                     for cmd_name in restricted_commands:
                         cmd = self.tree.get_command(cmd_name)
                         if cmd:
                             self.tree.add_command(cmd, guild=test_guild_obj)
-                    
-                    await self.tree.sync(guild=test_guild_obj)
-                    logger.info(f"Synced restricted commands to test guild {TEST_GUILD_ID} (not in database)")
-                
 
-                
+                    await self.tree.sync(guild=test_guild_obj)
+                    logger.info(
+                        f"Synced restricted commands to test guild {TEST_GUILD_ID} (not in database)"
+                    )
+
                 # Log all available commands
                 global_commands = [cmd.name for cmd in self.tree.get_commands()]
                 logger.info("Final global commands: %s", global_commands)
-                
+
                 return True
             except Exception as e:
-                logger.error("Sync attempt %d/%d failed: %s", attempt, retries, e, exc_info=True)
+                logger.error(
+                    "Sync attempt %d/%d failed: %s", attempt, retries, e, exc_info=True
+                )
                 if attempt < retries:
                     await asyncio.sleep(delay)
         logger.error("Failed to sync commands after %d attempts.", retries)
@@ -351,7 +427,10 @@ class BettingBot(commands.Bot):
                     text=True,
                     bufsize=1,
                 )
-            logger.info("Started Flask web server (webapp.py) as a subprocess with logging to %s", webapp_log_path)
+            logger.info(
+                "Started Flask web server (webapp.py) as a subprocess with logging to %s",
+                webapp_log_path,
+            )
 
     def start_fetcher(self):
         """Start the fetcher process and monitor its status."""
@@ -375,19 +454,28 @@ class BettingBot(commands.Bot):
                     "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
                     "MYSQL_DB": os.getenv("MYSQL_DB"),
                     "MYSQL_POOL_MIN_SIZE": os.getenv("MYSQL_POOL_MIN_SIZE", "1"),
-                    "MYSQL_POOL_MAX_SIZE": os.getenv("MYSQL_POOL_MAX_SIZE", "10")
+                    "MYSQL_POOL_MAX_SIZE": os.getenv("MYSQL_POOL_MAX_SIZE", "10"),
                 }
 
                 # Validate all required variables are present
-                missing_vars = [var for var, value in required_vars.items() if not value]
+                missing_vars = [
+                    var for var, value in required_vars.items() if not value
+                ]
                 if missing_vars:
-                    logger.error("Missing required environment variables for fetcher: %s", ", ".join(missing_vars))
+                    logger.error(
+                        "Missing required environment variables for fetcher: %s",
+                        ", ".join(missing_vars),
+                    )
                     return False
 
                 # Add validated variables to environment
                 for var, value in required_vars.items():
                     env[var] = str(value)
-                    logger.info("Passing %s=%s to fetcher process", var, "*" * len(str(value)) if "PASSWORD" in var else value)
+                    logger.info(
+                        "Passing %s=%s to fetcher process",
+                        var,
+                        "*" * len(str(value)) if "PASSWORD" in var else value,
+                    )
 
                 try:
                     # Start the fetcher process with the validated environment
@@ -399,18 +487,25 @@ class BettingBot(commands.Bot):
                         text=True,
                         bufsize=1,
                         env=env,
-                        cwd=BASE_DIR
+                        cwd=BASE_DIR,
                     )
-                    logger.info("Started fetcher (fetcher.py) as subprocess with PID %d", self.fetcher_process.pid)
+                    logger.info(
+                        "Started fetcher (fetcher.py) as subprocess with PID %d",
+                        self.fetcher_process.pid,
+                    )
 
                     # Create monitoring task if not already running
-                    if not hasattr(self, '_fetcher_monitor_task'):
-                        self._fetcher_monitor_task = asyncio.create_task(self._monitor_fetcher(fetcher_log_path))
+                    if not hasattr(self, "_fetcher_monitor_task"):
+                        self._fetcher_monitor_task = asyncio.create_task(
+                            self._monitor_fetcher(fetcher_log_path)
+                        )
                         logger.info("Created fetcher monitoring task")
 
                     return True
                 except Exception as e:
-                    logger.error("Failed to start fetcher process: %s", e, exc_info=True)
+                    logger.error(
+                        "Failed to start fetcher process: %s", e, exc_info=True
+                    )
                     return False
 
     async def _monitor_fetcher(self, log_path: str):
@@ -424,14 +519,19 @@ class BettingBot(commands.Bot):
 
             if self.fetcher_process.poll() is not None:
                 return_code = self.fetcher_process.returncode
-                logger.error("Fetcher process ended unexpectedly with return code %d", return_code)
+                logger.error(
+                    "Fetcher process ended unexpectedly with return code %d",
+                    return_code,
+                )
 
                 # Get last few lines of log for context
                 try:
                     with open(log_path, "r") as f:
                         lines = f.readlines()
                         last_lines = lines[-20:] if len(lines) > 20 else lines
-                        logger.error("Last few lines from fetcher.log:\n%s", "".join(last_lines))
+                        logger.error(
+                            "Last few lines from fetcher.log:\n%s", "".join(last_lines)
+                        )
                 except Exception as e:
                     logger.error("Failed to read fetcher.log: %s", e)
 
@@ -450,7 +550,9 @@ class BettingBot(commands.Bot):
 
         await self.db_manager.connect()
         if not self.db_manager._pool:
-            logger.critical("Database connection pool failed to initialize. Bot cannot continue.")
+            logger.critical(
+                "Database connection pool failed to initialize. Bot cannot continue."
+            )
             await self.close()
             sys.exit("Database connection failed.")
 
@@ -487,15 +589,23 @@ class BettingBot(commands.Bot):
         results = await asyncio.gather(*service_starts, return_exceptions=True)
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                service_name = service_starts[i].__self__.__class__.__name__ if hasattr(service_starts[i], "__self__") else f"Service {i}"
-                logger.error("Error starting %s: %s", service_name, result, exc_info=True)
+                service_name = (
+                    service_starts[i].__self__.__class__.__name__
+                    if hasattr(service_starts[i], "__self__")
+                    else f"Service {i}"
+                )
+                logger.error(
+                    "Error starting %s: %s", service_name, result, exc_info=True
+                )
         logger.info("Services startup initiated, including LiveGameChannelService.")
-        
+
         # Only start webapp and fetcher if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
             self.start_flask_webapp()
             self.start_fetcher()
-            logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
+            logger.info(
+                "Bot setup_hook completed successfully - commands will be synced in on_ready"
+            )
         else:
             logger.info("Bot setup_hook completed successfully in scheduler mode")
 
@@ -539,9 +649,14 @@ class BettingBot(commands.Bot):
             self.tree.add_command(setup_command, guild=guild_obj)
             # DISABLED: Remove automatic sync to avoid rate limits
             # await self.tree.sync(guild=guild_obj)
-            logger.info(f"(SYNC DISABLED) Would have synced setup command to new guild {guild.id}")
+            logger.info(
+                f"(SYNC DISABLED) Would have synced setup command to new guild {guild.id}"
+            )
         except Exception as e:
-            logger.error(f"Failed to sync setup command to new guild {guild.id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to sync setup command to new guild {guild.id}: {e}",
+                exc_info=True,
+            )
 
     async def on_setup_complete(self, guild_id: int):
         """Handle when a guild completes the setup process."""
@@ -553,9 +668,14 @@ class BettingBot(commands.Bot):
                     self.tree.add_command(cmd, guild=guild_obj)
             # DISABLED: Remove automatic sync to avoid rate limits
             # await self.tree.sync(guild=guild_obj)
-            logger.info(f"(SYNC DISABLED) Would have synced all commands to guild {guild_id} after setup completion")
+            logger.info(
+                f"(SYNC DISABLED) Would have synced all commands to guild {guild_id} after setup completion"
+            )
         except Exception as e:
-            logger.error(f"Failed to sync commands to guild {guild_id} after setup: {e}", exc_info=True)
+            logger.error(
+                f"Failed to sync commands to guild {guild_id} after setup: {e}",
+                exc_info=True,
+            )
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.user_id == self.user.id:
@@ -622,7 +742,9 @@ class BettingBot(commands.Bot):
                             if hasattr(stop_tasks[i], "__self__")
                             else f"Service {i}"
                         )
-                        logger.error("Error stopping %s: %s", service_name, result, exc_info=True)
+                        logger.error(
+                            "Error stopping %s: %s", service_name, result, exc_info=True
+                        )
             except asyncio.TimeoutError:
                 logger.warning("Timeout while waiting for services to stop")
             except Exception as e:
@@ -637,7 +759,9 @@ class BettingBot(commands.Bot):
                 except asyncio.TimeoutError:
                     logger.warning("Timeout while closing database connection pool")
                 except Exception as e:
-                    logger.error("Error closing database connection pool: %s", e, exc_info=True)
+                    logger.error(
+                        "Error closing database connection pool: %s", e, exc_info=True
+                    )
 
             if self.webapp_process and self.webapp_process.poll() is None:
                 self.webapp_process.send_signal(signal.SIGINT)
@@ -657,34 +781,50 @@ class BettingBot(commands.Bot):
                 logger.error("Error closing Discord client: %s", e, exc_info=True)
             logger.info("Bot shutdown complete.")
 
+
 # --- Manual Sync Command (as a Cog) ---
 class SyncCog(commands.Cog):
     def __init__(self, bot: BettingBot):
         self.bot = bot
 
-    @app_commands.command(name="sync", description="Manually sync bot commands (admin only)")
+    @app_commands.command(
+        name="sync", description="Manually sync bot commands (admin only)"
+    )
     @app_commands.checks.has_permissions(administrator=True)
     async def sync_command(self, interaction: discord.Interaction):
-        logger.info("Manual sync initiated by %s in guild %s", interaction.user, interaction.guild_id)
+        logger.info(
+            "Manual sync initiated by %s in guild %s",
+            interaction.user,
+            interaction.guild_id,
+        )
         try:
             await interaction.response.defer(ephemeral=True)
             commands_list = [cmd.name for cmd in self.bot.tree.get_commands()]
             logger.debug("Commands to sync: %s", commands_list)
             await self.bot.sync_commands_with_retry()
-            await interaction.followup.send("Global commands synced successfully!", ephemeral=True)
+            await interaction.followup.send(
+                "Global commands synced successfully!", ephemeral=True
+            )
         except Exception as e:
             logger.error("Failed to sync commands: %s", e, exc_info=True)
             if not interaction.response.is_done():
-                await interaction.response.send_message(f"Failed to sync commands: {e}", ephemeral=True)
+                await interaction.response.send_message(
+                    f"Failed to sync commands: {e}", ephemeral=True
+                )
             else:
-                await interaction.followup.send(f"Failed to sync commands: {e}", ephemeral=True)
+                await interaction.followup.send(
+                    f"Failed to sync commands: {e}", ephemeral=True
+                )
+
 
 async def setup_sync_cog(bot: BettingBot):
     await bot.add_cog(SyncCog(bot))
     logger.info("SyncCog loaded")
 
+
 # Add a manual sync command to AdminService or a new AdminCog
 from discord.ext import commands
+
 
 class ManualSyncCog(commands.Cog):
     def __init__(self, bot):
@@ -694,21 +834,25 @@ class ManualSyncCog(commands.Cog):
     @commands.is_owner()
     async def synccommands(self, ctx):
         """Manually sync commands to the test guild."""
-        test_guild_id = int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+        test_guild_id = (
+            int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+        )
         if test_guild_id:
             await ctx.bot.tree.sync(guild=discord.Object(id=test_guild_id))
             await ctx.send(f"Commands synced to test guild {test_guild_id}!")
         else:
             await ctx.send("TEST_GUILD_ID not set. Cannot sync commands.")
 
-# Register the manual sync cog in BettingBot.setup_hook
+    # Register the manual sync cog in BettingBot.setup_hook
     async def setup_hook(self):
         logger.info("Starting setup_hook...")
         await run_one_time_logo_download()
         await run_one_time_player_data_download()
         await self.db_manager.connect()
         if not self.db_manager._pool:
-            logger.critical("Database connection pool failed to initialize. Bot cannot continue.")
+            logger.critical(
+                "Database connection pool failed to initialize. Bot cannot continue."
+            )
             await self.close()
             sys.exit("Database connection failed.")
         await self.db_manager.execute(
@@ -740,17 +884,26 @@ class ManualSyncCog(commands.Cog):
         results = await asyncio.gather(*service_starts, return_exceptions=True)
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                service_name = service_starts[i].__self__.__class__.__name__ if hasattr(service_starts[i], "__self__") else f"Service {i}"
-                logger.error("Error starting %s: %s", service_name, result, exc_info=True)
+                service_name = (
+                    service_starts[i].__self__.__class__.__name__
+                    if hasattr(service_starts[i], "__self__")
+                    else f"Service {i}"
+                )
+                logger.error(
+                    "Error starting %s: %s", service_name, result, exc_info=True
+                )
         logger.info("Services startup initiated, including LiveGameChannelService.")
         # Register the manual sync cog
         self.add_cog(ManualSyncCog(self))
         if not os.getenv("SCHEDULER_MODE"):
             self.start_flask_webapp()
             self.start_fetcher()
-            logger.info("Bot setup_hook completed successfully - commands will be synced in on_ready")
+            logger.info(
+                "Bot setup_hook completed successfully - commands will be synced in on_ready"
+            )
         else:
             logger.info("Bot setup_hook completed successfully in scheduler mode")
+
 
 # --- Main Execution ---
 async def run_bot():
@@ -765,7 +918,9 @@ async def run_bot():
             await bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"])
             break
         except discord.LoginFailure:
-            logger.critical("Login failed: Invalid Discord token provided in .env file.")
+            logger.critical(
+                "Login failed: Invalid Discord token provided in .env file."
+            )
             break
         except discord.PrivilegedIntentsRequired as e:
             shard_id_info = f" (Shard ID: {e.shard_id})" if e.shard_id else ""
@@ -773,21 +928,37 @@ async def run_bot():
                 "Privileged Intents%s are required but not enabled in the Discord Developer Portal.",
                 shard_id_info,
             )
-            logger.critical("Enable 'Presence Intent', 'Server Members Intent', and 'Message Content Intent'.")
+            logger.critical(
+                "Enable 'Presence Intent', 'Server Members Intent', and 'Message Content Intent'."
+            )
             break
         except (discord.HTTPException, aiohttp.ClientError, asyncio.TimeoutError) as e:
             retry_count += 1
             if retry_count < max_retries:
-                logger.warning("Connection error occurred (attempt %d/%d): %s", retry_count, max_retries, e)
+                logger.warning(
+                    "Connection error occurred (attempt %d/%d): %s",
+                    retry_count,
+                    max_retries,
+                    e,
+                )
                 logger.info("Retrying in %d seconds...", retry_delay)
                 await asyncio.sleep(retry_delay)
                 retry_delay *= 2
             else:
-                logger.critical("Failed to connect after %d attempts. Last error: %s", max_retries, e)
+                logger.critical(
+                    "Failed to connect after %d attempts. Last error: %s",
+                    max_retries,
+                    e,
+                )
                 break
         except Exception as e:
-            logger.critical("An unexpected error occurred while running the bot: %s", e, exc_info=True)
+            logger.critical(
+                "An unexpected error occurred while running the bot: %s",
+                e,
+                exc_info=True,
+            )
             break
+
 
 def main():
     try:
@@ -796,9 +967,12 @@ def main():
     except KeyboardInterrupt:
         logger.info("Bot shutdown requested via KeyboardInterrupt.")
     except Exception as e:
-        logger.critical("An unexpected error occurred while running the bot: %s", e, exc_info=True)
+        logger.critical(
+            "An unexpected error occurred while running the bot: %s", e, exc_info=True
+        )
     finally:
         logger.info("Bot process finished.")
+
 
 if __name__ == "__main__":
     main()

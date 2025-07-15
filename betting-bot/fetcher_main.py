@@ -28,10 +28,12 @@ MYSQL_PORT = int(os.getenv("MYSQL_PORT", 3306))
 
 EDT = ZoneInfo("America/New_York")
 
+
 async def main():
     """Main function to handle fetcher tasks."""
     logger.info("Starting fetcher tasks...")
     # Add your main fetcher logic here
+
 
 if __name__ == "__main__":
     asyncio.run(main())

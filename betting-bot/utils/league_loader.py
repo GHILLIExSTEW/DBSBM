@@ -46,6 +46,7 @@ ALL_LEAGUES = {
     # Add more leagues as needed...
 }
 
+
 def get_all_league_names():
     """Return a list of all league names for dropdowns."""
-    return [info["name"] for info in ALL_LEAGUES.values()] 
+    return [info["name"] for info in ALL_LEAGUES.values()]

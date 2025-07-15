@@ -21,7 +21,7 @@ if not isinstance(sports_data, list):
     print(json.dumps(sports_data, indent=2))
     exit(1)
 
-sport_keys = [sport['key'] for sport in sports_data if sport.get('key')]
+sport_keys = [sport["key"] for sport in sports_data if sport.get("key")]
 print(f"Found {len(sport_keys)} sport keys.")
 
 # Step 2: For each sport key, fetch teams
@@ -46,4 +46,4 @@ for SPORT_KEY in sport_keys:
     teams = sorted(t for t in teams if t)
     with open(f"oddsapi_{SPORT_KEY}_teams.json", "w", encoding="utf-8") as f:
         json.dump(teams, f, indent=2, ensure_ascii=False)
-    print(f"Saved {len(teams)} teams to oddsapi_{SPORT_KEY}_teams.json") 
+    print(f"Saved {len(teams)} teams to oddsapi_{SPORT_KEY}_teams.json")

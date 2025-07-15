@@ -1,5 +1,5 @@
-# This file makes the utils directory a Python package 
+# This file makes the utils directory a Python package
 
-"""Utility modules for the betting bot.""" 
+"""Utility modules for the betting bot."""
 
-"""Utilities package for helper functions and classes.""" 
+"""Utilities package for helper functions and classes."""

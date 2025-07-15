@@ -8,6 +8,7 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
+
 class SyncCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -19,7 +20,8 @@ class SyncCog(commands.Cog):
     async def sync_command(self, interaction: discord.Interaction):
         logger.info(
             "Manual sync initiated by %s in guild %s",
-            interaction.user, interaction.guild_id
+            interaction.user,
+            interaction.guild_id,
         )
         try:
             await interaction.response.defer(ephemeral=True)
@@ -29,8 +31,11 @@ class SyncCog(commands.Cog):
             # Clear existing commands and sync globally
             self.bot.tree.clear_commands(guild=None)
             # synced = await self.bot.tree.sync()  # DISABLED: Prevent rate limit
-            logger.info("Global commands synced: %s", [cmd.name for cmd in self.bot.tree.get_commands()])
-            
+            logger.info(
+                "Global commands synced: %s",
+                [cmd.name for cmd in self.bot.tree.get_commands()],
+            )
+
             # Log final command list for verification
             global_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
             logger.info("Final global commands: %s", global_commands)
@@ -41,11 +46,16 @@ class SyncCog(commands.Cog):
         except Exception as e:
             logger.error("Failed to sync commands: %s", e, exc_info=True)
             if not interaction.response.is_done():
-                 await interaction.response.send_message(f"Failed to sync commands: {e}",ephemeral=True)
+                await interaction.response.send_message(
+                    f"Failed to sync commands: {e}", ephemeral=True
+                )
             else:
-                 await interaction.followup.send(f"Failed to sync commands: {e}",ephemeral=True)
+                await interaction.followup.send(
+                    f"Failed to sync commands: {e}", ephemeral=True
+                )
+
 
 async def setup_sync_cog(bot):
     """Setup function to register the SyncCog."""
     await bot.add_cog(SyncCog(bot))
-    logger.info("SyncCog loaded") 
+    logger.info("SyncCog loaded")

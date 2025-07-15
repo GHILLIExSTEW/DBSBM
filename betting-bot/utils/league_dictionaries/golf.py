@@ -13,15 +13,15 @@ GOLF_LEAGUES = {
         "type": "men",
         "tournaments": [
             "Masters Tournament",
-            "PGA Championship", 
+            "PGA Championship",
             "U.S. Open",
             "The Open Championship",
             "FedEx Cup",
-            "PGA Tour Championship"
-        ]
+            "PGA Tour Championship",
+        ],
     },
     "LPGA": {
-        "name": "LPGA Tour", 
+        "name": "LPGA Tour",
         "sport": "golf",
         "type": "women",
         "tournaments": [
@@ -29,37 +29,34 @@ GOLF_LEAGUES = {
             "KPMG Women's PGA Championship",
             "U.S. Women's Open",
             "AIG Women's Open",
-            "CME Group Tour Championship"
-        ]
+            "CME Group Tour Championship",
+        ],
     },
     "EuropeanTour": {
         "name": "European Tour",
-        "sport": "golf", 
+        "sport": "golf",
         "type": "men",
         "tournaments": [
             "BMW PGA Championship",
             "DP World Tour Championship",
             "Scottish Open",
             "Irish Open",
-            "French Open"
-        ]
+            "French Open",
+        ],
     },
     "LIVGolf": {
         "name": "LIV Golf",
         "sport": "golf",
         "type": "men",
-        "tournaments": [
-            "LIV Golf Invitational Series",
-            "LIV Golf Team Championship"
-        ]
-    }
+        "tournaments": ["LIV Golf Invitational Series", "LIV Golf Team Championship"],
+    },
 }
 
 # Golf specific mappings
 GOLF_MAPPINGS = {
     "course_types": ["links", "parkland", "desert", "mountain", "coastal"],
     "tournament_formats": ["stroke_play", "match_play", "stableford", "scramble"],
-    "major_championships": ["masters", "pga", "us_open", "open_championship"]
+    "major_championships": ["masters", "pga", "us_open", "open_championship"],
 }
 
 # PGA Tour Players
@@ -362,24 +359,28 @@ GOLF_TEAM_MAPPINGS = {
     "PresidentsCup": PRESIDENTS_CUP_TEAMS,
 }
 
+
 # Export the main mapping function
 def get_golf_player_name(player_name: str, league: str = "PGA") -> str:
     """Get normalized golf player name for a given league."""
     if not player_name:
         return player_name
-    
+
     player_name_lower = player_name.lower().strip()
     league_mappings = GOLF_TEAM_MAPPINGS.get(league, PGA_PLAYERS)
-    
+
     # Try exact match first
     if player_name_lower in league_mappings:
         return league_mappings[player_name_lower]
-    
+
     # Try fuzzy matching
     import difflib
-    matches = difflib.get_close_matches(player_name_lower, league_mappings.keys(), n=1, cutoff=0.75)
+
+    matches = difflib.get_close_matches(
+        player_name_lower, league_mappings.keys(), n=1, cutoff=0.75
+    )
     if matches:
         return league_mappings[matches[0]]
-    
+
     # Return title case as fallback
-    return player_name.title() 
+    return player_name.title()

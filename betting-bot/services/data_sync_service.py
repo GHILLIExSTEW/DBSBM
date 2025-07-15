@@ -20,6 +20,7 @@ if not API_KEY:
 
 EDT = ZoneInfo("America/New_York")
 
+
 def iso_to_mysql_datetime(iso_str):
     """Convert ISO 8601 string to MySQL DATETIME string (ETC)."""
     if not iso_str:
@@ -83,7 +84,9 @@ class DataSyncService:
             if hasattr(self.cache, "connect"):
                 await self.cache.connect()
             self.running = True
-            logger.info("Data sync service started, relying on fetch_and_cache.py for fetches.")
+            logger.info(
+                "Data sync service started, relying on fetch_and_cache.py for fetches."
+            )
 
     async def stop(self):
         """Stop the data sync service background task."""
@@ -106,7 +109,9 @@ class DataSyncService:
             await self.cache.close()
         logger.info("Data sync service stopped.")
 
-    async def _save_games(self, games: List[Dict], sport: str, league: str, league_id: str) -> int:
+    async def _save_games(
+        self, games: List[Dict], sport: str, league: str, league_id: str
+    ) -> int:
         """Save games to database and return count of saved games."""
         saved_count = 0
         for game in games:
@@ -132,7 +137,9 @@ class DataSyncService:
                     league_info = safe_get(game, "league", default={})
                     score = safe_get(game, "score", default={})
                     game_data = {
-                        "id": str(safe_get(game, "id", default=safe_get(fixture, "id"))),
+                        "id": str(
+                            safe_get(game, "id", default=safe_get(fixture, "id"))
+                        ),
                         "sport": sport,
                         "league_id": league_id,
                         "league_name": safe_get(league_info, "name", default=league),
@@ -141,19 +148,25 @@ class DataSyncService:
                         "home_team_name": safe_get(home_team, "name"),
                         "away_team_name": safe_get(away_team, "name"),
                         "start_time": iso_to_mysql_datetime(safe_get(fixture, "date")),
-                        "status": safe_get(fixture, "status", "long", default="Scheduled"),
+                        "status": safe_get(
+                            fixture, "status", "long", default="Scheduled"
+                        ),
                         "score": json.dumps(score),
                         "venue": safe_get(fixture, "venue", "name"),
                         "referee": safe_get(fixture, "referee"),
                         "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                        "fetched_at": datetime.now(timezone.utc).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
                     }
                 elif sport.lower() in ["baseball", "mlb"]:
                     game_data = {
                         "id": str(safe_get(game, "id")),
                         "sport": sport,
                         "league_id": league_id,
-                        "league_name": LEAGUE_CONFIG.get(league, {}).get("name", league),
+                        "league_name": LEAGUE_CONFIG.get(league, {}).get(
+                            "name", league
+                        ),
                         "home_team_id": str(safe_get(home_team, "id")),
                         "away_team_id": str(safe_get(away_team, "id")),
                         "home_team_name": safe_get(home_team, "name"),
@@ -162,21 +175,29 @@ class DataSyncService:
                         "status": safe_get(game, "status", "long", default="Scheduled"),
                         "score": json.dumps(
                             {
-                                "home": safe_get(game, "scores", "home", "total", default=0),
-                                "away": safe_get(game, "scores", "away", "total", default=0),
+                                "home": safe_get(
+                                    game, "scores", "home", "total", default=0
+                                ),
+                                "away": safe_get(
+                                    game, "scores", "away", "total", default=0
+                                ),
                             }
                         ),
                         "venue": safe_get(game, "venue", "name"),
                         "referee": None,
                         "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                        "fetched_at": datetime.now(timezone.utc).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
                     }
                 else:
                     game_data = {
                         "id": str(safe_get(game, "id")),
                         "sport": sport,
                         "league_id": league_id,
-                        "league_name": LEAGUE_CONFIG.get(league, {}).get("name", league),
+                        "league_name": LEAGUE_CONFIG.get(league, {}).get(
+                            "name", league
+                        ),
                         "home_team_id": str(safe_get(home_team, "id")),
                         "away_team_id": str(safe_get(away_team, "id")),
                         "home_team_name": safe_get(home_team, "name"),
@@ -185,14 +206,20 @@ class DataSyncService:
                         "status": safe_get(game, "status", "long", default="Scheduled"),
                         "score": json.dumps(
                             {
-                                "home": safe_get(game, "scores", "home", "total", default=0),
-                                "away": safe_get(game, "scores", "away", "total", default=0),
+                                "home": safe_get(
+                                    game, "scores", "home", "total", default=0
+                                ),
+                                "away": safe_get(
+                                    game, "scores", "away", "total", default=0
+                                ),
                             }
                         ),
                         "venue": safe_get(game, "venue", "name"),
                         "referee": safe_get(game, "referee"),
                         "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                        "fetched_at": datetime.now(timezone.utc).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
                     }
                 if not game_data["id"] or not game_data["start_time"]:
                     self.logger.error(

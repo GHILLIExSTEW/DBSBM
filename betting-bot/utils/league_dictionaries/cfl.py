@@ -16,7 +16,6 @@ TEAM_NAMES = {
     "saskatchewan roughriders": "Saskatchewan Roughriders",
     "toronto argonauts": "Toronto Argonauts",
     "winnipeg blue bombers": "Winnipeg Blue Bombers",
-    
     # Common abbreviations
     "b.c. lions": "BC Lions",
     "b.c lions": "BC Lions",
@@ -29,7 +28,6 @@ TEAM_NAMES = {
     "saskatchewan": "Saskatchewan Roughriders",
     "toronto": "Toronto Argonauts",
     "winnipeg": "Winnipeg Blue Bombers",
-    
     # Team nicknames
     "lions": "BC Lions",
     "stampeders": "Calgary Stampeders",
@@ -49,7 +47,7 @@ TEAM_NAMES = {
 # Full team names for display
 TEAM_FULL_NAMES = {
     "BC Lions": "BC Lions",
-    "Calgary Stampeders": "Calgary Stampeders", 
+    "Calgary Stampeders": "Calgary Stampeders",
     "Edmonton Elks": "Edmonton Elks",
     "Hamilton Tiger-Cats": "Hamilton Tiger-Cats",
     "Montreal Alouettes": "Montreal Alouettes",
@@ -63,11 +61,11 @@ TEAM_FULL_NAMES = {
 TEAM_ABBREVIATIONS = {
     "BC": "BC Lions",
     "CGY": "Calgary Stampeders",
-    "EDM": "Edmonton Elks", 
+    "EDM": "Edmonton Elks",
     "HAM": "Hamilton Tiger-Cats",
     "MTL": "Montreal Alouettes",
     "OTT": "Ottawa Redblacks",
     "SSK": "Saskatchewan Roughriders",
     "TOR": "Toronto Argonauts",
     "WPG": "Winnipeg Blue Bombers",
-} 
+}

@@ -21,51 +21,51 @@ from scripts.download_golf_players import GolfPlayerDownloader
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Download player images from Wikipedia for darts, tennis, and golf"
     )
     parser.add_argument(
-        '--sport', 
-        choices=['tennis', 'darts', 'golf', 'all'],
-        default='all',
-        help='Which sport to download (default: all)'
+        "--sport",
+        choices=["tennis", "darts", "golf", "all"],
+        default="all",
+        help="Which sport to download (default: all)",
     )
     parser.add_argument(
-        '--skip-existing',
-        action='store_true',
-        help='Skip sports that already have downloaded images'
+        "--skip-existing",
+        action="store_true",
+        help="Skip sports that already have downloaded images",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Define downloaders for each sport
     downloaders = {
-        'tennis': TennisPlayerDownloader,
-        'darts': DartsPlayerDownloader, 
-        'golf': GolfPlayerDownloader
+        "tennis": TennisPlayerDownloader,
+        "darts": DartsPlayerDownloader,
+        "golf": GolfPlayerDownloader,
     }
-    
+
     base_dir = Path(__file__).parent.parent
     players_dir = base_dir / "static" / "logos" / "players"
-    
+
     logger.info("🎯 Starting Player Image Download from Wikipedia")
     logger.info(f"Base directory: {base_dir}")
     logger.info(f"Players directory: {players_dir}")
-    
-    if args.sport == 'all':
+
+    if args.sport == "all":
         sports_to_run = list(downloaders.keys())
     else:
         sports_to_run = [args.sport]
-    
+
     successful_sports = []
     failed_sports = []
-    
+
     for sport in sports_to_run:
         if args.skip_existing:
             # Check if sport directory exists and has images
@@ -76,55 +76,58 @@ def main():
                 for subdir in sport_dir.iterdir():
                     if subdir.is_dir():
                         png_count += len(list(subdir.glob("*.png")))
-                
+
                 if png_count > 0:
-                    logger.info(f"⏭️ Skipping {sport} - {png_count} images already exist")
+                    logger.info(
+                        f"⏭️ Skipping {sport} - {png_count} images already exist"
+                    )
                     continue
-        
+
         try:
             logger.info(f"\n{'='*60}")
             logger.info(f"Starting {sport.upper()} player download")
             logger.info(f"{'='*60}")
-            
+
             # Create downloader instance and run
             downloader_class = downloaders[sport]
             downloader = downloader_class()
-            
-            if sport == 'tennis':
+
+            if sport == "tennis":
                 results = downloader.download_all_tennis_players()
-            elif sport == 'darts':
+            elif sport == "darts":
                 results = downloader.download_all_darts_players()
-            elif sport == 'golf':
+            elif sport == "golf":
                 results = downloader.download_all_golf_players()
-            
+
             logger.info(f"✅ {sport} download completed successfully")
             successful_sports.append(sport)
-            
+
         except Exception as e:
             logger.error(f"❌ {sport} download failed: {e}")
             failed_sports.append(sport)
-    
+
     # Final summary
     logger.info(f"\n{'='*60}")
     logger.info("FINAL SUMMARY")
     logger.info(f"{'='*60}")
-    
+
     if successful_sports:
         logger.info(f"✅ Successful: {', '.join(successful_sports)}")
-    
+
     if failed_sports:
         logger.info(f"❌ Failed: {', '.join(failed_sports)}")
-    
+
     logger.info(f"\nTotal sports processed: {len(sports_to_run)}")
     logger.info(f"Successful: {len(successful_sports)}")
     logger.info(f"Failed: {len(failed_sports)}")
-    
+
     if failed_sports:
         logger.info(f"\nTo retry failed sports, run:")
         for sport in failed_sports:
             logger.info(f"  python scripts/download_{sport}_players.py")
-    
+
     logger.info("\n🎉 Player image download process completed!")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

@@ -10,7 +10,13 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 import sys
 
-from config.leagues import LEAGUE_IDS, LEAGUE_SEASON_STARTS, ENDPOINTS, get_current_season, get_auto_season_year
+from config.leagues import (
+    LEAGUE_IDS,
+    LEAGUE_SEASON_STARTS,
+    ENDPOINTS,
+    get_current_season,
+    get_auto_season_year,
+)
 from api.sports_api import SportsAPI
 
 # Configure logging to file and console
@@ -22,7 +28,7 @@ try:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(os.path.join(log_dir, "fetcher.log")),
-            logging.StreamHandler()
+            logging.StreamHandler(),
         ],
     )
 except Exception as e:
@@ -72,6 +78,7 @@ try:
     sys.path.append(os.path.join(os.path.dirname(__file__), "utils"))
     logger.info("Attempting to import utils.api_sports")
     from utils.api_sports import LEAGUE_IDS, ENDPOINTS, ENDPOINTS_MAP
+
     logger.info("Successfully imported LEAGUE_IDS, ENDPOINTS, and ENDPOINTS_MAP")
 except ImportError as e:
     logger.error(f"Failed to import LEAGUE_IDS, ENDPOINTS, or ENDPOINTS_MAP: {e}")
@@ -168,10 +175,14 @@ def iso_to_mysql_datetime(iso_str):
         return None
 
 
-def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Optional[Dict]:
+def map_game_data(
+    game: Dict, sport: str, league: str, league_id: str
+) -> Optional[Dict]:
     """Normalize game data based on sport and league."""
     try:
-        logger.debug(f"Mapping game data for {sport}/{league}, game_id={safe_get(game, 'id', default='unknown')}")
+        logger.debug(
+            f"Mapping game data for {sport}/{league}, game_id={safe_get(game, 'id', default='unknown')}"
+        )
         if sport.lower() in ["football", "soccer"]:
             fixture = safe_get(game, "fixture", default={})
             teams = safe_get(game, "teams", default={})
@@ -200,22 +211,29 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
             teams = safe_get(game, "teams", default={})
             home_team = safe_get(teams, "home", default={})
             away_team = safe_get(teams, "away", default={})
-            
+
             # Get team names and normalize them for MLB
             home_team_name = safe_get(home_team, "name", default="Unknown")
             away_team_name = safe_get(away_team, "name", default="Unknown")
-            
+
             # Use league-specific normalization for MLB only
             if league.upper() == "MLB":
                 from data.game_utils import normalize_team_name
-                home_team_name = normalize_team_name(home_team_name, sport="baseball", league="MLB")
-                away_team_name = normalize_team_name(away_team_name, sport="baseball", league="MLB")
-            
+
+                home_team_name = normalize_team_name(
+                    home_team_name, sport="baseball", league="MLB"
+                )
+                away_team_name = normalize_team_name(
+                    away_team_name, sport="baseball", league="MLB"
+                )
+
             game_data = {
                 "id": str(safe_get(game, "id", default="")),
                 "sport": "Baseball",
                 "league_id": league_id,
-                "league_name": LEAGUE_CONFIG["baseball"].get(league, {}).get("name", league),
+                "league_name": LEAGUE_CONFIG["baseball"]
+                .get(league, {})
+                .get("name", league),
                 "home_team_id": str(safe_get(home_team, "id")),
                 "away_team_id": str(safe_get(away_team, "id")),
                 "home_team_name": home_team_name,
@@ -272,7 +290,9 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
                 ),
                 "sport": sport.title(),
                 "league_id": league_id,
-                "league_name": LEAGUE_CONFIG.get(sport, {}).get(league, {}).get("name", league),
+                "league_name": LEAGUE_CONFIG.get(sport, {})
+                .get(league, {})
+                .get("name", league),
                 "home_team_id": str(safe_get(home_team, "id")),
                 "away_team_id": str(safe_get(away_team, "id")),
                 "home_team_name": safe_get(home_team, "name", default="Unknown"),
@@ -286,31 +306,37 @@ def map_game_data(game: Dict, sport: str, league: str, league_id: str) -> Option
                     "long",
                     default=safe_get(fixture, "status", "long", default="Scheduled"),
                 ),
-                "score": json.dumps(
-                    {
-                        "home": safe_get(
-                            game,
-                            "scores",
-                            "home",
-                            "total",
-                            default=safe_get(game, "goals", "home", default=0),
-                        ),
-                        "away": safe_get(
-                            game,
-                            "scores",
-                            "away",
-                            "total",
-                            default=safe_get(game, "goals", "away", default=0),
-                        ),
-                    }
-                ) if any(safe_get(game, key) for key in ["scores", "goals"]) else "{}",
+                "score": (
+                    json.dumps(
+                        {
+                            "home": safe_get(
+                                game,
+                                "scores",
+                                "home",
+                                "total",
+                                default=safe_get(game, "goals", "home", default=0),
+                            ),
+                            "away": safe_get(
+                                game,
+                                "scores",
+                                "away",
+                                "total",
+                                default=safe_get(game, "goals", "away", default=0),
+                            ),
+                        }
+                    )
+                    if any(safe_get(game, key) for key in ["scores", "goals"])
+                    else "{}"
+                ),
                 "venue": safe_get(game, "venue", "name", default=None),
                 "referee": safe_get(fixture, "referee"),
                 "raw_json": json.dumps(game),
                 "fetched_at": datetime.now(EDT).strftime("%Y-%m-%d %H:%M:%S"),
             }
         if not game_data["id"] or not game_data["start_time"]:
-            logger.error(f"Skipping game with missing id or start_time: {json.dumps(game)}")
+            logger.error(
+                f"Skipping game with missing id or start_time: {json.dumps(game)}"
+            )
             return None
         logger.debug(f"Successfully mapped game: {game_data['id']}")
         return game_data
@@ -339,7 +365,9 @@ async def create_db_pool() -> aiomysql.Pool:
     logger.info(f"  Port: {MYSQL_PORT}")
     logger.info(f"  Database: {MYSQL_DB}")
     logger.info(f"  User: {MYSQL_USER}")
-    logger.info(f"  Password: {'*' * len(MYSQL_PASSWORD) if MYSQL_PASSWORD else 'Not set'}")
+    logger.info(
+        f"  Password: {'*' * len(MYSQL_PASSWORD) if MYSQL_PASSWORD else 'Not set'}"
+    )
     logger.info("Testing database connection...")
 
     max_retries = 3
@@ -354,7 +382,7 @@ async def create_db_pool() -> aiomysql.Pool:
                 user=MYSQL_USER,
                 password=MYSQL_PASSWORD,
                 db=MYSQL_DB,
-                connect_timeout=30
+                connect_timeout=30,
             ) as test_conn:
                 logger.info("Test connection successful")
             logger.info("Creating connection pool...")
@@ -368,16 +396,18 @@ async def create_db_pool() -> aiomysql.Pool:
                 minsize=1,
                 maxsize=5,
                 connect_timeout=30,
-                echo=True
+                echo=True,
             )
             logger.info("Database connection pool created successfully")
             return pool
         except aiomysql.OperationalError as e:
             last_error = e
-            error_code = e.args[0] if e.args else 'unknown'
-            sql_state = e.args[1] if len(e.args) > 1 else 'unknown'
+            error_code = e.args[0] if e.args else "unknown"
+            sql_state = e.args[1] if len(e.args) > 1 else "unknown"
             error_message = str(e)
-            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed to connect to MySQL:")
+            logger.warning(
+                f"Attempt {attempt + 1}/{max_retries} failed to connect to MySQL:"
+            )
             logger.warning(f"  Error code: {error_code}")
             logger.warning(f"  SQL state: {sql_state}")
             logger.warning(f"  Error message: {error_message}")
@@ -393,7 +423,9 @@ async def create_db_pool() -> aiomysql.Pool:
 
     if last_error:
         logger.critical("FATAL: All connection attempts failed")
-        raise ConnectionError(f"Failed to connect after {max_retries} attempts: {last_error}") from last_error
+        raise ConnectionError(
+            f"Failed to connect after {max_retries} attempts: {last_error}"
+        ) from last_error
 
 
 async def clear_api_games_table(pool: aiomysql.Pool):
@@ -436,7 +468,9 @@ async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
                         fetched_at=VALUES(fetched_at)
                     """,
                     (
-                        game_data.get("api_game_id", str(game_data["id"])),  # Use api_game_id if available, fallback to id
+                        game_data.get(
+                            "api_game_id", str(game_data["id"])
+                        ),  # Use api_game_id if available, fallback to id
                         None,  # Let MySQL auto-increment handle the internal id
                         game_data["sport"],
                         game_data["league_id"],
@@ -512,6 +546,7 @@ def get_season_for_league(league_name: str) -> int:
     """Return the correct season year for a league using auto-detection."""
     return get_auto_season_year(league_name)
 
+
 def log_endpoint_mapping():
     """Log the complete endpoint mapping for debugging purposes."""
     logger.info("=== ENDPOINT MAPPING CONFIGURATION ===")
@@ -519,9 +554,9 @@ def log_endpoint_mapping():
         logger.info(f"Sport: {sport}")
         logger.info(f"  Base URL: {config['base']}")
         logger.info(f"  Available endpoints: {list(config.keys())}")
-        if 'games' in config:
+        if "games" in config:
             logger.info(f"  Games endpoint: {config['base']}{config['games']}")
-        if 'fixtures' in config:
+        if "fixtures" in config:
             logger.info(f"  Fixtures endpoint: {config['base']}{config['fixtures']}")
         logger.info("---")
     logger.info("=== END OF ENDPOINT MAPPING ===")
@@ -536,21 +571,23 @@ async def fetch_games(
     date: str,
     season: int = None,
     end_date: str = None,
-    max_retries: int = 3
+    max_retries: int = 3,
 ):
     """Fetch game data for a specific league and date range, saving to database and cache."""
     # Use the reconciled season logic
     if season is None:
         season = get_season_for_league(league_name)
     headers = {"x-apisports-key": API_KEY}
-    
+
     # Use comprehensive ENDPOINTS_MAP for better endpoint resolution
     sport_config = ENDPOINTS_MAP.get(sport)
     if not sport_config or not league_id:
-        logger.warning(f"Skipping {league_name}: missing endpoint configuration or league_id for sport '{sport}'")
+        logger.warning(
+            f"Skipping {league_name}: missing endpoint configuration or league_id for sport '{sport}'"
+        )
         logger.debug(f"Available sports in ENDPOINTS_MAP: {list(ENDPOINTS_MAP.keys())}")
         return False
-    
+
     # Determine the correct endpoint based on sport
     base_url = sport_config["base"]
     if sport == "football":
@@ -566,13 +603,15 @@ async def fetch_games(
     #         endpoint_path = sport_config.get("tournaments", "/tournaments")
     else:
         endpoint_path = sport_config.get("games", "/games")
-    
+
     endpoint = f"{base_url}{endpoint_path}"
     params = {"league": league_id, "date": date, "season": season}
     if end_date:
         params["to"] = end_date
-    
-    logger.info(f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})")
+
+    logger.info(
+        f"Fetching games for {league_name} (league_id={league_id}, sport={sport}, date={date}, season={season})"
+    )
     logger.info(f"Using endpoint: {endpoint}")
     logger.info(f"Sport configuration: {sport_config}")
     logger.debug(f"API request params: {params}")
@@ -581,20 +620,26 @@ async def fetch_games(
         try:
             async with session.get(endpoint, headers=headers, params=params) as resp:
                 logger.info(f"API response status for {league_name}: {resp.status}")
-                
+
                 if resp.status == 429:  # Rate limit
-                    wait_time = int(resp.headers.get('retry-after', 60))
-                    logger.warning(f"Rate limit hit for {league_name}. Waiting {wait_time} seconds...")
+                    wait_time = int(resp.headers.get("retry-after", 60))
+                    logger.warning(
+                        f"Rate limit hit for {league_name}. Waiting {wait_time} seconds..."
+                    )
                     await asyncio.sleep(wait_time)
                     retry_count += 1
                     continue
-                    
+
                 elif resp.status != 200:
                     error_text = await resp.text()
-                    logger.error(f"Error fetching {league_name}: {resp.status} - {error_text}")
+                    logger.error(
+                        f"Error fetching {league_name}: {resp.status} - {error_text}"
+                    )
                     if retry_count + 1 < max_retries:
                         retry_count += 1
-                        await asyncio.sleep(5 * (retry_count + 1))  # Exponential backoff
+                        await asyncio.sleep(
+                            5 * (retry_count + 1)
+                        )  # Exponential backoff
                         continue
                     return False
 
@@ -605,7 +650,9 @@ async def fetch_games(
 
                 games = data.get("response", [])
                 if not games:
-                    logger.warning(f"No games found for {league_name} on {date} (params: {params})")
+                    logger.warning(
+                        f"No games found for {league_name} on {date} (params: {params})"
+                    )
                     logger.warning(f"Raw API response: {json.dumps(data)[:1000]}")
                     return True  # Consider this a success - just no games available
 
@@ -617,9 +664,14 @@ async def fetch_games(
                         if game_data and await save_game_to_db(pool, game_data):
                             saved_count += 1
                     except Exception as e:
-                        logger.error(f"Error processing game for {league_name}: {e}", exc_info=True)
-                
-                logger.info(f"Successfully saved {saved_count}/{len(games)} games for {league_name}")
+                        logger.error(
+                            f"Error processing game for {league_name}: {e}",
+                            exc_info=True,
+                        )
+
+                logger.info(
+                    f"Successfully saved {saved_count}/{len(games)} games for {league_name}"
+                )
                 return True
 
         except aiohttp.ClientError as e:
@@ -629,7 +681,7 @@ async def fetch_games(
                 await asyncio.sleep(5 * (retry_count + 1))
                 continue
             return False
-            
+
         except Exception as e:
             logger.error(f"Unexpected error fetching {league_name}: {e}", exc_info=True)
             return False
@@ -647,7 +699,7 @@ async def initial_fetch(pool: aiomysql.Pool):
     logger.info("Starting initial data fetch for all leagues")
     logger.info(f"Available sports in ENDPOINTS_MAP: {list(ENDPOINTS_MAP.keys())}")
     logger.info(f"Configured leagues: {list(LEAGUE_IDS.keys())}")
-    
+
     failed_fetches = []
     successful_fetches = []
     try:
@@ -656,7 +708,7 @@ async def initial_fetch(pool: aiomysql.Pool):
                 sport = league_info["sport"]
                 league_id = league_info["id"]
                 season = get_current_season(league_name)
-                
+
                 # Log sport configuration details
                 sport_config = ENDPOINTS_MAP.get(sport)
                 if sport_config:
@@ -675,19 +727,27 @@ async def initial_fetch(pool: aiomysql.Pool):
                     #         endpoint_path = sport_config.get("tournaments", "/tournaments")
                     else:
                         endpoint_path = sport_config.get("games", "/games")
-                    
-                    logger.info(f"[initial] Fetching {league_name} (sport: {sport}, league_id: {league_id}, season: {season})")
+
+                    logger.info(
+                        f"[initial] Fetching {league_name} (sport: {sport}, league_id: {league_id}, season: {season})"
+                    )
                     logger.info(f"[initial] Using endpoint: {base_url}{endpoint_path}")
                 else:
-                    logger.warning(f"[initial] No endpoint configuration found for sport '{sport}' when fetching {league_name}")
-                
+                    logger.warning(
+                        f"[initial] No endpoint configuration found for sport '{sport}' when fetching {league_name}"
+                    )
+
                 # Fetch for today
-                result_today = await fetch_games(pool, session, sport, league_name, league_id, today_str, season)
+                result_today = await fetch_games(
+                    pool, session, sport, league_name, league_id, today_str, season
+                )
                 await asyncio.sleep(1.2)  # Throttle to avoid rate limit
                 # Fetch for tomorrow
-                result_tomorrow = await fetch_games(pool, session, sport, league_name, league_id, tomorrow_str, season)
+                result_tomorrow = await fetch_games(
+                    pool, session, sport, league_name, league_id, tomorrow_str, season
+                )
                 await asyncio.sleep(1.2)  # Throttle to avoid rate limit
-                
+
                 if result_today and result_tomorrow:
                     successful_fetches.append(league_name)
                 else:
@@ -696,7 +756,9 @@ async def initial_fetch(pool: aiomysql.Pool):
                     if not result_tomorrow:
                         failed_fetches.append(f"{league_name} (tomorrow)")
 
-        logger.info(f"Initial fetch completed. Successful: {len(successful_fetches)} leagues")
+        logger.info(
+            f"Initial fetch completed. Successful: {len(successful_fetches)} leagues"
+        )
         if successful_fetches:
             logger.info(f"Successfully fetched: {', '.join(successful_fetches)}")
         if failed_fetches:
@@ -708,6 +770,7 @@ async def initial_fetch(pool: aiomysql.Pool):
         logger.error(f"Error during initial fetch: {e}", exc_info=True)
         return False
 
+
 async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
     """Update bet-related games every 5 seconds."""
     logger.info("Starting 5-second update loop for bet games")
@@ -717,29 +780,37 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
         # Initialize SportsAPI once outside the loop
         api = SportsAPI(db_manager=pool)
         await api.__aenter__()  # Initialize the API session
-        logger.debug("SportsAPI initialized for bet games update loop")  # Changed to debug level
-        
+        logger.debug(
+            "SportsAPI initialized for bet games update loop"
+        )  # Changed to debug level
+
         while True:
             try:
                 # Get active games with bets
                 async with pool.acquire() as conn:
                     async with conn.cursor(aiomysql.DictCursor) as cur:
-                        await cur.execute("""
+                        await cur.execute(
+                            """
                             SELECT DISTINCT ag.api_game_id, ag.sport, ag.league_id 
                             FROM bets b
                             JOIN api_games ag ON b.api_game_id = ag.api_game_id
                             WHERE b.confirmed = 1 
                             AND ag.status NOT IN ('Match Finished', 'Finished', 'FT', 'Game Finished', 'Final')
-                        """)
+                        """
+                        )
                         bet_games = await cur.fetchall()
 
                 if bet_games:
                     for game in bet_games:
                         try:
                             # Use existing API instance
-                            await api.update_game(game['api_game_id'], game['sport'], game['league_id'])
+                            await api.update_game(
+                                game["api_game_id"], game["sport"], game["league_id"]
+                            )
                         except Exception as e:
-                            logger.error(f"Error updating game {game['api_game_id']}: {e}")
+                            logger.error(
+                                f"Error updating game {game['api_game_id']}: {e}"
+                            )
                             continue
 
             except Exception as e:
@@ -755,19 +826,20 @@ async def update_bet_games_every_5_seconds(pool: aiomysql.Pool):
             await api.__aexit__(None, None, None)
             logger.debug("SportsAPI connection closed")  # Changed to debug level
 
+
 async def setup_db_pool() -> aiomysql.Pool:
     """Set up and return a MySQL connection pool."""
     try:
         logger.info("Creating MySQL connection pool...")
         pool = await aiomysql.create_pool(
-            host=os.getenv('MYSQL_HOST'),
-            port=int(os.getenv('MYSQL_PORT', 3306)),
-            user=os.getenv('MYSQL_USER'),
-            password=os.getenv('MYSQL_PASSWORD'),
-            db=os.getenv('MYSQL_DB'),
-            minsize=int(os.getenv('MYSQL_POOL_MIN_SIZE', 1)),
-            maxsize=int(os.getenv('MYSQL_POOL_MAX_SIZE', 10)),
-            autocommit=True
+            host=os.getenv("MYSQL_HOST"),
+            port=int(os.getenv("MYSQL_PORT", 3306)),
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            db=os.getenv("MYSQL_DB"),
+            minsize=int(os.getenv("MYSQL_POOL_MIN_SIZE", 1)),
+            maxsize=int(os.getenv("MYSQL_POOL_MAX_SIZE", 10)),
+            autocommit=True,
         )
         logger.info("MySQL connection pool created successfully")
         return pool
@@ -783,11 +855,16 @@ async def run_hourly_fetch_task(pool: aiomysql.Pool):
         # Calculate next hour
         next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
         wait_seconds = (next_hour - now).total_seconds()
-        logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next full hour fetch...")
+        logger.info(
+            f"Waiting {wait_seconds/60:.1f} minutes until next full hour fetch..."
+        )
         await asyncio.sleep(wait_seconds)
-        logger.info("Running scheduled hourly full fetch: clearing api_games and fetching all fresh data...")
+        logger.info(
+            "Running scheduled hourly full fetch: clearing api_games and fetching all fresh data..."
+        )
         await clear_api_games_table(pool)
         await initial_fetch(pool)
+
 
 # Update main function to only use the 5-second update loop
 async def main():
@@ -796,10 +873,10 @@ async def main():
     try:
         pool = await setup_db_pool()
         logger.info("Database pool created successfully")
-        
+
         # Log endpoint mapping configuration at startup
         log_endpoint_mapping()
-        
+
         # Clear api_games on server restart
         await clear_api_games_table(pool)
         # Start the hourly fetch in the background
@@ -817,8 +894,11 @@ async def main():
             await pool.wait_closed()
             logger.info("Database pool closed")
 
+
 if __name__ == "__main__":
     asyncio.run(main())
 
 # Reduce verbosity of SportsAPI initialization messages
-logging.getLogger('api.sports_api').setLevel(logging.WARNING)  # Change from INFO to WARNING
+logging.getLogger("api.sports_api").setLevel(
+    logging.WARNING
+)  # Change from INFO to WARNING

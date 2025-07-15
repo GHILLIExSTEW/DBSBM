@@ -1,5 +1,5 @@
-# This file makes the services directory a Python package 
+# This file makes the services directory a Python package
 
-"""Services package for the betting bot.""" 
+"""Services package for the betting bot."""
 
-"""Services package for bot functionality.""" 
+"""Services package for bot functionality."""

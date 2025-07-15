@@ -31,7 +31,7 @@ MLB_TEAM_NAMES = {
     "tampa bay rays": "Tampa Bay Rays",
     "texas rangers": "Texas Rangers",
     "toronto blue jays": "Toronto Blue Jays",
-    "washington nationals": "Washington Nationals"
+    "washington nationals": "Washington Nationals",
 }
 
 # NFL Teams
@@ -67,7 +67,7 @@ NFL_TEAM_NAMES = {
     "seattle seahawks": "Seattle Seahawks",
     "tampa bay buccaneers": "Tampa Bay Buccaneers",
     "tennessee titans": "Tennessee Titans",
-    "washington commanders": "Washington Commanders"
+    "washington commanders": "Washington Commanders",
 }
 
 # NBA Teams
@@ -101,7 +101,7 @@ NBA_TEAM_NAMES = {
     "san antonio spurs": "San Antonio Spurs",
     "toronto raptors": "Toronto Raptors",
     "utah jazz": "Utah Jazz",
-    "washington wizards": "Washington Wizards"
+    "washington wizards": "Washington Wizards",
 }
 
 # NHL Teams
@@ -137,7 +137,7 @@ NHL_TEAM_NAMES = {
     "vancouver canucks": "Vancouver Canucks",
     "vegas golden knights": "Vegas Golden Knights",
     "washington capitals": "Washington Capitals",
-    "winnipeg jets": "Winnipeg Jets"
+    "winnipeg jets": "Winnipeg Jets",
 }
 
 # EPL Teams
@@ -161,7 +161,7 @@ EPL_TEAM_NAMES = {
     "southampton": "Southampton",
     "tottenham hotspur": "Tottenham Hotspur",
     "west ham united": "West Ham United",
-    "wolverhampton wanderers": "Wolverhampton Wanderers"
+    "wolverhampton wanderers": "Wolverhampton Wanderers",
 }
 
 # La Liga Teams
@@ -185,7 +185,7 @@ LALIGA_TEAM_NAMES = {
     "real sociedad": "Real Sociedad",
     "sevilla": "Sevilla",
     "valencia": "Valencia",
-    "villarreal": "Villarreal"
+    "villarreal": "Villarreal",
 }
 
 # Bundesliga Teams
@@ -207,7 +207,7 @@ BUNDESLIGA_TEAM_NAMES = {
     "stuttgart": "Stuttgart",
     "union berlin": "Union Berlin",
     "werder bremen": "Werder Bremen",
-    "wolfsburg": "Wolfsburg"
+    "wolfsburg": "Wolfsburg",
 }
 
 # Serie A Teams
@@ -231,7 +231,7 @@ SERIEA_TEAM_NAMES = {
     "salernitana": "Salernitana",
     "sassuolo": "Sassuolo",
     "torino": "Torino",
-    "udinese": "Udinese"
+    "udinese": "Udinese",
 }
 
 # Ligue 1 Teams
@@ -251,7 +251,7 @@ LIGUE1_TEAM_NAMES = {
     "reims": "Reims",
     "rennes": "Rennes",
     "strasbourg": "Strasbourg",
-    "toulouse": "Toulouse"
+    "toulouse": "Toulouse",
 }
 
 # MLS Teams
@@ -284,7 +284,7 @@ MLS_TEAM_NAMES = {
     "sporting kansas city": "Sporting Kansas City",
     "st. louis city": "St. Louis City",
     "toronto fc": "Toronto FC",
-    "vancouver whitecaps": "Vancouver Whitecaps"
+    "vancouver whitecaps": "Vancouver Whitecaps",
 }
 
 # WNBA Teams
@@ -300,7 +300,7 @@ WNBA_TEAM_NAMES = {
     "new york liberty": "New York Liberty",
     "phoenix mercury": "Phoenix Mercury",
     "seattle storm": "Seattle Storm",
-    "washington mystics": "Washington Mystics"
+    "washington mystics": "Washington Mystics",
 }
 
 # NPB Teams
@@ -316,7 +316,7 @@ NPB_TEAM_NAMES = {
     "tokyo yakult swallows": "Tokyo Yakult Swallows",
     "yokohama baystars": "Yokohama BayStars",
     "yokohama dena baystars": "Yokohama DeNA BayStars",
-    "yomiuri giants": "Yomiuri Giants"
+    "yomiuri giants": "Yomiuri Giants",
 }
 
 # KBO Teams
@@ -330,7 +330,7 @@ KBO_TEAM_NAMES = {
     "nc dinos": "NC Dinos",
     "samsung lions": "Samsung Lions",
     "ssg landers": "SSG Landers",
-    "kiwoom heroes": "Kiwoom Heroes"
+    "kiwoom heroes": "Kiwoom Heroes",
 }
 
 # KHL Teams
@@ -347,7 +347,7 @@ KHL_TEAM_NAMES = {
     "spartak moscow": "Spartak Moscow",
     "torpedo nizhny novgorod": "Torpedo Nizhny Novgorod",
     "traktor chelyabinsk": "Traktor Chelyabinsk",
-    "vityaz podolsk": "Vityaz Podolsk"
+    "vityaz podolsk": "Vityaz Podolsk",
 }
 
 # PDC Players
@@ -366,7 +366,7 @@ PDC_PLAYER_NAMES = {
     "joe cullen": "Joe Cullen",
     "dave chisnall": "Dave Chisnall",
     "gary anderson": "Gary Anderson",
-    "jonny clayton": "Jonny Clayton"
+    "jonny clayton": "Jonny Clayton",
 }
 
 # WTA Players
@@ -380,7 +380,7 @@ WTA_PLAYER_NAMES = {
     "marketa vondrousova": "Markéta Vondroušová",
     "karolina muchova": "Karolína Muchová",
     "maria sakkari": "Maria Sakkari",
-    "beatriz haddad maia": "Beatriz Haddad Maia"
+    "beatriz haddad maia": "Beatriz Haddad Maia",
 }
 
 # ATP Players
@@ -394,7 +394,7 @@ ATP_PLAYER_NAMES = {
     "stefanos tsitsipas": "Stefanos Tsitsipas",
     "holger rune": "Holger Rune",
     "hubert hurkacz": "Hubert Hurkacz",
-    "taylor fritz": "Taylor Fritz"
+    "taylor fritz": "Taylor Fritz",
 }
 
 # Esports Teams
@@ -408,7 +408,7 @@ CSGO_TEAM_NAMES = {
     "cloud9": "Cloud9",
     "faze": "FaZe Clan",
     "ence": "ENCE",
-    "heroic": "Heroic"
+    "heroic": "Heroic",
 }
 
 VALORANT_TEAM_NAMES = {
@@ -421,7 +421,7 @@ VALORANT_TEAM_NAMES = {
     "g2": "G2 Esports",
     "faze": "FaZe Clan",
     "tsm": "TSM",
-    "version1": "Version1"
+    "version1": "Version1",
 }
 
 LOL_TEAM_NAMES = {
@@ -434,7 +434,7 @@ LOL_TEAM_NAMES = {
     "rogue": "Rogue",
     "100 thieves": "100 Thieves",
     "tsm": "TSM",
-    "evil geniuses": "Evil Geniuses"
+    "evil geniuses": "Evil Geniuses",
 }
 
 DOTA2_TEAM_NAMES = {
@@ -447,7 +447,7 @@ DOTA2_TEAM_NAMES = {
     "fnatic": "Fnatic",
     "cloud9": "Cloud9",
     "natus vincere": "Natus Vincere",
-    "team secret": "Team Secret"
+    "team secret": "Team Secret",
 }
 
 # Map league names to their respective team dictionaries
@@ -472,5 +472,5 @@ LEAGUE_TEAM_MAPPINGS = {
     "CSGO": CSGO_TEAM_NAMES,
     "VALORANT": VALORANT_TEAM_NAMES,
     "LOL": LOL_TEAM_NAMES,
-    "DOTA2": DOTA2_TEAM_NAMES
-} 
+    "DOTA2": DOTA2_TEAM_NAMES,
+}
