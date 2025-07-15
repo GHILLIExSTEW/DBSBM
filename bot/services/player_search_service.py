@@ -48,7 +48,7 @@ class PlayerSearchService:
 
         Args:
             query: Search query (player name)
-            league: Optional league filter
+            league: Optional league filter (REQUIRED for proper sport filtering)
             team_name: Optional team name to prioritize team library players
             limit: Maximum number of results
             min_confidence: Minimum confidence score (0-100)
@@ -76,7 +76,7 @@ class PlayerSearchService:
                     league, team_name
                 )
 
-            # Get players from database
+            # Get players from database - IMPORTANT: Always filter by league
             db_players = await self._get_players_from_db(league)
 
             # Combine and prioritize team library players
@@ -163,25 +163,27 @@ class PlayerSearchService:
         Get most frequently searched players.
 
         Args:
-            league: Optional league filter
+            league: League filter (REQUIRED for proper sport filtering)
             limit: Maximum number of results
 
         Returns:
             List of popular players
         """
         try:
+            # IMPORTANT: Always filter by league to avoid wrong sport players
+            if not league:
+                logger.warning("get_popular_players called without league filter - this may return wrong sport players")
+                return []
+                
             query = """
                 SELECT
                     player_name, team_name, league, sport,
                     last_used, usage_count
                 FROM player_search_cache
                 WHERE is_active = 1
+                AND league = %s
             """
-            params = []
-
-            if league:
-                query += " AND league = %s"
-                params.append(league)
+            params = [league]
 
             query += " ORDER BY usage_count DESC, last_used DESC LIMIT %s"
             params.append(limit)
