@@ -238,6 +238,9 @@ class StatsImageGenerator:
             fig = plt.figure(figsize=(18, 12))
             gs = fig.add_gridspec(3, 4)
             fig.patch.set_facecolor('#181c24')
+        except Exception as e:
+            logger.error(f"Error initializing matplotlib figure: {str(e)}")
+            return self._generate_fallback_guild_image(stats)
 
             # Extract stats
             total_bets = int(stats.get('total_bets', 0) or 0)
@@ -355,8 +358,14 @@ class StatsImageGenerator:
             safe_total_units = float(total_units or 0)
             safe_net_units = float(net_units or 0)
             avg_bets_per_capper = safe_total_bets / safe_total_cappers if safe_total_cappers > 0 else 0
-            summary_text = f"""
-            🏆 Guild Stats Summary\n\n📊 Total Bets: {int(safe_total_bets)}\n👥 Total Cappers: {int(safe_total_cappers)}\n💰 Total Units Wagered: {safe_total_units:.2f}\n📈 Net Units: {safe_net_units:.2f}\n🎯 Avg Bets/Capper: {avg_bets_per_capper:.1f}"
+            summary_text = (
+                f"🏆 Guild Stats Summary\n\n"
+                f"📊 Total Bets: {int(safe_total_bets)}\n"
+                f"👥 Total Cappers: {int(safe_total_cappers)}\n"
+                f"💰 Total Units Wagered: {safe_total_units:.2f}\n"
+                f"📈 Net Units: {safe_net_units:.2f}\n"
+                f"🎯 Avg Bets/Capper: {avg_bets_per_capper:.1f}"
+            )
             ax5.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax5.transAxes,
                     color='white', fontsize=13, fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='#232b3b', alpha=0.85))
