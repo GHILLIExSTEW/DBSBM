@@ -105,20 +105,32 @@ class AssetLoader:
     ) -> Optional[Image.Image]:
         """
         Load team logo with fallback chain.
-
-        Args:
-            team_name: Name of the team
-            league: League name
-            guild_id: Guild ID for guild-specific fallbacks
-
-        Returns:
-            PIL Image object or None if no logo found
         """
         # Import here to avoid circular imports
         from config.asset_paths import get_sport_category_for_path
+        # Import team mappings
+        try:
+            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
+        except ImportError:
+            LEAGUE_TEAM_MAPPINGS = {}
 
-        # Normalize team name
-        normalized_team = self._normalize_team_name(team_name, league)
+        # Use mapping if available
+        mapped_team = None
+        league_key = league.upper()
+        if league_key in LEAGUE_TEAM_MAPPINGS:
+            mapping = LEAGUE_TEAM_MAPPINGS[league_key]
+            # Try exact match, then lower, then fuzzy
+            if team_name in mapping:
+                mapped_team = mapping[team_name]
+            elif team_name.lower() in mapping:
+                mapped_team = mapping[team_name.lower()]
+            else:
+                # Fuzzy match
+                import difflib
+                matches = difflib.get_close_matches(team_name.lower(), mapping.keys(), n=1, cutoff=0.7)
+                if matches:
+                    mapped_team = mapping[matches[0]]
+        normalized_team = mapped_team or self._normalize_team_name(team_name, league)
         if not normalized_team:
             normalized_team = team_name
 
@@ -151,6 +163,7 @@ class AssetLoader:
         # Try fuzzy matching
         candidates = [f for f in os.listdir(logo_dir) if f.endswith(".png")]
         candidate_names = [os.path.splitext(f)[0] for f in candidates]
+        import difflib
         matches = difflib.get_close_matches(
             normalized_team, candidate_names, n=1, cutoff=0.75
         )
