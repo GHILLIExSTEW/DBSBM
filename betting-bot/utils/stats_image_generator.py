@@ -317,13 +317,13 @@ class StatsImageGenerator:
             ax4.axis('off')
             summary_text = f"""
             🏆 Guild Stats Summary
-            
-            📊 Total Bets: {total_bets}
-            👥 Total Cappers: {total_cappers}
-            💰 Total Units Wagered: {total_units:.2f}
-            📈 Net Units: {net_units:.2f}
-            
-            🎯 Average Bets per Capper: {total_bets/total_cappers:.1f if total_cappers > 0 else 0}
+
+            📊 Total Bets: {int(total_bets)}
+            👥 Total Cappers: {int(total_cappers)}
+            💰 Total Units Wagered: {float(total_units or 0):.2f}
+            📈 Net Units: {float(net_units or 0):.2f}
+
+            🎯 Average Bets per Capper: {float(total_bets)/float(total_cappers):.1f if total_cappers > 0 else 0}
             """
             ax4.text(0.5, 0.5, summary_text, ha='center', va='center', transform=ax4.transAxes,
                     color='white', fontsize=12, fontweight='bold',
