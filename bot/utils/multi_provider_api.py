@@ -871,8 +871,15 @@ class MultiProviderAPI:
                             
                             # Save games to database if db_pool is available
                             if self.db_pool:
+                                logger.info(f"Saving {len(games)} games to database for {league['name']}")
                                 for game in games:
-                                    await self._save_game_to_db(game)
+                                    success = await self._save_game_to_db(game)
+                                    if success:
+                                        logger.debug(f"Successfully saved game {game.get('api_game_id')} to database")
+                                    else:
+                                        logger.error(f"Failed to save game {game.get('api_game_id')} to database")
+                            else:
+                                logger.warning("No database pool available, skipping database save")
                         
                         # Rate limiting between requests
                         await asyncio.sleep(1.5)
@@ -889,7 +896,10 @@ class MultiProviderAPI:
 
     async def _save_game_to_db(self, game_data: Dict) -> bool:
         """Save game data to the database."""
+        logger.debug(f"Attempting to save game to database: {game_data.get('api_game_id')}")
+        
         if not self.db_pool:
+            logger.warning("No database pool available")
             return False
             
         try:
