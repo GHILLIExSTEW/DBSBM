@@ -544,9 +544,16 @@ async def get_normalized_games_for_dropdown(
         ORDER BY start_time ASC LIMIT 100
     """
 
-    league_id = LEAGUE_ID_MAP.get(
-        league_key, "1"
-    )  # Use league_key instead of league_name
+    # Special handling for Serie A leagues (Italian vs Brazilian)
+    if league_key == "SerieA":
+        # Italian Serie A has league_id 135
+        league_id = "135"
+    elif league_key == "Brazil_Serie_A":
+        # Brazil Serie A has league_id 71
+        league_id = "71"
+    else:
+        league_id = LEAGUE_ID_MAP.get(league_key, "1")
+    
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     logger.info(
         f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"
