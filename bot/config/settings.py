@@ -36,7 +36,7 @@ USER_CACHE_TTL = 86400  # 24 hours in seconds
 MIN_ODDS = -1000
 MAX_ODDS = 1000
 ALLOWED_BET_TYPES = ["moneyline", "spread", "total"]
-ALLOWED_LEAGUES = ["NBA", "NFL", "MLB", "NHL", "MLS", "Other"]
+ALLOWED_LEAGUES = ["NBA", "NFL", "MLB", "NHL", "MLS", "Brazil Serie A", "Other"]
 
 # Voice Channel Configuration
 VOICE_CHANNEL_CHECK_INTERVAL = 300  # 5 minutes in seconds

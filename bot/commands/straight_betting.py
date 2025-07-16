@@ -32,6 +32,7 @@ LEAGUE_FILE_KEY_MAP = {
     "EPL": "EPL",
     "Bundesliga": "Bundesliga",
     "MLS": "MLS",
+    "Brazil Serie A": "Brazil_Serie_A",
     "NBA": "NBA",
     "WNBA": "WNBA",
     "MLB": "MLB",

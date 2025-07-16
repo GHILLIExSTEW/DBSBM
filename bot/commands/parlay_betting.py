@@ -46,6 +46,7 @@ ALLOWED_LEAGUES = [
     "MLS",
     "ChampionsLeague",
     "EuropaLeague",
+    "Brazil Serie A",
     "WorldCup",
     "Formula 1",
     "Tennis",
