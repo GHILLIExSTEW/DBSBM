@@ -874,42 +874,41 @@ class MultiProviderAPI:
                         await cur.execute("""
                             UPDATE api_games SET 
                                 sport = %s, league_id = %s, league_name = %s, 
-                                season = %s, game_date = %s, game_time = %s,
-                                home_team = %s, away_team = %s, home_score = %s, 
-                                away_score = %s, status = %s, venue = %s,
-                                home_team_id = %s, away_team_id = %s, league_id_api = %s,
+                                home_team_id = %s, away_team_id = %s,
+                                home_team_name = %s, away_team_name = %s,
+                                start_time = %s, end_time = %s, status = %s, 
+                                score = %s, venue = %s, referee = %s, season = %s,
                                 raw_json = %s, fetched_at = %s
                             WHERE api_game_id = %s
                         """, (
                             game_data.get("sport"), game_data.get("league_id"), 
-                            game_data.get("league_name"), game_data.get("season"),
-                            game_data.get("game_date"), game_data.get("game_time"),
-                            game_data.get("home_team"), game_data.get("away_team"),
-                            game_data.get("home_score"), game_data.get("away_score"),
-                            game_data.get("status"), game_data.get("venue"),
-                            game_data.get("home_team_id"), game_data.get("away_team_id"),
-                            game_data.get("league_id_api"), raw_json, fetched_at,
+                            game_data.get("league_name"), game_data.get("home_team_id"),
+                            game_data.get("away_team_id"), game_data.get("home_team_name"),
+                            game_data.get("away_team_name"), game_data.get("start_time"),
+                            game_data.get("end_time"), game_data.get("status"),
+                            json.dumps(game_data.get("score")) if game_data.get("score") else None,
+                            game_data.get("venue"), game_data.get("referee"),
+                            game_data.get("season"), raw_json, fetched_at,
                             game_data["api_game_id"]
                         ))
                     else:
                         # Insert new game
                         await cur.execute("""
                             INSERT INTO api_games (
-                                api_game_id, sport, league_id, league_name, season,
-                                game_date, game_time, home_team, away_team, home_score,
-                                away_score, status, venue, home_team_id, away_team_id,
-                                league_id_api, raw_json, fetched_at
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                api_game_id, sport, league_id, league_name, home_team_id,
+                                away_team_id, home_team_name, away_team_name, start_time,
+                                end_time, status, score, venue, referee, season,
+                                raw_json, fetched_at
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
                             game_data["api_game_id"], game_data.get("sport"),
                             game_data.get("league_id"), game_data.get("league_name"),
-                            game_data.get("season"), game_data.get("game_date"),
-                            game_data.get("game_time"), game_data.get("home_team"),
-                            game_data.get("away_team"), game_data.get("home_score"),
-                            game_data.get("away_score"), game_data.get("status"),
-                            game_data.get("venue"), game_data.get("home_team_id"),
-                            game_data.get("away_team_id"), game_data.get("league_id_api"),
-                            raw_json, fetched_at
+                            game_data.get("home_team_id"), game_data.get("away_team_id"),
+                            game_data.get("home_team_name"), game_data.get("away_team_name"),
+                            game_data.get("start_time"), game_data.get("end_time"),
+                            game_data.get("status"), json.dumps(game_data.get("score")) if game_data.get("score") else None,
+                            game_data.get("venue"), game_data.get("referee"),
+                            game_data.get("season"), raw_json, fetched_at
                         ))
                     
                     await conn.commit()
