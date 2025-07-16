@@ -442,8 +442,19 @@ async def get_normalized_games_for_dropdown(
     # If not found by key, try to find by display name (e.g., "UEFA Champions League")
     if not sport:
         for key, league_info in LEAGUE_IDS.items():
+            # Try to get display name from LEAGUE_CONFIG
+            sport_key = league_info.get("sport", "").capitalize()
+            if sport_key == "Soccer":
+                sport_key = "Soccer"  # Keep as Soccer for LEAGUE_CONFIG lookup
+            elif sport_key == "American Football":
+                sport_key = "American Football"  # Keep as American Football for LEAGUE_CONFIG lookup
+            elif sport_key == "Formula 1":
+                sport_key = "Racing"  # Formula 1 is under Racing in LEAGUE_CONFIG
+            elif sport_key == "Fighting":
+                sport_key = "Fighting"  # Keep as Fighting for LEAGUE_CONFIG lookup
+            
             display_name = (
-                LEAGUE_CONFIG.get(league_info.get("sport", ""), {})
+                LEAGUE_CONFIG.get(sport_key, {})
                 .get(key, {})
                 .get("name", key)
             )
@@ -474,6 +485,27 @@ async def get_normalized_games_for_dropdown(
                         break
                 if sport:
                     break
+    
+    # If still not found, try direct hardcoded mappings for common cases
+    if not sport:
+        direct_mappings = {
+            "Brazil Serie A": ("Brazil_Serie_A", "football", "Brazil Serie A"),
+            "Serie A": ("SerieA", "football", "Serie A"),
+            "English Premier League": ("EPL", "football", "English Premier League"),
+            "La Liga": ("LaLiga", "football", "La Liga"),
+            "Bundesliga": ("Bundesliga", "football", "Bundesliga"),
+            "Ligue 1": ("Ligue1", "football", "Ligue 1"),
+            "UEFA Champions League": ("ChampionsLeague", "football", "UEFA Champions League"),
+            "UEFA Europa League": ("EuropaLeague", "football", "UEFA Europa League"),
+            "FIFA World Cup": ("WorldCup", "football", "FIFA World Cup"),
+        }
+        
+        if league_name in direct_mappings:
+            league_key, sport_lower, league_name_db = direct_mappings[league_name]
+            sport = sport_lower.capitalize()
+            logger.info(
+                f"[get_normalized_games_for_dropdown] Found league by direct mapping: sport={sport}, league_key={league_key}, league_name={league_name_db}"
+            )
 
     if not sport or not league_key:
         logger.warning(

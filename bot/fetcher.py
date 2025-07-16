@@ -185,11 +185,16 @@ def map_game_data(
             away_team = safe_get(teams, "away", default={})
             league_info = safe_get(game, "league", default={})
             score = safe_get(game, "score", default={})
+            # --- FIX: Always use 'Brazil Serie A' for league_id 71 ---
+            if str(league_id) == "71":
+                league_name_final = "Brazil Serie A"
+            else:
+                league_name_final = safe_get(league_info, "name", default=league)
             game_data = {
                 "id": str(safe_get(fixture, "id", default="")),
                 "sport": "Football",
                 "league_id": league_id,
-                "league_name": safe_get(league_info, "name", default=league),
+                "league_name": league_name_final,
                 "home_team_id": str(safe_get(home_team, "id")),
                 "away_team_id": str(safe_get(away_team, "id")),
                 "home_team_name": safe_get(home_team, "name", default="Unknown"),
@@ -202,6 +207,7 @@ def map_game_data(
                 "raw_json": json.dumps(game),
                 "fetched_at": datetime.now(EDT).strftime("%Y-%m-%d %H:%M:%S"),
             }
+            return game_data
         elif sport.lower() in ["baseball", "mlb"]:
             teams = safe_get(game, "teams", default={})
             home_team = safe_get(teams, "home", default={})
