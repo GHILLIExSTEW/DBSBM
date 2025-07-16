@@ -513,13 +513,13 @@ class SportsAPI:
                     logger.info(
                         f"[fetch_games] Successfully mapped game: {mapped_game.get('id')}"
                     )
-                    # If we have a database manager, save the game
+                    # If we have a database manager, save the mapped game (not the raw API game!)
                     if self.db_manager:
                         try:
                             logger.info(
                                 f"[fetch_games] Saving game {mapped_game.get('id')} to database"
                             )
-                            await self.db_manager.upsert_api_game(game)
+                            await self.db_manager.upsert_api_game(mapped_game)
                             logger.info(
                                 f"[fetch_games] Successfully saved game {mapped_game.get('id')} to database"
                             )
