@@ -178,11 +178,20 @@ class ComprehensiveFetcher:
         """Map API game data to our standard format."""
         try:
             if sport == "football":
+                # Force league_name for Brazil Serie A and Italian Serie A
+                league_id = str(league["id"])
+                if league_id == "71":
+                    league_name_final = "Brazil Serie A"
+                elif league_id == "135":
+                    league_name_final = "Serie A"
+                else:
+                    league_name_final = league["name"]
+                
                 return {
                     "api_game_id": str(game["fixture"]["id"]),
                     "sport": "Football",
-                    "league_id": str(league["id"]),
-                    "league_name": league["name"],
+                    "league_id": league_id,
+                    "league_name": league_name_final,
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
                     "start_time": game["fixture"]["date"],

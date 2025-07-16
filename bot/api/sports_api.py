@@ -13,6 +13,9 @@ from typing import Any, Dict, List
 import aiohttp
 from dotenv import load_dotenv
 
+# Import LEAGUE_IDS for league mapping
+from config.leagues import LEAGUE_IDS
+
 # Load environment variables
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
@@ -176,10 +179,21 @@ class APISportsFetcher:
         """Map API-Sports game data to our standard format."""
         try:
             if sport == "football":
+                # Get league_id from LEAGUE_IDS to check for Brazil Serie A
+                league_id = LEAGUE_IDS.get(league, {}).get("id", "")
+                
+                # Force league_name for Brazil Serie A and Italian Serie A
+                if str(league_id) == "71":
+                    league_name_final = "Brazil Serie A"
+                elif str(league_id) == "135":
+                    league_name_final = "Serie A"
+                else:
+                    league_name_final = LEAGUE_CONFIG["football"][league]["name"]
+                
                 return {
                     "id": str(game["fixture"]["id"]),
                     "sport": "Football",
-                    "league": LEAGUE_CONFIG["football"][league]["name"],
+                    "league": league_name_final,
                     "home_team": game["teams"]["home"]["name"],
                     "away_team": game["teams"]["away"]["name"],
                     "start_time": game["fixture"]["date"],
