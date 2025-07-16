@@ -4,20 +4,56 @@ Handles different API providers for various sports including API-Sports, SportDe
 """
 
 import asyncio
+import json
 import logging
 import os
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-import json
+import sys
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
-from dotenv import load_dotenv
-from .sportdevs_query_builder import endpoint, SportDevsQueryBuilder
+import aiomysql
 
-# Load environment variables
-load_dotenv()
+# Add the bot directory to the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import API settings and database manager
+from config.api_settings import API_KEY
+from data.db_manager import DatabaseManager
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def parse_datetime(datetime_str: Optional[str]) -> Optional[datetime]:
+    """Parse datetime string to MySQL-compatible datetime object."""
+    if not datetime_str:
+        return None
+    
+    try:
+        logger.debug(f"Parsing datetime string: {datetime_str}")
+        
+        # Handle ISO 8601 format with timezone
+        if 'T' in datetime_str and '+' in datetime_str:
+            # Remove timezone info and parse
+            dt_part = datetime_str.split('+')[0]
+            parsed_dt = datetime.fromisoformat(dt_part)
+            logger.debug(f"Parsed datetime result: {parsed_dt}")
+            return parsed_dt
+        elif 'T' in datetime_str:
+            # ISO format without timezone
+            parsed_dt = datetime.fromisoformat(datetime_str)
+            logger.debug(f"Parsed datetime result: {parsed_dt}")
+            return parsed_dt
+        else:
+            # Try standard format
+            parsed_dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+            logger.debug(f"Parsed datetime result: {parsed_dt}")
+            return parsed_dt
+            
+    except Exception as e:
+        logger.warning(f"Failed to parse datetime '{datetime_str}': {e}")
+        return None
 
 # API Providers and their configurations
 API_PROVIDERS = {
@@ -869,6 +905,15 @@ class MultiProviderAPI:
                     raw_json = json.dumps(game_data)
                     fetched_at = datetime.now()
                     
+                    # Parse datetime strings
+                    start_time = parse_datetime(game_data.get("start_time"))
+                    end_time = parse_datetime(game_data.get("end_time"))
+                    
+                    logger.debug(f"Original start_time: {game_data.get('start_time')}")
+                    logger.debug(f"Parsed start_time: {start_time}")
+                    logger.debug(f"Original end_time: {game_data.get('end_time')}")
+                    logger.debug(f"Parsed end_time: {end_time}")
+                    
                     if await cur.fetchone():
                         # Update existing game
                         await cur.execute("""
@@ -884,9 +929,8 @@ class MultiProviderAPI:
                             game_data.get("sport"), game_data.get("league_id"), 
                             game_data.get("league_name"), game_data.get("home_team_id"),
                             game_data.get("away_team_id"), game_data.get("home_team_name"),
-                            game_data.get("away_team_name"), game_data.get("start_time"),
-                            game_data.get("end_time"), game_data.get("status"),
-                            json.dumps(game_data.get("score")) if game_data.get("score") else None,
+                            game_data.get("away_team_name"), start_time, end_time,
+                            game_data.get("status"), json.dumps(game_data.get("score")) if game_data.get("score") else None,
                             game_data.get("venue"), game_data.get("referee"),
                             game_data.get("season"), raw_json, fetched_at,
                             game_data["api_game_id"]
@@ -905,8 +949,8 @@ class MultiProviderAPI:
                             game_data.get("league_id"), game_data.get("league_name"),
                             game_data.get("home_team_id"), game_data.get("away_team_id"),
                             game_data.get("home_team_name"), game_data.get("away_team_name"),
-                            game_data.get("start_time"), game_data.get("end_time"),
-                            game_data.get("status"), json.dumps(game_data.get("score")) if game_data.get("score") else None,
+                            start_time, end_time, game_data.get("status"),
+                            json.dumps(game_data.get("score")) if game_data.get("score") else None,
                             game_data.get("venue"), game_data.get("referee"),
                             game_data.get("season"), raw_json, fetched_at
                         ))
