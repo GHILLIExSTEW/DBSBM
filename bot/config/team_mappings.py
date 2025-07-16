@@ -2354,6 +2354,35 @@ TEAM_MAPPINGS = {
     "Virginia State Trojans": "virginia_state_trojans",
     "Virginia State": "virginia_state_trojans",
     "VSU_VIRGINIA": "virginia_state_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
+    
+    # Brazil Serie A Teams
+    "America MG": "america-mg",
+    "América-MG": "america-mg",
+    "Athletico PR": "athletico-pr",
+    "Athletico-PR": "athletico-pr",
+    "Atletico GO": "atletico-go",
+    "Atlético-GO": "atletico-go",
+    "Atletico MG": "atletico-mg",
+    "Atlético-MG": "atletico-mg",
+    "Bahia": "bahia",
+    "Botafogo": "botafogo",
+    "Bragantino": "bragantino",
+    "Corinthians": "corinthians",
+    "Criciuma": "criciuma",
+    "Cruzeiro": "cruzeiro",
+    "Flamengo": "flamengo",
+    "Fluminense": "fluminense",
+    "Fortaleza": "fortaleza",
+    "Gremio": "gremio",
+    "Grêmio": "gremio",
+    "Internacional": "internacional",
+    "Juventude": "juventude",
+    "Palmeiras": "palmeiras",
+    "Santos": "santos",
+    "Sao Paulo": "sao-paulo",
+    "São Paulo": "sao-paulo",
+    "Vasco da Gama": "vasco-da-gama",
+    "Vasco": "vasco-da-gama",
 }
 
 

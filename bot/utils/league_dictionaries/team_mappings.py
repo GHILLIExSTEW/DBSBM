@@ -254,6 +254,37 @@ LIGUE1_TEAM_NAMES = {
     "toulouse": "Toulouse",
 }
 
+# Brazil Serie A Teams
+BRAZIL_SERIE_A_TEAM_NAMES = {
+    "america mg": "America MG",
+    "américa-mg": "America MG",
+    "athletico pr": "Athletico PR",
+    "athletico-pr": "Athletico PR",
+    "atletico go": "Atletico GO",
+    "atlético-go": "Atletico GO",
+    "atletico mg": "Atletico MG",
+    "atlético-mg": "Atletico MG",
+    "bahia": "Bahia",
+    "botafogo": "Botafogo",
+    "bragantino": "Bragantino",
+    "corinthians": "Corinthians",
+    "criciuma": "Criciuma",
+    "cruzeiro": "Cruzeiro",
+    "flamengo": "Flamengo",
+    "fluminense": "Fluminense",
+    "fortaleza": "Fortaleza",
+    "gremio": "Gremio",
+    "grêmio": "Gremio",
+    "internacional": "Internacional",
+    "juventude": "Juventude",
+    "palmeiras": "Palmeiras",
+    "santos": "Santos",
+    "sao paulo": "Sao Paulo",
+    "são paulo": "Sao Paulo",
+    "vasco da gama": "Vasco da Gama",
+    "vasco": "Vasco da Gama",
+}
+
 # MLS Teams
 MLS_TEAM_NAMES = {
     "atlanta united": "Atlanta United",
@@ -462,6 +493,7 @@ LEAGUE_TEAM_MAPPINGS = {
     "SerieA": SERIEA_TEAM_NAMES,
     "Ligue1": LIGUE1_TEAM_NAMES,
     "MLS": MLS_TEAM_NAMES,
+    "BRAZIL_SERIE_A": BRAZIL_SERIE_A_TEAM_NAMES,
     "WNBA": WNBA_TEAM_NAMES,
     "NPB": NPB_TEAM_NAMES,
     "KBO": KBO_TEAM_NAMES,

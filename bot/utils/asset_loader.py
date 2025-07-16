@@ -155,6 +155,11 @@ class AssetLoader:
 
         # Try league directory in uppercase, capitalized, and lowercase
         league_variants = [league.upper(), league.capitalize(), league.lower()]
+        
+        # Special handling for Brazil Serie A
+        if league.lower() == "brazil serie a":
+            league_variants.extend(["Brazil_Serie_A", "BRAZIL_SERIE_A"])
+        
         logo_dir = None
         for variant in league_variants:
             candidate_dir = os.path.join(self.logos_dir, "teams", sport, variant)

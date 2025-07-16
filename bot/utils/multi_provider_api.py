@@ -845,6 +845,24 @@ class MultiProviderAPI:
         
         logger.info(f"Starting multi-provider fetch for {date} and next {next_days} days")
         
+        # Define the leagues we actually want to fetch (major leagues only)
+        TARGET_LEAGUES = {
+            "football": [
+                "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1", 
+                "MLS", "UEFA Champions League", "UEFA Europa League", "Brazil Serie A",
+                "FIFA World Cup", "Allsvenskan", "Superettan"
+            ],
+            "basketball": ["NBA", "WNBA", "EuroLeague"],
+            "baseball": ["MLB", "NPB", "KBO"],
+            "hockey": ["NHL", "Kontinental Hockey League"],
+            "american-football": ["NFL", "NCAA Football", "CFL"],
+            "rugby": ["Super Rugby", "Six Nations Championship"],
+            "tennis": ["ATP Tour", "WTA Tour"],
+            "golf": ["PGA Tour", "LPGA Tour"],
+            "mma": ["UFC", "Bellator MMA"],
+            "darts": ["Professional Darts Corporation"]
+        }
+        
         results = {
             "total_leagues": 0,
             "successful_fetches": 0,
@@ -855,7 +873,18 @@ class MultiProviderAPI:
         for sport, leagues in self.discovered_leagues.items():
             logger.info(f"Processing {len(leagues)} leagues for {sport}")
             
+            # Filter to only target leagues
+            target_league_names = TARGET_LEAGUES.get(sport, [])
+            filtered_leagues = []
+            
             for league in leagues:
+                if any(target_name.lower() in league.get('name', '').lower() for target_name in target_league_names):
+                    filtered_leagues.append(league)
+                    logger.info(f"Including league: {league.get('name')}")
+            
+            logger.info(f"Filtered to {len(filtered_leagues)} target leagues for {sport}")
+            
+            for league in filtered_leagues:
                 results["total_leagues"] += 1
                 
                 try:
