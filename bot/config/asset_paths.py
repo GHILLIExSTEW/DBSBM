@@ -81,6 +81,7 @@ SPORT_CATEGORIES = {
         "BUNDESLIGA",
         "SERIE_A",
         "LIGUE_1",
+        "BRAZIL_SERIE_A",
         "UEFACL",
         "UEFA CHAMPIONS LEAGUE",
         "ChampionsLeague",
@@ -320,7 +321,7 @@ def determine_asset_paths():
     # for category in SPORT_CATEGORIES.keys():
     #     os.makedirs(os.path.join(TEAMS_SUBDIR, category), exist_ok=True)
     #     os.makedirs(os.path.join(LEAGUES_SUBDIR, category), exist_ok=True)
-    #
+
     #     # Create league subdirectories
     #     for league in SPORT_CATEGORIES[category]:
     #         os.makedirs(os.path.join(TEAMS_SUBDIR, category, league), exist_ok=True)

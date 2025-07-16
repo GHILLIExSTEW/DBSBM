@@ -181,6 +181,15 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., Liverpool to Win, Over 2.5 Goals, Both Teams to Score",
         "line_placeholder_player": "e.g., To Score Anytime, xG Over 0.5",
     },
+    "Brazil_Serie_A": {
+        "sport": "Soccer",
+        "name": "Brazil Serie A",
+        "sport_type": "Team Sport",
+        "participant_label": "Team",
+        "team_placeholder": "e.g., Flamengo",
+        "line_placeholder_game": "e.g., Flamengo to Win, Over 2.5 Goals, Both Teams to Score",
+        "line_placeholder_player": "e.g., To Score Anytime, xG Over 0.5",
+    },
     "WorldCup": {
         "sport": "Soccer",
         "name": "FIFA World Cup",
@@ -489,6 +498,7 @@ LEAGUE_SEASON_STARTS = {
     "MLS": {"start": "2024-02-24", "end": "2024-12-07"},
     "ChampionsLeague": {"start": "2024-09-17", "end": "2025-06-01"},
     "EuropaLeague": {"start": "2024-09-19", "end": "2025-05-28"},
+    "Brazil_Serie_A": {"start": "2025-04-19", "end": "2025-12-07"},
     "WorldCup": {"start": "2025-12-10", "end": "2025-12-21"},
     # Rugby
     "SuperRugby": {"start": "2024-02-23", "end": "2024-06-22"},
@@ -533,6 +543,7 @@ LEAGUE_IDS = {
     "MLS": {"id": 253, "sport": "football", "name": "MLS"},
     "ChampionsLeague": {"id": 2, "sport": "football", "name": "UEFA Champions League"},
     "EuropaLeague": {"id": 3, "sport": "football", "name": "UEFA Europa League"},
+    "Brazil_Serie_A": {"id": 71, "sport": "football", "name": "Brazil Serie A"},
     "WorldCup": {"id": 15, "sport": "football", "name": "FIFA World Cup"},
     # Basketball
     "NBA": {"id": 12, "sport": "basketball", "name": "NBA"},

@@ -9,6 +9,7 @@ ALL_LEAGUES = {
     "MLS": {"id": 253, "name": "Major League Soccer", "sport": "Soccer"},
     "ChampionsLeague": {"id": 2, "name": "UEFA Champions League", "sport": "Soccer"},
     "EuropaLeague": {"id": 3, "name": "UEFA Europa League", "sport": "Soccer"},
+    "Brazil_Serie_A": {"id": 71, "name": "Brazil Serie A", "sport": "Soccer"},
     "WorldCup": {"id": 15, "name": "FIFA World Cup", "sport": "Soccer"},
     # Sweden Leagues
     "Allsvenskan": {"id": 113, "name": "Allsvenskan", "sport": "Soccer"},

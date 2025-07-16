@@ -1093,6 +1093,20 @@ class DatabaseManager:
                 if current_month >= 10 or current_month <= 2:
                     season = season + 1
 
+        # Support both flat and nested structures
+        def safe_get_team(game, key):
+            # Try nested structure first
+            teams = game.get("teams")
+            if teams and isinstance(teams, dict):
+                team = teams.get(key)
+                if team and isinstance(team, dict):
+                    return team.get("name")
+            # Fallback to flat
+            return game.get(f"{key}_team_name") or game.get(f"{key}_name")
+
+        home_team_name = safe_get_team(game, "home")
+        away_team_name = safe_get_team(game, "away")
+
         query = """
             INSERT INTO api_games (
                 api_game_id, sport, league_id, season, home_team_name, away_team_name,
@@ -1115,18 +1129,18 @@ class DatabaseManager:
                 updated_at=CURRENT_TIMESTAMP
         """
         params = (
-            str(game.get("id")),
+            str(game.get("api_game_id") or game.get("id")),
             game.get("sport", ""),
-            str(game.get("league", {}).get("id", "")),
+            str(game.get("league_id", "")),
             season,
-            (game.get("teams", {}) or {}).get("home", {}).get("name"),
-            (game.get("teams", {}) or {}).get("away", {}).get("name"),
-            game.get("date"),
-            None,
-            game.get("status", {}).get("short", ""),
-            json.dumps(game.get("scores", {})),
-            json.dumps(game),
-            datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+            home_team_name,
+            away_team_name,
+            game.get("start_time"),
+            game.get("end_time"),
+            game.get("status", ""),
+            game.get("score"),
+            game.get("raw_json") if isinstance(game.get("raw_json"), str) else json.dumps(game.get("raw_json", {})),
+            game.get("fetched_at", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")),
         )
         await self.execute(query, params)
 

@@ -46,6 +46,34 @@ API_HOSTS = {
     "golf": "https://v1.golf.api-sports.io",
     # Cycling
     "cycling": "https://v1.cycling.api-sports.io",
+    # Darts
+    "darts": "https://v1.darts.api-sports.io",
+    # Esports
+    "esports": "https://v1.esports.api-sports.io",
+    # Futsal
+    "futsal": "https://v1.futsal.api-sports.io",
+    # Table Tennis
+    "table-tennis": "https://v1.table-tennis.api-sports.io",
+    # Badminton
+    "badminton": "https://v1.badminton.api-sports.io",
+    # Beach Volleyball
+    "beach-volleyball": "https://v1.beach-volleyball.api-sports.io",
+    # Field Hockey
+    "field-hockey": "https://v1.field-hockey.api-sports.io",
+    # Ice Hockey
+    "ice-hockey": "https://v1.ice-hockey.api-sports.io",
+    # Motorsport
+    "motorsport": "https://v1.motorsport.api-sports.io",
+    # Snooker
+    "snooker": "https://v1.snooker.api-sports.io",
+    # Squash
+    "squash": "https://v1.squash.api-sports.io",
+    # Water Polo
+    "water-polo": "https://v1.water-polo.api-sports.io",
+    # Winter Sports
+    "winter-sports": "https://v1.winter-sports.api-sports.io",
+    # AFL
+    "afl": "https://v1.afl.api-sports.io",
 }
 
 # API Key

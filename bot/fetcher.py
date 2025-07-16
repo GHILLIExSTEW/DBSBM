@@ -89,6 +89,7 @@ LEAGUE_CONFIG = {
         "MLS": {"id": 253, "name": "Major League Soccer"},
         "ChampionsLeague": {"id": 2, "name": "UEFA Champions League"},
         "EuropaLeague": {"id": 3, "name": "UEFA Europa League"},
+        "Brazil_Serie_A": {"id": 71, "name": "Brazil Serie A"},
         "WorldCup": {"id": 15, "name": "FIFA World Cup"},
     },
     "basketball": {
@@ -843,21 +844,35 @@ async def setup_db_pool() -> aiomysql.Pool:
 
 
 async def run_hourly_fetch_task(pool: aiomysql.Pool):
-    """Run the full fetch at the start of every hour, clearing api_games first for all fresh data."""
-    while True:
-        now = datetime.now(timezone.utc)
-        # Calculate next hour
-        next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-        wait_seconds = (next_hour - now).total_seconds()
-        logger.info(
-            f"Waiting {wait_seconds/60:.1f} minutes until next full hour fetch..."
-        )
-        await asyncio.sleep(wait_seconds)
-        logger.info(
-            "Running scheduled hourly full fetch: clearing api_games and fetching all fresh data..."
-        )
-        await clear_api_games_table(pool)
-        await initial_fetch(pool)
+    """Run the multi-provider fetch for ALL leagues at the start of every hour."""
+    from utils.multi_provider_api import MultiProviderAPI
+    
+    logger.info("Starting multi-provider hourly fetch task for ALL leagues")
+    
+        while True:
+        try:
+            now = datetime.now(timezone.utc)
+            # Calculate next hour
+            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            wait_seconds = (next_hour - now).total_seconds()
+            
+            logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next multi-provider hourly fetch...")
+            await asyncio.sleep(wait_seconds)
+            
+            logger.info("Running multi-provider hourly fetch for ALL leagues...")
+            
+            async with MultiProviderAPI(pool) as api:
+                # Discover all leagues first
+                await api.discover_all_leagues()
+                
+                # Fetch data for all leagues
+                results = await api.fetch_all_leagues_data()
+                
+                logger.info(f"Multi-provider hourly fetch completed: {results}")
+                
+        except Exception as e:
+            logger.error(f"Error in multi-provider hourly fetch: {e}")
+            await asyncio.sleep(300)  # Wait 5 minutes before retrying
 
 
 # Update main function to only use the 5-second update loop
@@ -873,10 +888,14 @@ async def main():
 
         # Clear api_games on server restart
         await clear_api_games_table(pool)
-        # Start the hourly fetch in the background
+        # Start the comprehensive hourly fetch in the background
         asyncio.create_task(run_hourly_fetch_task(pool))
-        # Perform initial fetch of all games for today and tomorrow
-        await initial_fetch(pool)
+        # Perform comprehensive initial fetch of ALL leagues using multi-provider API
+        from utils.multi_provider_api import MultiProviderAPI
+        async with MultiProviderAPI(pool) as api:
+            await api.discover_all_leagues()
+            results = await api.fetch_all_leagues_data()
+            logger.info(f"Multi-provider initial fetch completed: {results}")
         # Then run the 5-second update loop for bet games
         await update_bet_games_every_5_seconds(pool)
     except Exception as e:
