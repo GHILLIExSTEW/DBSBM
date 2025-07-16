@@ -114,6 +114,9 @@ class AssetLoader:
             from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
         except ImportError:
             LEAGUE_TEAM_MAPPINGS = {}
+        
+        # Store team context for Serie A detection
+        self._last_team_context = team_name
 
         # Use mapping if available
         mapped_team = None
@@ -156,8 +159,25 @@ class AssetLoader:
         # Try league directory in uppercase, capitalized, and lowercase
         league_variants = [league.upper(), league.capitalize(), league.lower()]
         
-        # Special handling for Brazil Serie A
-        if league.lower() == "brazil serie a":
+        # Special handling for Serie A leagues (Italian vs Brazilian)
+        if league.lower() == "serie a":
+            # Check if we have team context to determine which Serie A
+            if hasattr(self, '_last_team_context'):
+                team_name = self._last_team_context.lower()
+                # Brazilian teams
+                brazilian_teams = ['flamengo', 'santos', 'palmeiras', 'corinthians', 'sao paulo', 
+                                  'vasco da gama', 'botafogo', 'fluminense', 'cruzeiro', 'atletico mg',
+                                  'internacional', 'gremio', 'bahia', 'fortaleza', 'bragantino']
+                
+                if any(team in team_name for team in brazilian_teams):
+                    league_variants.extend(["Brazil_Serie_A", "BRAZIL_SERIE_A"])
+                else:
+                    # Default to Italian Serie A
+                    league_variants.extend(["Serie_A", "SERIE_A"])
+            else:
+                # Default to Italian Serie A if no team context
+                league_variants.extend(["Serie_A", "SERIE_A"])
+        elif league.lower() == "brazil serie a":
             league_variants.extend(["Brazil_Serie_A", "BRAZIL_SERIE_A"])
         
         logo_dir = None
