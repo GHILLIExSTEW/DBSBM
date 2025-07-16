@@ -8,6 +8,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
+import json
 
 import aiohttp
 from dotenv import load_dotenv
@@ -864,6 +865,9 @@ class MultiProviderAPI:
                         (game_data["api_game_id"],)
                     )
                     
+                    # Prepare raw_json data
+                    raw_json = json.dumps(game_data)
+                    
                     if await cur.fetchone():
                         # Update existing game
                         await cur.execute("""
@@ -871,14 +875,14 @@ class MultiProviderAPI:
                                 sport = %s, league_id = %s, league_name = %s,
                                 home_team_name = %s, away_team_name = %s,
                                 start_time = %s, status = %s, score = %s, venue = %s,
-                                updated_at = NOW()
+                                raw_json = %s, updated_at = NOW()
                             WHERE api_game_id = %s
                         """, (
                             game_data["sport"], game_data["league_id"], game_data["league_name"],
                             game_data["home_team_name"], game_data["away_team_name"],
                             game_data["start_time"], game_data["status"],
                             str(game_data["score"]) if game_data["score"] else None,
-                            game_data["venue"], game_data["api_game_id"]
+                            game_data["venue"], raw_json, game_data["api_game_id"]
                         ))
                     else:
                         # Insert new game
@@ -886,14 +890,14 @@ class MultiProviderAPI:
                             INSERT INTO api_games (
                                 api_game_id, sport, league_id, league_name,
                                 home_team_name, away_team_name, start_time,
-                                status, score, venue, created_at, updated_at
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                                status, score, venue, raw_json, created_at, updated_at
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                         """, (
                             game_data["api_game_id"], game_data["sport"], game_data["league_id"],
                             game_data["league_name"], game_data["home_team_name"],
                             game_data["away_team_name"], game_data["start_time"],
                             game_data["status"], str(game_data["score"]) if game_data["score"] else None,
-                            game_data["venue"]
+                            game_data["venue"], raw_json
                         ))
                     
                     await conn.commit()
