@@ -185,9 +185,11 @@ def map_game_data(
             away_team = safe_get(teams, "away", default={})
             league_info = safe_get(game, "league", default={})
             score = safe_get(game, "score", default={})
-            # --- FIX: Always use 'Brazil Serie A' for league_id 71 ---
+            # --- FORCE league_name for Brazil Serie A and Italian Serie A ---
             if str(league_id) == "71":
                 league_name_final = "Brazil Serie A"
+            elif str(league_id) == "135":
+                league_name_final = "Serie A"
             else:
                 league_name_final = safe_get(league_info, "name", default=league)
             game_data = {
