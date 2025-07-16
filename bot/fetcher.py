@@ -849,7 +849,7 @@ async def run_hourly_fetch_task(pool: aiomysql.Pool):
     
     logger.info("Starting multi-provider hourly fetch task for ALL leagues")
     
-        while True:
+    while True:
         try:
             now = datetime.now(timezone.utc)
             # Calculate next hour
