@@ -1758,8 +1758,8 @@ class StraightBetDetailsModal(Modal):
                 if not interaction.response.is_done():
                     await interaction.response.defer()
                 
-                # For manual entries, go to units selection (step 4)
-                self.view_ref.current_step = 3  # Set to 3 so go_next increments to 4 (units selection)
+                # Go to units selection (step 5)
+                self.view_ref.current_step = 4  # Set to 4 so go_next increments to 5 (units selection)
                 await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(
