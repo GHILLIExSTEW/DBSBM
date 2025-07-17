@@ -102,6 +102,29 @@ class SportSelect(Select):
         value = self.values[0]
         self.parent_view.bet_details["sport"] = value
         self.disabled = True
+        
+        # Special handling for darts - send modal directly without deferring
+        if value.lower() == "darts":
+            logger.info("[WORKFLOW TRACE] Darts selected in SportSelect - sending modal directly")
+            self.parent_view.bet_details["league"] = "DARTS"
+            self.parent_view.bet_details["line_type"] = "game_line"
+            self.parent_view.bet_details["is_manual"] = True
+            self.parent_view.bet_details["home_team_name"] = "Manual Entry"
+            self.parent_view.bet_details["away_team_name"] = "Manual Entry"
+            
+            # Create and send the modal directly
+            modal = StraightBetDetailsModal(
+                line_type="game_line",
+                selected_league_key="DARTS",
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=True,
+                view_custom_id_suffix=str(interaction.id),
+            )
+            modal.view_ref = self.parent_view
+            await interaction.response.send_modal(modal)
+            return
+        
+        # For other sports, continue with normal flow
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
@@ -797,34 +820,8 @@ class StraightBetWorkflowView(View):
             await self.edit_message(content=self.get_content(), view=self)
             return
         elif self.current_step == 2:
-            # Step 2: League selection within selected sport (skip for darts)
+            # Step 2: League selection within selected sport
             sport = self.bet_details.get("sport")
-            
-            # Special handling for darts - skip league selection and go directly to manual entry
-            if sport.lower() == "darts":
-                logger.info("[WORKFLOW TRACE] Darts selected - skipping league selection, going to manual entry")
-                self.bet_details["league"] = "DARTS"
-                self.bet_details["line_type"] = "game_line"
-                self.bet_details["is_manual"] = True
-                self.bet_details["home_team_name"] = "Manual Entry"
-                self.bet_details["away_team_name"] = "Manual Entry"
-                
-                # Skip to step 4 (team/opponent entry modal) without recursive call
-                self.current_step = 4
-                await self.edit_message(content="Please fill in the darts player and opponent details.", view=self)
-                
-                # Create and send the modal directly
-                modal = StraightBetDetailsModal(
-                    line_type="game_line",
-                    selected_league_key="DARTS",
-                    bet_details_from_view=self.bet_details,
-                    is_manual=True,
-                    view_custom_id_suffix=str(interaction.id),
-                )
-                modal.view_ref = self
-                await interaction.response.send_modal(modal)
-                return
-            
             leagues = get_leagues_by_sport(sport)
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
