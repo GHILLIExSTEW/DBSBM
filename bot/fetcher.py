@@ -712,6 +712,11 @@ async def initial_fetch(pool: aiomysql.Pool):
                 league_id = league_info["id"]
                 season = get_current_season(league_name)
 
+                # --- SKIP RapidAPI sports ---
+                if sport in ["darts", "tennis", "golf", "esports"]:
+                    logger.info(f"[initial] Skipping {league_name} (sport: {sport}) - handled by MultiProviderAPI")
+                    continue
+
                 # Log sport configuration details
                 sport_config = ENDPOINTS_MAP.get(sport)
                 if sport_config:
@@ -723,11 +728,6 @@ async def initial_fetch(pool: aiomysql.Pool):
                         endpoint_path = sport_config.get("races", "/races")
                     elif sport == "mma":
                         endpoint_path = sport_config.get("fights", "/fights")
-                    # Note: tennis, golf, and darts APIs are not available
-                    # elif sport in ["tennis", "golf", "darts"]:
-                    #     endpoint_path = sport_config.get("matches", "/matches")
-                    #     if not endpoint_path:
-                    #         endpoint_path = sport_config.get("tournaments", "/tournaments")
                     else:
                         endpoint_path = sport_config.get("games", "/games")
 
