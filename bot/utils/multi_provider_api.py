@@ -1134,21 +1134,28 @@ class MultiProviderAPI:
             "hockey": ["NHL", "Kontinental Hockey League"],
             "american-football": ["NFL", "NCAA Football", "CFL"],
             "rugby": ["Super Rugby", "Six Nations Championship"],
-            "tennis": ["ATP Tour", "WTA Tour"],
-            "golf": ["PGA Tour", "LPGA Tour"],
+            "tennis": ["ATP", "WTA", "Grand Slam", "Masters"],
+            "golf": ["PGA", "LPGA", "European Tour", "LIV Golf"],
             "mma": ["UFC", "Bellator MMA"],
             "darts": [
-                "Professional Darts Corporation",
-                "British Darts Organisation",
-                "World Darts Federation",
-                "Premier League Darts",
+                "PDC",
+                "BDO",
+                "WDF",
+                "Premier League",
                 "World Matchplay",
                 "World Grand Prix",
                 "UK Open",
-                "Grand Slam of Darts",
+                "Grand Slam",
                 "Players Championship",
                 "European Championship",
                 "Masters",
+            ],
+            "esports": [
+                "CS:GO",
+                "League of Legends",
+                "Dota 2",
+                "Valorant",
+                "Overwatch",
             ],
         }
 
@@ -1216,43 +1223,92 @@ class MultiProviderAPI:
                 results["total_leagues"] += 1
 
                 try:
-                    # Fetch for multiple days
-                    for day_offset in range(next_days):
-                        fetch_date = (
-                            datetime.strptime(date, "%Y-%m-%d")
-                            + timedelta(days=day_offset)
-                        ).strftime("%Y-%m-%d")
-
-                        games = await self.fetch_games(sport, league, fetch_date)
-
-                        if games:
-                            results["total_games"] += len(games)
+                    # Special handling for consolidated darts league
+                    if sport == "darts" and league.get("type") == "consolidated":
+                        # Fetch games for each individual darts league
+                        for sub_league in league.get("consolidated_leagues", []):
                             logger.info(
-                                f"Fetched {len(games)} games for {league['name']} on {fetch_date}"
+                                f"Fetching games for darts sub-league: {sub_league['name']}"
                             )
 
-                            # Save games to database if db_pool is available
-                            if self.db_pool:
-                                logger.info(
-                                    f"Saving {len(games)} games to database for {league['name']}"
-                                )
-                                for game in games:
-                                    success = await self._save_game_to_db(game)
-                                    if success:
-                                        logger.debug(
-                                            f"Successfully saved game {game.get('api_game_id')} to database"
-                                        )
-                                    else:
-                                        logger.error(
-                                            f"Failed to save game {game.get('api_game_id')} to database"
-                                        )
-                            else:
-                                logger.warning(
-                                    "No database pool available, skipping database save"
+                            # Fetch for multiple days
+                            for day_offset in range(next_days):
+                                fetch_date = (
+                                    datetime.strptime(date, "%Y-%m-%d")
+                                    + timedelta(days=day_offset)
+                                ).strftime("%Y-%m-%d")
+
+                                games = await self.fetch_games(
+                                    sport, sub_league, fetch_date
                                 )
 
-                        # Rate limiting between requests
-                        await asyncio.sleep(1.5)
+                                if games:
+                                    results["total_games"] += len(games)
+                                    logger.info(
+                                        f"Fetched {len(games)} games for {sub_league['name']} on {fetch_date}"
+                                    )
+
+                                    # Save games to database if db_pool is available
+                                    if self.db_pool:
+                                        logger.info(
+                                            f"Saving {len(games)} games to database for {sub_league['name']}"
+                                        )
+                                        for game in games:
+                                            success = await self._save_game_to_db(game)
+                                            if success:
+                                                logger.debug(
+                                                    f"Successfully saved game {game.get('api_game_id')} to database"
+                                                )
+                                            else:
+                                                logger.error(
+                                                    f"Failed to save game {game.get('api_game_id')} to database"
+                                                )
+                                    else:
+                                        logger.warning(
+                                            "No database pool available, skipping database save"
+                                        )
+
+                                # Rate limiting between requests
+                                await asyncio.sleep(1.5)
+                    else:
+                        # Normal handling for other leagues
+                        # Fetch for multiple days
+                        for day_offset in range(next_days):
+                            fetch_date = (
+                                datetime.strptime(date, "%Y-%m-%d")
+                                + timedelta(days=day_offset)
+                            ).strftime("%Y-%m-%d")
+
+                            games = await self.fetch_games(sport, league, fetch_date)
+
+                            if games:
+                                results["total_games"] += len(games)
+                                logger.info(
+                                    f"Fetched {len(games)} games for {league['name']} on {fetch_date}"
+                                )
+
+                                # Save games to database if db_pool is available
+                                if self.db_pool:
+                                    logger.info(
+                                        f"Saving {len(games)} games to database for {league['name']}"
+                                    )
+                                    for game in games:
+                                        success = await self._save_game_to_db(game)
+                                        if success:
+                                            logger.debug(
+                                                f"Successfully saved game {game.get('api_game_id')} to database"
+                                            )
+                                        else:
+                                            logger.error(
+                                                f"Failed to save game {game.get('api_game_id')} to database"
+                                            )
+                                else:
+                                    logger.warning(
+                                        "No database pool available, skipping database save"
+                                    )
+
+                            # Rate limiting between requests
+                            await asyncio.sleep(1.5)
 
                     results["successful_fetches"] += 1
 
