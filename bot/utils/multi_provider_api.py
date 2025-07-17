@@ -327,8 +327,9 @@ class MultiProviderAPI:
             
             if provider == "sportdevs":
                 # Use SportDevs query builder for proper query syntax
-                query = endpoint(leagues_endpoint).limit(50).build_url()
-                data = await self.make_request(sport, query, None)
+                # For now, use a simple approach since endpoint is not defined
+                params = {"limit": "50"}
+                data = await self.make_request(sport, leagues_endpoint, params)
             elif provider == "rapidapi-darts":
                 # For Darts Devs, we need to get tournaments by league
                 # First, let's get some sample leagues to work with
@@ -431,45 +432,67 @@ class MultiProviderAPI:
         # Create a set of unique tournaments
         tournaments = {}
         for event in events:
-            tournament_id = event.get("tournament_id")
-            tournament_name = event.get("tournament_name")
+            # The golf API returns events with 'tour' and 'name' fields
+            tour = event.get("tour", {})
+            tournament_id = event.get("id")  # Use event ID as tournament ID
+            tournament_name = event.get("name")
+            tour_name = tour.get("name", "")
             
             if tournament_id and tournament_name:
-                tournaments[tournament_id] = {
-                    "id": tournament_id,
-                    "name": tournament_name,
-                    "type": "tournament",
-                    "logo": "",
-                    "country": event.get("country", ""),
-                    "country_code": event.get("country_code", ""),
-                    "flag": "",
-                    "season": datetime.now().year,
-                    "sport": sport,
-                    "provider": "rapidapi-golf"
-                }
+                # Create a unique key combining tour and tournament name
+                unique_key = f"{tour_name}_{tournament_name}"
+                
+                if unique_key not in tournaments:
+                    tournaments[unique_key] = {
+                        "id": tournament_id,
+                        "name": tournament_name,
+                        "tour_name": tour_name,
+                        "type": "tournament",
+                        "logo": tour.get("logo", ""),
+                        "country": event.get("location", ""),
+                        "country_code": "",
+                        "flag": "",
+                        "season": datetime.now().year,
+                        "sport": sport,
+                        "provider": "rapidapi-golf"
+                    }
         
         # Convert to list
         leagues = list(tournaments.values())
+        logger.info(f"Parsed {len(leagues)} golf tournaments from {len(events)} events")
         return leagues
 
     def _parse_rapidapi_darts_leagues(self, data: Dict, sport: str) -> List[Dict]:
         """Parse RapidAPI Darts league response."""
         leagues = []
-        tournaments = data if isinstance(data, list) else data.get("tournaments", [])
-        for tournament in tournaments:
-            leagues.append({
-                "id": tournament.get("id"),
-                "name": tournament.get("name", ""),
-                "type": "tournament",
-                "logo": tournament.get("logo", ""),
-                "country": tournament.get("country", ""),
-                "country_code": tournament.get("country_code", ""),
-                "flag": tournament.get("flag", ""),
-                "season": datetime.now().year,
-                "sport": sport,
-                "provider": "rapidapi-darts",
-                "league_id": tournament.get("league_id", "")  # Store league_id for later use
-            })
+        
+        # The API returns a list of league objects, each with league_name and tournaments
+        league_objects = data if isinstance(data, list) else []
+        
+        for league_obj in league_objects:
+            league_name = league_obj.get("league_name", "")
+            league_id = league_obj.get("league_id", "")
+            tournaments = league_obj.get("tournaments", [])
+            
+            # Create a league entry for each league
+            if league_name and league_id:
+                leagues.append({
+                    "id": str(league_id),
+                    "name": league_name,
+                    "type": "league",
+                    "logo": "",
+                    "country": "",
+                    "country_code": "",
+                    "flag": "",
+                    "season": datetime.now().year,
+                    "sport": sport,
+                    "provider": "rapidapi-darts",
+                    "league_id": str(league_id),
+                    "tournaments": tournaments  # Store tournaments for later use
+                })
+                
+                logger.info(f"Added darts league: {league_name} (ID: {league_id}) with {len(tournaments)} tournaments")
+        
         return leagues
 
     def _parse_rapidapi_tennis_leagues(self, data: Dict, sport: str) -> List[Dict]:
@@ -534,6 +557,32 @@ class MultiProviderAPI:
             provider = self.get_provider_for_sport(sport)
             today = datetime.now().strftime("%Y-%m-%d")
             
+            # Special handling for consolidated darts league
+            if sport == "darts" and league.get("type") == "consolidated":
+                all_games = []
+                consolidated_leagues = league.get("consolidated_leagues", [])
+                
+                logger.info(f"Fetching games for consolidated Darts league with {len(consolidated_leagues)} sub-leagues")
+                
+                for sub_league in consolidated_leagues:
+                    try:
+                        # Fetch games for each sub-league
+                        sub_games = await self.fetch_games(sport, sub_league, date)
+                        if sub_games:
+                            all_games.extend(sub_games)
+                            logger.info(f"Fetched {len(sub_games)} games from {sub_league.get('name')}")
+                        
+                        # Rate limiting between sub-leagues
+                        await asyncio.sleep(1)
+                        
+                    except Exception as e:
+                        logger.error(f"Error fetching games for darts sub-league {sub_league.get('name')}: {e}")
+                        continue
+                
+                logger.info(f"Total games fetched for consolidated Darts: {len(all_games)}")
+                return all_games
+            
+            # Normal handling for individual leagues
             if provider == "sportdevs":
                 # For Tennis/Esports Devs, try to filter by date >= today if supported, else just by tournament_id
                 # We'll use the query builder for flexibility
@@ -777,11 +826,17 @@ class MultiProviderAPI:
     def _map_rapidapi_darts_game(self, game: Dict, sport: str, league: Dict) -> Optional[Dict]:
         """Map RapidAPI Darts game data to standard format."""
         try:
+            # For consolidated darts league, use "Darts" as the league name
+            if league.get("type") == "consolidated":
+                league_name = "Darts"
+            else:
+                league_name = game.get("league_name", league["name"])
+            
             return {
                 "api_game_id": str(game.get("id", "")),
                 "sport": sport.title(),
                 "league_id": str(game.get("league_id", league["id"])),
-                "league_name": game.get("league_name", league["name"]),
+                "league_name": league_name,
                 "home_team_name": game.get("home_team_name", ""),
                 "away_team_name": game.get("away_team_name", ""),
                 "start_time": game.get("start_time", ""),
@@ -869,7 +924,9 @@ class MultiProviderAPI:
             "tennis": ["ATP Tour", "WTA Tour"],
             "golf": ["PGA Tour", "LPGA Tour"],
             "mma": ["UFC", "Bellator MMA"],
-            "darts": ["Professional Darts Corporation"]
+            "darts": ["Professional Darts Corporation", "British Darts Organisation", "World Darts Federation", 
+                     "Premier League Darts", "World Matchplay", "World Grand Prix", "UK Open", 
+                     "Grand Slam of Darts", "Players Championship", "European Championship", "Masters"]
         }
         
         results = {
@@ -886,10 +943,39 @@ class MultiProviderAPI:
             target_league_names = TARGET_LEAGUES.get(sport, [])
             filtered_leagues = []
             
-            for league in leagues:
-                if any(target_name.lower() in league.get('name', '').lower() for target_name in target_league_names):
-                    filtered_leagues.append(league)
-                    logger.info(f"Including league: {league.get('name')}")
+            # Special handling for darts - consolidate all darts leagues under one entry
+            if sport == "darts":
+                # Create a single consolidated darts league entry
+                consolidated_darts_league = {
+                    "id": "DARTS_CONSOLIDATED",
+                    "name": "Darts",
+                    "type": "consolidated",
+                    "logo": "",
+                    "country": "International",
+                    "country_code": "",
+                    "flag": "",
+                    "season": datetime.now().year,
+                    "sport": sport,
+                    "provider": "rapidapi-darts",
+                    "consolidated_leagues": []  # Store all individual leagues here
+                }
+                
+                # Add all darts leagues to the consolidated entry
+                for league in leagues:
+                    if any(target_name.lower() in league.get('name', '').lower() for target_name in target_league_names):
+                        consolidated_darts_league["consolidated_leagues"].append(league)
+                        logger.info(f"Including darts league: {league.get('name')}")
+                
+                # Only add the consolidated league if we found any darts leagues
+                if consolidated_darts_league["consolidated_leagues"]:
+                    filtered_leagues.append(consolidated_darts_league)
+                    logger.info(f"Created consolidated Darts league with {len(consolidated_darts_league['consolidated_leagues'])} sub-leagues")
+            else:
+                # Normal filtering for other sports
+                for league in leagues:
+                    if any(target_name.lower() in league.get('name', '').lower() for target_name in target_league_names):
+                        filtered_leagues.append(league)
+                        logger.info(f"Including league: {league.get('name')}")
             
             logger.info(f"Filtered to {len(filtered_leagues)} target leagues for {sport}")
             
