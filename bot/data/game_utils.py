@@ -572,6 +572,18 @@ async def get_normalized_games_for_dropdown(
         f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}"
     )
 
+    # Define league_id for all sports (needed for query parameters)
+    if league_key == "SerieA":
+        # Italian Serie A has league_id 135
+        league_id = "135"
+    elif league_key == "Brazil_Serie_A":
+        # Brazil Serie A has league_id 71
+        league_id = "71"
+    else:
+        league_id = LEAGUE_ID_MAP.get(league_key, "1")
+
+    logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
+
     # Special handling for darts - show all darts games regardless of league
     if sport.lower() == "darts":
         status_placeholders = ", ".join(["%s"] * len(finished_statuses))
@@ -583,6 +595,9 @@ async def get_normalized_games_for_dropdown(
             ORDER BY start_time ASC LIMIT 100
         """
         params = (sport,) + tuple(finished_statuses)
+        logger.info(
+            f"[get_normalized_games_for_dropdown] Fetching all darts games (no league filtering)"
+        )
     else:
         # Normal handling for other sports
         status_placeholders = ", ".join(["%s"] * len(finished_statuses))
@@ -601,25 +616,8 @@ async def get_normalized_games_for_dropdown(
             + tuple([name.upper() for name in league_names])
             + tuple(finished_statuses)
         )
-
-    # Special handling for Serie A leagues (Italian vs Brazilian) - only for non-darts
-    if sport.lower() != "darts":
-        if league_key == "SerieA":
-            # Italian Serie A has league_id 135
-            league_id = "135"
-        elif league_key == "Brazil_Serie_A":
-            # Brazil Serie A has league_id 71
-            league_id = "71"
-        else:
-            league_id = LEAGUE_ID_MAP.get(league_key, "1")
-
-        logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
         logger.info(
             f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"
-        )
-    else:
-        logger.info(
-            f"[get_normalized_games_for_dropdown] Fetching all darts games (no league filtering)"
         )
     rows = await db_manager.fetch_all(query, params)
     logger.info(

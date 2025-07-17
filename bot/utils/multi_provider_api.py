@@ -1130,14 +1130,14 @@ class MultiProviderAPI:
             "tennis": ["ATP", "WTA", "Grand Slam", "Masters"],
             "golf": ["PGA", "LPGA", "European Tour", "LIV Golf"],
             "mma": ["UFC", "Bellator MMA"],
-            "darts": [
-                "PDC",
-                "Premier League",
-                "World Matchplay",
-                "World Grand Prix",
-                "UK Open",
-                "Grand Slam",
-            ],
+            # "darts": [
+            #     "PDC",
+            #     "Premier League",
+            #     "World Matchplay",
+            #     "World Grand Prix",
+            #     "UK Open",
+            #     "Grand Slam",
+            # ],
             "esports": [
                 "CS:GO",
                 "League of Legends",
@@ -1162,36 +1162,35 @@ class MultiProviderAPI:
             filtered_leagues = []
 
             # Special handling for darts - consolidate ALL darts leagues under one entry
-            if sport == "darts":
-                # Create a single consolidated darts league entry
-                consolidated_darts_league = {
-                    "id": "DARTS_CONSOLIDATED",
-                    "name": "Darts",
-                    "type": "consolidated",
-                    "logo": "",
-                    "country": "International",
-                    "country_code": "",
-                    "flag": "",
-                    "season": datetime.now().year,
-                    "sport": sport,
-                    "provider": "rapidapi-darts",
-                    "consolidated_leagues": [],  # Store all individual leagues here
-                }
+            # if sport == "darts":
+            #     # Create a single consolidated darts league entry
+            #     consolidated_darts_league = {
+            #         "id": "DARTS_CONSOLIDATED",
+            #         "name": "Darts",
+            #         "type": "consolidated",
+            #         "logo": "",
+            #         "country": "International",
+            #         "country_code": "",
+            #         "flag": "",
+            #         "season": datetime.now().year,
+            #         "sport": sport,
+            #         "provider": "rapidapi-darts",
+            #         "consolidated_leagues": [],  # Store all individual leagues here
+            #     }
 
-                # Add ALL darts leagues to the consolidated entry (no filtering)
-                for league in leagues:
-                    consolidated_darts_league["consolidated_leagues"].append(league)
-                    logger.info(f"Including darts league: {league.get('name')}")
+            #     # Add ALL darts leagues to the consolidated entry (no filtering)
+            #     for league in leagues:
+            #         consolidated_darts_league["consolidated_leagues"].append(league)
+            #         logger.info(f"Including darts league: {league.get('name')}")
 
-                # Only add the consolidated league if we found any darts leagues
-                if consolidated_darts_league["consolidated_leagues"]:
-                    filtered_leagues.append(consolidated_darts_league)
-                    logger.info(
-                        f"Created consolidated Darts league with {len(consolidated_darts_league['consolidated_leagues'])} sub-leagues"
-                    )
-            else:
-                # Normal filtering for other sports
-                for league in leagues:
+            #     # Only add the consolidated league if we found any darts leagues
+            #     if consolidated_darts_league["consolidated_leagues"]:
+            #         filtered_leagues.append(consolidated_darts_league)
+            #         logger.info(
+            #             f"Created consolidated Darts league with {len(consolidated_darts_league['consolidated_leagues'])} sub-leagues"
+            #         )
+            # Normal filtering for other sports
+            for league in leagues:
                     if any(
                         target_name.lower() in league.get("name", "").lower()
                         for target_name in target_league_names
@@ -1208,53 +1207,52 @@ class MultiProviderAPI:
 
                 try:
                     # Special handling for consolidated darts league
-                    if sport == "darts" and league.get("type") == "consolidated":
-                        # For darts, fetch all games for each day in one API call per day
-                        logger.info(
-                            f"Fetching consolidated darts games for {next_days} days"
-                        )
+                    # if sport == "darts" and league.get("type") == "consolidated":
+                    #     # For darts, fetch all games for each day in one API call per day
+                    #     logger.info(
+                    #         f"Fetching consolidated darts games for {next_days} days"
+                    #     )
 
-                        # Fetch for multiple days
-                        for day_offset in range(next_days):
-                            fetch_date = (
-                                datetime.strptime(date, "%Y-%m-%d")
-                                + timedelta(days=day_offset)
-                            ).strftime("%Y-%m-%d")
+                    #     # Fetch for multiple days
+                    #     for day_offset in range(next_days):
+                    #         fetch_date = (
+                    #             datetime.strptime(date, "%Y-%m-%d")
+                    #             + timedelta(days=day_offset)
+                    #         ).strftime("%Y-%m-%d")
 
-                            games = await self.fetch_games(sport, league, fetch_date)
+                    #         games = await self.fetch_games(sport, league, fetch_date)
 
-                            if games:
-                                results["total_games"] += len(games)
-                                logger.info(
-                                    f"Fetched {len(games)} consolidated darts games for {fetch_date}"
-                                )
+                    #         if games:
+                    #             results["total_games"] += len(games)
+                    #             logger.info(
+                    #                 f"Fetched {len(games)} consolidated darts games for {fetch_date}"
+                    #             )
 
-                                # Save games to database if db_pool is available
-                                if self.db_pool:
-                                    logger.info(
-                                        f"Saving {len(games)} darts games to database for {fetch_date}"
-                                    )
-                                    for game in games:
-                                        success = await self._save_game_to_db(game)
-                                        if success:
-                                            logger.debug(
-                                                f"Successfully saved darts game {game.get('api_game_id')} to database"
-                                            )
-                                        else:
-                                            logger.error(
-                                                f"Failed to save darts game {game.get('api_game_id')} to database"
-                                            )
-                                else:
-                                    logger.warning(
-                                        "No database pool available, skipping database save"
-                                    )
+                    #         # Save games to database if db_pool is available
+                    #         if self.db_pool:
+                    #             logger.info(
+                    #                 f"Saving {len(games)} darts games to database for {fetch_date}"
+                    #             )
+                    #             for game in games:
+                    #                 success = await self._save_game_to_db(game)
+                    #                 if success:
+                    #                     logger.debug(
+                    #                         f"Successfully saved darts game {game.get('api_game_id')} to database"
+                    #                     )
+                    #                 else:
+                    #                     logger.error(
+                    #                         f"Failed to save darts game {game.get('api_game_id')} to database"
+                    #                     )
+                    #         else:
+                    #             logger.warning(
+                    #                 "No database pool available, skipping database save"
+                    #             )
 
-                            # Rate limiting between requests
-                            await asyncio.sleep(1.5)
-                    else:
-                        # Normal handling for other leagues
-                        # Fetch for multiple days
-                        for day_offset in range(next_days):
+                    #         # Rate limiting between requests
+                    #         await asyncio.sleep(1.5)
+                    # Normal handling for other leagues
+                    # Fetch for multiple days
+                    for day_offset in range(next_days):
                             fetch_date = (
                                 datetime.strptime(date, "%Y-%m-%d")
                                 + timedelta(days=day_offset)
