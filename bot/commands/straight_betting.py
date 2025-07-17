@@ -869,35 +869,14 @@ class StraightBetWorkflowView(View):
                 self.stop()
                 return
         elif self.current_step == 4:
-            # Step 4: Team selection or modal (depending on manual entry and sport type)
+            # Step 4: Team selection or skip to units (depending on manual entry and sport type)
             is_manual = self.bet_details.get("is_manual", False)
 
             if is_manual:
-                # For manual entry, always go directly to modal (both individual and team sports)
-                line_type = self.bet_details.get("line_type", "game_line")
-                modal = StraightBetDetailsModal(
-                    line_type=line_type,
-                    selected_league_key=self.bet_details.get("league", "OTHER"),
-                    bet_details_from_view=self.bet_details,
-                    is_manual=True,
-                    view_custom_id_suffix=str(interaction.id),
-                )
-                modal.view_ref = self
-                if not interaction.response.is_done():
-                    await interaction.response.send_modal(modal)
-                    await self.edit_message(
-                        content="Please fill in the bet details in the popup form.",
-                        view=self,
-                    )
-                else:
-                    logger.error(
-                        "Tried to send modal, but interaction already responded to."
-                    )
-                    await self.edit_message(
-                        content="❌ Error: Could not open modal. Please try again or cancel.",
-                        view=None,
-                    )
-                    self.stop()
+                # For manual entry, skip team selection and go directly to units selection
+                logger.info("[WORKFLOW TRACE] Manual entry detected - skipping team selection, going to units selection")
+                self.current_step = 4  # This will be incremented to 5 in the next go_next call
+                await self.go_next(interaction)
                 return
             else:
                 # For regular games, show team selection
@@ -1662,22 +1641,6 @@ class StraightBetDetailsModal(Modal):
         self.add_item(self.odds_input)
 
     async def on_submit(self, interaction: Interaction):
-        # Set skip increment flag so go_next does not double-increment
-        preview_bytes = None  # Ensure this is always defined
-        if self.view_ref:
-            self.view_ref._skip_increment = True
-            if preview_bytes:
-                self.view_ref.preview_image_bytes = io.BytesIO(preview_bytes)
-                self.view_ref.preview_image_bytes.seek(0)
-            else:
-                self.view_ref.preview_image_bytes = None
-            # Update the view's bet_details with the modal data
-            self.view_ref.bet_details.update(self.bet_details)
-            if not interaction.response.is_done():
-                await interaction.response.defer()
-            # For manual entries, go to units selection (step 4)
-            self.view_ref.current_step = 3  # Set to 3 so go_next increments to 4 (units selection)
-            await self.view_ref.go_next(interaction)
         try:
             # Get values from inputs
             if self.is_manual:
@@ -1788,6 +1751,19 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
+                
+                # Update the view's bet_details with the modal data
+                self.view_ref.bet_details.update(self.bet_details)
+                
+                # Set skip increment flag so go_next does not double-increment
+                self.view_ref._skip_increment = True
+                
+                if not interaction.response.is_done():
+                    await interaction.response.defer()
+                
+                # For manual entries, go to units selection (step 4)
+                self.view_ref.current_step = 3  # Set to 3 so go_next increments to 4 (units selection)
+                await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(
                 f"[StraightBetDetailsModal] on_submit error: {e}\n{traceback.format_exc()}"
