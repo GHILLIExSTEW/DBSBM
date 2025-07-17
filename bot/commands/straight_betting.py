@@ -797,8 +797,23 @@ class StraightBetWorkflowView(View):
             await self.edit_message(content=self.get_content(), view=self)
             return
         elif self.current_step == 2:
-            # Step 2: League selection within selected sport
+            # Step 2: League selection within selected sport (skip for darts)
             sport = self.bet_details.get("sport")
+            
+            # Special handling for darts - skip league selection and go directly to manual entry
+            if sport.lower() == "darts":
+                logger.info("[WORKFLOW TRACE] Darts selected - skipping league selection, going to manual entry")
+                self.bet_details["league"] = "DARTS"
+                self.bet_details["line_type"] = "game_line"
+                self.bet_details["is_manual"] = True
+                self.bet_details["home_team_name"] = "Manual Entry"
+                self.bet_details["away_team_name"] = "Manual Entry"
+                
+                # Skip to step 4 (team/opponent entry modal)
+                self.current_step = 3  # This will be incremented to 4 in the next go_next call
+                await self.go_next(interaction)
+                return
+            
             leagues = get_leagues_by_sport(sport)
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
@@ -1521,7 +1536,7 @@ class StraightBetDetailsModal(Modal):
             sport_type = league_conf.get("sport_type", "Team Sport")
             is_individual_sport = sport_type == "Individual Player"
 
-            if is_individual_sport:
+            if is_individual_sport or self.selected_league_key == "DARTS":
                 # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
                 player_label = league_conf.get("participant_label", "Player")
                 player_placeholder = league_conf.get(
@@ -1540,7 +1555,7 @@ class StraightBetDetailsModal(Modal):
                     "PlayersChampionship",
                     "EuropeanChampionship",
                     "Masters",
-                ]:
+                ] or self.selected_league_key == "DARTS":
                     player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
                 elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                     player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
@@ -1580,7 +1595,7 @@ class StraightBetDetailsModal(Modal):
                         "PlayersChampionship",
                         "EuropeanChampionship",
                         "Masters",
-                    ]:
+                    ] or self.selected_league_key == "DARTS":
                         opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
                     elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                         opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
@@ -1664,7 +1679,7 @@ class StraightBetDetailsModal(Modal):
                 sport_type = league_conf.get("sport_type", "Team Sport")
                 is_individual_sport = sport_type == "Individual Player"
 
-                if is_individual_sport:
+                if is_individual_sport or self.selected_league_key == "DARTS":
                     # For individual sports, use player and opponent
                     self.bet_details["player_name"] = (
                         self.player_input.value.strip()[:100] or "Player"

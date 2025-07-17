@@ -15,6 +15,18 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., Moneyline, Spread, Total",
         "line_placeholder_player": "e.g., Player Prop",
     },
+    # Darts (consolidated)
+    "DARTS": {
+        "sport": "Darts",
+        "name": "Darts",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Michael van Gerwen, Peter Wright",
+        "opponent_label": "Opponent",
+        "opponent_placeholder": "e.g., Peter Wright, Gerwyn Price",
+        "line_placeholder_game": "e.g., Match Winner, Handicap, Total Legs",
+        "line_placeholder_player": "e.g., 180s Over 2.5, Checkout % Over 40%",
+    },
     # Basketball
     "NBA": {
         "sport": "Basketball",

@@ -244,6 +244,7 @@ SPORT_CATEGORIES = {
         "TOUR_CHAMPIONSHIP",
     ],
     "DARTS": [
+        "DARTS",  # Consolidated darts entry
         "PDC",
         "BDO",
         "WORLD_CHAMPIONSHIP",
