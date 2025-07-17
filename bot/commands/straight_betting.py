@@ -875,7 +875,7 @@ class StraightBetWorkflowView(View):
             if is_manual:
                 # For manual entry, skip team selection and go directly to units selection
                 logger.info("[WORKFLOW TRACE] Manual entry detected - skipping team selection, going to units selection")
-                self.current_step = 4  # This will be incremented to 5 in the next go_next call
+                # Don't set current_step again, just proceed to step 5
                 await self.go_next(interaction)
                 return
             else:
@@ -1754,9 +1754,6 @@ class StraightBetDetailsModal(Modal):
                 
                 # Update the view's bet_details with the modal data
                 self.view_ref.bet_details.update(self.bet_details)
-                
-                # Set skip increment flag so go_next does not double-increment
-                self.view_ref._skip_increment = True
                 
                 if not interaction.response.is_done():
                     await interaction.response.defer()
