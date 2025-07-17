@@ -51,6 +51,7 @@ SPORT_ENDPOINTS = {
     "winter-sports": "https://v1.winter-sports.api-sports.io",
 }
 
+
 # Rate limiter for API calls
 class APIRateLimiter:
     def __init__(self, calls_per_minute: int = 30):
@@ -79,7 +80,7 @@ class LeagueDiscovery:
         self.api_key = API_KEY
         if not self.api_key:
             raise ValueError("API_KEY not found in environment variables")
-        
+
         self.rate_limiter = APIRateLimiter()
         self.session = None
         self.discovered_leagues = {}
@@ -95,40 +96,48 @@ class LeagueDiscovery:
     async def discover_all_leagues(self) -> Dict[str, List[Dict]]:
         """Discover all available leagues from all sports APIs."""
         logger.info("Starting comprehensive league discovery...")
-        
+
         all_leagues = {}
         current_year = datetime.now().year
-        
+
         for sport, base_url in SPORT_ENDPOINTS.items():
             try:
                 logger.info(f"Discovering leagues for {sport}...")
-                leagues = await self._discover_sport_leagues(sport, base_url, current_year)
+                leagues = await self._discover_sport_leagues(
+                    sport, base_url, current_year
+                )
                 if leagues:
                     all_leagues[sport] = leagues
                     logger.info(f"Found {len(leagues)} leagues for {sport}")
                 else:
                     logger.warning(f"No leagues found for {sport}")
-                
+
                 # Rate limiting between sports
                 await asyncio.sleep(2)
-                
+
             except Exception as e:
                 logger.error(f"Error discovering leagues for {sport}: {e}")
                 continue
 
-        logger.info(f"League discovery completed. Found leagues for {len(all_leagues)} sports")
+        logger.info(
+            f"League discovery completed. Found leagues for {len(all_leagues)} sports"
+        )
         return all_leagues
 
-    async def _discover_sport_leagues(self, sport: str, base_url: str, season: int) -> List[Dict]:
+    async def _discover_sport_leagues(
+        self, sport: str, base_url: str, season: int
+    ) -> List[Dict]:
         """Discover leagues for a specific sport."""
         await self.rate_limiter.acquire()
-        
+
         url = f"{base_url}/leagues"
         headers = {"x-apisports-key": self.api_key}
         params = {"season": season}
 
         try:
-            async with self.session.get(url, headers=headers, params=params) as response:
+            async with self.session.get(
+                url, headers=headers, params=params
+            ) as response:
                 if response.status == 429:  # Rate limit exceeded
                     logger.warning(f"Rate limit exceeded for {sport}, waiting...")
                     await asyncio.sleep(60)
@@ -145,7 +154,7 @@ class LeagueDiscovery:
                 for league_data in data.get("response", []):
                     league = league_data.get("league", {})
                     country = league_data.get("country", {})
-                    
+
                     if league and league.get("id"):
                         league_info = {
                             "id": league["id"],
@@ -156,7 +165,7 @@ class LeagueDiscovery:
                             "country_code": country.get("code", ""),
                             "flag": country.get("flag", ""),
                             "season": season,
-                            "sport": sport
+                            "sport": sport,
                         }
                         leagues.append(league_info)
 
@@ -169,11 +178,13 @@ class LeagueDiscovery:
             logger.error(f"Unexpected error discovering leagues for {sport}: {e}")
             return []
 
-    def generate_league_ids_config(self, discovered_leagues: Dict[str, List[Dict]]) -> str:
+    def generate_league_ids_config(
+        self, discovered_leagues: Dict[str, List[Dict]]
+    ) -> str:
         """Generate the LEAGUE_IDS configuration string."""
         config_lines = ["# Auto-generated LEAGUE_IDS configuration", ""]
         config_lines.append("LEAGUE_IDS = {")
-        
+
         for sport, leagues in discovered_leagues.items():
             config_lines.append(f"    # {sport.title()}")
             for league in leagues:
@@ -183,7 +194,7 @@ class LeagueDiscovery:
                     f'    "{safe_name}": {{"id": {league["id"]}, "sport": "{sport}", "name": "{league["name"]}"}},'
                 )
             config_lines.append("")
-        
+
         config_lines.append("}")
         return "\n".join(config_lines)
 
@@ -192,11 +203,11 @@ class LeagueDiscovery:
         # Remove special characters and replace spaces with underscores
         safe_name = "".join(c for c in league_name if c.isalnum() or c.isspace())
         safe_name = safe_name.replace(" ", "").replace("&", "And")
-        
+
         # Handle common abbreviations
         abbreviations = {
             "PremierLeague": "EPL",
-            "LaLiga": "LaLiga", 
+            "LaLiga": "LaLiga",
             "Bundesliga": "Bundesliga",
             "SerieA": "SerieA",
             "Ligue1": "Ligue1",
@@ -243,25 +254,33 @@ class LeagueDiscovery:
             "EuropeanChampionship": "EuropeanChampionship",
             "Masters": "Masters",
         }
-        
+
         return abbreviations.get(safe_name, safe_name)
 
-    async def save_discovered_leagues(self, discovered_leagues: Dict[str, List[Dict]], output_file: str = "discovered_leagues.json"):
+    async def save_discovered_leagues(
+        self,
+        discovered_leagues: Dict[str, List[Dict]],
+        output_file: str = "discovered_leagues.json",
+    ):
         """Save discovered leagues to a JSON file."""
         import json
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
+
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(discovered_leagues, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Discovered leagues saved to {output_file}")
 
-    async def update_league_config(self, discovered_leagues: Dict[str, List[Dict]], config_file: str = "bot/config/leagues.py"):
+    async def update_league_config(
+        self,
+        discovered_leagues: Dict[str, List[Dict]],
+        config_file: str = "bot/config/leagues.py",
+    ):
         """Update the leagues.py configuration file with discovered leagues."""
         config_content = self.generate_league_ids_config(discovered_leagues)
-        
+
         # Read existing file
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 existing_content = f.read()
         except FileNotFoundError:
             logger.error(f"Configuration file {config_file} not found")
@@ -269,11 +288,14 @@ class LeagueDiscovery:
 
         # Find and replace the LEAGUE_IDS section
         import re
+
         pattern = r"LEAGUE_IDS\s*=\s*\{[^}]*\}"
         replacement = config_content
-        
+
         if re.search(pattern, existing_content, re.DOTALL):
-            new_content = re.sub(pattern, replacement, existing_content, flags=re.DOTALL)
+            new_content = re.sub(
+                pattern, replacement, existing_content, flags=re.DOTALL
+            )
         else:
             # If no existing LEAGUE_IDS, add it before the ENDPOINTS section
             pattern = r"(ENDPOINTS\s*=\s*\{)"
@@ -281,9 +303,9 @@ class LeagueDiscovery:
             new_content = re.sub(pattern, replacement, existing_content)
 
         # Write updated content
-        with open(config_file, 'w', encoding='utf-8') as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             f.write(new_content)
-        
+
         logger.info(f"Updated {config_file} with discovered leagues")
         return True
 
@@ -293,17 +315,19 @@ async def main():
     async with LeagueDiscovery() as discoverer:
         # Discover all leagues
         discovered_leagues = await discoverer.discover_all_leagues()
-        
+
         # Save to JSON file
         await discoverer.save_discovered_leagues(discovered_leagues)
-        
+
         # Update configuration file
         await discoverer.update_league_config(discovered_leagues)
-        
+
         # Print summary
         total_leagues = sum(len(leagues) for leagues in discovered_leagues.values())
-        logger.info(f"Discovery complete! Found {total_leagues} leagues across {len(discovered_leagues)} sports")
+        logger.info(
+            f"Discovery complete! Found {total_leagues} leagues across {len(discovered_leagues)} sports"
+        )
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

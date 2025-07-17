@@ -51,3 +51,20 @@ ALL_LEAGUES = {
 def get_all_league_names():
     """Return a list of all league names for dropdowns."""
     return [info["name"] for info in ALL_LEAGUES.values()]
+
+
+def get_all_sport_categories():
+    """Return a sorted list of all unique sport categories from ALL_LEAGUES."""
+    categories = set()
+    for league in ALL_LEAGUES.values():
+        categories.add(league["sport"])
+    return sorted(categories)
+
+
+def get_leagues_by_sport(sport: str):
+    """Return a list of league names for a given sport category."""
+    return [
+        info["name"]
+        for info in ALL_LEAGUES.values()
+        if info["sport"].lower() == sport.lower()
+    ]

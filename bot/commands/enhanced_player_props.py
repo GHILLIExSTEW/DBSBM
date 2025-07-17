@@ -18,6 +18,7 @@ from discord.ui import Button, Select, View
 
 from commands.admin import require_registered_guild
 from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
+from utils.league_loader import get_all_sport_categories, get_leagues_by_sport
 from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,26 @@ class EnhancedPlayerPropsCog(commands.Cog):
             )
 
 
+class SportSelect(Select):
+    def __init__(self, parent_view: "PlayerPropsWorkflowView", sports: List[str]):
+        self.parent_view = parent_view
+        options = [SelectOption(label=sport, value=sport) for sport in sports]
+        super().__init__(
+            placeholder="Select Sport Category...",
+            options=options,
+            min_values=1,
+            max_values=1,
+            custom_id=f"playerprops_sport_select_{parent_view.original_interaction.id}",
+        )
+
+    async def callback(self, interaction: Interaction):
+        value = self.values[0]
+        self.parent_view.bet_details["sport"] = value
+        self.disabled = True
+        await interaction.response.defer()
+        await self.parent_view.go_next(interaction)
+
+
 class PlayerPropsWorkflowView(View):
     """Workflow view for player props that follows the same pattern as other bet types."""
 
@@ -107,20 +128,26 @@ class PlayerPropsWorkflowView(View):
         )
 
         if self.current_step == 1:
-            # Step 1: League selection
-            from commands.straight_betting import (
-                LeagueSelect,
-                get_all_league_names,
-            )
+            # Step 1: Sport category selection
+            sports = get_all_sport_categories()
+            self.clear_items()
+            self.add_item(SportSelect(self, sports))
+            self.add_item(CancelButton(self))
+            await self.edit_message(content=self.get_content(), view=self)
+            return
+        elif self.current_step == 2:
+            # Step 2: League selection within selected sport
+            from commands.straight_betting import LeagueSelect
 
-            leagues = get_all_league_names()
+            sport = self.bet_details.get("sport")
+            leagues = get_leagues_by_sport(sport)
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
             await self.edit_message(content=self.get_content(), view=self)
             return
-        elif self.current_step == 2:
-            # Step 2: Game selection
+        elif self.current_step == 3:
+            # Step 3: Game selection
             from data.game_utils import get_normalized_games_for_dropdown
 
             from commands.straight_betting import GameSelect
@@ -154,8 +181,8 @@ class PlayerPropsWorkflowView(View):
                 )
                 self.stop()
                 return
-        elif self.current_step == 3:
-            # Step 3: Team selection
+        elif self.current_step == 4:
+            # Step 4: Team selection
             home_team = self.bet_details.get("home_team_name", "")
             away_team = self.bet_details.get("away_team_name", "")
             self.clear_items()
@@ -165,8 +192,8 @@ class PlayerPropsWorkflowView(View):
                 content="Select which team's players you want to bet on:", view=self
             )
             return
-        elif self.current_step == 4:
-            # Step 4: Player/Prop selection (enhanced modal)
+        elif self.current_step == 5:
+            # Step 5: Player/Prop selection (enhanced modal)
             from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
 
             team_name = self.bet_details.get("team", "")
@@ -202,8 +229,8 @@ class PlayerPropsWorkflowView(View):
 
             await self.edit_message(embed=embed, view=view)
             return
-        elif self.current_step == 5:
-            # Step 5: Units selection
+        elif self.current_step == 6:
+            # Step 6: Units selection
             from commands.straight_betting import (
                 ConfirmUnitsButton,
                 UnitsSelect,
@@ -265,8 +292,8 @@ class PlayerPropsWorkflowView(View):
                 content=self.get_content(), view=self, file=file_to_send
             )
             return
-        elif self.current_step == 6:
-            # Step 6: Channel selection
+        elif self.current_step == 7:
+            # Step 7: Channel selection
             from commands.straight_betting import (
                 ChannelSelect,
                 FinalConfirmButton,
@@ -380,10 +407,10 @@ class PlayerPropsWorkflowView(View):
         if step_num is None:
             step_num = self.current_step
         if step_num == 1:
-            return "Welcome to the Player Props Workflow! Please select your desired league from the list."
+            return "Welcome to the Player Props Workflow! Please select your desired sport category from the list."
         if step_num == 2:
-            league = self.bet_details.get("league", "N/A")
-            return f"Great choice! Now, please select a game from **{league}**."
+            sport = self.bet_details.get("sport", "N/A")
+            return f"Great choice! Now, please select a league from **{sport}**."
         if step_num == 3:
             league = self.bet_details.get("league", "N/A")
             return f"Select which team's players you want to bet on from the **{league}** game."
@@ -398,6 +425,14 @@ class PlayerPropsWorkflowView(View):
             )
             return f"**Step {step_num}**: Select Units for your player prop bet. {preview_info}"
         if step_num == 6:
+            units = self.bet_details.get("units", "N/A")
+            preview_info = (
+                "(Preview below)"
+                if self.preview_image_bytes
+                else "(Preview image failed)"
+            )
+            return f"**Step {step_num}**: 🔒 Units: `{units}` 🔒 {preview_info}. Select Channel to post your player prop bet."
+        if step_num == 7:
             units = self.bet_details.get("units", "N/A")
             preview_info = (
                 "(Preview below)"
@@ -824,8 +859,10 @@ class GameSelectionView(View):
 
 class PlayerPropTeamSelect(Select):
     """Team selector specifically for player props."""
-    
-    def __init__(self, parent_view: "PlayerPropsWorkflowView", home_team: str, away_team: str):
+
+    def __init__(
+        self, parent_view: "PlayerPropsWorkflowView", home_team: str, away_team: str
+    ):
         self.parent_view = parent_view
         options = [
             SelectOption(label=home_team[:100], value=home_team[:100]),
@@ -842,17 +879,19 @@ class PlayerPropTeamSelect(Select):
         selected_team = self.values[0]
         home_team = self.parent_view.bet_details.get("home_team_name", "")
         away_team = self.parent_view.bet_details.get("away_team_name", "")
-        
+
         if selected_team == home_team:
             opponent = away_team
         else:
             opponent = home_team
-            
+
         self.parent_view.bet_details["team"] = selected_team
         self.parent_view.bet_details["opponent"] = opponent
-        
-        logger.info(f"[PLAYER PROPS TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}")
-        
+
+        logger.info(
+            f"[PLAYER PROPS TEAM SELECT] Selected team: {selected_team}, opponent: {opponent}"
+        )
+
         # Move to next step (player/prop selection)
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -860,7 +899,7 @@ class PlayerPropTeamSelect(Select):
 
 class CancelButton(Button):
     """Cancel button for player props workflow."""
-    
+
     def __init__(self, parent_view: "PlayerPropsWorkflowView"):
         super().__init__(style=ButtonStyle.red, label="Cancel")
         self.parent_view = parent_view
@@ -927,7 +966,9 @@ class TeamSelectionView(View):
 
             embed.add_field(name="🏆 League", value=self.league, inline=True)
             embed.add_field(
-                name="🎮 Game", value=f"{self.away_team} @ {self.home_team}", inline=True
+                name="🎮 Game",
+                value=f"{self.away_team} @ {self.home_team}",
+                inline=True,
             )
             embed.add_field(name="👥 Team", value=team_name, inline=True)
 

@@ -181,7 +181,7 @@ class APISportsFetcher:
             if sport == "football":
                 # Get league_id from LEAGUE_IDS to check for Brazil Serie A
                 league_id = LEAGUE_IDS.get(league, {}).get("id", "")
-                
+
                 # Force league_name for Brazil Serie A and Italian Serie A
                 if str(league_id) == "71":
                     league_name_final = "Brazil Serie A"
@@ -189,7 +189,7 @@ class APISportsFetcher:
                     league_name_final = "Serie A"
                 else:
                     league_name_final = LEAGUE_CONFIG["football"][league]["name"]
-                
+
                 return {
                     "id": str(game["fixture"]["id"]),
                     "sport": "Football",

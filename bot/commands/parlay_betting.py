@@ -24,7 +24,11 @@ from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
 from utils.errors import ValidationError
-from utils.league_loader import get_all_league_names
+from utils.league_loader import (
+    get_all_league_names,
+    get_all_sport_categories,
+    get_leagues_by_sport,
+)
 from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
 from .admin import require_registered_guild
@@ -156,6 +160,26 @@ def get_league_file_key(league_name):
 
 
 # --- UI Component Classes ---
+class SportSelect(Select):
+    def __init__(self, parent_view: "ParlayBetWorkflowView", sports: List[str]):
+        self.parent_view = parent_view
+        options = [SelectOption(label=sport, value=sport) for sport in sports]
+        super().__init__(
+            placeholder="Select Sport Category...",
+            options=options,
+            min_values=1,
+            max_values=1,
+            custom_id=f"parlay_sport_select_{parent_view.original_interaction.id}",
+        )
+
+    async def callback(self, interaction: Interaction):
+        value = self.values[0]
+        self.parent_view.current_leg_construction_details["sport"] = value
+        self.disabled = True
+        await interaction.response.defer()
+        await self.parent_view.go_next(interaction)
+
+
 class LeagueSelect(Select):
     def __init__(
         self,
@@ -211,9 +235,7 @@ class LeagueSelect(Select):
             await self.parent_view.update_league_page(interaction, self.page - 1)
             return
         self.parent_view.current_leg_construction_details["league"] = value
-        logger.debug(
-            f"Parlay Leg - League selected: {value} by user {interaction.user.id}"
-        )
+        logger.debug(f"League selected: {value} by user {interaction.user.id}")
         self.disabled = True
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -247,9 +269,9 @@ class LineTypeSelect(Select):
             logger.debug(
                 f"[LineTypeSelect] Callback triggered. Value: {self.values[0]}"
             )
-            self.parent_view.current_leg_construction_details[
-                "line_type"
-            ] = self.values[0]
+            self.parent_view.current_leg_construction_details["line_type"] = (
+                self.values[0]
+            )
             logger.debug(
                 f"Parlay Leg - Line Type selected: {self.values[0]} by user {interaction.user.id}"
             )
@@ -723,21 +745,21 @@ class BetDetailsModal(Modal):
             elif self.is_manual and self.line_type == "player_prop":
                 # For enhanced player props, we'll handle this in a separate modal
                 # Just store the basic info for now
-                self.view_ref.current_leg_construction_details[
-                    "line_type"
-                ] = "player_prop"
-                self.view_ref.current_leg_construction_details[
-                    "league"
-                ] = self.view_ref.current_leg_construction_details.get("league", "")
+                self.view_ref.current_leg_construction_details["line_type"] = (
+                    "player_prop"
+                )
+                self.view_ref.current_leg_construction_details["league"] = (
+                    self.view_ref.current_leg_construction_details.get("league", "")
+                )
             elif self.line_type == "player_prop":
                 # For enhanced player props, we'll handle this in a separate modal
                 # Just store the basic info for now
-                self.view_ref.current_leg_construction_details[
-                    "line_type"
-                ] = "player_prop"
-                self.view_ref.current_leg_construction_details[
-                    "league"
-                ] = self.view_ref.current_leg_construction_details.get("league", "")
+                self.view_ref.current_leg_construction_details["line_type"] = (
+                    "player_prop"
+                )
+                self.view_ref.current_leg_construction_details["league"] = (
+                    self.view_ref.current_leg_construction_details.get("league", "")
+                )
 
             line = self.line_input.value.strip()
             if not line:
@@ -785,24 +807,22 @@ class BetDetailsModal(Modal):
                 }
 
                 if self.line_type == "player_prop":
-                    leg_data[
-                        "player_name"
-                    ] = self.view_ref.current_leg_construction_details.get(
-                        "player_name", ""
+                    leg_data["player_name"] = (
+                        self.view_ref.current_leg_construction_details.get(
+                            "player_name", ""
+                        )
                     )
                     # For player props, keep the home team as the selected team
-                    leg_data[
-                        "home_team"
-                    ] = self.view_ref.current_leg_construction_details.get("team", "")
-                    leg_data[
-                        "away_team"
-                    ] = self.view_ref.current_leg_construction_details.get(
-                        "player_name", ""
+                    leg_data["home_team"] = (
+                        self.view_ref.current_leg_construction_details.get("team", "")
+                    )
+                    leg_data["away_team"] = (
+                        self.view_ref.current_leg_construction_details.get(
+                            "player_name", ""
+                        )
                     )  # This will be replaced with player image
-                    leg_data[
-                        "selected_team"
-                    ] = self.view_ref.current_leg_construction_details.get(
-                        "team", ""
+                    leg_data["selected_team"] = (
+                        self.view_ref.current_leg_construction_details.get("team", "")
                     )  # Keep the team as selected
 
                 # Generate preview with just this leg
@@ -1555,17 +1575,30 @@ class ParlayBetWorkflowView(View):
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
 
         if self.current_step == 1:
-            # Step 1: League selection
-            leagues = get_all_league_names()
+            # Step 1: Sport category selection
+            sports = get_all_sport_categories()
+            self.clear_items()
+            self.add_item(SportSelect(self, sports))
+            self.add_item(CancelButton(self))
+            await self.edit_message_for_current_leg(
+                interaction,
+                content="Select a sport category for your parlay:",
+                view=self,
+            )
+            return
+        elif self.current_step == 2:
+            # Step 2: League selection within selected sport
+            sport = self.current_leg_construction_details.get("sport")
+            leagues = get_leagues_by_sport(sport)
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
             await self.edit_message_for_current_leg(
-                interaction, content="Select a league for your parlay:", view=self
+                interaction, content=f"Select a league from {sport}:", view=self
             )
             return
-        elif self.current_step == 2:
-            # Step 2: Line type selection
+        elif self.current_step == 3:
+            # Step 3: Line type selection
             self.clear_items()
             self.add_item(LineTypeSelect(self))
             self.add_item(CancelButton(self))
@@ -1573,8 +1606,8 @@ class ParlayBetWorkflowView(View):
                 interaction, content="Select the type of bet for this leg:", view=self
             )
             return
-        elif self.current_step == 3:
-            # Step 3: Game selection
+        elif self.current_step == 4:
+            # Step 4: Game selection
             league = self.current_leg_construction_details.get("league", "N/A")
             line_type = self.current_leg_construction_details.get(
                 "line_type", "game_line"
@@ -1614,8 +1647,8 @@ class ParlayBetWorkflowView(View):
                 )
                 self.stop()
                 return
-        elif self.current_step == 4:
-            # Step 4: Team selection or modal (depending on manual entry and sport type)
+        elif self.current_step == 5:
+            # Step 5: Team selection or modal (depending on manual entry and sport type)
             league = self.current_leg_construction_details.get("league", "N/A")
             line_type = self.current_leg_construction_details.get(
                 "line_type", "game_line"
@@ -1708,10 +1741,10 @@ class ParlayBetWorkflowView(View):
                     view=self,
                 )
                 return
-        elif self.current_step == 5:
+        elif self.current_step == 6:
             # Show bet details modal (handled by modal, so just return)
             return
-        elif self.current_step == 6:
+        elif self.current_step == 7:
             # Show summary and decision view
             summary_text = self._generate_parlay_summary_text()
             decision_view = LegDecisionView(self)
@@ -1722,13 +1755,13 @@ class ParlayBetWorkflowView(View):
             )
             self.current_step += 1
             return
-        elif self.current_step == 7:
+        elif self.current_step == 8:
             # Show total odds modal
             modal = TotalOddsModal(view_custom_id_suffix=self.original_interaction.id)
             modal.view_ref = self
             await interaction.response.send_modal(modal)
             return
-        elif self.current_step == 8:
+        elif self.current_step == 9:
             # Show units select
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
@@ -1738,7 +1771,7 @@ class ParlayBetWorkflowView(View):
             )
             self.current_step += 1
             return
-        elif self.current_step == 9:
+        elif self.current_step == 10:
             # Show channel selection
             try:
                 # Get available channels for the user
@@ -1788,7 +1821,7 @@ class ParlayBetWorkflowView(View):
                 return
 
             except Exception as e:
-                logger.error(f"Error in step 9: {e}")
+                logger.error(f"Error in step 10: {e}")
                 await self.edit_message_for_current_leg(
                     interaction, content=f"❌ Error: {e}", view=None
                 )

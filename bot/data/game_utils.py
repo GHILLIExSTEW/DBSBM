@@ -452,11 +452,9 @@ async def get_normalized_games_for_dropdown(
                 sport_key = "Racing"  # Formula 1 is under Racing in LEAGUE_CONFIG
             elif sport_key == "Fighting":
                 sport_key = "Fighting"  # Keep as Fighting for LEAGUE_CONFIG lookup
-            
+
             display_name = (
-                LEAGUE_CONFIG.get(sport_key, {})
-                .get(key, {})
-                .get("name", key)
+                LEAGUE_CONFIG.get(sport_key, {}).get(key, {}).get("name", key)
             )
             if display_name == league_name:
                 sport = league_info.get("sport", "").capitalize()
@@ -485,7 +483,7 @@ async def get_normalized_games_for_dropdown(
                         break
                 if sport:
                     break
-    
+
     # If still not found, try direct hardcoded mappings for common cases
     if not sport:
         direct_mappings = {
@@ -495,11 +493,15 @@ async def get_normalized_games_for_dropdown(
             "La Liga": ("LaLiga", "football", "La Liga"),
             "Bundesliga": ("Bundesliga", "football", "Bundesliga"),
             "Ligue 1": ("Ligue1", "football", "Ligue 1"),
-            "UEFA Champions League": ("ChampionsLeague", "football", "UEFA Champions League"),
+            "UEFA Champions League": (
+                "ChampionsLeague",
+                "football",
+                "UEFA Champions League",
+            ),
             "UEFA Europa League": ("EuropaLeague", "football", "UEFA Europa League"),
             "FIFA World Cup": ("WorldCup", "football", "FIFA World Cup"),
         }
-        
+
         if league_name in direct_mappings:
             league_key, sport_lower, league_name_db = direct_mappings[league_name]
             sport = sport_lower.capitalize()
@@ -585,7 +587,7 @@ async def get_normalized_games_for_dropdown(
         league_id = "71"
     else:
         league_id = LEAGUE_ID_MAP.get(league_key, "1")
-    
+
     logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
     logger.info(
         f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"

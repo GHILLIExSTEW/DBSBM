@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_FILE = "datagolf_players_by_name.json"
 
+
 async def save_datagolf_players_dict():
     logger.info("Fetching DataGolf player list...")
     async with MultiProviderAPI() as api:
@@ -27,14 +28,15 @@ async def save_datagolf_players_dict():
         if not players:
             logger.error("No players fetched from DataGolf.")
             return
-        
+
         # Build dict keyed by player_name
         player_dict = {p["player_name"]: p for p in players if "player_name" in p}
         logger.info(f"Saving {len(player_dict)} players to {OUTPUT_FILE}")
-        
+
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(player_dict, f, ensure_ascii=False, indent=2)
         logger.info("Done.")
 
+
 if __name__ == "__main__":
-    asyncio.run(save_datagolf_players_dict()) 
+    asyncio.run(save_datagolf_players_dict())

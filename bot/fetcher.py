@@ -854,30 +854,34 @@ async def setup_db_pool() -> aiomysql.Pool:
 async def run_hourly_fetch_task(pool: aiomysql.Pool):
     """Run the multi-provider fetch for ALL leagues at the start of every hour."""
     from utils.multi_provider_api import MultiProviderAPI
-    
+
     logger.info("Starting multi-provider hourly fetch task for ALL leagues")
-    
+
     while True:
         try:
             now = datetime.now(timezone.utc)
             # Calculate next hour
-            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(
+                hours=1
+            )
             wait_seconds = (next_hour - now).total_seconds()
-            
-            logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next multi-provider hourly fetch...")
+
+            logger.info(
+                f"Waiting {wait_seconds/60:.1f} minutes until next multi-provider hourly fetch..."
+            )
             await asyncio.sleep(wait_seconds)
-            
+
             logger.info("Running multi-provider hourly fetch for ALL leagues...")
-            
+
             async with MultiProviderAPI(pool) as api:
                 # Discover all leagues first
                 await api.discover_all_leagues()
-                
+
                 # Fetch data for all leagues
                 results = await api.fetch_all_leagues_data()
-                
+
                 logger.info(f"Multi-provider hourly fetch completed: {results}")
-                
+
         except Exception as e:
             logger.error(f"Error in multi-provider hourly fetch: {e}")
             await asyncio.sleep(300)  # Wait 5 minutes before retrying
@@ -896,14 +900,35 @@ async def main():
 
         # Clear api_games on server restart
         await clear_api_games_table(pool)
+
         # Start the comprehensive hourly fetch in the background
         asyncio.create_task(run_hourly_fetch_task(pool))
-        # Perform comprehensive initial fetch of ALL leagues using multi-provider API
+
+        # HYBRID APPROACH: Use both APIs
+        logger.info(
+            "Starting hybrid initial fetch - API-Sports for traditional sports, RapidAPI for golf/tennis/darts/esports"
+        )
+
+        # Step 1: Fetch traditional sports using API-Sports
+        logger.info("Step 1: Fetching traditional sports using API-Sports...")
+        traditional_success = await initial_fetch(pool)
+        logger.info(
+            f"Traditional sports fetch completed: {'Success' if traditional_success else 'Some failures'}"
+        )
+
+        # Step 2: Fetch RapidAPI sports (golf, tennis, darts, esports)
+        logger.info(
+            "Step 2: Fetching RapidAPI sports (golf, tennis, darts, esports)..."
+        )
         from utils.multi_provider_api import MultiProviderAPI
+
         async with MultiProviderAPI(pool) as api:
             await api.discover_all_leagues()
-            results = await api.fetch_all_leagues_data()
-            logger.info(f"Multi-provider initial fetch completed: {results}")
+            rapidapi_results = await api.fetch_all_leagues_data()
+            logger.info(f"RapidAPI sports fetch completed: {rapidapi_results}")
+
+        logger.info("Hybrid initial fetch completed successfully!")
+
         # Then run the 5-second update loop for bet games
         await update_bet_games_every_5_seconds(pool)
     except Exception as e:

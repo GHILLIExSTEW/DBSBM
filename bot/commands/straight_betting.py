@@ -18,7 +18,11 @@ from discord.ui import Button, Modal, Select, TextInput, View
 
 from utils.game_line_image_generator import GameLineImageGenerator
 from utils.image_url_converter import convert_image_path_to_url
-from utils.league_loader import get_all_league_names
+from utils.league_loader import (
+    get_all_league_names,
+    get_all_sport_categories,
+    get_leagues_by_sport,
+)
 from utils.modals import StraightBetDetailsModal
 from utils.player_prop_image_generator import PlayerPropImageGenerator
 
@@ -80,6 +84,26 @@ def get_league_file_key(league_name):
     if isinstance(key, list):
         return key[0]
     return key
+
+
+class SportSelect(Select):
+    def __init__(self, parent_view: View, sports: List[str]):
+        self.parent_view = parent_view
+        options = [SelectOption(label=sport, value=sport) for sport in sports]
+        super().__init__(
+            placeholder="Select Sport Category...",
+            options=options,
+            min_values=1,
+            max_values=1,
+            custom_id=f"straight_sport_select_{parent_view.original_interaction.id}",
+        )
+
+    async def callback(self, interaction: Interaction):
+        value = self.values[0]
+        self.parent_view.bet_details["sport"] = value
+        self.disabled = True
+        await interaction.response.defer()
+        await self.parent_view.go_next(interaction)
 
 
 class LeagueSelect(Select):
@@ -760,18 +784,27 @@ class StraightBetWorkflowView(View):
         logger.info(f"[WORKFLOW TRACE] go_next called for step {self.current_step}")
 
         if self.current_step == 1:
-            # Step 1: League selection
-            leagues = get_all_league_names()
+            # Step 1: Sport category selection
+            sports = get_all_sport_categories()
+            self.clear_items()
+            self.add_item(SportSelect(self, sports))
+            self.add_item(CancelButton(self))
+            await self.edit_message(content=self.get_content(), view=self)
+            return
+        elif self.current_step == 2:
+            # Step 2: League selection within selected sport
+            sport = self.bet_details.get("sport")
+            leagues = get_leagues_by_sport(sport)
             self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
             await self.edit_message(content=self.get_content(), view=self)
             return
-        elif self.current_step == 2:
-            # Step 2: Game selection (skip line type since /gameline implies game_line)
-            self.bet_details[
-                "line_type"
-            ] = "game_line"  # Set default for gameline command
+        elif self.current_step == 3:
+            # Step 3: Game selection (skip line type since /gameline implies game_line)
+            self.bet_details["line_type"] = (
+                "game_line"  # Set default for gameline command
+            )
             league = self.bet_details.get("league", "N/A")
             line_type = "game_line"
             logger.info(
@@ -807,8 +840,8 @@ class StraightBetWorkflowView(View):
                 )
                 self.stop()
                 return
-        elif self.current_step == 3:
-            # Step 3: Team selection or modal (depending on manual entry and sport type)
+        elif self.current_step == 4:
+            # Step 4: Team selection or modal (depending on manual entry and sport type)
             is_manual = self.bet_details.get("is_manual", False)
 
             if is_manual:
@@ -867,8 +900,8 @@ class StraightBetWorkflowView(View):
                     content="Select which team you are betting on:", view=self
                 )
                 return
-        elif self.current_step == 4:
-            # Step 4: Units selection
+        elif self.current_step == 5:
+            # Step 5: Units selection
             self.clear_items()
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
@@ -876,8 +909,8 @@ class StraightBetWorkflowView(View):
 
             # Generate preview image only if team has been selected
             selected_team = self.bet_details.get("team")
-            logger.info(f"[STEP 4] Selected team: {selected_team}")
-            logger.info(f"[STEP 4] Bet details: {self.bet_details}")
+            logger.info(f"[STEP 5] Selected team: {selected_team}")
+            logger.info(f"[STEP 5] Bet details: {self.bet_details}")
             if selected_team:
                 logger.info(
                     f"[PREVIEW] Generating preview image for team: {selected_team}"
@@ -946,8 +979,8 @@ class StraightBetWorkflowView(View):
             )
             return
 
-        elif self.current_step == 5:
-            # Step 5: Channel selection
+        elif self.current_step == 6:
+            # Step 6: Channel selection
             try:
                 # Fetch allowed embed channels from guild settings
                 allowed_channels = []
@@ -1279,11 +1312,9 @@ class StraightBetWorkflowView(View):
         if step_num is None:
             step_num = self.current_step
         if step_num == 1:
-            return "Welcome to the Straight Betting Workflow! Please select your desired league from the list."
+            return "Welcome to the Straight Betting Workflow! Please select your desired sport category from the list."
         if step_num == 2:
-            return (
-                "Great choice! Now, please select the type of line you want to bet on."
-            )
+            return "Great choice! Now, please select the league within your chosen sport category."
         if step_num == 3:
             league = self.bet_details.get("league", "N/A")
             return f"Fetching available games for the selected league: **{league}**. Please wait..."

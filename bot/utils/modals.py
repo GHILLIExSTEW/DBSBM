@@ -501,19 +501,19 @@ class StraightBetDetailsModal(Modal):
             if hasattr(self, "team_input"):
                 self.view_ref.bet_details["team"] = self.team_input.value.strip()
             if hasattr(self, "opponent_input"):
-                self.view_ref.bet_details[
-                    "opponent"
-                ] = self.opponent_input.value.strip()
+                self.view_ref.bet_details["opponent"] = (
+                    self.opponent_input.value.strip()
+                )
             if hasattr(self, "player_input"):
-                self.view_ref.bet_details[
-                    "player_name"
-                ] = self.player_input.value.strip()
+                self.view_ref.bet_details["player_name"] = (
+                    self.player_input.value.strip()
+                )
                 # For individual sports, set team to player name for consistency
                 self.view_ref.bet_details["team"] = self.player_input.value.strip()
             if hasattr(self, "player_name_input"):
-                self.view_ref.bet_details[
-                    "player_name"
-                ] = self.player_name_input.value.strip()
+                self.view_ref.bet_details["player_name"] = (
+                    self.player_name_input.value.strip()
+                )
 
         # Generate preview image
         try:
@@ -543,7 +543,9 @@ class StraightBetDetailsModal(Modal):
 
         # Advance workflow to units selection
         if hasattr(self.view_ref, "current_step"):
-            self.view_ref.current_step = 4  # Set to step 4 (units selection with preview)
+            self.view_ref.current_step = (
+                4  # Set to step 4 (units selection with preview)
+            )
             logger.info(f"[MODAL SUBMIT] Calling go_next for step 4.")
             await self.view_ref.go_next(interaction)
         else:

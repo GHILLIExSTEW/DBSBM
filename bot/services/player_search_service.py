@@ -172,9 +172,11 @@ class PlayerSearchService:
         try:
             # IMPORTANT: Always filter by league to avoid wrong sport players
             if not league:
-                logger.warning("get_popular_players called without league filter - this may return wrong sport players")
+                logger.warning(
+                    "get_popular_players called without league filter - this may return wrong sport players"
+                )
                 return []
-                
+
             query = """
                 SELECT
                     player_name, team_name, league, sport,

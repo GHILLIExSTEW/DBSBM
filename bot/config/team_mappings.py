@@ -2354,7 +2354,6 @@ TEAM_MAPPINGS = {
     "Virginia State Trojans": "virginia_state_trojans",
     "Virginia State": "virginia_state_trojans",
     "VSU_VIRGINIA": "virginia_state_trojans",  # Baseball, Basketball (M/W), Volleyball (W), Football; No Soccer
-    
     # Brazil Serie A Teams
     "America MG": "america-mg",
     "América-MG": "america-mg",

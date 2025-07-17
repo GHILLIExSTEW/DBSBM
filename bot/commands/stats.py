@@ -150,9 +150,9 @@ class StatsView(View):
         self.selected_profile_image_url = None  # Store selected profile image path/url
         # Placeholder for the select component - will be added by populate_cappers
         self.capper_select: Optional[Select] = None
-        self.channel_select: Optional[
-            ChannelSelect
-        ] = None  # To hold the channel select later
+        self.channel_select: Optional[ChannelSelect] = (
+            None  # To hold the channel select later
+        )
 
     async def update_message(
         self, interaction: Optional[Interaction] = None, content: Optional[str] = None

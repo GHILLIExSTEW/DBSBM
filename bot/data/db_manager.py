@@ -1139,8 +1139,14 @@ class DatabaseManager:
             game.get("end_time"),
             game.get("status", ""),
             game.get("score"),
-            game.get("raw_json") if isinstance(game.get("raw_json"), str) else json.dumps(game.get("raw_json", {})),
-            game.get("fetched_at", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")),
+            (
+                game.get("raw_json")
+                if isinstance(game.get("raw_json"), str)
+                else json.dumps(game.get("raw_json", {}))
+            ),
+            game.get(
+                "fetched_at", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            ),
         )
         await self.execute(query, params)
 
