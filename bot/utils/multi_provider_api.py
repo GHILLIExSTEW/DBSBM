@@ -624,36 +624,29 @@ class MultiProviderAPI:
 
             # Special handling for consolidated darts league
             if sport == "darts" and league.get("type") == "consolidated":
-                all_games = []
-                consolidated_leagues = league.get("consolidated_leagues", [])
-
+                # For darts, we can fetch all games for a date in one API call
+                # The API returns all darts matches regardless of league
                 logger.info(
-                    f"Fetching games for consolidated Darts league with {len(consolidated_leagues)} sub-leagues"
+                    f"Fetching all darts games for date {date} (consolidated approach)"
                 )
 
-                for sub_league in consolidated_leagues:
-                    try:
-                        # Fetch games for each sub-league
-                        sub_games = await self.fetch_games(sport, sub_league, date)
-                        if sub_games:
-                            all_games.extend(sub_games)
-                            logger.info(
-                                f"Fetched {len(sub_games)} games from {sub_league.get('name')}"
-                            )
-
-                        # Rate limiting between sub-leagues
-                        await asyncio.sleep(1)
-
-                    except Exception as e:
-                        logger.error(
-                            f"Error fetching games for darts sub-league {sub_league.get('name')}: {e}"
-                        )
-                        continue
-
-                logger.info(
-                    f"Total games fetched for consolidated Darts: {len(all_games)}"
-                )
-                return all_games
+                # Use a dummy league object for the API call
+                dummy_league = {
+                    "id": "DARTS_ALL",
+                    "name": "All Darts Leagues",
+                    "type": "consolidated"
+                }
+                
+                # Fetch all darts games for the date
+                all_games = await self.fetch_games(sport, dummy_league, date)
+                
+                if all_games:
+                    logger.info(f"Fetched {len(all_games)} total darts games for {date}")
+                    # Return ALL darts games without league filtering
+                    return all_games
+                else:
+                    logger.info(f"No darts games found for {date}")
+                    return []
 
             # Normal handling for individual leagues
             if provider == "sportdevs":
@@ -1139,16 +1132,11 @@ class MultiProviderAPI:
             "mma": ["UFC", "Bellator MMA"],
             "darts": [
                 "PDC",
-                "BDO",
-                "WDF",
                 "Premier League",
                 "World Matchplay",
                 "World Grand Prix",
                 "UK Open",
                 "Grand Slam",
-                "Players Championship",
-                "European Championship",
-                "Masters",
             ],
             "esports": [
                 "CS:GO",
@@ -1173,7 +1161,7 @@ class MultiProviderAPI:
             target_league_names = TARGET_LEAGUES.get(sport, [])
             filtered_leagues = []
 
-            # Special handling for darts - consolidate all darts leagues under one entry
+            # Special handling for darts - consolidate ALL darts leagues under one entry
             if sport == "darts":
                 # Create a single consolidated darts league entry
                 consolidated_darts_league = {
@@ -1190,14 +1178,10 @@ class MultiProviderAPI:
                     "consolidated_leagues": [],  # Store all individual leagues here
                 }
 
-                # Add all darts leagues to the consolidated entry
+                # Add ALL darts leagues to the consolidated entry (no filtering)
                 for league in leagues:
-                    if any(
-                        target_name.lower() in league.get("name", "").lower()
-                        for target_name in target_league_names
-                    ):
-                        consolidated_darts_league["consolidated_leagues"].append(league)
-                        logger.info(f"Including darts league: {league.get('name')}")
+                    consolidated_darts_league["consolidated_leagues"].append(league)
+                    logger.info(f"Including darts league: {league.get('name')}")
 
                 # Only add the consolidated league if we found any darts leagues
                 if consolidated_darts_league["consolidated_leagues"]:
@@ -1225,51 +1209,48 @@ class MultiProviderAPI:
                 try:
                     # Special handling for consolidated darts league
                     if sport == "darts" and league.get("type") == "consolidated":
-                        # Fetch games for each individual darts league
-                        for sub_league in league.get("consolidated_leagues", []):
-                            logger.info(
-                                f"Fetching games for darts sub-league: {sub_league['name']}"
-                            )
+                        # For darts, fetch all games for each day in one API call per day
+                        logger.info(
+                            f"Fetching consolidated darts games for {next_days} days"
+                        )
 
-                            # Fetch for multiple days
-                            for day_offset in range(next_days):
-                                fetch_date = (
-                                    datetime.strptime(date, "%Y-%m-%d")
-                                    + timedelta(days=day_offset)
-                                ).strftime("%Y-%m-%d")
+                        # Fetch for multiple days
+                        for day_offset in range(next_days):
+                            fetch_date = (
+                                datetime.strptime(date, "%Y-%m-%d")
+                                + timedelta(days=day_offset)
+                            ).strftime("%Y-%m-%d")
 
-                                games = await self.fetch_games(
-                                    sport, sub_league, fetch_date
+                            games = await self.fetch_games(sport, league, fetch_date)
+
+                            if games:
+                                results["total_games"] += len(games)
+                                logger.info(
+                                    f"Fetched {len(games)} consolidated darts games for {fetch_date}"
                                 )
 
-                                if games:
-                                    results["total_games"] += len(games)
+                                # Save games to database if db_pool is available
+                                if self.db_pool:
                                     logger.info(
-                                        f"Fetched {len(games)} games for {sub_league['name']} on {fetch_date}"
+                                        f"Saving {len(games)} darts games to database for {fetch_date}"
+                                    )
+                                    for game in games:
+                                        success = await self._save_game_to_db(game)
+                                        if success:
+                                            logger.debug(
+                                                f"Successfully saved darts game {game.get('api_game_id')} to database"
+                                            )
+                                        else:
+                                            logger.error(
+                                                f"Failed to save darts game {game.get('api_game_id')} to database"
+                                            )
+                                else:
+                                    logger.warning(
+                                        "No database pool available, skipping database save"
                                     )
 
-                                    # Save games to database if db_pool is available
-                                    if self.db_pool:
-                                        logger.info(
-                                            f"Saving {len(games)} games to database for {sub_league['name']}"
-                                        )
-                                        for game in games:
-                                            success = await self._save_game_to_db(game)
-                                            if success:
-                                                logger.debug(
-                                                    f"Successfully saved game {game.get('api_game_id')} to database"
-                                                )
-                                            else:
-                                                logger.error(
-                                                    f"Failed to save game {game.get('api_game_id')} to database"
-                                                )
-                                    else:
-                                        logger.warning(
-                                            "No database pool available, skipping database save"
-                                        )
-
-                                # Rate limiting between requests
-                                await asyncio.sleep(1.5)
+                            # Rate limiting between requests
+                            await asyncio.sleep(1.5)
                     else:
                         # Normal handling for other leagues
                         # Fetch for multiple days

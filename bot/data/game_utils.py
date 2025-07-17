@@ -565,38 +565,55 @@ async def get_normalized_games_for_dropdown(
         f"[get_normalized_games_for_dropdown] Using finished_statuses={finished_statuses}"
     )
 
-    # Dynamically build the correct number of %s for the NOT IN and IN clauses
-    status_placeholders = ", ".join(["%s"] * len(finished_statuses))
-    league_name_placeholders = ", ".join(["%s"] * len(league_names))
-    query = f"""
-        SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
-        FROM api_games
-        WHERE sport = %s
-        AND league_id = %s
-        AND (UPPER(league_name) IN ({league_name_placeholders}))
-        AND status NOT IN ({status_placeholders})
-        ORDER BY start_time ASC LIMIT 100
-    """
-
-    # Special handling for Serie A leagues (Italian vs Brazilian)
-    if league_key == "SerieA":
-        # Italian Serie A has league_id 135
-        league_id = "135"
-    elif league_key == "Brazil_Serie_A":
-        # Brazil Serie A has league_id 71
-        league_id = "71"
+    # Special handling for darts - show all darts games regardless of league
+    if sport.lower() == "darts":
+        status_placeholders = ", ".join(["%s"] * len(finished_statuses))
+        query = f"""
+            SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
+            FROM api_games
+            WHERE sport = %s
+            AND status NOT IN ({status_placeholders})
+            ORDER BY start_time ASC LIMIT 100
+        """
+        params = (sport,) + tuple(finished_statuses)
     else:
-        league_id = LEAGUE_ID_MAP.get(league_key, "1")
+        # Normal handling for other sports
+        status_placeholders = ", ".join(["%s"] * len(finished_statuses))
+        league_name_placeholders = ", ".join(["%s"] * len(league_names))
+        query = f"""
+            SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
+            FROM api_games
+            WHERE sport = %s
+            AND league_id = %s
+            AND (UPPER(league_name) IN ({league_name_placeholders}))
+            AND status NOT IN ({status_placeholders})
+            ORDER BY start_time ASC LIMIT 100
+        """
+        params = (
+            (sport, league_id)
+            + tuple([name.upper() for name in league_names])
+            + tuple(finished_statuses)
+        )
 
-    logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
-    logger.info(
-        f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"
-    )
-    params = (
-        (sport, league_id)
-        + tuple([name.upper() for name in league_names])
-        + tuple(finished_statuses)
-    )
+    # Special handling for Serie A leagues (Italian vs Brazilian) - only for non-darts
+    if sport.lower() != "darts":
+        if league_key == "SerieA":
+            # Italian Serie A has league_id 135
+            league_id = "135"
+        elif league_key == "Brazil_Serie_A":
+            # Brazil Serie A has league_id 71
+            league_id = "71"
+        else:
+            league_id = LEAGUE_ID_MAP.get(league_key, "1")
+
+        logger.info(f"[get_normalized_games_for_dropdown] Using league_id={league_id}")
+        logger.info(
+            f"[get_normalized_games_for_dropdown] Fetching all non-finished games for {sport}/{league_key} (league_names={league_names})"
+        )
+    else:
+        logger.info(
+            f"[get_normalized_games_for_dropdown] Fetching all darts games (no league filtering)"
+        )
     rows = await db_manager.fetch_all(query, params)
     logger.info(
         f"[get_normalized_games_for_dropdown] Found {len(rows) if rows else 0} games"

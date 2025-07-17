@@ -373,6 +373,11 @@ class CancelButton(Button):
 class TeamSelect(Select):
     def __init__(self, parent_view: View, home_team: str, away_team: str):
         self.parent_view = parent_view
+        
+        # Ensure we have valid team names
+        if not home_team or not away_team:
+            raise ValueError(f"Invalid team names: home_team='{home_team}', away_team='{away_team}'")
+        
         options = [
             SelectOption(
                 label=home_team[:100],
@@ -845,54 +850,47 @@ class StraightBetWorkflowView(View):
             is_manual = self.bet_details.get("is_manual", False)
 
             if is_manual:
-                # For manual entry, check if this is an individual sport
-                from config.leagues import LEAGUE_CONFIG
-
-                league_conf = LEAGUE_CONFIG.get(self.bet_details.get("league", ""), {})
-                sport_type = league_conf.get("sport_type", "Team Sport")
-                is_individual_sport = sport_type == "Individual Player"
-
-                if is_individual_sport:
-                    # For individual sports, skip team selection and go directly to modal
-                    line_type = self.bet_details.get("line_type", "game_line")
-                    modal = StraightBetDetailsModal(
-                        line_type=line_type,
-                        selected_league_key=self.bet_details.get("league", "OTHER"),
-                        bet_details_from_view=self.bet_details,
-                        is_manual=True,
-                    )
-                    modal.view_ref = self
-                    if not interaction.response.is_done():
-                        await interaction.response.send_modal(modal)
-                        await self.edit_message(
-                            content="Please fill in the bet details in the popup form.",
-                            view=self,
-                        )
-                    else:
-                        logger.error(
-                            "Tried to send modal, but interaction already responded to."
-                        )
-                        await self.edit_message(
-                            content="❌ Error: Could not open modal. Please try again or cancel.",
-                            view=None,
-                        )
-                        self.stop()
-                    return
-                else:
-                    # For team sports, show team selection (existing logic)
-                    home_team = self.bet_details.get("home_team_name", "")
-                    away_team = self.bet_details.get("away_team_name", "")
-                    self.clear_items()
-                    self.add_item(TeamSelect(self, home_team, away_team))
-                    self.add_item(CancelButton(self))
+                # For manual entry, always go directly to modal (both individual and team sports)
+                line_type = self.bet_details.get("line_type", "game_line")
+                modal = StraightBetDetailsModal(
+                    line_type=line_type,
+                    selected_league_key=self.bet_details.get("league", "OTHER"),
+                    bet_details_from_view=self.bet_details,
+                    is_manual=True,
+                    view_custom_id_suffix=str(interaction.id),
+                )
+                modal.view_ref = self
+                if not interaction.response.is_done():
+                    await interaction.response.send_modal(modal)
                     await self.edit_message(
-                        content="Select which team you are betting on:", view=self
+                        content="Please fill in the bet details in the popup form.",
+                        view=self,
                     )
-                    return
+                else:
+                    logger.error(
+                        "Tried to send modal, but interaction already responded to."
+                    )
+                    await self.edit_message(
+                        content="❌ Error: Could not open modal. Please try again or cancel.",
+                        view=None,
+                    )
+                    self.stop()
+                return
             else:
                 # For regular games, show team selection
                 home_team = self.bet_details.get("home_team_name", "")
                 away_team = self.bet_details.get("away_team_name", "")
+                
+                # Check if we have valid team names
+                if not home_team or not away_team:
+                    logger.error(f"Missing team names: home_team='{home_team}', away_team='{away_team}'")
+                    await self.edit_message(
+                        content="❌ Error: Missing team information. Please try again or contact support.",
+                        view=None,
+                    )
+                    self.stop()
+                    return
+                
                 self.clear_items()
                 self.add_item(TeamSelect(self, home_team, away_team))
                 self.add_item(CancelButton(self))
