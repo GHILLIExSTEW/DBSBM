@@ -147,6 +147,11 @@ class AssetLoader:
         filename_team = self._team_name_to_filename(normalized_team)
 
         # Get sport category
+        # Special handling for MANUAL entry
+        if league.upper() == "MANUAL":
+            logger.info(f"Manual entry detected - using fallback logo")
+            return self._load_fallback_logo(guild_id)
+
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             logger.warning(f"No sport category found for league: {league}")

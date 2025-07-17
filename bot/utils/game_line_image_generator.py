@@ -331,8 +331,23 @@ class GameLineImageGenerator:
         away_section_center_x = image_width - padding - section_width // 2
         center_x = image_width // 2
 
-        # Special handling for darts logos
-        if league.lower() == "darts":
+        # Special handling for manual entry and darts logos
+        if league.upper() == "MANUAL":
+            # For manual entry, use default logos
+            from PIL import Image
+            import os
+            
+            default_logo_path = "bot/static/logos/default_image.png"
+            if os.path.exists(default_logo_path):
+                default_logo = Image.open(default_logo_path)
+                default_logo_resized = default_logo.convert("RGBA").resize(logo_size)
+                
+                # Use default logo for both teams
+                home_logo_x = int(home_section_center_x - logo_size[0] // 2)
+                away_logo_x = int(away_section_center_x - logo_size[0] // 2)
+                image.paste(default_logo_resized, (home_logo_x, y_base), default_logo_resized)
+                image.paste(default_logo_resized, (away_logo_x, y_base), default_logo_resized)
+        elif league.lower() == "darts":
             from PIL import Image
             import os
             
@@ -685,8 +700,16 @@ class GameLineImageGenerator:
         from PIL import Image
         import os
 
+        # Special handling for manual entry
+        if league.upper() == "MANUAL":
+            default_logo_path = "bot/static/logos/default_image.png"
+            if os.path.exists(default_logo_path):
+                return Image.open(default_logo_path)
+            else:
+                logger.warning(f"Default logo not found at {default_logo_path}")
+                return None
         # Special handling for darts - use specific logos
-        if league.lower() == "darts":
+        elif league.lower() == "darts":
             # For darts, use darts_all.png for the selected team and default_darts.png for opponent
             # This will be handled in the calling code based on selected_team
             darts_all_path = "bot/static/logos/darts_all.png"

@@ -17,6 +17,9 @@ FONT_DIR = os.path.join(ASSETS_DIR, "fonts")
 
 # Sport categories and their leagues
 SPORT_CATEGORIES = {
+    "OTHER": [
+        "MANUAL",  # Manual entry
+    ],
     "BASKETBALL": [
         "NBA",
         "NCAAB",
@@ -263,6 +266,7 @@ DEFAULT_FALLBACK_CATEGORY = "OTHER_SPORTS"
 # --- AUTO-GENERATED: Add all leagues from LEAGUE_CONFIG to SPORT_CATEGORIES ---
 # Build a reverse map from sport name to SPORT_CATEGORIES key
 SPORT_NAME_TO_CATEGORY = {
+    "Other": "OTHER",
     "Basketball": "BASKETBALL",
     "Baseball": "BASEBALL",
     "Ice Hockey": "HOCKEY",

@@ -509,6 +509,13 @@ async def get_normalized_games_for_dropdown(
                 f"[get_normalized_games_for_dropdown] Found league by direct mapping: sport={sport}, league_key={league_key}, league_name={league_name_db}"
             )
 
+    # Special handling for MANUAL entry
+    if league_name == "MANUAL":
+        logger.info(
+            f"[get_normalized_games_for_dropdown] Manual entry selected - returning only manual entry option"
+        )
+        return dropdown_games  # Return just the manual entry option
+
     if not sport or not league_key:
         logger.warning(
             f"[get_normalized_games_for_dropdown] Could not find sport and league name for league_name={league_name}"

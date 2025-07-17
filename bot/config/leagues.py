@@ -5,6 +5,16 @@ import requests
 from dotenv import load_dotenv
 
 LEAGUE_CONFIG = {
+    # Manual Entry
+    "MANUAL": {
+        "sport": "Other",
+        "name": "Manual Entry",
+        "sport_type": "Team Sport",
+        "participant_label": "Team",
+        "team_placeholder": "e.g., Team Name",
+        "line_placeholder_game": "e.g., Moneyline, Spread, Total",
+        "line_placeholder_player": "e.g., Player Prop",
+    },
     # Basketball
     "NBA": {
         "sport": "Basketball",
