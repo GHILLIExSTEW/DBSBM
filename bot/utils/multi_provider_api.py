@@ -119,6 +119,16 @@ API_PROVIDERS = {
         "rate_limit": 100,
         "host": "tennis-devs.p.rapidapi.com",
     },
+    # RapidAPI Esports (new)
+    "rapidapi-esports": {
+        "base_urls": {
+            "esports": "https://esports-devs.p.rapidapi.com",
+        },
+        "auth_type": "rapidapi",
+        "api_key": "10151b7417mshe26e052885bed6fp1cae61jsn60fa13b51c05",
+        "rate_limit": 30,
+        "host": "esports-devs.p.rapidapi.com",
+    },
     # FlashLive Sports API for player data
     "flashlive-sports": {
         "base_urls": {
@@ -154,7 +164,7 @@ SPORT_PROVIDER_MAP = {
     "formula-1": "api-sports",
     "mma": "api-sports",
     "darts": "rapidapi-darts",
-    "esports": "sportdevs",
+    "esports": "rapidapi-esports",
     "tennis": "rapidapi-tennis",
     "golf": "rapidapi-golf",
     "golf-players": "datagolf",
@@ -199,6 +209,9 @@ ENDPOINT_CONFIGS = {
     },
     "rapidapi-tennis": {
         "tennis": {"leagues": "/tournaments", "games": "/matches-by-date"},
+    },
+    "rapidapi-esports": {
+        "esports": {"leagues": "/tournaments", "games": "/matches"},
     },
     # FlashLive Sports endpoints
     "flashlive-sports": {
@@ -360,6 +373,10 @@ class MultiProviderAPI:
                 # For Tennis Devs, get tournaments
                 params = {"offset": "0", "limit": "50", "lang": "en"}
                 data = await self.make_request(sport, leagues_endpoint, params)
+            elif provider == "rapidapi-esports":
+                # For Esports Devs, get tournaments
+                params = {"offset": "0", "limit": "50", "lang": "en"}
+                data = await self.make_request(sport, leagues_endpoint, params)
             elif provider == "rapidapi-golf":
                 # Golf doesn't have a leagues endpoint, so we'll use events to get tournaments
                 # Use a date range to get current/future events
@@ -374,9 +391,12 @@ class MultiProviderAPI:
                 data = await self.make_request(sport, leagues_endpoint, params)
 
             # Handle different response formats
-            if sport in ["esports", "tennis"]:
+            if sport == "tennis":
                 # SportDevs format
                 return self._parse_sportdevs_leagues(data, sport)
+            elif sport == "esports":
+                # RapidAPI Esports format
+                return self._parse_rapidapi_esports_leagues(data, sport)
             elif sport == "golf":
                 # RapidAPI Golf format
                 return self._parse_rapidapi_golf_leagues(data, sport)
@@ -386,6 +406,9 @@ class MultiProviderAPI:
             elif sport == "tennis":
                 # RapidAPI Tennis format
                 return self._parse_rapidapi_tennis_leagues(data, sport)
+            elif sport == "esports":
+                # RapidAPI Esports format
+                return self._parse_rapidapi_esports_leagues(data, sport)
             else:
                 # API-Sports format
                 return self._parse_apisports_leagues(data, sport)
@@ -537,6 +560,27 @@ class MultiProviderAPI:
             )
         return leagues
 
+    def _parse_rapidapi_esports_leagues(self, data: Dict, sport: str) -> List[Dict]:
+        """Parse RapidAPI Esports league response."""
+        leagues = []
+        tournaments = data if isinstance(data, list) else data.get("tournaments", [])
+        for tournament in tournaments:
+            leagues.append(
+                {
+                    "id": tournament.get("id"),
+                    "name": tournament.get("name", ""),
+                    "type": "tournament",
+                    "logo": tournament.get("logo", ""),
+                    "country": tournament.get("country", ""),
+                    "country_code": tournament.get("country_code", ""),
+                    "flag": tournament.get("flag", ""),
+                    "season": datetime.now().year,
+                    "sport": sport,
+                    "provider": "rapidapi-esports",
+                }
+            )
+        return leagues
+
     async def fetch_player_data(
         self, sport_id: str, player_id: str, locale: str = "en_INT"
     ) -> Dict:
@@ -657,6 +701,15 @@ class MultiProviderAPI:
                     "date": f"eq.{date}",  # Use eq. prefix like other endpoints
                 }
                 data = await self.make_request(sport, games_endpoint, params)
+            elif provider == "rapidapi-esports":
+                # For Esports Devs, use matches endpoint with tournament_id filter
+                params = {
+                    "offset": "0",
+                    "limit": "50",
+                    "lang": "en",
+                    "tournament_id": f"eq.{league['id']}",  # Filter by tournament
+                }
+                data = await self.make_request(sport, games_endpoint, params)
             else:
                 data = await self.make_request(sport, games_endpoint, {})
 
@@ -671,6 +724,8 @@ class MultiProviderAPI:
                 return self._parse_rapidapi_darts_games(data, sport, league)
             elif provider == "rapidapi-tennis":
                 return self._parse_rapidapi_tennis_games(data, sport, league)
+            elif provider == "rapidapi-esports":
+                return self._parse_rapidapi_esports_games(data, sport, league)
 
         except Exception as e:
             logger.error(f"Error fetching games for {sport}/{league['name']}: {e}")
@@ -776,6 +831,40 @@ class MultiProviderAPI:
             matches = data.get("matches", [])
             for game in matches:
                 mapped_game = self._map_rapidapi_tennis_game(game, sport, league)
+                if mapped_game:
+                    games.append(mapped_game)
+
+        return games
+
+    def _parse_rapidapi_esports_games(
+        self, data: Dict, sport: str, league: Dict
+    ) -> List[Dict]:
+        """Parse RapidAPI Esports games response."""
+        games = []
+
+        # Handle the nested structure where each item has a 'matches' array
+        if isinstance(data, list):
+            for date_group in data:
+                if isinstance(date_group, dict) and "matches" in date_group:
+                    # This is a date group with matches
+                    for game in date_group["matches"]:
+                        mapped_game = self._map_rapidapi_esports_game(
+                            game, sport, league
+                        )
+                        if mapped_game:
+                            games.append(mapped_game)
+                else:
+                    # This is a direct match
+                    mapped_game = self._map_rapidapi_esports_game(
+                        date_group, sport, league
+                    )
+                    if mapped_game:
+                        games.append(mapped_game)
+        else:
+            # Handle dictionary response
+            matches = data.get("matches", [])
+            for game in matches:
+                mapped_game = self._map_rapidapi_esports_game(game, sport, league)
                 if mapped_game:
                     games.append(mapped_game)
 
@@ -953,6 +1042,35 @@ class MultiProviderAPI:
             }
         except Exception as e:
             logger.error(f"Error mapping RapidAPI Tennis game: {e}")
+            return None
+
+    def _map_rapidapi_esports_game(
+        self, game: Dict, sport: str, league: Dict
+    ) -> Optional[Dict]:
+        """Map RapidAPI Esports game data to standard format."""
+        try:
+            return {
+                "api_game_id": str(game.get("id", "")),
+                "sport": sport.title(),
+                "league_id": str(game.get("league_id", league["id"])),
+                "league_name": game.get("league_name", league["name"]),
+                "home_team_name": game.get("home_team_name", ""),
+                "away_team_name": game.get("away_team_name", ""),
+                "start_time": game.get("start_time", ""),
+                "status": game.get("status", ""),
+                "score": (
+                    {
+                        "home": game.get("home_team_score", ""),
+                        "away": game.get("away_team_score", ""),
+                    }
+                    if game.get("home_team_score") or game.get("away_team_score")
+                    else None
+                ),
+                "venue": game.get("venue", ""),
+                "provider": "rapidapi-esports",
+            }
+        except Exception as e:
+            logger.error(f"Error mapping RapidAPI Esports game: {e}")
             return None
 
     async def discover_all_leagues(self) -> Dict[str, List[Dict]]:
