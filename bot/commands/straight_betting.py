@@ -869,15 +869,32 @@ class StraightBetWorkflowView(View):
                 self.stop()
                 return
         elif self.current_step == 4:
-            # Step 4: Team selection or skip to units (depending on manual entry and sport type)
+            # Step 4: Team selection or modal for manual entry
             is_manual = self.bet_details.get("is_manual", False)
 
             if is_manual:
-                # For manual entry, skip team selection and go directly to units selection
-                logger.info("[WORKFLOW TRACE] Manual entry detected - skipping team selection, going to units selection")
-                # Don't set current_step again, just proceed to step 5
-                await self.go_next(interaction)
-                return
+                # For manual entry, show modal for line/odds input directly
+                logger.info("[WORKFLOW TRACE] Manual entry detected - showing modal for line/odds input")
+                line_type = self.bet_details.get("line_type", "game_line")
+                modal = StraightBetDetailsModal(
+                    line_type=line_type,
+                    selected_league_key=self.bet_details.get("league", "OTHER"),
+                    bet_details_from_view=self.bet_details,
+                    is_manual=is_manual,
+                    view_custom_id_suffix=str(interaction.id),
+                )
+                modal.view_ref = self
+                if not interaction.response.is_done():
+                    await interaction.response.send_modal(modal)
+                    return
+                else:
+                    logger.error("Tried to send modal, but interaction already responded to.")
+                    await self.edit_message(
+                        content="❌ Error: Could not open modal. Please try again or cancel.",
+                        view=None,
+                    )
+                    self.stop()
+                    return
             else:
                 # For regular games, show team selection
                 home_team = self.bet_details.get("home_team_name", "")
