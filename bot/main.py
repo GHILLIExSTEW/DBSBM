@@ -81,6 +81,17 @@ from bot.services.voice_service import VoiceService
 from bot.commands.sync_cog import setup_sync_cog
 
 # --- Environment Variable Validation ---
+# Define required environment variables
+REQUIRED_ENV_VARS = {
+    "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
+    "API_KEY": os.getenv("API_KEY"),
+    "MYSQL_HOST": os.getenv("MYSQL_HOST"),
+    "MYSQL_USER": os.getenv("MYSQL_USER"),
+    "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
+    "MYSQL_DB": os.getenv("MYSQL_DB"),
+    "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
+}
+
 try:
     from bot.utils.environment_validator import validate_environment
 
@@ -89,15 +100,6 @@ try:
         sys.exit("Environment validation failed")
 except ImportError:
     # Fallback to basic validation if environment validator is not available
-    REQUIRED_ENV_VARS = {
-        "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
-        "API_KEY": os.getenv("API_KEY"),
-        "MYSQL_HOST": os.getenv("MYSQL_HOST"),
-        "MYSQL_USER": os.getenv("MYSQL_USER"),
-        "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
-        "MYSQL_DB": os.getenv("MYSQL_DB"),
-        "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
-    }
     missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
     if missing_vars:
         logger.critical(
