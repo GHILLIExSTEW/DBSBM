@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ErrorRecord:
     """Record of an error occurrence."""
+
     error_type: str
     message: str
     timestamp: datetime
@@ -34,9 +35,14 @@ class ErrorRecord:
 
 class DBSBMError(Exception):
     """Base exception for DBSBM."""
-    
-    def __init__(self, message: str, user_id: Optional[int] = None, 
-                 guild_id: Optional[int] = None, command: Optional[str] = None):
+
+    def __init__(
+        self,
+        message: str,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+        command: Optional[str] = None,
+    ):
         super().__init__(message)
         self.message = message
         self.user_id = user_id
@@ -47,13 +53,16 @@ class DBSBMError(Exception):
 
 class DatabaseError(DBSBMError):
     """Database-related errors."""
+
     pass
 
 
 class APIError(DBSBMError):
     """API-related errors."""
-    
-    def __init__(self, message: str, api_name: str, status_code: Optional[int] = None, **kwargs):
+
+    def __init__(
+        self, message: str, api_name: str, status_code: Optional[int] = None, **kwargs
+    ):
         super().__init__(message, **kwargs)
         self.api_name = api_name
         self.status_code = status_code
@@ -61,7 +70,7 @@ class APIError(DBSBMError):
 
 class RateLimitError(DBSBMError):
     """Rate limiting errors."""
-    
+
     def __init__(self, message: str, retry_after: Optional[float] = None, **kwargs):
         super().__init__(message, **kwargs)
         self.retry_after = retry_after
@@ -69,70 +78,82 @@ class RateLimitError(DBSBMError):
 
 class ValidationError(DBSBMError):
     """Data validation errors."""
+
     pass
 
 
 class AuthenticationError(DBSBMError):
     """Authentication and authorization errors."""
+
     pass
 
 
 class ConfigurationError(DBSBMError):
     """Configuration-related errors."""
+
     pass
 
 
 class InsufficientUnitsError(DBSBMError):
     """Insufficient units/balance errors."""
+
     pass
 
 
 class BettingError(DBSBMError):
     """Betting-related errors."""
+
     pass
 
 
 class ImageGenerationError(DBSBMError):
     """Image generation errors."""
+
     pass
 
 
 class ErrorHandler:
     """Error handling and tracking system."""
-    
+
     def __init__(self, max_errors: int = 1000, alert_threshold: int = 10):
         """
         Initialize the error handler.
-        
+
         Args:
             max_errors: Maximum number of errors to store in memory
             alert_threshold: Number of errors before triggering alert
         """
         self.max_errors = max_errors
         self.alert_threshold = alert_threshold
-        
+
         # Error storage
         self.errors: deque = deque(maxlen=max_errors)
         self.error_counts: Dict[str, int] = defaultdict(int)
         self.recent_errors: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
-        
+
         # Recovery strategies
         self.recovery_strategies: Dict[Type[Exception], Callable] = {}
-        
+
         # Alert callbacks
         self.alert_callbacks: List[Callable] = []
-        
+
         # Error patterns for analysis
         self.error_patterns: Dict[str, Dict[str, Any]] = defaultdict(dict)
-        
+
         logger.info("Error handler initialized")
-    
-    def record_error(self, error: Exception, context: Optional[Dict[str, Any]] = None,
-                    user_id: Optional[int] = None, guild_id: Optional[int] = None,
-                    command: Optional[str] = None, severity: str = "error"):
+
+    def record_error(
+        self,
+        error: Exception,
+        context: Optional[Dict[str, Any]] = None,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+        command: Optional[str] = None,
+        severity: str = "error",
+    ):
         """
         Record an error occurrence.
-        
+
         Args:
             error: The exception that occurred
             context: Additional context information
@@ -150,25 +171,27 @@ class ErrorHandler:
             user_id=user_id,
             guild_id=guild_id,
             command=command,
-            severity=severity
+            severity=severity,
         )
-        
+
         self.errors.append(error_record)
         self.error_counts[error_record.error_type] += 1
         self.recent_errors[error_record.error_type].append(error_record)
-        
+
         # Update error patterns
         self._update_error_patterns(error_record)
-        
+
         # Log the error
-        log_message = f"Error recorded: {error_record.error_type} - {error_record.message}"
+        log_message = (
+            f"Error recorded: {error_record.error_type} - {error_record.message}"
+        )
         if user_id:
             log_message += f" (User: {user_id})"
         if guild_id:
             log_message += f" (Guild: {guild_id})"
         if command:
             log_message += f" (Command: {command})"
-        
+
         if severity == "critical":
             logger.critical(log_message)
         elif severity == "error":
@@ -177,15 +200,15 @@ class ErrorHandler:
             logger.warning(log_message)
         else:
             logger.info(log_message)
-        
+
         # Check if we should trigger an alert
         if self.error_counts[error_record.error_type] >= self.alert_threshold:
             self._trigger_error_alert(error_record)
-    
+
     def _update_error_patterns(self, error_record: ErrorRecord):
         """Update error pattern analysis."""
         pattern_key = f"{error_record.error_type}_{error_record.command or 'unknown'}"
-        
+
         if pattern_key not in self.error_patterns:
             self.error_patterns[pattern_key] = {
                 "count": 0,
@@ -193,24 +216,24 @@ class ErrorHandler:
                 "last_seen": error_record.timestamp,
                 "users_affected": set(),
                 "guilds_affected": set(),
-                "contexts": []
+                "contexts": [],
             }
-        
+
         pattern = self.error_patterns[pattern_key]
         pattern["count"] += 1
         pattern["last_seen"] = error_record.timestamp
-        
+
         if error_record.user_id:
             pattern["users_affected"].add(error_record.user_id)
         if error_record.guild_id:
             pattern["guilds_affected"].add(error_record.guild_id)
-        
+
         pattern["contexts"].append(error_record.context)
-        
+
         # Keep only recent contexts
         if len(pattern["contexts"]) > 10:
             pattern["contexts"] = pattern["contexts"][-10:]
-    
+
     def _trigger_error_alert(self, error_record: ErrorRecord):
         """Trigger an alert for repeated errors."""
         alert = {
@@ -219,11 +242,11 @@ class ErrorHandler:
             "count": self.error_counts[error_record.error_type],
             "threshold": self.alert_threshold,
             "message": f"Error threshold exceeded for {error_record.error_type}",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
         logger.warning(f"Error alert: {alert['message']} (Count: {alert['count']})")
-        
+
         # Call alert callbacks
         for callback in self.alert_callbacks:
             try:
@@ -233,70 +256,81 @@ class ErrorHandler:
                     callback(alert)
             except Exception as e:
                 logger.error(f"Error in alert callback: {e}")
-    
+
     def add_recovery_strategy(self, error_type: Type[Exception], strategy: Callable):
         """
         Add a recovery strategy for a specific error type.
-        
+
         Args:
             error_type: The exception type to handle
             strategy: Recovery function to call
         """
         self.recovery_strategies[error_type] = strategy
         logger.info(f"Added recovery strategy for {error_type.__name__}")
-    
-    async def handle_error(self, error: Exception, context: Optional[Dict[str, Any]] = None,
-                          user_id: Optional[int] = None, guild_id: Optional[int] = None,
-                          command: Optional[str] = None) -> bool:
+
+    async def handle_error(
+        self,
+        error: Exception,
+        context: Optional[Dict[str, Any]] = None,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+        command: Optional[str] = None,
+    ) -> bool:
         """
         Handle an error with recovery strategies.
-        
+
         Args:
             error: The exception to handle
             context: Additional context
             user_id: Discord user ID if applicable
             guild_id: Discord guild ID if applicable
             command: Command name if applicable
-            
+
         Returns:
             bool: True if error was recovered, False otherwise
         """
         # Record the error
         self.record_error(error, context, user_id, guild_id, command)
-        
+
         # Try to find a recovery strategy
         for error_type, strategy in self.recovery_strategies.items():
             if isinstance(error, error_type):
                 try:
                     if asyncio.iscoroutinefunction(strategy):
-                        result = await strategy(error, context, user_id, guild_id, command)
+                        result = await strategy(
+                            error, context, user_id, guild_id, command
+                        )
                     else:
                         result = strategy(error, context, user_id, guild_id, command)
-                    
+
                     if result:
-                        logger.info(f"Error recovered using strategy for {error_type.__name__}")
+                        logger.info(
+                            f"Error recovered using strategy for {error_type.__name__}"
+                        )
                         return True
                 except Exception as recovery_error:
                     logger.error(f"Recovery strategy failed: {recovery_error}")
-        
+
         return False
-    
-    def get_error_summary(self, time_window: Optional[timedelta] = None) -> Dict[str, Any]:
+
+    def get_error_summary(
+        self, time_window: Optional[timedelta] = None
+    ) -> Dict[str, Any]:
         """
         Get a summary of errors for a time window.
-        
+
         Args:
             time_window: Time window to consider (default: last hour)
-            
+
         Returns:
             Dict containing error summary
         """
         if time_window is None:
             time_window = timedelta(hours=1)
-        
+
         cutoff_time = datetime.now() - time_window
         recent_errors = [e for e in self.errors if e.timestamp >= cutoff_time]
-        
+
         summary = {
             "total_errors": len(recent_errors),
             "error_types": defaultdict(int),
@@ -304,31 +338,31 @@ class ErrorHandler:
             "commands_affected": defaultdict(int),
             "users_affected": set(),
             "guilds_affected": set(),
-            "time_window": str(time_window)
+            "time_window": str(time_window),
         }
-        
+
         for error in recent_errors:
             summary["error_types"][error.error_type] += 1
             summary["severity_counts"][error.severity] += 1
-            
+
             if error.command:
                 summary["commands_affected"][error.command] += 1
-            
+
             if error.user_id:
                 summary["users_affected"].add(error.user_id)
             if error.guild_id:
                 summary["guilds_affected"].add(error.guild_id)
-        
+
         # Convert sets to lists for JSON serialization
         summary["users_affected"] = list(summary["users_affected"])
         summary["guilds_affected"] = list(summary["guilds_affected"])
-        
+
         return dict(summary)
-    
+
     def get_error_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Get error pattern analysis."""
         patterns = {}
-        
+
         for pattern_key, pattern_data in self.error_patterns.items():
             patterns[pattern_key] = {
                 "count": pattern_data["count"],
@@ -336,15 +370,15 @@ class ErrorHandler:
                 "last_seen": pattern_data["last_seen"].isoformat(),
                 "users_affected": len(pattern_data["users_affected"]),
                 "guilds_affected": len(pattern_data["guilds_affected"]),
-                "recent_contexts": pattern_data["contexts"][-5:]  # Last 5 contexts
+                "recent_contexts": pattern_data["contexts"][-5:],  # Last 5 contexts
             }
-        
+
         return patterns
-    
+
     def add_alert_callback(self, callback: Callable):
         """Add a callback for error alerts."""
         self.alert_callbacks.append(callback)
-    
+
     def clear_errors(self):
         """Clear all stored errors."""
         self.errors.clear()
@@ -352,7 +386,7 @@ class ErrorHandler:
         self.recent_errors.clear()
         self.error_patterns.clear()
         logger.info("All errors cleared")
-    
+
     def export_errors(self, filepath: str):
         """Export errors to a JSON file."""
         try:
@@ -368,19 +402,19 @@ class ErrorHandler:
                         "user_id": error.user_id,
                         "guild_id": error.guild_id,
                         "command": error.command,
-                        "severity": error.severity
+                        "severity": error.severity,
                     }
                     for error in self.errors
                 ],
                 "error_counts": dict(self.error_counts),
-                "error_patterns": self.get_error_patterns()
+                "error_patterns": self.get_error_patterns(),
             }
-            
-            with open(filepath, 'w') as f:
+
+            with open(filepath, "w") as f:
                 json.dump(export_data, f, indent=2)
-            
+
             logger.info(f"Errors exported to {filepath}")
-            
+
         except Exception as e:
             logger.error(f"Error exporting errors: {e}")
 
@@ -400,10 +434,11 @@ def get_error_handler() -> ErrorHandler:
 def handle_errors(context: Optional[Dict[str, Any]] = None):
     """
     Decorator to handle errors in functions.
-    
+
     Args:
         context: Additional context to include with errors
     """
+
     def decorator(func):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -414,25 +449,25 @@ def handle_errors(context: Optional[Dict[str, Any]] = None):
                 user_id = None
                 guild_id = None
                 command = func.__name__
-                
+
                 # Try to extract from Discord interaction/context
-                if args and hasattr(args[0], 'user'):
+                if args and hasattr(args[0], "user"):
                     user_id = args[0].user.id
-                if args and hasattr(args[0], 'guild_id'):
+                if args and hasattr(args[0], "guild_id"):
                     guild_id = args[0].guild_id
-                
+
                 # Handle the error
                 error_handler = get_error_handler()
                 recovered = await error_handler.handle_error(
                     e, context, user_id, guild_id, command
                 )
-                
+
                 if not recovered:
                     # Re-raise the error if not recovered
                     raise
-                
+
                 return None
-        
+
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             try:
@@ -442,33 +477,37 @@ def handle_errors(context: Optional[Dict[str, Any]] = None):
                 user_id = None
                 guild_id = None
                 command = func.__name__
-                
+
                 # Try to extract from Discord interaction/context
-                if args and hasattr(args[0], 'user'):
+                if args and hasattr(args[0], "user"):
                     user_id = args[0].user.id
-                if args and hasattr(args[0], 'guild_id'):
+                if args and hasattr(args[0], "guild_id"):
                     guild_id = args[0].guild_id
-                
+
                 # Handle the error
                 error_handler = get_error_handler()
                 # For sync functions, we'll handle the error but not recover
                 error_handler.record_error(e, context, user_id, guild_id, command)
-                
+
                 # Re-raise the error
                 raise
-        
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper
-    
+
     return decorator
 
 
 # Default recovery strategies
-async def database_recovery_strategy(error: Exception, context: Dict[str, Any],
-                                   user_id: Optional[int], guild_id: Optional[int],
-                                   command: Optional[str]) -> bool:
+async def database_recovery_strategy(
+    error: Exception,
+    context: Dict[str, Any],
+    user_id: Optional[int],
+    guild_id: Optional[int],
+    command: Optional[str],
+) -> bool:
     """Default recovery strategy for database errors."""
     if isinstance(error, DatabaseError):
         logger.info("Attempting database recovery...")
@@ -477,9 +516,13 @@ async def database_recovery_strategy(error: Exception, context: Dict[str, Any],
     return False
 
 
-async def api_recovery_strategy(error: Exception, context: Dict[str, Any],
-                              user_id: Optional[int], guild_id: Optional[int],
-                              command: Optional[str]) -> bool:
+async def api_recovery_strategy(
+    error: Exception,
+    context: Dict[str, Any],
+    user_id: Optional[int],
+    guild_id: Optional[int],
+    command: Optional[str],
+) -> bool:
     """Default recovery strategy for API errors."""
     if isinstance(error, APIError):
         logger.info(f"Attempting API recovery for {error.api_name}...")
@@ -500,19 +543,21 @@ if __name__ == "__main__":
     # Test the error handler
     async def test_error_handler():
         error_handler = get_error_handler()
-        
+
         # Test error recording
         try:
             raise ValueError("Test error")
         except Exception as e:
-            error_handler.record_error(e, {"test": "true"}, 123456789, 987654321, "test_command")
-        
+            error_handler.record_error(
+                e, {"test": "true"}, 123456789, 987654321, "test_command"
+            )
+
         # Test error summary
         summary = error_handler.get_error_summary()
         print(f"Error summary: {summary}")
-        
+
         # Test error patterns
         patterns = error_handler.get_error_patterns()
         print(f"Error patterns: {patterns}")
-    
-    asyncio.run(test_error_handler()) 
+
+    asyncio.run(test_error_handler())

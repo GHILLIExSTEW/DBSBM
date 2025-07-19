@@ -714,7 +714,9 @@ async def initial_fetch(pool: aiomysql.Pool):
 
                 # --- SKIP RapidAPI sports ---
                 if sport in ["darts", "tennis", "golf", "esports"]:
-                    logger.info(f"[initial] Skipping {league_name} (sport: {sport}) - handled by MultiProviderAPI")
+                    logger.info(
+                        f"[initial] Skipping {league_name} (sport: {sport}) - handled by MultiProviderAPI"
+                    )
                     continue
 
                 # Log sport configuration details

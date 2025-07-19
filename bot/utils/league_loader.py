@@ -60,14 +60,22 @@ ALL_LEAGUES = {
     "UKOpen": {"id": 7, "name": "UK Open", "sport": "Darts"},
     "GrandSlam": {"id": 8, "name": "Grand Slam", "sport": "Darts"},
     "PlayersChampionship": {"id": 9, "name": "Players Championship", "sport": "Darts"},
-    "EuropeanChampionship": {"id": 10, "name": "European Championship", "sport": "Darts"},
+    "EuropeanChampionship": {
+        "id": 10,
+        "name": "European Championship",
+        "sport": "Darts",
+    },
     "Masters": {"id": 11, "name": "Masters", "sport": "Darts"},
     # Racing
     "Formula1": {"id": 1, "name": "Formula 1", "sport": "Racing"},
     "NASCAR": {"id": 2, "name": "NASCAR", "sport": "Racing"},
     "IndyCar": {"id": 3, "name": "IndyCar", "sport": "Racing"},
     # Australian Football
-    "AFL": {"id": 1, "name": "Australian Football League", "sport": "Australian Football"},
+    "AFL": {
+        "id": 1,
+        "name": "Australian Football League",
+        "sport": "Australian Football",
+    },
     # Volleyball
     "FIVB": {"id": 1, "name": "FIVB World League", "sport": "Volleyball"},
     # Handball

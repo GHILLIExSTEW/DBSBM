@@ -10,14 +10,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 # Note: league_utils functions are not available, using alternative approach
 def get_active_leagues():
     """Placeholder for get_active_leagues function."""
     return []
 
+
 def get_league_info(league_name):
     """Placeholder for get_league_info function."""
     return {}
+
 
 # API configuration
 API_KEY = os.getenv("API_SPORTS_KEY")

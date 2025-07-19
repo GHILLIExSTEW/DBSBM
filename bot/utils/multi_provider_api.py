@@ -634,14 +634,16 @@ class MultiProviderAPI:
                 dummy_league = {
                     "id": "DARTS_ALL",
                     "name": "All Darts Leagues",
-                    "type": "consolidated"
+                    "type": "consolidated",
                 }
-                
+
                 # Fetch all darts games for the date
                 all_games = await self.fetch_games(sport, dummy_league, date)
-                
+
                 if all_games:
-                    logger.info(f"Fetched {len(all_games)} total darts games for {date}")
+                    logger.info(
+                        f"Fetched {len(all_games)} total darts games for {date}"
+                    )
                     # Return ALL darts games without league filtering
                     return all_games
                 else:
@@ -1191,12 +1193,12 @@ class MultiProviderAPI:
             #         )
             # Normal filtering for other sports
             for league in leagues:
-                    if any(
-                        target_name.lower() in league.get("name", "").lower()
-                        for target_name in target_league_names
-                    ):
-                        filtered_leagues.append(league)
-                        logger.info(f"Including league: {league.get('name')}")
+                if any(
+                    target_name.lower() in league.get("name", "").lower()
+                    for target_name in target_league_names
+                ):
+                    filtered_leagues.append(league)
+                    logger.info(f"Including league: {league.get('name')}")
 
             logger.info(
                 f"Filtered to {len(filtered_leagues)} target leagues for {sport}"
@@ -1253,41 +1255,41 @@ class MultiProviderAPI:
                     # Normal handling for other leagues
                     # Fetch for multiple days
                     for day_offset in range(next_days):
-                            fetch_date = (
-                                datetime.strptime(date, "%Y-%m-%d")
-                                + timedelta(days=day_offset)
-                            ).strftime("%Y-%m-%d")
+                        fetch_date = (
+                            datetime.strptime(date, "%Y-%m-%d")
+                            + timedelta(days=day_offset)
+                        ).strftime("%Y-%m-%d")
 
-                            games = await self.fetch_games(sport, league, fetch_date)
+                        games = await self.fetch_games(sport, league, fetch_date)
 
-                            if games:
-                                results["total_games"] += len(games)
+                        if games:
+                            results["total_games"] += len(games)
+                            logger.info(
+                                f"Fetched {len(games)} games for {league['name']} on {fetch_date}"
+                            )
+
+                            # Save games to database if db_pool is available
+                            if self.db_pool:
                                 logger.info(
-                                    f"Fetched {len(games)} games for {league['name']} on {fetch_date}"
+                                    f"Saving {len(games)} games to database for {league['name']}"
+                                )
+                                for game in games:
+                                    success = await self._save_game_to_db(game)
+                                    if success:
+                                        logger.debug(
+                                            f"Successfully saved game {game.get('api_game_id')} to database"
+                                        )
+                                    else:
+                                        logger.error(
+                                            f"Failed to save game {game.get('api_game_id')} to database"
+                                        )
+                            else:
+                                logger.warning(
+                                    "No database pool available, skipping database save"
                                 )
 
-                                # Save games to database if db_pool is available
-                                if self.db_pool:
-                                    logger.info(
-                                        f"Saving {len(games)} games to database for {league['name']}"
-                                    )
-                                    for game in games:
-                                        success = await self._save_game_to_db(game)
-                                        if success:
-                                            logger.debug(
-                                                f"Successfully saved game {game.get('api_game_id')} to database"
-                                            )
-                                        else:
-                                            logger.error(
-                                                f"Failed to save game {game.get('api_game_id')} to database"
-                                            )
-                                else:
-                                    logger.warning(
-                                        "No database pool available, skipping database save"
-                                    )
-
-                            # Rate limiting between requests
-                            await asyncio.sleep(1.5)
+                        # Rate limiting between requests
+                        await asyncio.sleep(1.5)
 
                     results["successful_fetches"] += 1
 

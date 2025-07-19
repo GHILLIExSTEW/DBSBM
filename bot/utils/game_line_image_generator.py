@@ -336,34 +336,38 @@ class GameLineImageGenerator:
             # For manual entry, use default logos
             from PIL import Image
             import os
-            
+
             default_logo_path = "bot/static/logos/default_image.png"
             if os.path.exists(default_logo_path):
                 default_logo = Image.open(default_logo_path)
                 default_logo_resized = default_logo.convert("RGBA").resize(logo_size)
-                
+
                 # Use default logo for both teams
                 home_logo_x = int(home_section_center_x - logo_size[0] // 2)
                 away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                image.paste(default_logo_resized, (home_logo_x, y_base), default_logo_resized)
-                image.paste(default_logo_resized, (away_logo_x, y_base), default_logo_resized)
+                image.paste(
+                    default_logo_resized, (home_logo_x, y_base), default_logo_resized
+                )
+                image.paste(
+                    default_logo_resized, (away_logo_x, y_base), default_logo_resized
+                )
         elif league.lower() == "darts":
             from PIL import Image
             import os
-            
+
             # For darts, use darts_all.png for selected team, default_darts.png for opponent
             darts_all_path = "bot/static/logos/darts_all.png"
             default_darts_path = "bot/static/logos/default_darts.png"
-            
+
             # Load darts logos
             home_logo = None
             away_logo = None
-            
+
             if os.path.exists(darts_all_path):
                 home_logo = Image.open(darts_all_path)
             if os.path.exists(default_darts_path):
                 away_logo = Image.open(default_darts_path)
-            
+
             # For darts, use darts_all.png for selected team, default_darts.png for opponent
             if selected_team:
                 if selected_team.lower() == home_team.lower():
@@ -371,31 +375,43 @@ class GameLineImageGenerator:
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
+                        image.paste(
+                            home_logo_resized, (home_logo_x, y_base), home_logo_resized
+                        )
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
+                        image.paste(
+                            away_logo_resized, (away_logo_x, y_base), away_logo_resized
+                        )
                 else:
                     # Away team is selected - use darts_all.png for away, default_darts.png for home
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
+                        image.paste(
+                            away_logo_resized, (away_logo_x, y_base), away_logo_resized
+                        )
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
+                        image.paste(
+                            home_logo_resized, (home_logo_x, y_base), home_logo_resized
+                        )
             else:
                 # No team selected yet - use default_darts.png for both
                 if home_logo:
                     home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                     home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                    image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
+                    image.paste(
+                        home_logo_resized, (home_logo_x, y_base), home_logo_resized
+                    )
                 if away_logo:
                     away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                     away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                    image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
+                    image.paste(
+                        away_logo_resized, (away_logo_x, y_base), away_logo_resized
+                    )
         else:
             # Normal logo loading for other sports
             home_logo = self._load_team_logo(home_team, league)
@@ -714,7 +730,7 @@ class GameLineImageGenerator:
             # This will be handled in the calling code based on selected_team
             darts_all_path = "bot/static/logos/darts_all.png"
             default_darts_path = "bot/static/logos/default_darts.png"
-            
+
             if os.path.exists(darts_all_path):
                 return Image.open(darts_all_path)
             else:

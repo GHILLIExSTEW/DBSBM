@@ -102,16 +102,18 @@ class SportSelect(Select):
         value = self.values[0]
         self.parent_view.bet_details["sport"] = value
         self.disabled = True
-        
+
         # Special handling for darts - send modal directly without deferring
         if value.lower() == "darts":
-            logger.info("[WORKFLOW TRACE] Darts selected in SportSelect - sending modal directly")
+            logger.info(
+                "[WORKFLOW TRACE] Darts selected in SportSelect - sending modal directly"
+            )
             self.parent_view.bet_details["league"] = "DARTS"
             self.parent_view.bet_details["line_type"] = "game_line"
             self.parent_view.bet_details["is_manual"] = True
             self.parent_view.bet_details["home_team_name"] = "Manual Entry"
             self.parent_view.bet_details["away_team_name"] = "Manual Entry"
-            
+
             # Create and send the modal directly
             modal = StraightBetDetailsModal(
                 line_type="game_line",
@@ -123,7 +125,7 @@ class SportSelect(Select):
             modal.view_ref = self.parent_view
             await interaction.response.send_modal(modal)
             return
-        
+
         # For other sports, continue with normal flow
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
@@ -396,11 +398,13 @@ class CancelButton(Button):
 class TeamSelect(Select):
     def __init__(self, parent_view: View, home_team: str, away_team: str):
         self.parent_view = parent_view
-        
+
         # Ensure we have valid team names
         if not home_team or not away_team:
-            raise ValueError(f"Invalid team names: home_team='{home_team}', away_team='{away_team}'")
-        
+            raise ValueError(
+                f"Invalid team names: home_team='{home_team}', away_team='{away_team}'"
+            )
+
         options = [
             SelectOption(
                 label=home_team[:100],
@@ -874,7 +878,9 @@ class StraightBetWorkflowView(View):
 
             if is_manual:
                 # For manual entry, show modal for line/odds input directly
-                logger.info("[WORKFLOW TRACE] Manual entry detected - showing modal for line/odds input")
+                logger.info(
+                    "[WORKFLOW TRACE] Manual entry detected - showing modal for line/odds input"
+                )
                 line_type = self.bet_details.get("line_type", "game_line")
                 modal = StraightBetDetailsModal(
                     line_type=line_type,
@@ -888,7 +894,9 @@ class StraightBetWorkflowView(View):
                     await interaction.response.send_modal(modal)
                     return
                 else:
-                    logger.error("Tried to send modal, but interaction already responded to.")
+                    logger.error(
+                        "Tried to send modal, but interaction already responded to."
+                    )
                     await self.edit_message(
                         content="❌ Error: Could not open modal. Please try again or cancel.",
                         view=None,
@@ -899,17 +907,19 @@ class StraightBetWorkflowView(View):
                 # For regular games, show team selection
                 home_team = self.bet_details.get("home_team_name", "")
                 away_team = self.bet_details.get("away_team_name", "")
-                
+
                 # Check if we have valid team names
                 if not home_team or not away_team:
-                    logger.error(f"Missing team names: home_team='{home_team}', away_team='{away_team}'")
+                    logger.error(
+                        f"Missing team names: home_team='{home_team}', away_team='{away_team}'"
+                    )
                     await self.edit_message(
                         content="❌ Error: Missing team information. Please try again or contact support.",
                         view=None,
                     )
                     self.stop()
                     return
-                
+
                 self.clear_items()
                 self.add_item(TeamSelect(self, home_team, away_team))
                 self.add_item(CancelButton(self))
@@ -1547,19 +1557,23 @@ class StraightBetDetailsModal(Modal):
                     "team_placeholder", "e.g., Player Name"
                 )
                 # League-specific player suggestions
-                if self.selected_league_key in [
-                    "PDC",
-                    "BDO",
-                    "WDF",
-                    "PremierLeagueDarts",
-                    "WorldMatchplay",
-                    "WorldGrandPrix",
-                    "UKOpen",
-                    "GrandSlam",
-                    "PlayersChampionship",
-                    "EuropeanChampionship",
-                    "Masters",
-                ] or self.selected_league_key == "DARTS":
+                if (
+                    self.selected_league_key
+                    in [
+                        "PDC",
+                        "BDO",
+                        "WDF",
+                        "PremierLeagueDarts",
+                        "WorldMatchplay",
+                        "WorldGrandPrix",
+                        "UKOpen",
+                        "GrandSlam",
+                        "PlayersChampionship",
+                        "EuropeanChampionship",
+                        "Masters",
+                    ]
+                    or self.selected_league_key == "DARTS"
+                ):
                     player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
                 elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                     player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
@@ -1587,19 +1601,23 @@ class StraightBetDetailsModal(Modal):
                         "opponent_placeholder", "e.g., Opponent Name"
                     )
                     # League-specific opponent suggestions
-                    if self.selected_league_key in [
-                        "PDC",
-                        "BDO",
-                        "WDF",
-                        "PremierLeagueDarts",
-                        "WorldMatchplay",
-                        "WorldGrandPrix",
-                        "UKOpen",
-                        "GrandSlam",
-                        "PlayersChampionship",
-                        "EuropeanChampionship",
-                        "Masters",
-                    ] or self.selected_league_key == "DARTS":
+                    if (
+                        self.selected_league_key
+                        in [
+                            "PDC",
+                            "BDO",
+                            "WDF",
+                            "PremierLeagueDarts",
+                            "WorldMatchplay",
+                            "WorldGrandPrix",
+                            "UKOpen",
+                            "GrandSlam",
+                            "PlayersChampionship",
+                            "EuropeanChampionship",
+                            "Masters",
+                        ]
+                        or self.selected_league_key == "DARTS"
+                    ):
                         opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
                     elif self.selected_league_key in ["ATP", "WTA", "Tennis"]:
                         opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
@@ -1768,15 +1786,17 @@ class StraightBetDetailsModal(Modal):
                     self.view_ref.preview_image_bytes.seek(0)
                 else:
                     self.view_ref.preview_image_bytes = None
-                
+
                 # Update the view's bet_details with the modal data
                 self.view_ref.bet_details.update(self.bet_details)
-                
+
                 if not interaction.response.is_done():
                     await interaction.response.defer()
-                
+
                 # Go to units selection (step 5)
-                self.view_ref.current_step = 4  # Set to 4 so go_next increments to 5 (units selection)
+                self.view_ref.current_step = (
+                    4  # Set to 4 so go_next increments to 5 (units selection)
+                )
                 await self.view_ref.go_next(interaction)
         except Exception as e:
             logging.error(

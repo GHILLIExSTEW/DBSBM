@@ -20,7 +20,10 @@ from bot.utils.parlay_image_generator import ParlayImageGenerator
 from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
 from bot.utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
 from bot.utils.performance_monitor import get_performance_monitor, background_monitoring
-from bot.utils.error_handler import get_error_handler, initialize_default_recovery_strategies
+from bot.utils.error_handler import (
+    get_error_handler,
+    initialize_default_recovery_strategies,
+)
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -80,6 +83,7 @@ from bot.commands.sync_cog import setup_sync_cog
 # --- Environment Variable Validation ---
 try:
     from bot.utils.environment_validator import validate_environment
+
     if not validate_environment():
         logger.critical("Environment validation failed. Please check your .env file.")
         sys.exit("Environment validation failed")
@@ -597,7 +601,7 @@ class BettingBot(commands.Bot):
             self.data_sync_service.start(),
             self.live_game_channel_service.start(),
         ]
-        
+
         # Initialize rate limiter
         try:
             self.rate_limiter = get_rate_limiter()
@@ -605,7 +609,7 @@ class BettingBot(commands.Bot):
         except Exception as e:
             logger.error(f"Failed to initialize rate limiter: {e}")
             raise
-        
+
         # Initialize performance monitor
         try:
             self.performance_monitor = get_performance_monitor()
@@ -613,7 +617,7 @@ class BettingBot(commands.Bot):
         except Exception as e:
             logger.error(f"Failed to initialize performance monitor: {e}")
             raise
-        
+
         # Initialize error handler
         try:
             self.error_handler = get_error_handler()
