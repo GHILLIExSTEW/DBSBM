@@ -2,7 +2,7 @@
 
 from typing import Union
 
-from utils.errors import ValidationError
+from bot.utils.errors import ValidationError
 
 
 def validate_units(units: Union[int, float, str]) -> float:

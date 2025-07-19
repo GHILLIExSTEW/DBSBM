@@ -3,7 +3,7 @@ import os
 
 from PIL import ImageDraw, ImageFont
 
-from utils.asset_loader import asset_loader
+from bot.utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 

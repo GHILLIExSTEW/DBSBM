@@ -4,7 +4,7 @@ import os
 
 from PIL import Image, ImageFont
 
-from utils.asset_loader import asset_loader
+from bot.utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 

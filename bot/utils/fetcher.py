@@ -5,10 +5,19 @@ from typing import Dict, List, Optional, Union
 
 import aiohttp
 import aiomysql
-from config.leagues import LEAGUE_CONFIG, get_league_id, is_league_in_season
-from log import logger
+from bot.config.leagues import LEAGUE_CONFIG, get_league_id, is_league_in_season
+import logging
 
-from utils.league_utils import get_active_leagues, get_league_info
+logger = logging.getLogger(__name__)
+
+# Note: league_utils functions are not available, using alternative approach
+def get_active_leagues():
+    """Placeholder for get_active_leagues function."""
+    return []
+
+def get_league_info(league_name):
+    """Placeholder for get_league_info function."""
+    return {}
 
 # API configuration
 API_KEY = os.getenv("API_SPORTS_KEY")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Clean up the cappers table structure
+Fix the cappers table by adding missing columns
 """
 
 import asyncio
@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 # Add the current directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from data.db_manager import DatabaseManager
+from bot.data.db_manager import DatabaseManager
 
 
-async def clean_cappers_table():
-    """Clean up the cappers table structure"""
-    print("Cleaning up cappers table structure...")
+async def fix_cappers_table():
+    """Fix the cappers table structure"""
+    print("Fixing cappers table structure...")
 
     # Load environment variables
     load_dotenv()
@@ -34,7 +34,7 @@ async def clean_cappers_table():
 
         print("✅ Database connection successful")
 
-        # Clean up table structure
+        # Check and add missing columns
         async with pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 # Check current structure
@@ -44,32 +44,37 @@ async def clean_cappers_table():
 
                 print(f"Current columns: {column_names}")
 
-                # Remove duplicate updated_at column with space
-                if " updated_at" in column_names:
-                    print("Removing duplicate ' updated_at' column...")
-                    try:
-                        await cursor.execute(
-                            "ALTER TABLE cappers DROP COLUMN ` updated_at`"
-                        )
-                        print("✅ Successfully removed duplicate column")
-                    except Exception as e:
-                        print(f"❌ Failed to remove duplicate column: {e}")
-
-                # Add bet_push if missing
-                if "bet_push" not in column_names:
-                    print("Adding bet_push column...")
+                # Add created_at if missing
+                if "created_at" not in column_names:
+                    print("Adding created_at column...")
                     try:
                         await cursor.execute(
                             """
                             ALTER TABLE cappers
-                            ADD COLUMN bet_push INTEGER DEFAULT 0 NOT NULL
+                            ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         """
                         )
-                        print("✅ Successfully added bet_push column")
+                        print("✅ Successfully added created_at column")
                     except Exception as e:
-                        print(f"❌ Failed to add bet_push column: {e}")
+                        print(f"❌ Failed to add created_at column: {e}")
                 else:
-                    print("✅ bet_push column already exists")
+                    print("✅ created_at column already exists")
+
+                # Verify updated_at exists
+                if "updated_at" not in column_names:
+                    print("Adding updated_at column...")
+                    try:
+                        await cursor.execute(
+                            """
+                            ALTER TABLE cappers
+                            ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        """
+                        )
+                        print("✅ Successfully added updated_at column")
+                    except Exception as e:
+                        print(f"❌ Failed to add updated_at column: {e}")
+                else:
+                    print("✅ updated_at column already exists")
 
                 # Show final structure
                 await cursor.execute("DESCRIBE cappers")
@@ -87,16 +92,16 @@ async def clean_cappers_table():
         return True
 
     except Exception as e:
-        print(f"❌ Database cleanup failed: {e}")
+        print(f"❌ Database fix failed: {e}")
         return False
     finally:
         await db_manager.close()
 
 
 if __name__ == "__main__":
-    result = asyncio.run(clean_cappers_table())
+    result = asyncio.run(fix_cappers_table())
     if result:
-        print("\n🎉 Table cleanup completed!")
+        print("\n🎉 Table fix completed!")
     else:
-        print("\n💥 Table cleanup failed!")
+        print("\n💥 Table fix failed!")
         sys.exit(1)

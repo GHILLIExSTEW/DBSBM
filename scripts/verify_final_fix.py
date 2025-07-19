@@ -10,7 +10,7 @@ import os
 # Add bot directory to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from data.db_manager import DatabaseManager
+from bot.data.db_manager import DatabaseManager
 
 
 async def verify_final_fix():

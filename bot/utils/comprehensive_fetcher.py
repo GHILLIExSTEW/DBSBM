@@ -20,7 +20,7 @@ API_KEY = os.getenv("API_KEY")
 logger = logging.getLogger(__name__)
 
 # Import the league discovery utility
-from utils.league_discovery import LeagueDiscovery, SPORT_ENDPOINTS
+from bot.utils.league_discovery import LeagueDiscovery, SPORT_ENDPOINTS
 
 
 class ComprehensiveFetcher:

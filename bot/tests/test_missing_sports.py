@@ -7,19 +7,21 @@ import asyncio
 import logging
 import os
 import sys
+import pytest
 from datetime import datetime, timezone
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils.multi_provider_api import MultiProviderAPI
-from data.db_manager import DatabaseManager
+from bot.utils.multi_provider_api import MultiProviderAPI
+from bot.data.db_manager import DatabaseManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.asyncio
 async def test_missing_sports():
     """Test if darts, tennis, golf, and esports are being fetched and saved."""
 
@@ -29,7 +31,7 @@ async def test_missing_sports():
     if not rapidapi_key:
         logger.error("❌ RAPIDAPI_KEY not found in environment variables!")
         logger.error("This is required for darts, tennis, and golf APIs")
-        return False
+        assert False, "RAPIDAPI_KEY not found in environment variables"
     else:
         logger.info(f"✅ RAPIDAPI_KEY found: {rapidapi_key[:10]}...")
 
@@ -174,12 +176,12 @@ async def test_missing_sports():
 
     except Exception as e:
         logger.error(f"Error in test: {e}")
-        return False
+        assert False, f"Test failed with error: {e}"
 
     finally:
         await db_manager.close()
 
-    return True
+    assert True, "Missing sports test completed successfully"
 
 
 if __name__ == "__main__":

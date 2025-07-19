@@ -9,15 +9,18 @@ from typing import Union
 
 import aiohttp
 import discord
-from api.sports_api import SportsAPI
+from bot.api.sports_api import SportsAPI
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from services.live_game_channel_service import LiveGameChannelService
+from bot.services.live_game_channel_service import LiveGameChannelService
 
-from utils.game_line_image_generator import GameLineImageGenerator
-from utils.parlay_image_generator import ParlayImageGenerator
-from utils.player_prop_image_generator import PlayerPropImageGenerator
+from bot.utils.game_line_image_generator import GameLineImageGenerator
+from bot.utils.parlay_image_generator import ParlayImageGenerator
+from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+from bot.utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
+from bot.utils.performance_monitor import get_performance_monitor, background_monitoring
+from bot.utils.error_handler import get_error_handler, initialize_default_recovery_strategies
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -63,38 +66,40 @@ else:
     else:
         print(f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
 
-from data.db_manager import DatabaseManager
-from services.admin_service import AdminService
-from services.analytics_service import AnalyticsService
-from services.bet_service import BetService
-from services.data_sync_service import DataSyncService
-from services.game_service import GameService
-from services.user_service import UserService
-from services.voice_service import VoiceService
+from bot.data.db_manager import DatabaseManager
+from bot.services.admin_service import AdminService
+from bot.services.analytics_service import AnalyticsService
+from bot.services.bet_service import BetService
+from bot.services.data_sync_service import DataSyncService
+from bot.services.game_service import GameService
+from bot.services.user_service import UserService
+from bot.services.voice_service import VoiceService
 
-from commands.sync_cog import setup_sync_cog
+from bot.commands.sync_cog import setup_sync_cog
 
 # --- Environment Variable Validation ---
-REQUIRED_ENV_VARS = {
-    "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
-    "API_KEY": os.getenv("API_KEY"),
-    "MYSQL_HOST": os.getenv("MYSQL_HOST"),
-    "MYSQL_USER": os.getenv("MYSQL_USER"),
-    "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
-    "MYSQL_DB": os.getenv("MYSQL_DB"),
-    "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
-}
-
-# Optional environment variables
-OPTIONAL_ENV_VARS = {
-    "ODDS_API_KEY": os.getenv("ODDS_API_KEY"),  # For The Odds API integration
-}
-missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
-if missing_vars:
-    logger.critical(
-        "Missing required environment variables: %s", ", ".join(missing_vars)
-    )
-    sys.exit("Missing required environment variables")
+try:
+    from bot.utils.environment_validator import validate_environment
+    if not validate_environment():
+        logger.critical("Environment validation failed. Please check your .env file.")
+        sys.exit("Environment validation failed")
+except ImportError:
+    # Fallback to basic validation if environment validator is not available
+    REQUIRED_ENV_VARS = {
+        "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
+        "API_KEY": os.getenv("API_KEY"),
+        "MYSQL_HOST": os.getenv("MYSQL_HOST"),
+        "MYSQL_USER": os.getenv("MYSQL_USER"),
+        "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
+        "MYSQL_DB": os.getenv("MYSQL_DB"),
+        "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
+    }
+    missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
+    if missing_vars:
+        logger.critical(
+            "Missing required environment variables: %s", ", ".join(missing_vars)
+        )
+        sys.exit("Missing required environment variables")
 
 # Get test guild ID
 TEST_GUILD_ID = (
@@ -249,6 +254,9 @@ class BettingBot(commands.Bot):
         self.webapp_process = None
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
+        self.rate_limiter = None  # Will be initialized in setup_hook
+        self.performance_monitor = None  # Will be initialized in setup_hook
+        self.error_handler = None  # Will be initialized in setup_hook
 
     async def get_bet_slip_generator(
         self, guild_id: int, bet_type: str = "game_line"
@@ -589,6 +597,31 @@ class BettingBot(commands.Bot):
             self.data_sync_service.start(),
             self.live_game_channel_service.start(),
         ]
+        
+        # Initialize rate limiter
+        try:
+            self.rate_limiter = get_rate_limiter()
+            logger.info("Rate limiter initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize rate limiter: {e}")
+            raise
+        
+        # Initialize performance monitor
+        try:
+            self.performance_monitor = get_performance_monitor()
+            logger.info("Performance monitor initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize performance monitor: {e}")
+            raise
+        
+        # Initialize error handler
+        try:
+            self.error_handler = get_error_handler()
+            initialize_default_recovery_strategies()
+            logger.info("Error handler initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize error handler: {e}")
+            raise
         results = await asyncio.gather(*service_starts, return_exceptions=True)
         for i, result in enumerate(results):
             if isinstance(result, Exception):

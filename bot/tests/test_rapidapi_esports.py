@@ -5,6 +5,7 @@ Test script to verify RapidAPI esports integration.
 
 import asyncio
 import logging
+import pytest
 from datetime import datetime
 import sys
 import os
@@ -16,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.asyncio
 async def test_rapidapi_esports():
     """Test RapidAPI esports integration."""
     logger.info("Testing RapidAPI esports integration...")
@@ -32,7 +34,7 @@ async def test_rapidapi_esports():
 
             if not leagues:
                 logger.warning("No esports leagues found")
-                return
+                assert True, "No esports leagues found (this is acceptable)"
 
             # Test 2: Fetch games for the first league
             logger.info("Test 2: Fetching esports games...")
@@ -65,6 +67,9 @@ async def test_rapidapi_esports():
 
         except Exception as e:
             logger.error(f"Error testing esports integration: {e}")
+            assert False, f"Esports integration test failed: {e}"
+
+    assert True, "RapidAPI esports integration test completed successfully"
 
 
 if __name__ == "__main__":

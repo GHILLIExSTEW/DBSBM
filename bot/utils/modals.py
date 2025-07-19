@@ -6,15 +6,15 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import discord
-from config.asset_paths import BASE_DIR
+from bot.config.asset_paths import BASE_DIR
 
 # Import your project's configurations and utilities
 # Adjust these paths if your config/utils structure is different
 # relative to the 'bot' root when this module is imported.
-from config.leagues import LEAGUE_CONFIG
+from bot.config.leagues import LEAGUE_CONFIG
 from discord.ui import Modal, TextInput
 
-from utils.errors import BetServiceError  # Example, if used directly in modal
+from bot.utils.errors import BetServiceError  # Example, if used directly in modal
 
 # Import the correct version of the image generator
 

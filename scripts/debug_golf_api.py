@@ -12,8 +12,8 @@ from datetime import datetime
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils.multi_provider_api import MultiProviderAPI
-from data.db_manager import DatabaseManager
+from bot.utils.multi_provider_api import MultiProviderAPI
+from bot.data.db_manager import DatabaseManager
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

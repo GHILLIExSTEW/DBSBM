@@ -3,7 +3,7 @@ import os
 from typing import Dict, List, Optional
 
 import aiohttp
-from config.leagues import ENDPOINTS, LEAGUE_IDS, get_current_season
+from bot.config.leagues import ENDPOINTS, LEAGUE_IDS, get_current_season
 from dotenv import load_dotenv
 
 load_dotenv()

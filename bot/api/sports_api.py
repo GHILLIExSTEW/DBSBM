@@ -14,7 +14,7 @@ import aiohttp
 from dotenv import load_dotenv
 
 # Import LEAGUE_IDS for league mapping
-from config.leagues import LEAGUE_IDS
+from bot.config.leagues import LEAGUE_IDS
 
 # Load environment variables
 load_dotenv()

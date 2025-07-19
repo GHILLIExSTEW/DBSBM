@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 
 import aiohttp
 import aiomysql
-from api.sports_api import SportsAPI
-from config.leagues import LEAGUE_IDS, get_auto_season_year, get_current_season
+from bot.api.sports_api import SportsAPI
+from bot.config.leagues import LEAGUE_IDS, get_auto_season_year, get_current_season
 from dotenv import load_dotenv
 
 # Configure logging to file and console
@@ -71,7 +71,7 @@ logger.info("Database configuration found")
 try:
     sys.path.append(os.path.join(os.path.dirname(__file__), "utils"))
     logger.info("Attempting to import utils.api_sports")
-    from utils.api_sports import ENDPOINTS_MAP, LEAGUE_IDS
+    from bot.utils.api_sports import ENDPOINTS_MAP, LEAGUE_IDS
 
     logger.info("Successfully imported LEAGUE_IDS, ENDPOINTS, and ENDPOINTS_MAP")
 except ImportError as e:

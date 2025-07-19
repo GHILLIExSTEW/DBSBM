@@ -18,8 +18,8 @@ import aiomysql
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import API settings and database manager
-from config.api_settings import API_KEY
-from data.db_manager import DatabaseManager
+from bot.config.api_settings import API_KEY
+from bot.data.db_manager import DatabaseManager
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

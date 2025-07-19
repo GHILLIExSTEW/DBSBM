@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import requests
 import thesportsdb
-from config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
+from bot.config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
 from PIL import Image
 
 # NCAA teams list (661 Division I and II teams, abridged for brevity)

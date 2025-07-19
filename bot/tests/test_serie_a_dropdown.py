@@ -6,14 +6,16 @@ Test script to verify Serie A dropdown functionality
 import asyncio
 import sys
 import os
+import pytest
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from data.game_utils import get_normalized_games_for_dropdown
-from data.db_manager import DatabaseManager
+from bot.data.game_utils import get_normalized_games_for_dropdown
+from bot.data.db_manager import DatabaseManager
 
 
+@pytest.mark.asyncio
 async def test_serie_a_dropdown():
     """Test that the dropdown system can distinguish between Italian and Brazilian Serie A."""
     print("Testing Serie A dropdown functionality...")
@@ -54,11 +56,13 @@ async def test_serie_a_dropdown():
     except Exception as e:
         print(f"❌ Error during test: {e}")
         import traceback
-
         traceback.print_exc()
+        assert False, f"Serie A dropdown test failed: {e}"
 
     finally:
         await db.close()
+
+    assert True, "Serie A dropdown test completed successfully"
 
 
 if __name__ == "__main__":
