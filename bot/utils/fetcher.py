@@ -133,6 +133,10 @@ class MainFetcher:
 
         logger.info(f"Starting main fetch for {date} and next {next_days} days")
 
+        # Clear the api_games table before fetching new data
+        await self._clear_api_games_table()
+        logger.info("Cleared api_games table before fetching new data")
+
         results = {
             "total_leagues": len(MAJOR_LEAGUES),
             "successful_fetches": 0,
@@ -397,6 +401,17 @@ class MainFetcher:
         except Exception as e:
             logger.error(f"Error saving game {game_data['id']} to database: {e}")
             return False
+
+    async def _clear_api_games_table(self):
+        """Clear all data from the api_games table."""
+        try:
+            async with self.db_pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("DELETE FROM api_games")
+                    logger.info("Successfully cleared api_games table")
+        except Exception as e:
+            logger.error(f"Error clearing api_games table: {e}")
+            raise
 
 
 async def main():
