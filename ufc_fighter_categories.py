@@ -66,7 +66,7 @@ def organize_fighters_by_category(fighters_data: Dict) -> Dict:
                 "name": name,
                 "nationality": fighter_data.get("nationality", ""),
                 "record": f"{fighter_data.get('wins', 0)}-{fighter_data.get('losses', 0)}-{fighter_data.get('draws', 0)}",
-                "logo_path": f"bot/static/logos/teams/MMA/UFC/{name.replace(' ', '_').lower()}.png"
+                "logo_path": f"bot/static/logos/teams/FIGHTING/UFC/{name.replace(' ', '_').lower()}.png"
             })
             
             # Add to lookup for quick access
@@ -75,7 +75,7 @@ def organize_fighters_by_category(fighters_data: Dict) -> Dict:
                 "category": category,
                 "nationality": fighter_data.get("nationality", ""),
                 "record": f"{fighter_data.get('wins', 0)}-{fighter_data.get('losses', 0)}-{fighter_data.get('draws', 0)}",
-                "logo_path": f"bot/static/logos/teams/MMA/UFC/{name.replace(' ', '_').lower()}.png"
+                "logo_path": f"bot/static/logos/teams/FIGHTING/UFC/{name.replace(' ', '_').lower()}.png"
             }
     
     # Sort fighters alphabetically within each category

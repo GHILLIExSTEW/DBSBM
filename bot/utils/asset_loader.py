@@ -152,6 +152,20 @@ class AssetLoader:
             logger.info(f"Manual entry detected - using fallback logo")
             return self._load_fallback_logo(guild_id)
 
+        # Special handling for UFC/MMA fighters
+        if league.upper() in ["UFC", "MMA"]:
+            logger.info(f"UFC/MMA detected - looking for fighter logo")
+            # UFC fighters are stored in FIGHTING/UFC directory
+            ufc_logo_dir = os.path.join(self.logos_dir, "teams", "FIGHTING", "UFC")
+            ufc_logo_path = os.path.join(ufc_logo_dir, f"{filename_team}.png")
+            
+            if os.path.exists(ufc_logo_path):
+                logger.info(f"Found UFC fighter logo: {ufc_logo_path}")
+                return self.load_image(ufc_logo_path)
+            else:
+                logger.warning(f"No UFC fighter logo found for '{team_name}' at {ufc_logo_path}")
+                return self._load_fallback_logo(guild_id)
+
         sport = get_sport_category_for_path(league.upper())
         if not sport:
             logger.warning(f"No sport category found for league: {league}")

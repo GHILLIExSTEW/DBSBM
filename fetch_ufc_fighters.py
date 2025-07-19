@@ -127,8 +127,8 @@ class UFCFighterFetcher:
     async def download_and_save_logo(self, session: aiohttp.ClientSession, fighter_id: int, logo_url: str, fighter_name: str):
         """Download and save fighter logo."""
         try:
-            # Create directory if it doesn't exist
-            logo_dir = "bot/static/logos/teams/MMA/UFC"
+            # Create directory if it doesn't exist - use FIGHTING category to match asset loader
+            logo_dir = "bot/static/logos/teams/FIGHTING/UFC"
             os.makedirs(logo_dir, exist_ok=True)
             
             # Download logo
@@ -186,7 +186,7 @@ class UFCFighterFetcher:
         
         logger.info(f"🥊 Completed! Fetched {len(self.fighters_data)} fighters")
         logger.info("📁 Fighter data saved to: ufc_fighters_data.json")
-        logger.info("📁 Logos saved to: bot/static/logos/teams/MMA/UFC/")
+        logger.info("📁 Logos saved to: bot/static/logos/teams/FIGHTING/UFC/")
 
 async def main():
     """Main function."""
