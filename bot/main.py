@@ -498,7 +498,7 @@ class BettingBot(commands.Bot):
                     # Start the fetcher process with the validated environment
                     logger.info("Starting fetcher process...")
                     self.fetcher_process = subprocess.Popen(
-                        [sys.executable, os.path.join(BASE_DIR, "fetcher.py")],
+                        [sys.executable, os.path.join(BASE_DIR, "utils", "fetcher.py")],
                         stdout=log_file,
                         stderr=log_file,
                         text=True,
