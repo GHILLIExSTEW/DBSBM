@@ -23,7 +23,7 @@ def get_league_info(league_name):
 
 
 # API configuration
-API_KEY = os.getenv("API_SPORTS_KEY")
+API_KEY = os.getenv("API_KEY")  # Changed from API_SPORTS_KEY to match main.py
 ENDPOINTS = {
     "football": "https://v3.football.api-sports.io",
     "basketball": "https://v1.basketball.api-sports.io",
@@ -344,3 +344,73 @@ def clear_cache(league_key: Optional[str] = None, date: Optional[str] = None):
         # Clear entire cache
         for file in os.listdir(CACHE_DIR):
             os.remove(os.path.join(CACHE_DIR, file))
+
+
+async def main():
+    """Main function to run the fetcher."""
+    logger.info("Starting fetcher process...")
+    
+    # Create cache directory if it doesn't exist
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    
+    # Database connection
+    pool = None
+    try:
+        pool = await aiomysql.create_pool(
+            host=os.getenv("MYSQL_HOST"),
+            port=int(os.getenv("MYSQL_PORT", "3306")),
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            db=os.getenv("MYSQL_DB"),
+            autocommit=True,
+            minsize=int(os.getenv("MYSQL_POOL_MIN_SIZE", "1")),
+            maxsize=int(os.getenv("MYSQL_POOL_MAX_SIZE", "10")),
+        )
+        logger.info("Database connection pool created")
+        
+        # HTTP session
+        async with aiohttp.ClientSession() as session:
+            # Get current date
+            today = datetime.now().strftime("%Y-%m-%d")
+            current_season = get_current_season()
+            
+            # Define leagues to fetch (simplified for now)
+            leagues_to_fetch = [
+                {"sport": "football", "league": "NFL", "league_id": "1"},
+                {"sport": "basketball", "league": "NBA", "league_id": "12"},
+                {"sport": "baseball", "league": "MLB", "league_id": "1"},
+                {"sport": "hockey", "league": "NHL", "league_id": "57"},
+            ]
+            
+            logger.info(f"Fetching data for {len(leagues_to_fetch)} leagues on {today}")
+            
+            # Fetch data for each league
+            for league_info in leagues_to_fetch:
+                try:
+                    await fetch_games(
+                        pool=pool,
+                        session=session,
+                        sport=league_info["sport"],
+                        league_name=league_info["league"],
+                        league_id=league_info["league_id"],
+                        date=today,
+                        season=current_season,
+                    )
+                except Exception as e:
+                    logger.error(f"Error fetching {league_info['league']}: {e}")
+            
+            logger.info("Fetcher process completed successfully")
+            
+    except Exception as e:
+        logger.error(f"Fetcher process failed: {e}")
+        raise
+    finally:
+        if pool:
+            pool.close()
+            await pool.wait_closed()
+            logger.info("Database connection pool closed")
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

@@ -705,8 +705,7 @@ def get_auto_season_year(league: str) -> int:
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
-if not API_KEY:
-    raise ValueError("API_KEY not found in .env file")
+# Don't raise error if API_KEY is not found - it might be set in environment
 
 # Map league config keys to API host and country_id
 LEAGUE_API_INFO = {
