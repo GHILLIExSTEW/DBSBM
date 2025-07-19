@@ -1,49 +1,89 @@
+"""
+Main Fetcher for API-Sports Leagues
+Fetches data for major leagues and saves to database.
+"""
+
+import asyncio
 import json
+import logging
 import os
+import sys
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import aiohttp
 import aiomysql
-from bot.config.leagues import LEAGUE_CONFIG
-import logging
-import sys
+from dotenv import load_dotenv
 
-# Configure logging to write to both file and console
+# Load environment variables
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.StreamHandler(sys.stdout),  # This will be captured by main.py
-        logging.StreamHandler(sys.stderr),  # This will be captured by main.py
+        logging.StreamHandler(sys.stdout),
+        logging.StreamHandler(sys.stderr),
     ]
 )
 
 logger = logging.getLogger(__name__)
 
-
-# Note: league_utils functions are not available, using alternative approach
-def get_active_leagues():
-    """Placeholder for get_active_leagues function."""
-    return []
-
-
-def get_league_info(league_name):
-    """Placeholder for get_league_info function."""
-    return {}
-
-
-# API configuration
-API_KEY = os.getenv("API_KEY")  # Changed from API_SPORTS_KEY to match main.py
-ENDPOINTS = {
+# API endpoints for different sports
+SPORT_ENDPOINTS = {
     "football": "https://v3.football.api-sports.io",
     "basketball": "https://v1.basketball.api-sports.io",
     "baseball": "https://v1.baseball.api-sports.io",
     "hockey": "https://v1.hockey.api-sports.io",
+    "american-football": "https://v1.american-football.api-sports.io",
     "afl": "https://v1.afl.api-sports.io",
+    "tennis": "https://v1.tennis.api-sports.io",
+    "golf": "https://v1.golf.api-sports.io",
+    "darts": "https://v1.darts.api-sports.io",
+    "mma": "https://v1.mma.api-sports.io",
+    "formula-1": "https://v1.formula-1.api-sports.io",
 }
 
-CACHE_DIR = os.path.join(os.path.dirname(__file__), "data", "cache")
+# Major leagues to fetch
+MAJOR_LEAGUES = [
+    # American Football
+    {"sport": "american-football", "name": "NFL", "id": 1, "season": 2025},
+    {"sport": "american-football", "name": "NCAA", "id": 2, "season": 2025},
+    {"sport": "american-football", "name": "CFL", "id": 3, "season": 2025},
+    # Basketball
+    {"sport": "basketball", "name": "NBA", "id": 12, "season": 2025},
+    {"sport": "basketball", "name": "WNBA", "id": 13, "season": 2025},
+    {"sport": "basketball", "name": "EuroLeague", "id": 1, "season": 2025},
+    # Baseball
+    {"sport": "baseball", "name": "MLB", "id": 1, "season": 2025},
+    {"sport": "baseball", "name": "NPB", "id": 2, "season": 2025},
+    {"sport": "baseball", "name": "KBO", "id": 3, "season": 2025},
+    # Hockey
+    {"sport": "hockey", "name": "NHL", "id": 57, "season": 2025},
+    {"sport": "hockey", "name": "KHL", "id": 1, "season": 2025},
+    # Soccer/Football
+    {"sport": "football", "name": "EPL", "id": 39, "season": 2025},
+    {"sport": "football", "name": "LaLiga", "id": 140, "season": 2025},
+    {"sport": "football", "name": "Bundesliga", "id": 78, "season": 2025},
+    {"sport": "football", "name": "SerieA", "id": 135, "season": 2025},
+    {"sport": "football", "name": "Ligue1", "id": 61, "season": 2025},
+    {"sport": "football", "name": "MLS", "id": 253, "season": 2025},
+    {"sport": "football", "name": "ChampionsLeague", "id": 2, "season": 2025},
+    {"sport": "football", "name": "EuropaLeague", "id": 3, "season": 2025},
+    {"sport": "football", "name": "Brazil_Serie_A", "id": 71, "season": 2025},
+    # Tennis
+    {"sport": "tennis", "name": "ATP", "id": 2, "season": 2025},
+    {"sport": "tennis", "name": "WTA", "id": 3, "season": 2025},
+    # Golf
+    {"sport": "golf", "name": "PGA", "id": 1, "season": 2025},
+    {"sport": "golf", "name": "LPGA", "id": 2, "season": 2025},
+    # Darts
+    {"sport": "darts", "name": "PDC", "id": 1, "season": 2025},
+    # AFL
+    {"sport": "afl", "name": "AFL", "id": 1, "season": 2025},
+]
 
 
 def safe_get(obj, *keys, default=None):
@@ -70,300 +110,278 @@ def iso_to_mysql_datetime(iso_string: str) -> Optional[str]:
         return None
 
 
-async def save_game_to_db(pool: aiomysql.Pool, game_data: Dict) -> bool:
-    """Save a single game to the api_games table."""
-    try:
-        async with pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO api_games
-                    (id, api_game_id, sport, league_id, league_name, home_team_id, away_team_id,
-                     home_team_name, away_team_name, start_time, end_time, status, score,
-                     venue, referee, raw_json, fetched_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                        api_game_id=VALUES(api_game_id),
-                        sport=VALUES(sport),
-                        league_name=VALUES(league_name),
-                        home_team_id=VALUES(home_team_id),
-                        away_team_id=VALUES(away_team_id),
-                        home_team_name=VALUES(home_team_name),
-                        away_team_name=VALUES(away_team_name),
-                        start_time=VALUES(start_time),
-                        end_time=VALUES(end_time),
-                        status=VALUES(status),
-                        score=VALUES(score),
-                        venue=VALUES(venue),
-                        referee=VALUES(referee),
-                        raw_json=VALUES(raw_json),
-                        fetched_at=VALUES(fetched_at),
-                        updated_at=CURRENT_TIMESTAMP
-                    """,
-                    (
-                        game_data["id"],
-                        game_data.get(
-                            "api_game_id", game_data["id"]
-                        ),  # Use api_game_id if available, fallback to id
-                        game_data["sport"],
-                        game_data["league_id"],
-                        game_data["league_name"],
-                        game_data["home_team_id"],
-                        game_data["away_team_id"],
-                        game_data["home_team_name"],
-                        game_data["away_team_name"],
-                        game_data["start_time"],
-                        game_data.get("end_time"),  # Optional field
-                        game_data["status"],
-                        game_data["score"],
-                        game_data["venue"],
-                        game_data["referee"],
-                        game_data["raw_json"],
-                        game_data["fetched_at"],
-                    ),
-                )
-        logger.info(f"Saved game {game_data['id']} to api_games")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving game {game_data['id']} to database: {e}")
-        return False
+class MainFetcher:
+    def __init__(self, db_pool: aiomysql.Pool):
+        self.db_pool = db_pool
+        self.api_key = API_KEY
+        if not self.api_key:
+            raise ValueError("API_KEY not found in environment variables")
+        self.session = None
 
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
 
-def map_game_data(
-    game: Dict, sport: str, league: str, league_id: str
-) -> Optional[Dict]:
-    """Normalize game data based on sport and league."""
-    try:
-        # Common fields for all sports
-        teams = safe_get(game, "teams", default={})
-        home_team = safe_get(teams, "home", default={})
-        away_team = safe_get(teams, "away", default={})
-        fixture = safe_get(game, "fixture", default={})
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.session:
+            await self.session.close()
 
-        # Get game ID from either game or fixture
-        game_id = str(safe_get(game, "id", default=safe_get(fixture, "id", default="")))
-        if not game_id:
-            logger.error(f"Missing game ID for {sport}/{league}")
-            return None
+    async def fetch_all_leagues(self, date: str = None, next_days: int = 1) -> Dict[str, int]:
+        """Fetch data for all major leagues."""
+        if not date:
+            date = datetime.now().strftime("%Y-%m-%d")
 
-        # Get start time from either game or fixture
-        start_time = iso_to_mysql_datetime(
-            safe_get(game, "date", default=safe_get(fixture, "date"))
-        )
-        if not start_time:
-            logger.error(f"Missing start time for game {game_id}")
-            return None
+        logger.info(f"Starting main fetch for {date} and next {next_days} days")
 
-        # Get status from either game or fixture
-        status = safe_get(
-            game,
-            "status",
-            "long",
-            default=safe_get(fixture, "status", "long", default="Scheduled"),
-        )
-
-        # Get score based on sport
-        score = {}
-        if sport.lower() in ["baseball", "mlb"]:
-            score = {
-                "home": safe_get(game, "scores", "home", "total", default=0),
-                "away": safe_get(game, "scores", "away", "total", default=0),
-            }
-        elif sport.lower() == "afl":
-            score = {
-                "home": safe_get(game, "scores", "home", "score", default=0),
-                "away": safe_get(game, "scores", "away", "score", default=0),
-            }
-        else:
-            score = {
-                "home": safe_get(
-                    game,
-                    "scores",
-                    "home",
-                    "total",
-                    default=safe_get(game, "goals", "home", default=0),
-                ),
-                "away": safe_get(
-                    game,
-                    "scores",
-                    "away",
-                    "total",
-                    default=safe_get(game, "goals", "away", default=0),
-                ),
-            }
-
-        # Build the game data dictionary
-        game_data = {
-            "id": game_id,
-            "api_game_id": safe_get(
-                game, "api_game_id", default=game_id
-            ),  # Use api_game_id if available, fallback to game_id
-            "sport": sport.title(),
-            "league_id": league_id,
-            "league_name": LEAGUE_CONFIG.get(sport, {})
-            .get(league, {})
-            .get("name", league),
-            "home_team_id": str(safe_get(home_team, "id")),
-            "away_team_id": str(safe_get(away_team, "id")),
-            "home_team_name": safe_get(home_team, "name", default="Unknown"),
-            "away_team_name": safe_get(away_team, "name", default="Unknown"),
-            "start_time": start_time,
-            "end_time": None,  # Will be updated when game ends
-            "status": status,
-            "score": json.dumps(score),
-            "venue": safe_get(game, "venue", "name", default=None),
-            "referee": safe_get(game, "referee", default=None),
-            "raw_json": json.dumps(game),
-            "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        results = {
+            "total_leagues": len(MAJOR_LEAGUES),
+            "successful_fetches": 0,
+            "failed_fetches": 0,
+            "total_games": 0,
         }
 
-        return game_data
-    except Exception as e:
-        logger.error(f"Error mapping game data for {sport}/{league}: {e}")
-        return None
+        for league in MAJOR_LEAGUES:
+            try:
+                # Fetch for multiple days
+                for day_offset in range(next_days):
+                    fetch_date = (
+                        datetime.strptime(date, "%Y-%m-%d")
+                        + timedelta(days=day_offset)
+                    ).strftime("%Y-%m-%d")
 
+                    games_fetched = await self._fetch_league_games(league, fetch_date)
 
-async def fetch_games(
-    pool: aiomysql.Pool,
-    session: aiohttp.ClientSession,
-    sport: str,
-    league_name: str,
-    league_id: str,
-    date: str,
-    season: int,
-):
-    """Fetch game data for a specific league and date, saving to database and cache."""
-    if not API_KEY:
-        logger.error("API_KEY not found in environment variables")
-        return
+                    if games_fetched > 0:
+                        results["total_games"] += games_fetched
+                        logger.info(
+                            f"Fetched {games_fetched} games for {league['name']} on {fetch_date}"
+                        )
 
-    headers = {"x-apisports-key": API_KEY}
-    base_endpoint = ENDPOINTS.get(sport)
-    if not base_endpoint or not league_id:
-        logger.warning(f"Skipping {league_name}: missing endpoint or league_id")
-        return
+                    # Rate limiting between requests
+                    await asyncio.sleep(1.5)
 
-    endpoint = (
-        f"{base_endpoint}/fixtures" if sport == "football" else f"{base_endpoint}/games"
-    )
-    params = {"league": league_id, "date": date, "season": season}
-    logger.info(f"Requesting {endpoint} with params: {params}")
+                results["successful_fetches"] += 1
 
-    try:
-        async with session.get(endpoint, headers=headers, params=params) as resp:
-            if resp.status != 200:
-                error_text = await resp.text()
-                logger.error(
-                    f"API request failed for {league_name}: {resp.status}: {error_text}"
-                )
-                return
+            except Exception as e:
+                results["failed_fetches"] += 1
+                logger.error(f"Failed to fetch data for {league['name']}: {e}")
+                continue
 
-            data = await resp.json()
-            if not data or "response" not in data:
-                logger.error(f"Invalid API response for {league_name}: {data}")
-                return
+        logger.info(f"Main fetch completed: {results}")
+        return results
 
-            # Save raw data
-            raw_file = os.path.join(CACHE_DIR, f"league_{league_name}.json")
-            with open(raw_file, "w") as f:
-                json.dump(data, f, indent=2)
-            logger.info(f"Fetched and cached raw data for {league_name} ({sport})")
+    async def _fetch_league_games(self, league: Dict, date: str) -> int:
+        """Fetch games for a specific league on a specific date."""
+        sport = league["sport"]
+        base_url = SPORT_ENDPOINTS.get(sport)
+        if not base_url:
+            logger.error(f"No endpoint found for sport: {sport}")
+            return 0
 
-            # Normalize and save to database
-            games = data.get("response", [])
-            if not games:
-                logger.info(f"No games found for {league_name} on {date}")
-                return
+        # Determine the correct endpoint based on sport
+        if sport == "football":
+            endpoint = "fixtures"
+        elif sport == "formula-1":
+            endpoint = "races"
+        elif sport == "mma":
+            endpoint = "fights"
+        elif sport in ["tennis", "golf", "darts"]:
+            endpoint = "matches"
+        else:
+            endpoint = "games"
 
-            logger.info(f"Found {len(games)} games in API response for {league_name}")
-            normalized = []
-            for game in games:
-                game_data = map_game_data(game, sport, league_name, league_id)
-                if game_data:
-                    normalized.append(game_data)
+        url = f"{base_url}/{endpoint}"
+        headers = {"x-apisports-key": self.api_key}
+        params = {
+            "league": league["id"],
+            "season": league["season"],
+            "date": date,
+        }
 
-            logger.info(
-                f"Successfully normalized {len(normalized)} games for {league_name}"
+        try:
+            async with self.session.get(url, headers=headers, params=params) as response:
+                if response.status == 429:  # Rate limit exceeded
+                    logger.warning(f"Rate limit exceeded for {league['name']}, waiting...")
+                    await asyncio.sleep(60)
+                    return await self._fetch_league_games(league, date)
+
+                response.raise_for_status()
+                data = await response.json()
+
+                if "errors" in data and data["errors"]:
+                    logger.warning(f"API errors for {league['name']}: {data['errors']}")
+                    return 0
+
+                games = data.get("response", [])
+                games_saved = 0
+
+                for game in games:
+                    try:
+                        mapped_game = self._map_game_data(game, sport, league)
+                        if mapped_game:
+                            await self._save_game_to_db(mapped_game)
+                            games_saved += 1
+                    except Exception as e:
+                        logger.error(f"Error processing game for {league['name']}: {e}")
+                        continue
+
+                return games_saved
+
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error fetching {league['name']}: {e}")
+            return 0
+        except Exception as e:
+            logger.error(f"Unexpected error fetching {league['name']}: {e}")
+            return 0
+
+    def _map_game_data(self, game: Dict, sport: str, league: Dict) -> Optional[Dict]:
+        """Map API game data to our database format."""
+        try:
+            # Common fields for all sports
+            teams = safe_get(game, "teams", default={})
+            home_team = safe_get(teams, "home", default={})
+            away_team = safe_get(teams, "away", default={})
+            fixture = safe_get(game, "fixture", default={})
+
+            # Get game ID from either game or fixture
+            game_id = str(safe_get(game, "id", default=safe_get(fixture, "id", default="")))
+            if not game_id:
+                logger.error(f"Missing game ID for {sport}/{league['name']}")
+                return None
+
+            # Get start time from either game or fixture
+            start_time = iso_to_mysql_datetime(
+                safe_get(game, "date", default=safe_get(fixture, "date"))
+            )
+            if not start_time:
+                logger.error(f"Missing start time for game {game_id}")
+                return None
+
+            # Get status from either game or fixture
+            status = safe_get(
+                game,
+                "status",
+                "long",
+                default=safe_get(fixture, "status", "long", default="Scheduled"),
             )
 
-            # Save to database
-            for game_data in normalized:
-                success = await save_game_to_db(pool, game_data)
-                if not success:
-                    logger.error(
-                        f"Failed to save game to database: {game_data.get('id', 'unknown')}"
+            # Get score based on sport
+            score = {}
+            if sport.lower() in ["baseball", "mlb"]:
+                score = {
+                    "home": safe_get(game, "scores", "home", "total", default=0),
+                    "away": safe_get(game, "scores", "away", "total", default=0),
+                }
+            elif sport.lower() == "afl":
+                score = {
+                    "home": safe_get(game, "scores", "home", "score", default=0),
+                    "away": safe_get(game, "scores", "away", "score", default=0),
+                }
+            else:
+                score = {
+                    "home": safe_get(
+                        game,
+                        "scores",
+                        "home",
+                        "total",
+                        default=safe_get(game, "goals", "home", default=0),
+                    ),
+                    "away": safe_get(
+                        game,
+                        "scores",
+                        "away",
+                        "total",
+                        default=safe_get(game, "goals", "away", default=0),
+                    ),
+                }
+
+            # Build the game data dictionary
+            game_data = {
+                "id": game_id,
+                "api_game_id": safe_get(game, "api_game_id", default=game_id),
+                "sport": sport.title(),
+                "league_id": str(league["id"]),
+                "league_name": league["name"],
+                "home_team_id": str(safe_get(home_team, "id")),
+                "away_team_id": str(safe_get(away_team, "id")),
+                "home_team_name": safe_get(home_team, "name", default="Unknown"),
+                "away_team_name": safe_get(away_team, "name", default="Unknown"),
+                "start_time": start_time,
+                "end_time": None,
+                "status": status,
+                "score": json.dumps(score),
+                "venue": safe_get(game, "venue", "name", default=None),
+                "referee": safe_get(game, "referee", default=None),
+                "raw_json": json.dumps(game),
+                "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+            }
+
+            return game_data
+        except Exception as e:
+            logger.error(f"Error mapping game data for {sport}/{league['name']}: {e}")
+            return None
+
+    async def _save_game_to_db(self, game_data: Dict) -> bool:
+        """Save a single game to the api_games table."""
+        try:
+            async with self.db_pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        """
+                        INSERT INTO api_games
+                        (id, api_game_id, sport, league_id, league_name, home_team_id, away_team_id,
+                         home_team_name, away_team_name, start_time, end_time, status, score,
+                         venue, referee, raw_json, fetched_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                            api_game_id=VALUES(api_game_id),
+                            sport=VALUES(sport),
+                            league_name=VALUES(league_name),
+                            home_team_id=VALUES(home_team_id),
+                            away_team_id=VALUES(away_team_id),
+                            home_team_name=VALUES(home_team_name),
+                            away_team_name=VALUES(away_team_name),
+                            start_time=VALUES(start_time),
+                            end_time=VALUES(end_time),
+                            status=VALUES(status),
+                            score=VALUES(score),
+                            venue=VALUES(venue),
+                            referee=VALUES(referee),
+                            raw_json=VALUES(raw_json),
+                            fetched_at=VALUES(fetched_at),
+                            updated_at=CURRENT_TIMESTAMP
+                        """,
+                        (
+                            game_data["id"],
+                            game_data.get("api_game_id", game_data["id"]),
+                            game_data["sport"],
+                            game_data["league_id"],
+                            game_data["league_name"],
+                            game_data["home_team_id"],
+                            game_data["away_team_id"],
+                            game_data["home_team_name"],
+                            game_data["away_team_name"],
+                            game_data["start_time"],
+                            game_data.get("end_time"),
+                            game_data["status"],
+                            game_data["score"],
+                            game_data["venue"],
+                            game_data["referee"],
+                            game_data["raw_json"],
+                            game_data["fetched_at"],
+                        ),
                     )
-
-            # Save normalized data
-            normalized_file = os.path.join(
-                CACHE_DIR, f"league_{league_name}_normalized.json"
-            )
-            with open(normalized_file, "w") as f:
-                json.dump(normalized, f, indent=2)
-            logger.info(
-                f"Saved {len(normalized)} normalized games for {league_name} ({sport})"
-            )
-
-    except aiohttp.ClientError as e:
-        logger.error(f"Network error fetching {league_name}: {e}")
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON parsing error for {league_name}: {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error fetching {league_name}: {e}")
-        logger.exception("Full traceback:")
-
-
-def get_cache_path(league_key: str, date: str) -> str:
-    """Get the cache file path for a league and date."""
-    return os.path.join(CACHE_DIR, f"{league_key}_{date}.json")
-
-
-def get_current_season() -> int:
-    """Get the current season year based on the current date."""
-    current_date = datetime.now()
-    # For most sports, the season year is the year when the season ends
-    # For example, 2023-24 season is considered 2024
-    if current_date.month >= 7:  # July or later
-        return current_date.year + 1
-    return current_date.year
-
-
-def clear_cache(league_key: Optional[str] = None, date: Optional[str] = None):
-    """
-    Clear the cache for a specific league and/or date.
-
-    Args:
-        league_key: Optional league identifier. If None, clears all leagues.
-        date: Optional date string. If None, clears all dates.
-    """
-    if league_key and date:
-        # Clear specific league and date
-        cache_path = get_cache_path(league_key, date)
-        if os.path.exists(cache_path):
-            os.remove(cache_path)
-    elif league_key:
-        # Clear all dates for a specific league
-        for file in os.listdir(CACHE_DIR):
-            if file.startswith(f"{league_key}_"):
-                os.remove(os.path.join(CACHE_DIR, file))
-    elif date:
-        # Clear all leagues for a specific date
-        for file in os.listdir(CACHE_DIR):
-            if file.endswith(f"_{date}.json"):
-                os.remove(os.path.join(CACHE_DIR, file))
-    else:
-        # Clear entire cache
-        for file in os.listdir(CACHE_DIR):
-            os.remove(os.path.join(CACHE_DIR, file))
+            logger.info(f"Saved game {game_data['id']} to api_games")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving game {game_data['id']} to database: {e}")
+            return False
 
 
 async def main():
     """Main function to run the fetcher."""
-    print("FETCHER: Starting fetcher process...")  # Direct print for immediate visibility
+    print("FETCHER: Starting fetcher process...")
     logger.info("Starting fetcher process...")
-    
-    # Create cache directory if it doesn't exist
-    os.makedirs(CACHE_DIR, exist_ok=True)
     
     # Database connection
     pool = None
@@ -380,39 +398,13 @@ async def main():
         )
         logger.info("Database connection pool created")
         
-        # HTTP session
-        async with aiohttp.ClientSession() as session:
-            # Get current date
-            today = datetime.now().strftime("%Y-%m-%d")
-            current_season = get_current_season()
-            
-            # Define leagues to fetch (simplified for now)
-            leagues_to_fetch = [
-                {"sport": "football", "league": "NFL", "league_id": "1"},
-                {"sport": "basketball", "league": "NBA", "league_id": "12"},
-                {"sport": "baseball", "league": "MLB", "league_id": "1"},
-                {"sport": "hockey", "league": "NHL", "league_id": "57"},
-            ]
-            
-            logger.info(f"Fetching data for {len(leagues_to_fetch)} leagues on {today}")
-            
-            # Fetch data for each league
-            for league_info in leagues_to_fetch:
-                try:
-                    await fetch_games(
-                        pool=pool,
-                        session=session,
-                        sport=league_info["sport"],
-                        league_name=league_info["league"],
-                        league_id=league_info["league_id"],
-                        date=today,
-                        season=current_season,
-                    )
-                except Exception as e:
-                    logger.error(f"Error fetching {league_info['league']}: {e}")
-            
-            logger.info("Fetcher process completed successfully")
-            
+        # Run the fetcher
+        async with MainFetcher(pool) as fetcher:
+            results = await fetcher.fetch_all_leagues()
+            logger.info(f"Fetcher completed with results: {results}")
+        
+        logger.info("Fetcher process completed successfully")
+        
     except Exception as e:
         logger.error(f"Fetcher process failed: {e}")
         raise
@@ -424,7 +416,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    import asyncio
     print("FETCHER: Script started, about to run main()")
     try:
         asyncio.run(main())
