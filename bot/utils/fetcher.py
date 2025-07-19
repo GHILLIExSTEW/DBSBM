@@ -7,6 +7,17 @@ import aiohttp
 import aiomysql
 from bot.config.leagues import LEAGUE_CONFIG
 import logging
+import sys
+
+# Configure logging to write to both file and console
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # This will be captured by main.py
+        logging.StreamHandler(sys.stderr),  # This will be captured by main.py
+    ]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -348,6 +359,7 @@ def clear_cache(league_key: Optional[str] = None, date: Optional[str] = None):
 
 async def main():
     """Main function to run the fetcher."""
+    print("FETCHER: Starting fetcher process...")  # Direct print for immediate visibility
     logger.info("Starting fetcher process...")
     
     # Create cache directory if it doesn't exist
@@ -413,4 +425,12 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main()) 
+    print("FETCHER: Script started, about to run main()")
+    try:
+        asyncio.run(main())
+        print("FETCHER: Main function completed successfully")
+    except Exception as e:
+        print(f"FETCHER: Error in main function: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1) 
