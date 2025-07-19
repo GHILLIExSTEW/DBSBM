@@ -249,7 +249,59 @@ class MainFetcher:
     def _map_game_data(self, game: Dict, sport: str, league: Dict) -> Optional[Dict]:
         """Map API game data to our database format."""
         try:
-            # Common fields for all sports
+            # Handle UFC/MMA differently - they use fighters instead of teams
+            if sport == "mma":
+                # UFC uses fighters structure
+                fighters = safe_get(game, "fighters", default={})
+                first_fighter = safe_get(fighters, "first", default={})
+                second_fighter = safe_get(fighters, "second", default={})
+                
+                # Get game ID
+                game_id = str(safe_get(game, "id", default=""))
+                if not game_id:
+                    logger.error(f"Missing game ID for {sport}/{league['name']}")
+                    return None
+
+                # Get start time
+                start_time = iso_to_mysql_datetime(safe_get(game, "date"))
+                if not start_time:
+                    logger.error(f"Missing start time for game {game_id}")
+                    return None
+
+                # Get status
+                status = safe_get(game, "status", "long", default="Scheduled")
+
+                # Get fighter IDs, ensuring they're valid integers
+                first_fighter_id = safe_get(first_fighter, "id")
+                second_fighter_id = safe_get(second_fighter, "id")
+                
+                # Convert to string, defaulting to "0" if None or invalid
+                home_team_id = str(first_fighter_id) if first_fighter_id is not None else "0"
+                away_team_id = str(second_fighter_id) if second_fighter_id is not None else "0"
+
+                # Build UFC game data
+                game_data = {
+                    "id": game_id,
+                    "api_game_id": safe_get(game, "api_game_id", default=game_id),
+                    "sport": "MMA",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_id": home_team_id,
+                    "away_team_id": away_team_id,
+                    "home_team_name": safe_get(first_fighter, "name", default="Unknown"),
+                    "away_team_name": safe_get(second_fighter, "name", default="Unknown"),
+                    "start_time": start_time,
+                    "end_time": None,
+                    "status": status,
+                    "score": json.dumps({"home": 0, "away": 0}),
+                    "venue": safe_get(game, "venue", "name", default=None),
+                    "referee": safe_get(game, "referee", default=None),
+                    "raw_json": json.dumps(game),
+                    "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                }
+                return game_data
+
+            # Common fields for all other sports
             teams = safe_get(game, "teams", default={})
             home_team = safe_get(teams, "home", default={})
             away_team = safe_get(teams, "away", default={})
@@ -276,6 +328,14 @@ class MainFetcher:
                 "long",
                 default=safe_get(fixture, "status", "long", default="Scheduled"),
             )
+
+            # Get team IDs, ensuring they're valid integers
+            home_team_id_raw = safe_get(home_team, "id")
+            away_team_id_raw = safe_get(away_team, "id")
+            
+            # Convert to string, defaulting to "0" if None or invalid
+            home_team_id = str(home_team_id_raw) if home_team_id_raw is not None else "0"
+            away_team_id = str(away_team_id_raw) if away_team_id_raw is not None else "0"
 
             # Get score based on sport
             score = {}
@@ -327,8 +387,8 @@ class MainFetcher:
                 "sport": sport.title(),
                 "league_id": str(league["id"]),
                 "league_name": league_name,
-                "home_team_id": str(safe_get(home_team, "id")),
-                "away_team_id": str(safe_get(away_team, "id")),
+                "home_team_id": home_team_id,
+                "away_team_id": away_team_id,
                 "home_team_name": safe_get(home_team, "name", default="Unknown"),
                 "away_team_name": safe_get(away_team, "name", default="Unknown"),
                 "start_time": start_time,
