@@ -192,11 +192,19 @@ class MainFetcher:
 
         url = f"{base_url}/{endpoint}"
         headers = {"x-apisports-key": self.api_key}
-        params = {
-            "league": league["id"],
-            "season": league["season"],
-            "date": date,
-        }
+        
+        # UFC API uses different parameters
+        if sport == "mma":
+            params = {
+                "season": league["season"],
+                "date": date,
+            }
+        else:
+            params = {
+                "league": league["id"],
+                "season": league["season"],
+                "date": date,
+            }
 
         try:
             async with self.session.get(url, headers=headers, params=params) as response:
@@ -295,13 +303,26 @@ class MainFetcher:
                     ),
                 }
 
+            # Normalize league names to prevent duplicates
+            league_name = league["name"]
+            if league_name.lower() in ["major league baseball", "mlb"]:
+                league_name = "MLB"
+            elif league_name.lower() in ["national basketball association", "nba"]:
+                league_name = "NBA"
+            elif league_name.lower() in ["national hockey league", "nhl"]:
+                league_name = "NHL"
+            elif league_name.lower() in ["national football league", "nfl"]:
+                league_name = "NFL"
+            elif league_name.lower() in ["ultimate fighting championship", "ufc"]:
+                league_name = "UFC"
+            
             # Build the game data dictionary
             game_data = {
                 "id": game_id,
                 "api_game_id": safe_get(game, "api_game_id", default=game_id),
                 "sport": sport.title(),
                 "league_id": str(league["id"]),
-                "league_name": league["name"],
+                "league_name": league_name,
                 "home_team_id": str(safe_get(home_team, "id")),
                 "away_team_id": str(safe_get(away_team, "id")),
                 "home_team_name": safe_get(home_team, "name", default="Unknown"),

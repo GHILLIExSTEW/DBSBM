@@ -43,8 +43,8 @@ async def test_ufc_api():
     
     for test_date in test_dates:
         print(f"\n🔍 Testing date: {test_date}")
+        # UFC API doesn't use league parameter
         params = {
-            "league": 1,  # UFC league ID
             "season": 2024,  # Try 2024 season first
             "date": test_date
         }
