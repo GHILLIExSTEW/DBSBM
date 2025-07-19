@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union
 
 import aiohttp
 import aiomysql
-from bot.config.leagues import LEAGUE_CONFIG, get_league_id, is_league_in_season
+from bot.config.leagues import LEAGUE_CONFIG
 import logging
 
 logger = logging.getLogger(__name__)
