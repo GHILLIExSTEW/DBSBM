@@ -13,7 +13,7 @@ class ParlayBetImageGenerator:
     A class to generate parlay bet slip images styled like the provided example.
     """
 
-    def __init__(self, font_dir="bot/assets/fonts", guild_id=None):
+    def __init__(self, font_dir="assets/fonts", guild_id=None):
         self.font_dir = font_dir
         self.guild_id = guild_id
         self.font_regular = ImageFont.truetype(

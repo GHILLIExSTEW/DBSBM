@@ -39,11 +39,39 @@ ALL_LEAGUES = {
     # Golf
     "PGA": {"id": 1, "name": "PGA Tour", "sport": "Golf"},
     "LPGA": {"id": 2, "name": "LPGA Tour", "sport": "Golf"},
+    "EuropeanTour": {"id": 3, "name": "European Tour", "sport": "Golf"},
+    "LIVGolf": {"id": 4, "name": "LIV Golf", "sport": "Golf"},
+    "RyderCup": {"id": 5, "name": "Ryder Cup", "sport": "Golf"},
+    "PresidentsCup": {"id": 6, "name": "Presidents Cup", "sport": "Golf"},
+    "KornFerry": {"id": 7, "name": "Korn Ferry Tour", "sport": "Golf"},
+    "ChampionsTour": {"id": 8, "name": "Champions Tour", "sport": "Golf"},
+    "SolheimCup": {"id": 9, "name": "Solheim Cup", "sport": "Golf"},
+    "OlympicGolf": {"id": 10, "name": "Olympic Golf", "sport": "Golf"},
     # MMA
     "MMA": {"id": 1, "name": "UFC", "sport": "MMA"},
     "Bellator": {"id": 2, "name": "Bellator MMA", "sport": "MMA"},
     # Darts
     "PDC": {"id": 1, "name": "Professional Darts Corporation", "sport": "Darts"},
+    "BDO": {"id": 2, "name": "British Darts Organisation", "sport": "Darts"},
+    "WDF": {"id": 3, "name": "World Darts Federation", "sport": "Darts"},
+    "PremierLeagueDarts": {"id": 4, "name": "Premier League Darts", "sport": "Darts"},
+    "WorldMatchplay": {"id": 5, "name": "World Matchplay", "sport": "Darts"},
+    "WorldGrandPrix": {"id": 6, "name": "World Grand Prix", "sport": "Darts"},
+    "UKOpen": {"id": 7, "name": "UK Open", "sport": "Darts"},
+    "GrandSlam": {"id": 8, "name": "Grand Slam", "sport": "Darts"},
+    "PlayersChampionship": {"id": 9, "name": "Players Championship", "sport": "Darts"},
+    "EuropeanChampionship": {"id": 10, "name": "European Championship", "sport": "Darts"},
+    "Masters": {"id": 11, "name": "Masters", "sport": "Darts"},
+    # Racing
+    "Formula1": {"id": 1, "name": "Formula 1", "sport": "Racing"},
+    "NASCAR": {"id": 2, "name": "NASCAR", "sport": "Racing"},
+    "IndyCar": {"id": 3, "name": "IndyCar", "sport": "Racing"},
+    # Australian Football
+    "AFL": {"id": 1, "name": "Australian Football League", "sport": "Australian Football"},
+    # Volleyball
+    "FIVB": {"id": 1, "name": "FIVB World League", "sport": "Volleyball"},
+    # Handball
+    "EHF": {"id": 1, "name": "EHF Champions League", "sport": "Handball"},
     # Add more leagues as needed...
 }
 
