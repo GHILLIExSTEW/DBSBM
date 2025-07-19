@@ -2243,6 +2243,10 @@ class ParlayCog(commands.Cog):
             )
             view.message = await interaction.original_response()
             logging.info("/parlay command response sent successfully.")
+            
+            # Start the workflow
+            await view.start_flow(interaction)
+            logging.info("Parlay workflow started successfully.")
         except Exception as e:
             logging.error(f"Error in /parlay command: {e}", exc_info=True)
             await interaction.response.send_message(
