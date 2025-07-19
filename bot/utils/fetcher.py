@@ -483,7 +483,7 @@ class MainFetcher:
 
 
 async def main():
-    """Main function to run the fetcher."""
+    """Main function to run the fetcher on a schedule."""
     print("FETCHER: Starting fetcher process...")
     logger.info("Starting fetcher process...")
     
@@ -502,12 +502,33 @@ async def main():
         )
         logger.info("Database connection pool created")
         
-        # Run the fetcher
+        # Run initial fetch on startup
+        logger.info("Running initial fetch on startup...")
         async with MainFetcher(pool) as fetcher:
             results = await fetcher.fetch_all_leagues()
-            logger.info(f"Fetcher completed with results: {results}")
+            logger.info(f"Initial fetch completed with results: {results}")
         
-        logger.info("Fetcher process completed successfully")
+        # Schedule hourly fetches
+        logger.info("Starting scheduled fetcher (runs every hour)...")
+        while True:
+            try:
+                # Calculate time until next hour
+                now = datetime.now(timezone.utc)
+                next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                wait_seconds = (next_hour - now).total_seconds()
+                
+                logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next fetch...")
+                await asyncio.sleep(wait_seconds)
+                
+                # Run scheduled fetch
+                logger.info("Running scheduled hourly fetch...")
+                async with MainFetcher(pool) as fetcher:
+                    results = await fetcher.fetch_all_leagues()
+                    logger.info(f"Scheduled fetch completed with results: {results}")
+                    
+            except Exception as e:
+                logger.error(f"Error in scheduled fetch: {e}")
+                await asyncio.sleep(300)  # Wait 5 minutes before retrying
         
     except Exception as e:
         logger.error(f"Fetcher process failed: {e}")
