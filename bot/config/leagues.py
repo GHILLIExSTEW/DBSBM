@@ -74,15 +74,7 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., Moneyline, Run Line -1.5, Total O/U 7.5",
         "line_placeholder_player": "e.g., Strikeouts Over 6.5, Hits Over 0.5",
     },
-    "KBO": {
-        "sport": "Baseball",
-        "name": "KBO",
-        "sport_type": "Team Sport",
-        "participant_label": "Team",
-        "team_placeholder": "e.g., Samsung Lions",
-        "line_placeholder_game": "e.g., Moneyline, Run Line -1.5, Total O/U 8.5",
-        "line_placeholder_player": "e.g., Strikeouts Over 6.5, Hits Over 0.5",
-    },
+
     # Hockey
     "NHL": {
         "sport": "Ice Hockey",
@@ -498,8 +490,6 @@ LEAGUE_CONFIG = {
 LEAGUE_SEASON_STARTS = {
     # Baseball
     "MLB": {"start": "2025-03-27", "end": "2025-09-28"},
-    "NPB": {"start": "2024-03-29", "end": "2024-10-10"},
-    "KBO": {"start": "2024-03-23", "end": "2024-10-20"},
     # Basketball
     "NBA": {"start": "2023-10-24", "end": "2024-04-14"},
     "WNBA": {"start": "2024-05-14", "end": "2024-09-19"},
@@ -573,8 +563,6 @@ LEAGUE_IDS = {
     "EuroLeague": {"id": 1, "sport": "basketball", "name": "EuroLeague"},
     # Baseball
     "MLB": {"id": 1, "sport": "baseball", "name": "MLB"},
-    "NPB": {"id": 2, "sport": "baseball", "name": "NPB"},
-    "KBO": {"id": 3, "sport": "baseball", "name": "KBO"},
     # Hockey
     "NHL": {"id": 57, "sport": "hockey", "name": "NHL"},
     "KHL": {"id": 1, "sport": "hockey", "name": "Kontinental Hockey League"},

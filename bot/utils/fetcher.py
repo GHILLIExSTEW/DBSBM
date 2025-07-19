@@ -56,10 +56,8 @@ MAJOR_LEAGUES = [
     {"sport": "basketball", "name": "NBA", "id": 12, "season": 2025},
     {"sport": "basketball", "name": "WNBA", "id": 13, "season": 2025},
     {"sport": "basketball", "name": "EuroLeague", "id": 1, "season": 2025},
-    # Baseball
+    # Baseball - Only MLB, removed KBO and NPB
     {"sport": "baseball", "name": "MLB", "id": 1, "season": 2025},
-    {"sport": "baseball", "name": "NPB", "id": 2, "season": 2025},
-    {"sport": "baseball", "name": "KBO", "id": 3, "season": 2025},
     # Hockey
     {"sport": "hockey", "name": "NHL", "id": 57, "season": 2025},
     {"sport": "hockey", "name": "KHL", "id": 1, "season": 2025},
@@ -81,6 +79,8 @@ MAJOR_LEAGUES = [
     {"sport": "golf", "name": "LPGA", "id": 2, "season": 2025},
     # Darts
     {"sport": "darts", "name": "PDC", "id": 1, "season": 2025},
+    # MMA
+    {"sport": "mma", "name": "UFC", "id": 1, "season": 2025},
     # AFL
     {"sport": "afl", "name": "AFL", "id": 1, "season": 2025},
 ]
