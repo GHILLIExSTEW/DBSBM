@@ -133,9 +133,9 @@ class MainFetcher:
 
         logger.info(f"Starting main fetch for {date} and next {next_days} days")
 
-        # Clear the api_games table before fetching new data
-        await self._clear_api_games_table()
-        logger.info("Cleared api_games table before fetching new data")
+        # Clear old games data before fetching new data (keep recent games)
+        await self._clear_old_games_data()
+        logger.info("Cleared old games data before fetching new data")
 
         results = {
             "total_leagues": len(MAJOR_LEAGUES),
@@ -402,16 +402,20 @@ class MainFetcher:
             logger.error(f"Error saving game {game_data['id']} to database: {e}")
             return False
 
-    async def _clear_api_games_table(self):
-        """Clear all data from the api_games table."""
+    async def _clear_old_games_data(self):
+        """Clear finished games data, keeping active and upcoming games."""
         try:
             async with self.db_pool.acquire() as conn:
                 async with conn.cursor() as cur:
-                    await cur.execute("DELETE FROM api_games")
-                    logger.info("Successfully cleared api_games table")
+                    # Remove only finished games, keep active and upcoming ones
+                    await cur.execute("""
+                        DELETE FROM api_games 
+                        WHERE status IN ('Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted')
+                    """)
+                    logger.info("Cleared finished games from api_games table")
         except Exception as e:
-            logger.error(f"Error clearing api_games table: {e}")
-            raise
+            logger.error(f"Error clearing finished games data: {e}")
+            # Don't raise - continue with fetch even if cleanup fails
 
 
 async def main():
