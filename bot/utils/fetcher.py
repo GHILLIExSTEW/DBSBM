@@ -408,9 +408,13 @@ class MainFetcher:
             async with self.db_pool.acquire() as conn:
                 async with conn.cursor() as cur:
                     # Remove only finished games, keep active and upcoming ones
+                    # Includes status values for all sports including MMA/UFC
                     await cur.execute("""
                         DELETE FROM api_games 
-                        WHERE status IN ('Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted')
+                        WHERE status IN (
+                            'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
+                            'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted'
+                        )
                     """)
                     logger.info("Cleared finished games from api_games table")
         except Exception as e:
