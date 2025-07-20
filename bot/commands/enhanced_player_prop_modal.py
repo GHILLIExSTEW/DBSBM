@@ -545,12 +545,32 @@ class PlayerPropSearchView(discord.ui.View):
                 selected_prop_type = prop_select.values[0]
                 template = self.prop_templates[selected_prop_type]
 
-                # Show success message with better formatting
+                # Store selected prop for later use
+                self.selected_prop_type = selected_prop_type
+
+                # Create view with Create Prop Bet button
+                final_view = discord.ui.View(timeout=300)
+                final_view.add_item(
+                    discord.ui.Button(
+                        label="Create Prop Bet", 
+                        style=discord.ButtonStyle.success,
+                        custom_id="create_prop_bet"
+                    )
+                )
+                final_view.add_item(
+                    discord.ui.Button(
+                        label="Back to Categories", 
+                        style=discord.ButtonStyle.secondary,
+                        custom_id="back_to_categories"
+                    )
+                )
+
+                # Show success message with Create Prop Bet button
                 await interaction.response.edit_message(
                     content=f"✅ **{self.selected_player}** - **{template.label}**\n\n"
                     f"📊 Range: {template.min_value}-{template.max_value} {template.unit}\n"
                     f"🎯 Click 'Create Prop Bet' below to set your line and bet amount!",
-                    view=None,
+                    view=final_view,
                 )
 
             prop_select.callback = prop_callback
@@ -575,21 +595,53 @@ class PlayerPropSearchView(discord.ui.View):
                 ephemeral=True,
             )
 
-    @discord.ui.button(label="Create Prop Bet", style=discord.ButtonStyle.success)
-    async def create_prop_bet(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ):
-        """Open the enhanced player prop modal."""
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Handle button interactions."""
+        if interaction.data.get("custom_id") == "create_prop_bet":
+            await self._handle_create_prop_bet(interaction)
+            return True
+        elif interaction.data.get("custom_id") == "back_to_categories":
+            await self._handle_back_to_categories(interaction)
+            return True
+        return True
+
+    async def _handle_create_prop_bet(self, interaction: discord.Interaction):
+        """Handle Create Prop Bet button click."""
         try:
+            # Check if we have the required data
+            if not hasattr(self, 'selected_player') or not hasattr(self, 'selected_prop_type'):
+                await interaction.response.send_message(
+                    "❌ Error: Missing player or prop selection. Please try again.",
+                    ephemeral=True
+                )
+                return
+
+            # Create the enhanced player prop modal
             modal = EnhancedPlayerPropModal(
                 self.bot, self.db_manager, self.league, self.game_id, self.team_name
             )
+            
+            # Pre-fill the player name and prop type
+            modal.player_search.default = self.selected_player
+            modal.prop_type.default = self.selected_prop_type
+            
             await interaction.response.send_modal(modal)
 
         except Exception as e:
             logger.error(f"Error opening player prop modal: {e}")
             await interaction.response.send_message(
                 "❌ Error opening bet modal.", ephemeral=True
+            )
+
+    async def _handle_back_to_categories(self, interaction: discord.Interaction):
+        """Handle Back to Categories button click."""
+        try:
+            # Go back to category selection
+            await self._show_prop_type_selection(interaction, self.selected_player)
+        except Exception as e:
+            logger.error(f"Error going back to categories: {e}")
+            await interaction.response.send_message(
+                "❌ Error going back to categories.", ephemeral=True
             )
 
 
