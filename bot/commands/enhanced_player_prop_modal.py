@@ -355,7 +355,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 bet_direction=bet_data["bet_direction"],
                 odds=bet_data["odds"],
                 units=0.0,  # Default units value
-                game_id=bet_data.get("game_id"),
+                api_game_id=bet_data.get("game_id"),  # Pass as api_game_id
                 confirmed=0,  # Not confirmed until units are set
             )
             

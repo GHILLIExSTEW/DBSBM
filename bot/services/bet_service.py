@@ -429,15 +429,44 @@ class BetService:
         bet_direction: str,
         odds: str,
         units: float = 0.0,
-        game_id: Optional[str] = None,
+        api_game_id: Optional[str] = None,
         channel_id: Optional[int] = None,
         confirmed: int = 0,
     ) -> Optional[int]:
         """Create a player prop bet, populating all relevant fields based on the schema."""
         logger.info(
-            f"[BET INSERT] Attempting to create player prop bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, sport={sport}, player_name={player_name}, team_name={team_name}, prop_type={prop_type}, line_value={line_value}, bet_direction={bet_direction}, odds={odds}, units={units}, game_id={game_id}, channel_id={channel_id}, confirmed={confirmed}"
+            f"[BET INSERT] Attempting to create player prop bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, sport={sport}, player_name={player_name}, team_name={team_name}, prop_type={prop_type}, line_value={line_value}, bet_direction={bet_direction}, odds={odds}, units={units}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}"
         )
         try:
+            # Handle game_id conversion like straight bets
+            internal_game_id = None
+            if api_game_id and api_game_id != "manual":
+                try:
+                    logger.info(
+                        f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}"
+                    )
+                    game_exists = await self.db_manager.fetch_one(
+                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        (api_game_id,),
+                    )
+                    if not game_exists:
+                        logger.warning(
+                            f"[BET INSERT] Game with api_game_id {api_game_id} not found in api_games table"
+                        )
+                        raise BetServiceError(f"Game with ID {api_game_id} not found")
+                    logger.info(
+                        "[BET INSERT] Game found, getting/creating internal game record"
+                    )
+                    internal_game_id = await self._get_or_create_game(api_game_id)
+                    logger.info(f"[BET INSERT] Internal game_id: {internal_game_id}")
+                except BetServiceError as e:
+                    logger.warning(
+                        f"[BET INSERT] Could not get/create game for api_game_id {api_game_id}: {e}"
+                    )
+                    raise
+            else:
+                logger.info("[BET INSERT] Manual entry bet - setting game_id to NULL")
+
             # Convert odds to float for storage
             try:
                 odds_float = float(odds)
@@ -453,7 +482,7 @@ class BetService:
                 "line_value": line_value,
                 "bet_direction": bet_direction,
                 "odds": odds,
-                "game_id": game_id,
+                "api_game_id": api_game_id,
                 "sport": sport
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
@@ -481,7 +510,7 @@ class BetService:
                 line_value,
                 bet_direction,
                 odds_float,
-                game_id,
+                internal_game_id,  # Use converted internal game_id
                 "pending",
                 units,
                 bet_details_json,
