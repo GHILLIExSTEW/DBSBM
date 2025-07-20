@@ -499,9 +499,7 @@ class BetDetailsModal(Modal):
         league_key = (
             bet_details_from_view.get("league")
             or bet_details_from_view.get("selected_league_key")
-            or self.view_ref.current_leg_construction_details.get("league")
-            if self.view_ref
-            else None
+            or "NFL"  # Default fallback
         )
         league_conf = LEAGUE_CONFIG.get(league_key, {})
 
@@ -701,7 +699,18 @@ class BetDetailsModal(Modal):
         if self.view_ref:
             self.view_ref._skip_increment = True
         try:
+            # Check if view_ref is properly set
+            if not self.view_ref:
+                await interaction.response.send_message(
+                    "❌ Error: Modal not properly initialized. Please try again.",
+                    ephemeral=True
+                )
+                return
+                
             # Get league config to check sport type
+            if not hasattr(self.view_ref, 'current_leg_construction_details'):
+                self.view_ref.current_leg_construction_details = {}
+                
             league_key = self.view_ref.current_leg_construction_details.get(
                 "league", ""
             )
@@ -869,6 +878,9 @@ class BetDetailsModal(Modal):
                 "❌ An error occurred while processing bet details. Please try again.",
                 ephemeral=True,
             )
+            # Stop the view to prevent further issues
+            if self.view_ref:
+                self.view_ref.stop()
 
 
 class TotalOddsModal(Modal):
@@ -1498,72 +1510,83 @@ class ParlayBetWorkflowView(View):
             f"Parlay: Attempting to edit message {self.message.id if self.message else 'None'}. Content: {content is not None}, View: {view is not None}"
         )
         attachments = [file] if file else discord.utils.MISSING
+        
         try:
+            # Try to edit the existing message first
             if self.message:
                 await self.message.edit(
                     content=content, embed=embed, view=view, attachments=attachments
                 )
-            else:
-                logger.warning(
-                    "Parlay: self.message is None during edit_message_for_current_leg. Using original_interaction followup."
-                )
-                if self.original_interaction.response.is_done():
-                    self.message = await self.original_interaction.followup.send(
-                        content=content or "Updating...",
+                return
+        except (discord.NotFound, discord.HTTPException) as e:
+            logger.warning(f"Parlay: Failed to edit existing message: {e}")
+            # Clear the message reference so we create a new one
+            self.message = None
+        
+        # If we get here, we need to create a new message
+        try:
+            # Only create a new message if we don't already have one
+            if not self.message:
+                if interaction_context and not interaction_context.response.is_done():
+                    # Use the current interaction to send a new message
+                    await interaction_context.response.send_message(
+                        content=content or "Parlay setup...",
                         view=view,
                         files=attachments if attachments else None,
                         ephemeral=True,
                     )
-                else:
+                    self.message = await interaction_context.original_response()
+                elif self.original_interaction and not self.original_interaction.response.is_done():
+                    # Use the original interaction
                     await self.original_interaction.response.send_message(
-                        content=content or "Updating...",
+                        content=content or "Parlay setup...",
                         view=view,
                         files=attachments if attachments else None,
                         ephemeral=True,
                     )
                     self.message = await self.original_interaction.original_response()
-        except (discord.NotFound, discord.HTTPException) as e:
-            logger.warning(
-                f"Parlay: Failed to edit message {self.message.id if self.message else 'Original Interaction'}: {e}. Interaction type: {interaction_context.type if interaction_context else 'N/A'}"
-            )
-            if (
-                interaction_context
-                and interaction_context.response.is_done()
-                and (
-                    not self.message
-                    or interaction_context.message.id != self.message.id
-                )
-            ):
-                try:
-                    self.message = await interaction_context.followup.send(
-                        content=content or "Updating display...",
-                        ephemeral=True,
-                        view=view,
-                        files=attachments if attachments else None,
-                    )
-                except discord.HTTPException as fe:
-                    logger.error(
-                        f"Parlay: Failed to send followup after message edit error: {fe}"
-                    )
-            elif not interaction_context.response.is_done():
-                try:
-                    await interaction_context.response.send_message(
-                        content=content or "Updating display...",
-                        ephemeral=True,
-                        view=view,
-                        files=attachments if attachments else None,
-                    )
-                    self.message = await interaction_context.original_response()
-                except discord.HTTPException as fe:
-                    logger.error(
-                        f"Parlay: Failed to send new message after previous edit error: {fe}"
-                    )
+                else:
+                    # Use followup if response is done
+                    if interaction_context:
+                        self.message = await interaction_context.followup.send(
+                            content=content or "Parlay setup...",
+                            view=view,
+                            files=attachments if attachments else None,
+                            ephemeral=True,
+                        )
+                    elif self.original_interaction:
+                        self.message = await self.original_interaction.followup.send(
+                            content=content or "Parlay setup...",
+                            view=view,
+                            files=attachments if attachments else None,
+                            ephemeral=True,
+                        )
+                    else:
+                        logger.error("Parlay: No valid interaction context available")
             else:
-                logger.error(
-                    f"Parlay: Cannot reliably update user after message edit error. Main message: {self.message.id if self.message else 'None'}"
-                )
+                # We have a message but couldn't edit it, try to send a followup
+                if interaction_context:
+                    await interaction_context.followup.send(
+                        content="⚠️ Display updated. Please continue with the parlay setup.",
+                        ephemeral=True,
+                    )
+                elif self.original_interaction:
+                    await self.original_interaction.followup.send(
+                        content="⚠️ Display updated. Please continue with the parlay setup.",
+                        ephemeral=True,
+                    )
+                    
         except Exception as e:
-            logger.exception(f"Parlay: Unexpected error editing message: {e}")
+            logger.exception(f"Parlay: Failed to create new message: {e}")
+            # Try to send a simple error message
+            try:
+                if interaction_context and not interaction_context.response.is_done():
+                    await interaction_context.response.send_message(
+                        "❌ Error updating parlay display. Please try again.",
+                        ephemeral=True
+                    )
+            except:
+                pass
 
     async def go_next(self, interaction: Interaction):
         """Advance to the next step in the parlay workflow."""
