@@ -1,0 +1,43 @@
+[2025-07-20 15:20:07] ============================================================
+[2025-07-20 15:20:07] INACTIVE PLAYER IMAGE CLEANUP
+[2025-07-20 15:20:07] ============================================================
+[2025-07-20 15:20:07] 
+1. Scanning player images...
+[2025-07-20 15:20:07] Found 0 images in american_football
+[2025-07-20 15:20:07] Found 0 images in australian_football
+[2025-07-20 15:20:07] Found 1395 images in baseball
+[2025-07-20 15:20:07] Found 937 images in basketball
+[2025-07-20 15:20:07] Found 22 images in darts
+[2025-07-20 15:20:07] Found 0 images in golf
+[2025-07-20 15:20:07] Found 1335 images in ice_hockey
+[2025-07-20 15:20:07] Found 1960 images in mma
+[2025-07-20 15:20:07] Found 23 images in motorsport
+[2025-07-20 15:20:07] Found 6419 images in soccer
+[2025-07-20 15:20:07] Found 45 images in tennis
+[2025-07-20 15:20:07] 
+2. Processing each sport...
+[2025-07-20 15:20:07] 
+==================================================
+[2025-07-20 15:20:07] CLEANING SPORT: baseball
+[2025-07-20 15:20:07] ==================================================
+[2025-07-20 15:20:07] ⚠️  BASEBALL player data not available in API-Sports
+[2025-07-20 15:20:07]    Keeping all 1395 images (cannot verify active status)
+[2025-07-20 15:20:07] 
+==================================================
+[2025-07-20 15:20:07] CLEANING SPORT: basketball
+[2025-07-20 15:20:07] ==================================================
+[2025-07-20 15:20:07] Getting active players for NBA...
+[2025-07-20 15:20:08]   Total active players in NBA: 0
+[2025-07-20 15:20:08] Getting active players for WNBA...
+[2025-07-20 15:20:08]   Atlanta Dream W: 0 active players
+[2025-07-20 15:20:08]   Chicago Sky W: 0 active players
+[2025-07-20 15:20:09]   Connecticut Sun W: 0 active players
+[2025-07-20 15:20:09]   Dallas Wings W: 0 active players
+[2025-07-20 15:20:09]   Indiana Fever W: 0 active players
+[2025-07-20 15:20:10]   Las Vegas Aces W: 0 active players
+[2025-07-20 15:20:10]   Los Angeles Sparks W: 0 active players
+[2025-07-20 15:20:10]   Minnesota Lynx W: 0 active players
+[2025-07-20 15:20:10]   New York Liberty W: 0 active players
+[2025-07-20 15:20:11]   Phoenix Mercury W: 0 active players
+[2025-07-20 15:20:11]   Seattle Storm W: 0 active players
+[2025-07-20 15:20:11]   Team USA W: 0 active players
