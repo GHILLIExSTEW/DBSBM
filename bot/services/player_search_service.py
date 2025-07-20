@@ -76,8 +76,8 @@ class PlayerSearchService:
                     league, team_name
                 )
 
-            # Get players from database - IMPORTANT: Always filter by league
-            db_players = await self._get_players_from_db(league)
+            # Get players from database - IMPORTANT: Always filter by league and team if specified
+            db_players = await self._get_players_from_db(league, team_name)
 
             # Combine and prioritize team library players
             all_players = team_players + db_players
@@ -157,7 +157,7 @@ class PlayerSearchService:
         return [result.player_name for result in results]
 
     async def get_popular_players(
-        self, league: Optional[str] = None, limit: int = 20
+        self, league: Optional[str] = None, team_name: Optional[str] = None, limit: int = 20
     ) -> List[PlayerSearchResult]:
         """
         Get most frequently searched players.
@@ -182,10 +182,20 @@ class PlayerSearchService:
                     player_name, team_name, league, sport,
                     last_used, usage_count
                 FROM player_search_cache
-                WHERE is_active = 1
-                AND league = %s
             """
-            params = [league]
+            params = []
+            conditions = []
+
+            if league:
+                conditions.append("league = %s")
+                params.append(league)
+            
+            if team_name:
+                conditions.append("team_name = %s")
+                params.append(team_name)
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
 
             query += " ORDER BY usage_count DESC, last_used DESC LIMIT %s"
             params.append(limit)
@@ -248,7 +258,7 @@ class PlayerSearchService:
             logger.error(f"Error adding player to cache: {e}")
             return False
 
-    async def _get_players_from_db(self, league: Optional[str] = None) -> List[Dict]:
+    async def _get_players_from_db(self, league: Optional[str] = None, team_name: Optional[str] = None) -> List[Dict]:
         """Get players from database for searching."""
         try:
             # First try player_search_cache table
@@ -259,10 +269,18 @@ class PlayerSearchService:
                 FROM player_search_cache
             """
             params = []
+            conditions = []
 
             if league:
-                query += " WHERE league = %s"
+                conditions.append("league = %s")
                 params.append(league)
+            
+            if team_name:
+                conditions.append("team_name = %s")
+                params.append(team_name)
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
 
             query += " ORDER BY usage_count DESC, last_used DESC"
 

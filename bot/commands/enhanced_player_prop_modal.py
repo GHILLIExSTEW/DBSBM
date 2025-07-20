@@ -367,9 +367,9 @@ class PlayerPropSearchView(discord.ui.View):
                 ephemeral=True,
             )
 
-            # For now, we'll show popular players for this league
+            # Show popular players for this league and team
             search_results = await self.player_search_service.get_popular_players(
-                self.league, limit=15
+                self.league, self.team_name, limit=15
             )
 
             if not search_results:

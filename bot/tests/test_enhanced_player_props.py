@@ -72,8 +72,8 @@ async def test_enhanced_player_props():
             )
 
             # Test popular players
-            popular = await player_search.get_popular_players("NBA", limit=5)
-            print(f"✅ Popular players test: Found {len(popular)} popular NBA players")
+            popular = await player_search.get_popular_players("NBA", "Los Angeles Lakers", limit=5)
+            print(f"✅ Popular players test: Found {len(popular)} popular Lakers players")
 
             await db_manager.close()
 
