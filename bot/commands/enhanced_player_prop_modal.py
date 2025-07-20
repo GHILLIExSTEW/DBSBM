@@ -331,49 +331,55 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
     async def _create_player_prop_bet(
         self, interaction: discord.Interaction, bet_data: dict
     ) -> bool:
-        """Create the player prop bet in the database."""
+        """Create the player prop bet in the database using BetService."""
         try:
-            # Insert into bets table
-            query = """
-                INSERT INTO bets (
-                    user_id, guild_id, bet_type, player_prop, player_name,
-                    team_name, league, sport, player_prop_type, player_prop_line,
-                    player_prop_direction, odds, game_id, status, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
-            """
-
-            await self.db_manager.execute(
-                query,
-                (
-                    interaction.user.id,
-                    interaction.guild_id,
-                    "player_prop",
-                    True,
+            logger.info(f"Creating player prop bet for user {interaction.user.id} in guild {interaction.guild_id}")
+            logger.info(f"Bet data: {bet_data}")
+            
+            # Get bet service from bot
+            bet_service = getattr(interaction.client, "bet_service", None)
+            if not bet_service:
+                logger.error("BetService not found on bot instance")
+                return False
+            
+            # Create the bet using BetService
+            bet_serial = await bet_service.create_player_prop_bet(
+                guild_id=interaction.guild_id,
+                user_id=interaction.user.id,
+                league=bet_data["league"],
+                sport=bet_data["sport"],
+                player_name=bet_data["player_name"],
+                team_name=bet_data["team_name"],
+                prop_type=bet_data["prop_type"],
+                line_value=bet_data["line_value"],
+                bet_direction=bet_data["bet_direction"],
+                odds=bet_data["odds"],
+                units=0.0,  # Default units value
+                game_id=bet_data.get("game_id"),
+                confirmed=0,  # Not confirmed until units are set
+            )
+            
+            if bet_serial:
+                logger.info(f"Player prop bet created successfully with bet_serial: {bet_serial}")
+                
+                # Add player to search cache for future searches
+                await self.player_search_service.add_player_to_cache(
                     bet_data["player_name"],
                     bet_data["team_name"],
                     bet_data["league"],
                     bet_data["sport"],
-                    bet_data["prop_type"],
-                    bet_data["line_value"],
-                    bet_data["bet_direction"],
-                    bet_data["odds"],
-                    bet_data["game_id"],
-                    "pending",
-                ),
-            )
-
-            # Add player to search cache for future searches
-            await self.player_search_service.add_player_to_cache(
-                bet_data["player_name"],
-                bet_data["team_name"],
-                bet_data["league"],
-                bet_data["sport"],
-            )
-
-            return True
+                )
+                
+                return True
+            else:
+                logger.error("Failed to create player prop bet - bet_serial is None")
+                return False
 
         except Exception as e:
             logger.error(f"Error creating player prop bet: {e}")
+            logger.error(f"Exception type: {type(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return False
 
     async def _show_units_selection(self, interaction: discord.Interaction, bet_data: dict):
@@ -434,30 +440,43 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
     async def _update_bet_with_units(self, interaction: discord.Interaction, bet_data: dict, units: float):
         """Update the bet with units, then show final confirmation."""
         try:
-            # Update the bet in the database with units
-            query = """
-                UPDATE bets 
-                SET units = %s, status = 'active'
-                WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' 
-                AND player_name = %s AND player_prop_type = %s AND player_prop_line = %s
-                AND player_prop_direction = %s AND odds = %s AND game_id = %s
-                ORDER BY created_at DESC LIMIT 1
-            """
-
-            await self.db_manager.execute(
-                query,
-                (
-                    units,
-                    interaction.user.id,
-                    interaction.guild_id,
-                    bet_data["player_name"],
-                    bet_data["prop_type"],
-                    bet_data["line_value"],
-                    bet_data["bet_direction"],
-                    bet_data["odds"],
-                    bet_data["game_id"],
-                ),
+            logger.info(f"Updating bet with units: {units} for user {interaction.user.id}")
+            
+            # Get bet service from bot
+            bet_service = getattr(interaction.client, "bet_service", None)
+            if not bet_service:
+                logger.error("BetService not found on bot instance")
+                await interaction.response.send_message(
+                    "❌ Error updating bet. Please try again.",
+                    ephemeral=True
+                )
+                return
+            
+            # Get the most recent player prop bet for this user
+            bet_record = await self.db_manager.fetch_one(
+                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
+                (interaction.user.id, interaction.guild_id)
             )
+            
+            if not bet_record:
+                logger.error("No player prop bet found to update")
+                await interaction.response.send_message(
+                    "❌ No bet found to update. Please try again.",
+                    ephemeral=True
+                )
+                return
+            
+            bet_serial = bet_record["bet_serial"]
+            logger.info(f"Updating bet_serial: {bet_serial} with units: {units}")
+            
+            # Update the bet using BetService
+            await bet_service.update_bet(
+                bet_serial=bet_serial,
+                units=units,
+                status="active"
+            )
+            
+            logger.info(f"Bet updated successfully")
 
             # Show channel selection
             await self._show_channel_selection(interaction, bet_data, units)
@@ -569,22 +588,18 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
             
-            # Get bet ID from database
+            # Get bet ID from database using the most recent bet for this user
+            logger.info(f"Retrieving bet_serial for user {interaction.user.id} in guild {interaction.guild_id}")
+            
             bet_record = await self.db_manager.fetch_one(
-                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' AND player_name = %s AND player_prop_type = %s AND player_prop_line = %s AND player_prop_direction = %s AND odds = %s AND game_id = %s ORDER BY created_at DESC LIMIT 1",
-                (
-                    interaction.user.id,
-                    interaction.guild_id,
-                    bet_data["player_name"],
-                    bet_data["prop_type"],
-                    bet_data["line_value"],
-                    bet_data["bet_direction"],
-                    bet_data["odds"],
-                    bet_data["game_id"],
-                ),
+                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
+                (interaction.user.id, interaction.guild_id)
             )
+            
+            logger.info(f"Bet record found: {bet_record}")
 
             bet_id = str(bet_record.get("bet_serial", "")) if bet_record else ""
+            logger.info(f"Retrieved bet_serial: {bet_id} for player prop bet")
             timestamp = datetime.now(timezone.utc)
 
             # Generate the bet slip image
@@ -592,7 +607,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 player_name=bet_data["player_name"],
                 team_name=bet_data.get("team_name", "Team"),
                 league=bet_data.get("league", "N/A"),
-                line=f"{bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}",
+                line=f"{bet_data['bet_direction'].upper()} {bet_data['line_value']}",
+                prop_type=bet_data["prop_type"],
                 units=units,
                 output_path=None,
                 bet_id=bet_id,
@@ -626,14 +642,33 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     from utils.image_url_converter import convert_image_path_to_url
                     webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
 
-                # Post to channel
-                await channel.send(file=image_file)
+                # Get webhook for the channel
+                webhooks = await channel.webhooks()
+                webhook = None
+                
+                # Find existing webhook or create new one
+                for existing_webhook in webhooks:
+                    if existing_webhook.name == "Bet Tracking AI":
+                        webhook = existing_webhook
+                        break
+                
+                if not webhook:
+                    webhook = await channel.create_webhook(name="Bet Tracking AI")
 
-                # Update bet with channel_id
-                await self.db_manager.execute(
-                    "UPDATE bets SET channel_id = %s WHERE bet_serial = %s",
-                    (channel_id, bet_id)
+                # Post to channel using webhook
+                await webhook.send(
+                    file=image_file,
+                    username=webhook_username,
+                    avatar_url=webhook_avatar_url
                 )
+
+                # Update bet with channel_id using BetService
+                bet_service = getattr(interaction.client, "bet_service", None)
+                if bet_service and bet_id:
+                    await bet_service.update_bet(
+                        bet_serial=int(bet_id),
+                        channel_id=channel_id
+                    )
 
                 # Show success message
                 await interaction.response.edit_message(

@@ -175,6 +175,7 @@ class PlayerPropImageGenerator:
         team_name,
         league,
         line,
+        prop_type,
         units,
         output_path=None,
         bet_id=None,
@@ -228,9 +229,10 @@ class PlayerPropImageGenerator:
         sport_category = get_sport_category_for_path(league_upper)
         league_logo_path = f"bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.png"
         try:
-            league_logo = (
-                Image.open(league_logo_path).convert("RGBA").resize(logo_display_size)
-            )
+            league_logo_original = Image.open(league_logo_path).convert("RGBA")
+            # Maintain aspect ratio when resizing
+            league_logo_original.thumbnail(logo_display_size, Image.Resampling.LANCZOS)
+            league_logo = league_logo_original
         except Exception:
             league_logo = None
         # Get proper league display name
@@ -289,14 +291,15 @@ class PlayerPropImageGenerator:
         header_bbox = font_bold.getbbox(header_text)
         header_w = header_bbox[2] - header_bbox[0]
         header_h = header_bbox[3] - header_bbox[1]
-        logo_w = logo_display_size[0] if league_logo else 0
+        logo_w = league_logo.size[0] if league_logo else 0
+        logo_h = league_logo.size[1] if league_logo else 0
         gap = 12 if league_logo else 0
         total_header_w = logo_w + gap + header_w
-        block_h = max(logo_display_size[1], header_h)
+        block_h = max(logo_h, header_h)
         block_x = (image_width - total_header_w) // 2
         block_y = 25
         if league_logo:
-            logo_y = block_y + (block_h - logo_display_size[1]) // 2
+            logo_y = block_y + (block_h - logo_h) // 2
             text_y = block_y + (block_h - header_h) // 2
             image.paste(league_logo, (block_x, logo_y), league_logo)
             text_x = block_x + logo_w + gap
@@ -319,19 +322,23 @@ class PlayerPropImageGenerator:
             team_name, league, guild_id
         )
         if team_logo:
-            team_logo_resized = team_logo.convert("RGBA").resize(logo_size)
-            team_logo_x = int(team_section_center_x - logo_size[0] // 2)
-            image.paste(team_logo_resized, (team_logo_x, y_base), team_logo_resized)
+            team_logo_copy = team_logo.convert("RGBA").copy()
+            team_logo_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
+            team_logo_x = int(team_section_center_x - team_logo_copy.size[0] // 2)
+            team_logo_y = int(y_base + (logo_size[1] - team_logo_copy.size[1]) // 2)
+            image.paste(team_logo_copy, (team_logo_x, team_logo_y), team_logo_copy)
 
         # Player image (right)
         player_image, display_name = PlayerPropImageGenerator._load_player_image(
             player_name, team_name, league, guild_id
         )
         if player_image:
-            player_image_resized = player_image.convert("RGBA").resize(logo_size)
-            player_image_x = int(player_section_center_x - logo_size[0] // 2)
+            player_image_copy = player_image.convert("RGBA").copy()
+            player_image_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
+            player_image_x = int(player_section_center_x - player_image_copy.size[0] // 2)
+            player_image_y = int(y_base + (logo_size[1] - player_image_copy.size[1]) // 2)
             image.paste(
-                player_image_resized, (player_image_x, y_base), player_image_resized
+                player_image_copy, (player_image_x, player_image_y), player_image_copy
             )
 
         # Team name (left, white)
@@ -358,10 +365,58 @@ class PlayerPropImageGenerator:
             anchor="lt",
         )
 
-        # Line (centered below)
+        # Prop type (centered below player name)
+        prop_acronyms = {
+            "points": "PTS",
+            "rebounds": "REB", 
+            "assists": "AST",
+            "steals": "STL",
+            "blocks": "BLK",
+            "turnovers": "TO",
+            "three_pointers_made": "3PM",
+            "field_goals_made": "FGM",
+            "field_goals_attempted": "FGA",
+            "free_throws_made": "FTM",
+            "free_throws_attempted": "FTA",
+            "runs_batted_in": "RBI",
+            "hits": "H",
+            "home_runs": "HR",
+            "stolen_bases": "SB",
+            "walks": "BB",
+            "strikeouts": "SO",
+            "earned_runs": "ER",
+            "innings_pitched": "IP",
+            "wins": "W",
+            "saves": "SV",
+            "goals": "G",
+            "shots": "S",
+            "passes": "P",
+            "tackles": "T",
+            "interceptions": "INT",
+            "yards": "YDS",
+            "touchdowns": "TD",
+            "receptions": "REC",
+            "carries": "CAR",
+            "passing_yards": "PYDS",
+            "rushing_yards": "RYDS",
+            "receiving_yards": "REYDS",
+        }
+        
+        prop_display = prop_acronyms.get(prop_type.lower(), prop_type.upper())
+        prop_w, prop_h = font_line.getbbox(prop_display)[2:]
+        prop_y = team_name_y + 16
+        draw.text(
+            ((image_width - prop_w) // 2, prop_y),
+            prop_display,
+            font=font_line,
+            fill="white",
+            anchor="lt",
+        )
+
+        # Line (centered below prop type)
         line_text = str(line)
         line_w, line_h = font_line.getbbox(line_text)[2:]
-        line_y = team_name_y + 32
+        line_y = prop_y + prop_h + 8
         draw.text(
             ((image_width - line_w) // 2, line_y),
             line_text,
@@ -464,7 +519,13 @@ class PlayerPropImageGenerator:
         # Footer (bet id and timestamp)
         footer_padding = 12
         footer_y = image_height - footer_padding - font_footer.size
-        bet_id_text = f"Bet #{bet_id}" if bet_id else ""
+        
+        # Ensure bet_id is properly formatted
+        if bet_id and str(bet_id).strip():
+            bet_id_text = f"Bet #{str(bet_id).strip()}"
+        else:
+            bet_id_text = ""
+            
         if timestamp:
             if isinstance(timestamp, str):
                 timestamp_text = timestamp
@@ -472,17 +533,21 @@ class PlayerPropImageGenerator:
                 timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC")
         else:
             timestamp_text = ""
+            
         # Draw bet ID bottom left
-        draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
+        if bet_id_text:
+            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
+            
         # Draw timestamp bottom right
-        ts_bbox = font_footer.getbbox(timestamp_text)
-        ts_width = ts_bbox[2] - ts_bbox[0]
-        draw.text(
-            (image_width - padding - ts_width, footer_y),
-            timestamp_text,
-            font=font_footer,
-            fill="#888888",
-        )
+        if timestamp_text:
+            ts_bbox = font_footer.getbbox(timestamp_text)
+            ts_width = ts_bbox[2] - ts_bbox[0]
+            draw.text(
+                (image_width - padding - ts_width, footer_y),
+                timestamp_text,
+                font=font_footer,
+                fill="#888888",
+            )
 
         # Save or return as bytes
         if output_path:

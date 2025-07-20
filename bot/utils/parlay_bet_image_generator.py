@@ -136,19 +136,29 @@ class ParlayBetImageGenerator:
             # Footer (bet id and timestamp)
             footer_padding = 12
             footer_y = int(image_height - footer_padding - self.font_mini.size)
-            bet_id_text = f"Bet #{bet_id}" if bet_id else ""
+            
+            # Ensure bet_id is properly formatted
+            if bet_id and str(bet_id).strip():
+                bet_id_text = f"Bet #{str(bet_id).strip()}"
+            else:
+                bet_id_text = ""
+                
             timestamp_text = bet_datetime if bet_datetime else ""
+            
             # Draw bet ID bottom left
-            draw.text((32, footer_y), bet_id_text, font=self.font_mini, fill="#888888")
+            if bet_id_text:
+                draw.text((32, footer_y), bet_id_text, font=self.font_mini, fill="#888888")
+                
             # Draw timestamp bottom right
-            ts_bbox = self.font_mini.getbbox(timestamp_text)
-            ts_width = ts_bbox[2] - ts_bbox[0]
-            draw.text(
-                (int(image_width - 32 - ts_width), footer_y),
-                timestamp_text,
-                font=self.font_mini,
-                fill="#888888",
-            )
+            if timestamp_text:
+                ts_bbox = self.font_mini.getbbox(timestamp_text)
+                ts_width = ts_bbox[2] - ts_bbox[0]
+                draw.text(
+                    (int(image_width - 32 - ts_width), footer_y),
+                    timestamp_text,
+                    font=self.font_mini,
+                    fill="#888888",
+                )
 
         if output_path:
             image.save(output_path)

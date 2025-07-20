@@ -416,6 +416,104 @@ class BetService:
             )
             return None
 
+    async def create_player_prop_bet(
+        self,
+        guild_id: int,
+        user_id: int,
+        league: str,
+        sport: str,
+        player_name: str,
+        team_name: str,
+        prop_type: str,
+        line_value: float,
+        bet_direction: str,
+        odds: str,
+        units: float = 0.0,
+        game_id: Optional[str] = None,
+        channel_id: Optional[int] = None,
+        confirmed: int = 0,
+    ) -> Optional[int]:
+        """Create a player prop bet, populating all relevant fields based on the schema."""
+        logger.info(
+            f"[BET INSERT] Attempting to create player prop bet with args: guild_id={guild_id}, user_id={user_id}, league={league}, sport={sport}, player_name={player_name}, team_name={team_name}, prop_type={prop_type}, line_value={line_value}, bet_direction={bet_direction}, odds={odds}, units={units}, game_id={game_id}, channel_id={channel_id}, confirmed={confirmed}"
+        )
+        try:
+            # Convert odds to float for storage
+            try:
+                odds_float = float(odds)
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid odds format: {odds}, storing as string")
+                odds_float = None
+
+            # Create bet_details JSON
+            internal_bet_details_dict = {
+                "player_name": player_name,
+                "team_name": team_name,
+                "prop_type": prop_type,
+                "line_value": line_value,
+                "bet_direction": bet_direction,
+                "odds": odds,
+                "game_id": game_id,
+                "sport": sport
+            }
+            bet_details_json = json.dumps(internal_bet_details_dict)
+            
+            query = """
+                INSERT INTO bets (
+                    guild_id, user_id, league, bet_type, player_prop, player_name,
+                    team_name, sport, player_prop_type, player_prop_line,
+                    player_prop_direction, odds, game_id, status, units, bet_details,
+                    channel_id, confirmed
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+            args = (
+                guild_id,
+                user_id,
+                league,
+                "player_prop",
+                "true",  # player_prop flag
+                player_name,
+                team_name,
+                sport,
+                prop_type,
+                line_value,
+                bet_direction,
+                odds_float,
+                game_id,
+                "pending",
+                units,
+                bet_details_json,
+                channel_id,
+                confirmed,
+            )
+            logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
+            rowcount, last_id = await self.db_manager.execute(query, args)
+            logger.info(
+                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
+            )
+            if (
+                rowcount is not None
+                and rowcount > 0
+                and last_id is not None
+                and last_id > 0
+            ):
+                logger.info(
+                    f"Player prop bet created successfully with bet_serial: {last_id}"
+                )
+                return last_id
+            else:
+                logger.error(
+                    f"Failed to create player prop bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
+                )
+                return None
+        except Exception as e:
+            logger.error(
+                f"[BET INSERT] Exception during player prop bet insert: {e}", exc_info=True
+            )
+            return None
+
     def _calculate_parlay_odds(self, legs: List[Dict]) -> float:
         """Calculate total American odds for a parlay bet from American odds legs."""
         if not legs:

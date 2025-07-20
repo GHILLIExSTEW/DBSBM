@@ -568,19 +568,29 @@ class GameLineImageGenerator:
         # Footer (bet id and timestamp)
         footer_padding = 12
         footer_y = image_height - footer_padding - font_footer.size
-        bet_id_text = f"Bet #{bet_id}" if bet_id else ""
+        
+        # Ensure bet_id is properly formatted
+        if bet_id and str(bet_id).strip():
+            bet_id_text = f"Bet #{str(bet_id).strip()}"
+        else:
+            bet_id_text = ""
+            
         timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC") if timestamp else ""
+        
         # Draw bet ID bottom left
-        draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
+        if bet_id_text:
+            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
+            
         # Draw timestamp bottom right
-        ts_bbox = font_footer.getbbox(timestamp_text)
-        ts_width = ts_bbox[2] - ts_bbox[0]
-        draw.text(
-            (image_width - padding - ts_width, footer_y),
-            timestamp_text,
-            font=font_footer,
-            fill="#888888",
-        )
+        if timestamp_text:
+            ts_bbox = font_footer.getbbox(timestamp_text)
+            ts_width = ts_bbox[2] - ts_bbox[0]
+            draw.text(
+                (image_width - padding - ts_width, footer_y),
+                timestamp_text,
+                font=font_footer,
+                fill="#888888",
+            )
 
         # Save or return as bytes
         if output_path:
