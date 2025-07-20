@@ -504,8 +504,9 @@ class ParlayPlayerSearchView(View):
     ):
         """Show prop type selection after player is chosen."""
         try:
-            # Get prop templates for this league
+            # Get prop templates and groups for this league
             prop_templates = get_prop_templates_for_league(self.league)
+            prop_groups = get_prop_groups_for_league(self.league)
 
             if not prop_templates:
                 await interaction.response.send_message(
@@ -513,21 +514,98 @@ class ParlayPlayerSearchView(View):
                 )
                 return
 
-            # Create prop type options
-            options = []
-            for prop_type, template in prop_templates.items():
-                options.append(
+            # Store selected player for later use
+            self.selected_player = player
+            self.prop_templates = prop_templates
+
+            # Create category options
+            category_options = []
+            for category_name, prop_types in prop_groups.items():
+                # Count props in this category
+                prop_count = len(prop_types)
+                category_options.append(
                     SelectOption(
-                        label=prop_type.title(),
-                        value=prop_type,
-                        description=f"{template.min_value}-{template.max_value} {template.unit}",
+                        label=f"{category_name} ({prop_count} props)",
+                        value=category_name,
+                        description=f"Select from {prop_count} {category_name.lower()} props",
                     )
                 )
 
-            # Create prop type selection dropdown
+            # Create category selection dropdown
+            category_select = Select(
+                placeholder="Select a category...",
+                options=category_options,
+                min_values=1,
+                max_values=1,
+            )
+
+            async def category_callback(interaction: Interaction):
+                selected_category = category_select.values[0]
+                await self._show_props_for_category(interaction, selected_category)
+
+            category_select.callback = category_callback
+
+            # Create new view with category selection
+            view = View(timeout=300)
+            view.add_item(category_select)
+            view.add_item(Button(label="Back", style=ButtonStyle.secondary))
+
+            await interaction.response.edit_message(
+                content=f"**Select category for {player.player_name}:**\n"
+                f"Choose a stat category to see available props:",
+                view=view
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing prop type selection: {e}")
+            await interaction.response.send_message(
+                "❌ Error showing prop types. Please try again.", ephemeral=True
+            )
+
+    async def _show_props_for_category(
+        self, interaction: Interaction, category_name: str
+    ):
+        """Show prop types for a specific category."""
+        try:
+            # Get prop types for this category
+            prop_groups = get_prop_groups_for_league(self.league)
+            category_props = prop_groups.get(category_name, [])
+            
+            if not category_props:
+                await interaction.response.send_message(
+                    f"No props found in {category_name} category.", ephemeral=True
+                )
+                return
+
+            # Create prop options for this category
+            prop_options = []
+            for prop_type in category_props:
+                template = self.prop_templates.get(prop_type)
+                if template:
+                    # Format the range nicely
+                    range_text = f"{template.min_value}-{template.max_value} {template.unit}"
+                    if template.min_value == 0.0:
+                        range_text = f"0-{template.max_value} {template.unit}"
+                    
+                    # Limit description to 100 characters (Discord limit)
+                    if len(range_text) > 100:
+                        range_text = range_text[:97] + "..."
+                    
+                    # Limit label to 100 characters (Discord limit)
+                    label = template.label[:100]
+                    
+                    prop_options.append(
+                        SelectOption(
+                            label=label,
+                            value=prop_type,
+                            description=range_text,
+                        )
+                    )
+
+            # Create prop selection dropdown
             prop_select = Select(
-                placeholder="Select prop type...",
-                options=options,
+                placeholder=f"Select {category_name.lower()} prop...",
+                options=prop_options,
                 min_values=1,
                 max_values=1,
             )
@@ -541,25 +619,27 @@ class ParlayPlayerSearchView(View):
                 )
 
                 # Pre-fill player name
-                modal.player_search.default = player.player_name
+                modal.player_search.default = self.selected_player.player_name
 
                 await interaction.response.send_modal(modal)
 
             prop_select.callback = prop_callback
 
-            # Create new view with prop type selection
+            # Create new view with prop selection
             view = View(timeout=300)
             view.add_item(prop_select)
-            view.add_item(Button(label="Back", style=ButtonStyle.secondary))
+            view.add_item(Button(label="Back to Categories", style=ButtonStyle.secondary))
 
             await interaction.response.edit_message(
-                content=f"**Select prop type for {player.player_name}:**", view=view
+                content=f"**{category_name} Props for {self.selected_player.player_name}:**\n"
+                f"Choose the specific stat you want to bet on:",
+                view=view
             )
 
         except Exception as e:
-            logger.error(f"Error showing prop type selection: {e}")
+            logger.error(f"Error showing props for category: {e}")
             await interaction.response.send_message(
-                "❌ Error showing prop types. Please try again.", ephemeral=True
+                "❌ Error showing props for category. Please try again.", ephemeral=True
             )
 
 
