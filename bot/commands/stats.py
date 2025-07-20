@@ -16,10 +16,10 @@ from .admin import require_registered_guild
 
 # Import necessary services and utils
 try:
-    from ..utils.stats_image_generator import StatsImageGenerator
+    from utils.stats_image_generator import StatsImageGenerator
 except ImportError:
     try:
-        from utils.stats_image_generator import StatsImageGenerator
+        from ..utils.stats_image_generator import StatsImageGenerator
     except ImportError:
         StatsImageGenerator = None
 
