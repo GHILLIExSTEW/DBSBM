@@ -203,16 +203,15 @@ class ParlayBetImageGenerator:
         )
 
         if bet_type == "game_line":
-            # Centered layout: [Home Logo+Name]   VS   [Away Logo+Name]
-            center_x = (card_x0 + card_x1) // 2
-            team_col_width = 200  # Increased from 180 to give more space
-            vs_width = draw.textlength("VS", font=self.font_vs_small)
-            spacing = 32
-            # Home team position
-            home_col_x = center_x - team_col_width // 2 - spacing // 2 - vs_width // 2
-            away_col_x = center_x + spacing // 2 + vs_width // 2
+            # Horizontal layout: Team | VS | Opponent | Line | Odds
             logo_y = card_y + 20
             name_y = logo_y + logo_size[1] + 6
+            line_y = name_y + 38
+            
+            # Calculate positions for horizontal layout
+            left_margin = card_x0 + 20
+            right_margin = card_x1 - 20
+            available_width = right_margin - left_margin
             
             # Helper function to truncate text if needed
             def truncate_text(text, max_width, font):
@@ -225,62 +224,52 @@ class ParlayBetImageGenerator:
                         return truncated
                 return text[:10] + "..." if len(text) > 10 else text
             
-            # Home logo and name
-            home_logo = self._load_team_logo(home_team, league)
-            if home_logo:
-                home_logo = home_logo.convert("RGBA").resize(logo_size)
-                logo_x = home_col_x + team_col_width // 2 - logo_size[0] // 2
-                image.paste(home_logo, (int(logo_x), int(logo_y)), home_logo)
+            # Team (left-aligned)
+            team_logo = self._load_team_logo(home_team, league)
+            if team_logo:
+                team_logo = team_logo.convert("RGBA").resize(logo_size)
+                image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
             
-            # Truncate home team name if needed
-            home_team_display = truncate_text(home_team, team_col_width - 20, team_font)
-            home_name_w = draw.textlength(home_team_display, font=team_font)
-            home_name_x = home_col_x + team_col_width // 2 - home_name_w // 2
-            home_color = (
-                "#00ff66"
-                if selected and selected.lower() == home_team.lower()
-                else "#ffffff"
-            )
-            draw.text(
-                (int(home_name_x), int(name_y)),
-                home_team_display,
-                font=team_font,
-                fill=home_color,
-            )
+            team_display = truncate_text(home_team, 120, team_font)
+            team_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
+            draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill=team_color)
             
-            # Away logo and name
-            away_logo = self._load_team_logo(away_team, league)
-            if away_logo:
-                away_logo = away_logo.convert("RGBA").resize(logo_size)
-                logo_x = away_col_x + team_col_width // 2 - logo_size[0] // 2
-                image.paste(away_logo, (int(logo_x), int(logo_y)), away_logo)
-            
-            # Truncate away team name if needed
-            away_team_display = truncate_text(away_team, team_col_width - 20, team_font)
-            away_name_w = draw.textlength(away_team_display, font=team_font)
-            away_name_x = away_col_x + team_col_width // 2 - away_name_w // 2
-            away_color = (
-                "#00ff66"
-                if selected and selected.lower() == away_team.lower()
-                else "#ffffff"
-            )
-            draw.text(
-                (int(away_name_x), int(name_y)),
-                away_team_display,
-                font=team_font,
-                fill=away_color,
-            )
-            # VS
+            # VS (to right of team)
             vs_text = "VS"
             vs_font = self.font_vs_small
-            vs_x = center_x - vs_width // 2
+            vs_width = draw.textlength(vs_text, font=vs_font)
+            vs_x = left_margin + 140  # Position after team
             vs_y = logo_y + logo_size[1] // 2 - self.font_vs_small.size // 2
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
-            # Line (below names, centered)
-            line_y = name_y + 38
+            
+            # Opponent (to right of VS)
+            opponent_logo = self._load_team_logo(away_team, league)
+            if opponent_logo:
+                opponent_logo = opponent_logo.convert("RGBA").resize(logo_size)
+                opponent_logo_x = vs_x + vs_width + 20
+                image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo)
+            
+            opponent_display = truncate_text(away_team, 120, team_font)
+            opponent_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
+            opponent_name_x = opponent_logo_x
+            draw.text((int(opponent_name_x), int(name_y)), opponent_display, font=team_font, fill=opponent_color)
+            
+            # Line (to right of opponent)
             line_w = draw.textlength(line, font=line_font)
-            line_x = center_x - line_w // 2
+            line_x = opponent_name_x + 140  # Position after opponent
             draw.text((int(line_x), int(line_y)), line, font=line_font, fill="#ffffff")
+            
+            # Odds (right-aligned)
+            odds_text = odds if odds else "-"
+            # Format odds with sign
+            try:
+                odds_val = int(float(odds_text))
+                odds_text = f"+{odds_val}" if odds_val > 0 else str(odds_val)
+            except Exception:
+                pass
+            odds_text_w = draw.textlength(odds_text, font=odds_font)
+            odds_text_x = right_margin - odds_text_w
+            draw.text((int(odds_text_x), int(line_y)), odds_text, font=odds_font, fill="#00d8ff")
         elif bet_type == "player_prop":
             margin_left = card_x0 + 24
             name_y = card_y + 32
@@ -297,29 +286,7 @@ class ParlayBetImageGenerator:
             # Line (below player name)
             line_y = name_y + 38
             draw.text((player_name_x, line_y), line, font=line_font, fill="#ffffff")
-        # Odds badge (right side, vertically centered)
-        badge_w = 90
-        badge_h = 48
-        badge_x = card_x1 - badge_w - 32
-        badge_y = card_y + card_height // 2 - badge_h // 2
-        draw.rounded_rectangle(
-            [(badge_x, badge_y), (badge_x + badge_w, badge_y + badge_h)],
-            radius=18,
-            fill=badge_color,
-        )
-        odds_text = odds if odds else "-"
-        # Format odds with sign
-        try:
-            odds_val = int(float(odds_text))
-            odds_text = f"+{odds_val}" if odds_val > 0 else str(odds_val)
-        except Exception:
-            pass
-        odds_text_w = draw.textlength(odds_text, font=odds_font)
-        odds_text_x = badge_x + badge_w // 2 - odds_text_w // 2
-        odds_text_y = badge_y + badge_h // 2 - self.font_bold.size // 2 + 4
-        draw.text(
-            (odds_text_x, odds_text_y), odds_text, font=odds_font, fill=badge_text_color
-        )
+        # Odds are now displayed inline with the layout, so no separate badge needed
 
     def _draw_odds_and_units(
         self,
