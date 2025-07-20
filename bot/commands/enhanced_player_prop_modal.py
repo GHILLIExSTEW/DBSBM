@@ -401,7 +401,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             # Create units selection dropdown
             units_select = discord.ui.Select(
-                placeholder="Select your bet amount...",
+                placeholder="Select unit amount for bet...",
                 options=units_options,
                 min_values=1,
                 max_values=1,
@@ -410,8 +410,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             async def units_callback(units_interaction: discord.Interaction):
                 selected_units = float(units_select.values[0])
                 
-                # Update the bet with units
-                await self._update_bet_with_units(units_interaction, bet_data, selected_units)
+                # Generate preview image with selected units
+                await self._show_units_preview(units_interaction, bet_data, selected_units)
 
             units_select.callback = units_callback
 
@@ -426,7 +426,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 f"**Prop:** {bet_data['prop_type']}\n"
                 f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
                 f"**Units:** 1.0\n\n"
-                f"**Select your bet amount:**",
+                f"**Select unit amount for bet:**",
                 view=view
             )
 
@@ -434,6 +434,98 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             logger.error(f"Error showing units selection: {e}")
             await interaction.response.send_message(
                 "❌ Error showing units selection. Please try again.",
+                ephemeral=True
+            )
+
+    async def _show_units_preview(self, interaction: discord.Interaction, bet_data: dict, units: float):
+        """Show preview image after unit selection."""
+        try:
+            import io
+            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+            from discord import File
+            from datetime import datetime, timezone
+            
+            # Generate preview image
+            generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
+            
+            # Format the line value properly
+            line_value = bet_data.get('line_value', 'N/A')
+            if isinstance(line_value, (int, float)):
+                line_value = str(line_value)
+            
+            # Format the prop type
+            prop_type = bet_data.get('prop_type', 'N/A')
+            prop_type = prop_type.replace('_', ' ').title()
+            
+            # Generate the image
+            image_bytes = generator.generate_player_prop_bet_image(
+                player_name=bet_data['player_name'],
+                team_name=bet_data['team_name'],
+                league=bet_data['league'],
+                line=line_value,
+                prop_type=prop_type,
+                units=units,
+                output_path=None,
+                bet_id="PREVIEW",
+                timestamp=datetime.now(timezone.utc),
+                guild_id=str(interaction.guild_id),
+                odds=bet_data.get('odds', 0.0),
+                units_display_mode="auto",
+                display_as_risk=False,
+            )
+            
+            if image_bytes:
+                # Create file object for Discord
+                file = File(io.BytesIO(image_bytes), filename="player_prop_preview.png")
+                
+                # Create confirmation buttons
+                confirm_button = discord.ui.Button(
+                    label="✅ Confirm Bet",
+                    style=discord.ButtonStyle.success,
+                    custom_id="confirm_bet"
+                )
+                
+                back_button = discord.ui.Button(
+                    label="🔄 Change Units",
+                    style=discord.ButtonStyle.secondary,
+                    custom_id="change_units"
+                )
+                
+                async def confirm_callback(confirm_interaction: discord.Interaction):
+                    await self._update_bet_with_units(confirm_interaction, bet_data, units)
+                
+                async def back_callback(back_interaction: discord.Interaction):
+                    await self._show_units_selection(back_interaction, bet_data)
+                
+                confirm_button.callback = confirm_callback
+                back_button.callback = back_callback
+                
+                # Create view with buttons
+                view = discord.ui.View(timeout=300)
+                view.add_item(confirm_button)
+                view.add_item(back_button)
+                
+                await interaction.response.edit_message(
+                    content=f"🎯 **Player Prop Bet Preview**\n\n"
+                    f"**Player:** {bet_data['player_name']}\n"
+                    f"**Prop:** {prop_type}\n"
+                    f"**Bet:** {bet_data['bet_direction'].upper()} {line_value} @ {bet_data.get('odds', 'N/A')}\n"
+                    f"**Units:** {units}\n\n"
+                    f"**Preview your bet slip below:**",
+                    view=view,
+                    file=file
+                )
+            else:
+                # Fallback if image generation fails
+                await interaction.response.send_message(
+                    "❌ Error generating preview image. Please try again.",
+                    ephemeral=True
+                )
+                
+        except Exception as e:
+            logger.error(f"Error showing units preview: {e}")
+            await interaction.response.send_message(
+                "❌ Error showing preview. Please try again.",
                 ephemeral=True
             )
 
@@ -473,7 +565,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             await bet_service.update_bet(
                 bet_serial=bet_serial,
                 units=units,
-                status="active"
+                status="pending"
             )
             
             logger.info(f"Bet updated successfully")
@@ -696,38 +788,62 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
 
 class PlayerPropSearchView(discord.ui.View):
-    """View for player search with autocomplete."""
+    """View for searching and selecting players with pagination."""
 
     def __init__(self, bot, db_manager, league: str, game_id: str, team_name: str):
-        super().__init__(timeout=60)
+        super().__init__(timeout=300)
         self.bot = bot
         self.db_manager = db_manager
         self.league = league
         self.game_id = game_id
         self.team_name = team_name
         self.player_search_service = PlayerSearchService(db_manager)
+        
+        # Pagination state
+        self.all_players = []
+        self.current_page = 0
+        self.players_per_page = 22  # Discord allows 25 total (24 + 1 placeholder)
 
     @discord.ui.button(label="Search Players", style=discord.ButtonStyle.primary)
     async def search_players(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        """Search for players using the enhanced search service."""
+        """Search for players using the enhanced search service with pagination."""
         try:
-            # Show popular players for this league and team directly
-            search_results = await self.player_search_service.get_popular_players(
-                self.league, self.team_name, limit=25
+            # Load all players for this league and team
+            self.all_players = await self.player_search_service.get_popular_players(
+                self.league, self.team_name, limit=100  # Get more players for pagination
             )
 
-            if not search_results:
+            if not self.all_players:
                 await interaction.response.send_message(
                     f"No players found for {self.team_name}. Please try a different team.",
                     ephemeral=True,
                 )
                 return
 
+            # Reset to first page and show players
+            self.current_page = 0
+            await self._show_current_page(interaction)
+
+        except Exception as e:
+            logger.error(f"Error in player search: {e}")
+            await interaction.response.send_message(
+                f"❌ Error searching for {self.team_name} players. Please try again.",
+                ephemeral=True,
+            )
+
+    async def _show_current_page(self, interaction: discord.Interaction):
+        """Show the current page of players with pagination controls."""
+        try:
+            # Calculate page boundaries
+            start_idx = self.current_page * self.players_per_page
+            end_idx = start_idx + self.players_per_page
+            current_players = self.all_players[start_idx:end_idx]
+
             # Create player selection dropdown
             options = []
-            for result in search_results:
+            for result in current_players:
                 # Add confidence indicator for team library players
                 confidence_indicator = "⭐" if result.confidence > 80 else "🔍"
                 label = f"{confidence_indicator} {result.player_name}"
@@ -751,31 +867,63 @@ class PlayerPropSearchView(discord.ui.View):
 
             async def player_callback(interaction: discord.Interaction):
                 selected_player = player_select.values[0]
-
                 # Show prop type selection
                 await self._show_prop_type_selection(interaction, selected_player)
 
             player_select.callback = player_callback
 
-            # Create new view with player selection
+            # Create pagination buttons
+            prev_button = discord.ui.Button(
+                label="◀️ Previous",
+                style=discord.ButtonStyle.secondary,
+                disabled=self.current_page == 0
+            )
+            
+            next_button = discord.ui.Button(
+                label="Next ▶️",
+                style=discord.ButtonStyle.secondary,
+                disabled=end_idx >= len(self.all_players)
+            )
+
+            async def prev_callback(prev_interaction: discord.Interaction):
+                if self.current_page > 0:
+                    self.current_page -= 1
+                    await self._show_current_page(prev_interaction)
+
+            async def next_callback(next_interaction: discord.Interaction):
+                if end_idx < len(self.all_players):
+                    self.current_page += 1
+                    await self._show_current_page(next_interaction)
+
+            prev_button.callback = prev_callback
+            next_button.callback = next_callback
+
+            # Create view with player selection and pagination
             view = discord.ui.View(timeout=300)
             view.add_item(player_select)
+            view.add_item(prev_button)
+            view.add_item(next_button)
             view.add_item(
                 discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary)
             )
 
+            # Calculate page info
+            total_pages = (len(self.all_players) + self.players_per_page - 1) // self.players_per_page
+            page_info = f"Page {self.current_page + 1} of {total_pages}"
+
             await interaction.response.edit_message(
                 content=f"**{self.team_name} Players:**\n"
                 f"⭐ = High confidence (team library)\n"
-                f"🔍 = Database match\n\n"
+                f"🔍 = Database match\n"
+                f"📄 {page_info} ({len(self.all_players)} total players)\n\n"
                 f"Select a player to continue:",
                 view=view,
             )
 
         except Exception as e:
-            logger.error(f"Error in player search: {e}")
+            logger.error(f"Error showing current page: {e}")
             await interaction.response.send_message(
-                f"❌ Error searching for {self.team_name} players. Please try again.",
+                "❌ Error displaying players. Please try again.",
                 ephemeral=True,
             )
 

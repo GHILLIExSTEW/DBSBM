@@ -315,7 +315,6 @@ class PlayerPropImageGenerator:
         section_width = image_width // 2 - padding * 1.5
         team_section_center_x = padding + section_width // 2
         player_section_center_x = image_width - padding - section_width // 2
-        image_width // 2
 
         # Team logo (left)
         team_logo = PlayerPropImageGenerator._load_team_logo(
