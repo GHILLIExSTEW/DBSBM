@@ -87,6 +87,8 @@ class ChannelSelect(Select):
                 # For now, use user_id as username if not available
                 username = self.parent_view.selected_username
                 profile_image_url = self.parent_view.selected_profile_image_url
+                # Add guild_id to stats_data for fallback image lookup
+                stats_data["guild_id"] = str(interaction.guild_id)
                 img = await image_generator.generate_capper_stats_image(
                     stats_data, username, profile_image_url
                 )
@@ -350,6 +352,8 @@ class StatsView(View):
                 img.save(img_buffer, format="PNG")
                 img_buffer.seek(0)
             else:
+                # Add guild_id to stats_data for fallback image lookup
+                self.stats_data["guild_id"] = str(interaction.guild_id)
                 img: Image.Image = await image_generator.generate_capper_stats_image(
                     self.stats_data, username, profile_image_url
                 )
