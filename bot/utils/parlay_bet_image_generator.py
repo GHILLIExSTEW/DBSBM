@@ -204,7 +204,9 @@ class ParlayBetImageGenerator:
 
         if bet_type == "game_line":
             # Horizontal layout: Team | VS | Opponent | Line | Odds
-            logo_y = card_y + 20
+            # Center everything vertically in the card
+            card_center_y = card_y + card_height // 2
+            logo_y = card_center_y - logo_size[1] // 2
             name_y = logo_y + logo_size[1] + 6
             line_y = name_y + 38
             
@@ -239,7 +241,7 @@ class ParlayBetImageGenerator:
             vs_font = self.font_vs_small
             vs_width = draw.textlength(vs_text, font=vs_font)
             vs_x = left_margin + 140  # Position after team
-            vs_y = logo_y + logo_size[1] // 2 - self.font_vs_small.size // 2
+            vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
             
             # Opponent (to right of VS)
@@ -258,18 +260,6 @@ class ParlayBetImageGenerator:
             line_w = draw.textlength(line, font=line_font)
             line_x = opponent_name_x + 140  # Position after opponent
             draw.text((int(line_x), int(line_y)), line, font=line_font, fill="#ffffff")
-            
-            # Odds (right-aligned)
-            odds_text = odds if odds else "-"
-            # Format odds with sign
-            try:
-                odds_val = int(float(odds_text))
-                odds_text = f"+{odds_val}" if odds_val > 0 else str(odds_val)
-            except Exception:
-                pass
-            odds_text_w = draw.textlength(odds_text, font=odds_font)
-            odds_text_x = right_margin - odds_text_w
-            draw.text((int(odds_text_x), int(line_y)), odds_text, font=odds_font, fill="#00d8ff")
         elif bet_type == "player_prop":
             margin_left = card_x0 + 24
             name_y = card_y + 32
@@ -286,7 +276,29 @@ class ParlayBetImageGenerator:
             # Line (below player name)
             line_y = name_y + 38
             draw.text((player_name_x, line_y), line, font=line_font, fill="#ffffff")
-        # Odds are now displayed inline with the layout, so no separate badge needed
+        # Odds badge (right side, vertically centered)
+        badge_w = 90
+        badge_h = 48
+        badge_x = card_x1 - badge_w - 32
+        badge_y = card_y + card_height // 2 - badge_h // 2
+        draw.rounded_rectangle(
+            [(badge_x, badge_y), (badge_x + badge_w, badge_y + badge_h)],
+            radius=18,
+            fill=badge_color,
+        )
+        odds_text = odds if odds else "-"
+        # Format odds with sign
+        try:
+            odds_val = int(float(odds_text))
+            odds_text = f"+{odds_val}" if odds_val > 0 else str(odds_val)
+        except Exception:
+            pass
+        odds_text_w = draw.textlength(odds_text, font=odds_font)
+        odds_text_x = badge_x + badge_w // 2 - odds_text_w // 2
+        odds_text_y = badge_y + badge_h // 2 - self.font_bold.size // 2 + 4
+        draw.text(
+            (odds_text_x, odds_text_y), odds_text, font=odds_font, fill=badge_text_color
+        )
 
     def _draw_odds_and_units(
         self,
