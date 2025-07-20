@@ -1763,13 +1763,24 @@ class ParlayBetWorkflowView(View):
             await interaction.response.send_modal(modal)
             return
         elif self.current_step == 9:
-            # Show units select
+            # Show units select with default preview
             self.clear_items()
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
             self.add_item(CancelButton(self))
+            
+            # Generate default preview with 1 unit
+            await self._generate_default_preview(interaction)
+            
+            file_to_send = None
+            if self.preview_image_bytes:
+                self.preview_image_bytes.seek(0)
+                file_to_send = File(
+                    self.preview_image_bytes, filename="parlay_preview.png"
+                )
+            
             await self.edit_message_for_current_leg(
-                interaction, content="Select units for your parlay:", view=self
+                interaction, content="Select units for your parlay:", view=self, file=file_to_send
             )
             self.current_step += 1
             return
@@ -1858,6 +1869,71 @@ class ParlayBetWorkflowView(View):
         summary_text += f"\nPost to Channel: {channel_mention}"
         summary_text += "\n\nClick Confirm to place your parlay."
         return summary_text
+
+    async def _generate_default_preview(self, interaction: Interaction):
+        """Generate default preview with 1 unit for initial display."""
+        try:
+            # Get guild settings for units display mode
+            guild_settings = await self.bot.db_manager.fetch_one(
+                "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+                (str(self.original_interaction.guild_id),),
+            )
+            units_display_mode = (
+                guild_settings.get("units_display_mode", "auto")
+                if guild_settings
+                else "auto"
+            )
+
+            generator = ParlayBetImageGenerator(
+                guild_id=self.original_interaction.guild_id
+            )
+            legs = []
+            for leg in self.bet_details.get("legs", []) or []:
+                leg_data = {
+                    "bet_type": leg.get("line_type", "game_line"),
+                    "league": leg.get("league", ""),
+                    "home_team": leg.get("home_team_name", ""),
+                    "away_team": leg.get("away_team_name", ""),
+                    "selected_team": leg.get("team", ""),
+                    "line": leg.get("line", ""),
+                    "odds": leg.get("odds", leg.get("odds_str", "")),
+                }
+                if leg.get("line_type") == "player_prop":
+                    leg_data["player_name"] = leg.get("player_name", "")
+                    leg_data["home_team"] = leg.get("team", "")
+                    leg_data["away_team"] = leg.get("player_name", "")
+                    leg_data["selected_team"] = leg.get("team", "")
+                legs.append(leg_data)
+            
+            if legs is None:
+                legs = []
+            
+            total_odds = self.bet_details.get("total_odds", None)
+            bet_id = str(self.bet_details.get("bet_serial", ""))
+            bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            
+            # Generate preview with 1 unit
+            image_bytes = generator.generate_image(
+                legs=legs,
+                output_path=None,
+                total_odds=total_odds,
+                units=1.0,
+                bet_id=bet_id,
+                bet_datetime=bet_datetime,
+                finalized=True,
+                units_display_mode=units_display_mode,
+                display_as_risk=False,
+            )
+            
+            if image_bytes:
+                self.preview_image_bytes = io.BytesIO(image_bytes)
+                self.preview_image_bytes.seek(0)
+            else:
+                self.preview_image_bytes = None
+                
+        except Exception as e:
+            logger.exception(f"Error generating default parlay preview: {e}")
+            self.preview_image_bytes = None
 
     async def _handle_units_selection(self, interaction: Interaction, units: float):
         self.bet_details["units"] = units

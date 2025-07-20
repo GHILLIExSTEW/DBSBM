@@ -182,11 +182,21 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             max_length=10,
         )
 
+        # Odds input
+        self.odds = discord.ui.TextInput(
+            label="Odds",
+            placeholder="Enter odds (e.g., -110, +150, 2.5)",
+            style=discord.TextStyle.short,
+            required=True,
+            max_length=10,
+        )
+
         # Add components to modal
         self.add_item(self.player_search)
         self.add_item(self.prop_type)
         self.add_item(self.line_value)
         self.add_item(self.bet_direction)
+        self.add_item(self.odds)
 
     async def on_submit(self, interaction: discord.Interaction):
         """Handle modal submission with validation."""
@@ -206,12 +216,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             success = await self._create_player_prop_bet(interaction, bet_data)
 
             if success:
-                await interaction.response.send_message(
-                    f"✅ **Player Prop Bet Created!**\n"
-                    f"**{bet_data['player_name']}** - {bet_data['prop_type']}\n"
-                    f"{bet_data['bet_direction'].upper()} {bet_data['line_value']}",
-                    ephemeral=True,
-                )
+                # Show units selection screen
+                await self._show_units_selection(interaction, bet_data)
             else:
                 await interaction.response.send_message(
                     "❌ **Error creating bet.** Please try again.", ephemeral=True
@@ -276,6 +282,32 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     "error": 'Bet direction must be "over" or "under".',
                 }
 
+            # Validate odds
+            odds_input = self.odds.value.strip()
+            try:
+                # Handle American odds (-110, +150) and decimal odds (2.5)
+                if odds_input.startswith('-') or odds_input.startswith('+'):
+                    # American odds
+                    odds_value = int(odds_input)
+                    if odds_value == 0:
+                        return {
+                            "valid": False,
+                            "error": "Odds cannot be zero. Enter valid odds (e.g., -110, +150).",
+                        }
+                else:
+                    # Decimal odds
+                    odds_value = float(odds_input)
+                    if odds_value <= 1.0:
+                        return {
+                            "valid": False,
+                            "error": "Decimal odds must be greater than 1.0 (e.g., 2.5, 1.5).",
+                        }
+            except ValueError:
+                return {
+                    "valid": False,
+                    "error": "Invalid odds format. Use American odds (-110, +150) or decimal odds (2.5).",
+                }
+
             # All validations passed
             return {
                 "valid": True,
@@ -287,6 +319,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     "prop_type": prop_type,
                     "line_value": line_value,
                     "bet_direction": bet_direction,
+                    "odds": odds_input,
                     "game_id": self.game_id,
                 },
             }
@@ -305,8 +338,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 INSERT INTO bets (
                     user_id, guild_id, bet_type, player_prop, player_name,
                     team_name, league, sport, player_prop_type, player_prop_line,
-                    player_prop_direction, game_id, status, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    player_prop_direction, odds, game_id, status, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             """
 
             await self.db_manager.execute(
@@ -323,6 +356,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     bet_data["prop_type"],
                     bet_data["line_value"],
                     bet_data["bet_direction"],
+                    bet_data["odds"],
                     bet_data["game_id"],
                     "pending",
                 ),
@@ -341,6 +375,111 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
         except Exception as e:
             logger.error(f"Error creating player prop bet: {e}")
             return False
+
+    async def _show_units_selection(self, interaction: discord.Interaction, bet_data: dict):
+        """Show units selection screen after modal submission."""
+        try:
+            # Create units selection options
+            units_options = [
+                discord.SelectOption(label="0.5 Units", value="0.5", description="$50 bet"),
+                discord.SelectOption(label="1 Unit", value="1.0", description="$100 bet"),
+                discord.SelectOption(label="1.5 Units", value="1.5", description="$150 bet"),
+                discord.SelectOption(label="2 Units", value="2.0", description="$200 bet"),
+                discord.SelectOption(label="2.5 Units", value="2.5", description="$250 bet"),
+                discord.SelectOption(label="3 Units", value="3.0", description="$300 bet"),
+                discord.SelectOption(label="4 Units", value="4.0", description="$400 bet"),
+                discord.SelectOption(label="5 Units", value="5.0", description="$500 bet"),
+                discord.SelectOption(label="7.5 Units", value="7.5", description="$750 bet"),
+                discord.SelectOption(label="10 Units", value="10.0", description="$1000 bet"),
+            ]
+
+            # Create units selection dropdown
+            units_select = discord.ui.Select(
+                placeholder="Select your bet amount...",
+                options=units_options,
+                min_values=1,
+                max_values=1,
+            )
+
+            async def units_callback(units_interaction: discord.Interaction):
+                selected_units = float(units_select.values[0])
+                
+                # Calculate bet amount (assuming $100 per unit)
+                bet_amount = selected_units * 100
+                
+                # Update the bet with units and bet amount
+                await self._update_bet_with_units(units_interaction, bet_data, selected_units, bet_amount)
+
+            units_select.callback = units_callback
+
+            # Create view with units selection
+            view = discord.ui.View(timeout=300)
+            view.add_item(units_select)
+
+            # Show bet summary and units selection with default preview
+            await interaction.response.edit_message(
+                content=f"🎯 **Player Prop Bet Summary**\n\n"
+                f"**Player:** {bet_data['player_name']}\n"
+                f"**Prop:** {bet_data['prop_type']}\n"
+                f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
+                f"**Units:** 1.0 (${100:,.0f})\n\n"
+                f"**Select your bet amount:**",
+                view=view
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing units selection: {e}")
+            await interaction.response.send_message(
+                "❌ Error showing units selection. Please try again.",
+                ephemeral=True
+            )
+
+    async def _update_bet_with_units(self, interaction: discord.Interaction, bet_data: dict, units: float, bet_amount: float):
+        """Update the bet with units and bet amount, then show final confirmation."""
+        try:
+            # Update the bet in the database with units and bet amount
+            query = """
+                UPDATE bets 
+                SET units = %s, bet_amount = %s, status = 'active'
+                WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' 
+                AND player_name = %s AND player_prop_type = %s AND player_prop_line = %s
+                AND player_prop_direction = %s AND odds = %s AND game_id = %s
+                ORDER BY created_at DESC LIMIT 1
+            """
+
+            await self.db_manager.execute(
+                query,
+                (
+                    units,
+                    bet_amount,
+                    interaction.user.id,
+                    interaction.guild_id,
+                    bet_data["player_name"],
+                    bet_data["prop_type"],
+                    bet_data["line_value"],
+                    bet_data["bet_direction"],
+                    bet_data["odds"],
+                    bet_data["game_id"],
+                ),
+            )
+
+            # Show final confirmation
+            await interaction.response.edit_message(
+                content=f"✅ **Player Prop Bet Confirmed!**\n\n"
+                f"**Player:** {bet_data['player_name']}\n"
+                f"**Prop:** {bet_data['prop_type']}\n"
+                f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
+                f"**Units:** {units} (${bet_amount:,.0f})\n\n"
+                f"🎉 Your bet has been placed successfully!",
+                view=None
+            )
+
+        except Exception as e:
+            logger.error(f"Error updating bet with units: {e}")
+            await interaction.response.send_message(
+                "❌ Error confirming bet. Please try again.",
+                ephemeral=True
+            )
 
 
 class PlayerPropSearchView(discord.ui.View):
@@ -548,22 +687,57 @@ class PlayerPropSearchView(discord.ui.View):
                 # Store selected prop for later use
                 self.selected_prop_type = selected_prop_type
 
-                # Create view with Create Prop Bet button
-                final_view = discord.ui.View(timeout=300)
-                final_view.add_item(
-                    discord.ui.Button(
-                        label="Create Prop Bet", 
-                        style=discord.ButtonStyle.success,
-                        custom_id="create_prop_bet"
-                    )
-                )
-                final_view.add_item(
-                    discord.ui.Button(
-                        label="Back to Categories", 
-                        style=discord.ButtonStyle.secondary,
-                        custom_id="back_to_categories"
-                    )
-                )
+                # Create a new view class for the final buttons
+                class FinalButtonsView(discord.ui.View):
+                    def __init__(self, parent_view):
+                        super().__init__(timeout=300)
+                        self.parent_view = parent_view
+
+                    @discord.ui.button(label="Create Prop Bet", style=discord.ButtonStyle.success)
+                    async def create_prop_bet(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                        try:
+                            # Check if we have the required data
+                            if not hasattr(self.parent_view, 'selected_player') or not hasattr(self.parent_view, 'selected_prop_type'):
+                                await button_interaction.response.send_message(
+                                    "❌ Error: Missing player or prop selection. Please try again.",
+                                    ephemeral=True
+                                )
+                                return
+
+                            # Create the enhanced player prop modal
+                            modal = EnhancedPlayerPropModal(
+                                self.parent_view.bot, 
+                                self.parent_view.db_manager, 
+                                self.parent_view.league, 
+                                self.parent_view.game_id, 
+                                self.parent_view.team_name
+                            )
+                            
+                            # Pre-fill the player name and prop type
+                            modal.player_search.default = self.parent_view.selected_player
+                            modal.prop_type.default = self.parent_view.selected_prop_type
+                            
+                            await button_interaction.response.send_modal(modal)
+
+                        except Exception as e:
+                            logger.error(f"Error opening player prop modal: {e}")
+                            await button_interaction.response.send_message(
+                                "❌ Error opening bet modal.", ephemeral=True
+                            )
+
+                    @discord.ui.button(label="Back to Categories", style=discord.ButtonStyle.secondary)
+                    async def back_to_categories(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                        try:
+                            # Go back to category selection
+                            await self.parent_view._show_prop_type_selection(button_interaction, self.parent_view.selected_player)
+                        except Exception as e:
+                            logger.error(f"Error going back to categories: {e}")
+                            await button_interaction.response.send_message(
+                                "❌ Error going back to categories.", ephemeral=True
+                            )
+
+                # Create the final view with working buttons
+                final_view = FinalButtonsView(self)
 
                 # Show success message with Create Prop Bet button
                 await interaction.response.edit_message(
@@ -595,54 +769,7 @@ class PlayerPropSearchView(discord.ui.View):
                 ephemeral=True,
             )
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """Handle button interactions."""
-        if interaction.data.get("custom_id") == "create_prop_bet":
-            await self._handle_create_prop_bet(interaction)
-            return True
-        elif interaction.data.get("custom_id") == "back_to_categories":
-            await self._handle_back_to_categories(interaction)
-            return True
-        return True
 
-    async def _handle_create_prop_bet(self, interaction: discord.Interaction):
-        """Handle Create Prop Bet button click."""
-        try:
-            # Check if we have the required data
-            if not hasattr(self, 'selected_player') or not hasattr(self, 'selected_prop_type'):
-                await interaction.response.send_message(
-                    "❌ Error: Missing player or prop selection. Please try again.",
-                    ephemeral=True
-                )
-                return
-
-            # Create the enhanced player prop modal
-            modal = EnhancedPlayerPropModal(
-                self.bot, self.db_manager, self.league, self.game_id, self.team_name
-            )
-            
-            # Pre-fill the player name and prop type
-            modal.player_search.default = self.selected_player
-            modal.prop_type.default = self.selected_prop_type
-            
-            await interaction.response.send_modal(modal)
-
-        except Exception as e:
-            logger.error(f"Error opening player prop modal: {e}")
-            await interaction.response.send_message(
-                "❌ Error opening bet modal.", ephemeral=True
-            )
-
-    async def _handle_back_to_categories(self, interaction: discord.Interaction):
-        """Handle Back to Categories button click."""
-        try:
-            # Go back to category selection
-            await self._show_prop_type_selection(interaction, self.selected_player)
-        except Exception as e:
-            logger.error(f"Error going back to categories: {e}")
-            await interaction.response.send_message(
-                "❌ Error going back to categories.", ephemeral=True
-            )
 
 
 async def setup_enhanced_player_prop(

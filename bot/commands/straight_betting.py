@@ -988,11 +988,6 @@ class StraightBetWorkflowView(View):
             except Exception as e:
                 logger.exception(f"Error generating preview image: {e}")
                 self.preview_image_bytes = None
-            else:
-                # No team selected yet, clear any existing preview
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.close()
-                    self.preview_image_bytes = None
 
             file_to_send = None
             if self.preview_image_bytes:
