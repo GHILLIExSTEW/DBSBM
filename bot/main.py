@@ -536,26 +536,36 @@ class BettingBot(commands.Bot):
 
             if self.fetcher_process.poll() is not None:
                 return_code = self.fetcher_process.returncode
-                logger.error(
-                    "Fetcher process ended unexpectedly with return code %d",
-                    return_code,
-                )
+                
+                if return_code == 0:
+                    # Fetcher exited successfully - this might be unexpected since it should run continuously
+                    logger.warning("Fetcher process exited with return code 0 - restarting to maintain continuous operation")
+                    # Restart the fetcher to maintain continuous operation
+                    await asyncio.sleep(5)
+                    logger.info("Restarting fetcher process to maintain continuous operation...")
+                    self.start_fetcher()
+                else:
+                    # Fetcher crashed with error - restart it
+                    logger.error(
+                        "Fetcher process crashed with return code %d",
+                        return_code,
+                    )
 
-                # Get last few lines of log for context
-                try:
-                    with open(log_path, "r") as f:
-                        lines = f.readlines()
-                        last_lines = lines[-20:] if len(lines) > 20 else lines
-                        logger.error(
-                            "Last few lines from fetcher.log:\n%s", "".join(last_lines)
-                        )
-                except Exception as e:
-                    logger.error("Failed to read fetcher.log: %s", e)
+                    # Get last few lines of log for context
+                    try:
+                        with open(log_path, "r") as f:
+                            lines = f.readlines()
+                            last_lines = lines[-20:] if len(lines) > 20 else lines
+                            logger.error(
+                                "Last few lines from fetcher.log:\n%s", "".join(last_lines)
+                            )
+                    except Exception as e:
+                        logger.error("Failed to read fetcher.log: %s", e)
 
-                # Wait a bit before restarting
-                await asyncio.sleep(5)
-                logger.info("Restarting fetcher process...")
-                self.start_fetcher()
+                    # Wait a bit before restarting
+                    await asyncio.sleep(5)
+                    logger.info("Restarting crashed fetcher process...")
+                    self.start_fetcher()
 
             await asyncio.sleep(5)  # Check every 5 seconds
 

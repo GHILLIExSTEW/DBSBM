@@ -605,11 +605,15 @@ async def main():
                     
             except Exception as e:
                 logger.error(f"Error in scheduled fetch: {e}")
+                logger.info("Waiting 5 minutes before retrying...")
                 await asyncio.sleep(300)  # Wait 5 minutes before retrying
+                continue  # Continue the loop instead of potentially exiting
         
     except Exception as e:
         logger.error(f"Fetcher process failed: {e}")
-        raise
+        logger.info("Fetcher will restart in 5 minutes...")
+        await asyncio.sleep(300)  # Wait 5 minutes before restarting
+        # Don't raise - let the process restart
     finally:
         if pool:
             pool.close()
