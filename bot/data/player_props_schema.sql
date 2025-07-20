@@ -56,11 +56,13 @@ CREATE TABLE IF NOT EXISTS player_search_cache (
     search_keywords TEXT NOT NULL COMMENT 'Normalized search terms',
     last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     usage_count INT DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
 
     UNIQUE KEY unique_player_team_league (player_name, team_name, league),
     INDEX idx_search_keywords (search_keywords(255)),
     INDEX idx_last_used (last_used),
-    INDEX idx_usage_count (usage_count)
+    INDEX idx_usage_count (usage_count),
+    INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Add columns to existing bets table if they don't exist
