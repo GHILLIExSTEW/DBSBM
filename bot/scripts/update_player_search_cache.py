@@ -118,9 +118,9 @@ class PlayerCacheUpdater:
 
         print("💾 Inserting players into cache...")
 
-        # Prepare batch insert
+        # Prepare batch insert with duplicate handling
         insert_sql = """
-        INSERT INTO player_search_cache (
+        INSERT IGNORE INTO player_search_cache (
             player_name, team_name, league, sport, search_keywords,
             usage_count, last_used
         ) VALUES (%s, %s, %s, %s, %s, %s, %s)

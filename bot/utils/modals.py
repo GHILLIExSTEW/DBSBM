@@ -794,7 +794,7 @@ class ParlayBetDetailsModal(Modal):
 
             # Generate preview image
             try:
-                from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+                from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
                 generator = ParlayBetImageGenerator(
                     guild_id=self.view_ref.original_interaction.guild_id

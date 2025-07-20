@@ -257,12 +257,11 @@ class PlayerSearchService:
                     player_name, team_name, league, sport,
                     last_used, usage_count
                 FROM player_search_cache
-                WHERE is_active = 1
             """
             params = []
 
             if league:
-                query += " AND league = %s"
+                query += " WHERE league = %s"
                 params.append(league)
 
             query += " ORDER BY usage_count DESC, last_used DESC"

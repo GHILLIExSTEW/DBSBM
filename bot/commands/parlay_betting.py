@@ -1573,6 +1573,7 @@ class ParlayBetWorkflowView(View):
 
         self.current_step += 1
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
+        logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
 
         if self.current_step == 1:
             # Step 1: Sport category selection
@@ -1763,6 +1764,7 @@ class ParlayBetWorkflowView(View):
             return
         elif self.current_step == 9:
             # Show units select
+            self.clear_items()
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
             self.add_item(CancelButton(self))
@@ -1874,6 +1876,7 @@ class ParlayBetWorkflowView(View):
         display_as_risk = self.bet_details.get("display_as_risk")
 
         try:
+            logger.info(f"[PARLAY WORKFLOW] Starting image generation for user {self.original_interaction.user.id}")
             generator = ParlayBetImageGenerator(
                 guild_id=self.original_interaction.guild_id
             )
@@ -1917,12 +1920,14 @@ class ParlayBetWorkflowView(View):
                 display_as_risk=display_as_risk,
             )
             if image_bytes:
+                logger.info(f"[PARLAY WORKFLOW] Image generation completed successfully for user {self.original_interaction.user.id}")
                 self.preview_image_bytes = io.BytesIO(image_bytes)
                 self.preview_image_bytes.seek(0)
                 file_to_send = File(
                     self.preview_image_bytes, filename="parlay_preview_units.png"
                 )
             else:
+                logger.warning(f"[PARLAY WORKFLOW] Image generation failed for user {self.original_interaction.user.id}")
                 self.preview_image_bytes = None
                 file_to_send = None
         except Exception as e:

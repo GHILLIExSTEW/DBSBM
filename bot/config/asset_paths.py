@@ -146,6 +146,7 @@ SPORT_CATEGORIES = {
     ],
     "FIGHTING": [
         "UFC",
+        "MMA",  # MMA is the league code for UFC
         "BOXING",  # Current leagues
         "BELLATOR",
         "ONE_CHAMPIONSHIP",

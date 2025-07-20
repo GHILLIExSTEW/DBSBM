@@ -382,12 +382,28 @@ class AssetLoader:
                 league_code.upper(),
                 f"{normalized_name}.png",
             ),
+            # Try using league name as directory (for cases like MMA -> UFC)
+            os.path.join(
+                self.logos_dir,
+                "leagues",
+                sport.upper(),
+                league_name.upper(),
+                f"{normalized_name}.png",
+            ),
             # Fallback to old naming convention (league code)
             os.path.join(
                 self.logos_dir,
                 "leagues",
                 sport.upper(),
                 league_code.upper(),
+                f"{league_code.lower()}.png",
+            ),
+            # Try using league name as directory with lowercase filename
+            os.path.join(
+                self.logos_dir,
+                "leagues",
+                sport.upper(),
+                league_name.upper(),
                 f"{league_code.lower()}.png",
             ),
             # Try without sport subdirectory
@@ -407,25 +423,28 @@ class AssetLoader:
                 logger.info(f"Found league logo: {logo_path}")
                 return self.load_image(logo_path)
 
-        # Try fuzzy matching in the league directory
-        league_dir = os.path.join(
-            self.logos_dir, "leagues", sport.upper(), league_code.upper()
-        )
-        if os.path.exists(league_dir):
-            candidates = [f for f in os.listdir(league_dir) if f.endswith(".png")]
-            candidate_names = [os.path.splitext(f)[0] for f in candidates]
+        # Try fuzzy matching in the league directory (try both league code and league name)
+        league_dirs = [
+            os.path.join(self.logos_dir, "leagues", sport.upper(), league_code.upper()),
+            os.path.join(self.logos_dir, "leagues", sport.upper(), league_name.upper()),
+        ]
+        
+        for league_dir in league_dirs:
+            if os.path.exists(league_dir):
+                candidates = [f for f in os.listdir(league_dir) if f.endswith(".png")]
+                candidate_names = [os.path.splitext(f)[0] for f in candidates]
 
-            # Try matching against normalized league name
-            matches = difflib.get_close_matches(
-                normalized_name.lower(),
-                [name.lower() for name in candidate_names],
-                n=1,
-                cutoff=0.75,
-            )
-            if matches:
-                match_path = os.path.join(league_dir, f"{matches[0]}.png")
-                logger.info(f"Found fuzzy league logo match: {match_path}")
-                return self.load_image(match_path)
+                # Try matching against normalized league name
+                matches = difflib.get_close_matches(
+                    normalized_name.lower(),
+                    [name.lower() for name in candidate_names],
+                    n=1,
+                    cutoff=0.75,
+                )
+                if matches:
+                    match_path = os.path.join(league_dir, f"{matches[0]}.png")
+                    logger.info(f"Found fuzzy league logo match: {match_path}")
+                    return self.load_image(match_path)
 
         logger.warning(f"No league logo found for '{league_code}' ({league_name})")
         return None
