@@ -461,6 +461,31 @@ class ComprehensiveFetcher:
         except Exception as e:
             logger.error(f"Error clearing api_games table: {e}")
 
+    async def clear_past_games(self):
+        """Clear finished games and past games data, keeping active and upcoming games."""
+        try:
+            async with self.db_pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    # Get current time in UTC
+                    current_time = datetime.now(timezone.utc)
+                    
+                    # Remove finished games and games that have started
+                    await cur.execute("""
+                        DELETE FROM api_games 
+                        WHERE status IN (
+                            'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
+                            'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted'
+                        )
+                        OR start_time < %s
+                    """, (current_time,))
+                    
+                    deleted_count = cur.rowcount
+                    await conn.commit()
+                    logger.info(f"Cleared {deleted_count} finished/past games from api_games table")
+        except Exception as e:
+            logger.error(f"Error clearing finished/past games data: {e}")
+            # Don't raise - continue with fetch even if cleanup fails
+
     async def get_fetch_statistics(self) -> Dict:
         """Get statistics about the fetch operation."""
         try:
@@ -513,6 +538,10 @@ async def run_comprehensive_hourly_fetch(db_pool: aiomysql.Pool):
             logger.info("Running comprehensive hourly fetch for ALL leagues...")
 
             async with ComprehensiveFetcher(db_pool) as fetcher:
+                # Clear past games before fetching new data
+                await fetcher.clear_past_games()
+                logger.info("Cleared past games before fetching new data")
+
                 # Discover all leagues first
                 await fetcher.discover_all_leagues()
 

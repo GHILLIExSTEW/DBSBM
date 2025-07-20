@@ -463,11 +463,14 @@ class MainFetcher:
             return False
 
     async def _clear_old_games_data(self):
-        """Clear finished games data, keeping active and upcoming games."""
+        """Clear finished games and past games data, keeping active and upcoming games."""
         try:
             async with self.db_pool.acquire() as conn:
                 async with conn.cursor() as cur:
-                    # Remove only finished games, keep active and upcoming ones
+                    # Get current time in UTC
+                    current_time = datetime.now(timezone.utc)
+                    
+                    # Remove finished games and games that have started
                     # Includes status values for all sports including MMA/UFC
                     await cur.execute("""
                         DELETE FROM api_games 
@@ -475,10 +478,13 @@ class MainFetcher:
                             'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
                             'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted'
                         )
-                    """)
-                    logger.info("Cleared finished games from api_games table")
+                        OR start_time < %s
+                    """, (current_time,))
+                    
+                    deleted_count = cur.rowcount
+                    logger.info(f"Cleared {deleted_count} finished/past games from api_games table")
         except Exception as e:
-            logger.error(f"Error clearing finished games data: {e}")
+            logger.error(f"Error clearing finished/past games data: {e}")
             # Don't raise - continue with fetch even if cleanup fails
 
 

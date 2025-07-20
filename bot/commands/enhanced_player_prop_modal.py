@@ -381,16 +381,16 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
         try:
             # Create units selection options
             units_options = [
-                discord.SelectOption(label="0.5 Units", value="0.5", description="$50 bet"),
-                discord.SelectOption(label="1 Unit", value="1.0", description="$100 bet"),
-                discord.SelectOption(label="1.5 Units", value="1.5", description="$150 bet"),
-                discord.SelectOption(label="2 Units", value="2.0", description="$200 bet"),
-                discord.SelectOption(label="2.5 Units", value="2.5", description="$250 bet"),
-                discord.SelectOption(label="3 Units", value="3.0", description="$300 bet"),
-                discord.SelectOption(label="4 Units", value="4.0", description="$400 bet"),
-                discord.SelectOption(label="5 Units", value="5.0", description="$500 bet"),
-                discord.SelectOption(label="7.5 Units", value="7.5", description="$750 bet"),
-                discord.SelectOption(label="10 Units", value="10.0", description="$1000 bet"),
+                discord.SelectOption(label="0.5 Units", value="0.5"),
+                discord.SelectOption(label="1 Unit", value="1.0"),
+                discord.SelectOption(label="1.5 Units", value="1.5"),
+                discord.SelectOption(label="2 Units", value="2.0"),
+                discord.SelectOption(label="2.5 Units", value="2.5"),
+                discord.SelectOption(label="3 Units", value="3.0"),
+                discord.SelectOption(label="4 Units", value="4.0"),
+                discord.SelectOption(label="5 Units", value="5.0"),
+                discord.SelectOption(label="7.5 Units", value="7.5"),
+                discord.SelectOption(label="10 Units", value="10.0"),
             ]
 
             # Create units selection dropdown
@@ -404,11 +404,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             async def units_callback(units_interaction: discord.Interaction):
                 selected_units = float(units_select.values[0])
                 
-                # Calculate bet amount (assuming $100 per unit)
-                bet_amount = selected_units * 100
-                
-                # Update the bet with units and bet amount
-                await self._update_bet_with_units(units_interaction, bet_data, selected_units, bet_amount)
+                # Update the bet with units
+                await self._update_bet_with_units(units_interaction, bet_data, selected_units)
 
             units_select.callback = units_callback
 
@@ -422,7 +419,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 f"**Player:** {bet_data['player_name']}\n"
                 f"**Prop:** {bet_data['prop_type']}\n"
                 f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
-                f"**Units:** 1.0 (${100:,.0f})\n\n"
+                f"**Units:** 1.0\n\n"
                 f"**Select your bet amount:**",
                 view=view
             )
@@ -434,13 +431,13 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 ephemeral=True
             )
 
-    async def _update_bet_with_units(self, interaction: discord.Interaction, bet_data: dict, units: float, bet_amount: float):
-        """Update the bet with units and bet amount, then show final confirmation."""
+    async def _update_bet_with_units(self, interaction: discord.Interaction, bet_data: dict, units: float):
+        """Update the bet with units, then show final confirmation."""
         try:
-            # Update the bet in the database with units and bet amount
+            # Update the bet in the database with units
             query = """
                 UPDATE bets 
-                SET units = %s, bet_amount = %s, status = 'active'
+                SET units = %s, status = 'active'
                 WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' 
                 AND player_name = %s AND player_prop_type = %s AND player_prop_line = %s
                 AND player_prop_direction = %s AND odds = %s AND game_id = %s
@@ -451,7 +448,6 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 query,
                 (
                     units,
-                    bet_amount,
                     interaction.user.id,
                     interaction.guild_id,
                     bet_data["player_name"],
@@ -463,21 +459,203 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 ),
             )
 
-            # Show final confirmation
-            await interaction.response.edit_message(
-                content=f"✅ **Player Prop Bet Confirmed!**\n\n"
-                f"**Player:** {bet_data['player_name']}\n"
-                f"**Prop:** {bet_data['prop_type']}\n"
-                f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
-                f"**Units:** {units} (${bet_amount:,.0f})\n\n"
-                f"🎉 Your bet has been placed successfully!",
-                view=None
-            )
+            # Show channel selection
+            await self._show_channel_selection(interaction, bet_data, units)
 
         except Exception as e:
             logger.error(f"Error updating bet with units: {e}")
             await interaction.response.send_message(
                 "❌ Error confirming bet. Please try again.",
+                ephemeral=True
+            )
+
+    async def _show_channel_selection(self, interaction: discord.Interaction, bet_data: dict, units: float):
+        """Show channel selection for posting the bet."""
+        try:
+            # Get available channels from guild settings
+            allowed_channels = []
+            guild_settings = await self.db_manager.fetch_one(
+                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                (str(interaction.guild_id),),
+            )
+            
+            if guild_settings:
+                for channel_id in (
+                    guild_settings.get("embed_channel_1"),
+                    guild_settings.get("embed_channel_2"),
+                ):
+                    if channel_id:
+                        try:
+                            cid = int(channel_id)
+                            channel = interaction.client.get_channel(cid) or await interaction.client.fetch_channel(cid)
+                            if (
+                                isinstance(channel, discord.TextChannel)
+                                and channel.permissions_for(interaction.guild.me).send_messages
+                            ):
+                                if channel not in allowed_channels:
+                                    allowed_channels.append(channel)
+                        except Exception as e:
+                            logger.error(f"Error processing channel {channel_id}: {e}")
+
+            if not allowed_channels:
+                await interaction.response.edit_message(
+                    content="❌ No valid embed channels configured. Please contact an admin.",
+                    view=None
+                )
+                return
+
+            # Create channel selection dropdown
+            channel_options = []
+            for channel in allowed_channels:
+                channel_options.append(
+                    discord.SelectOption(
+                        label=f"#{channel.name}",
+                        value=str(channel.id),
+                        description=f"Post to {channel.name}"
+                    )
+                )
+
+            channel_select = discord.ui.Select(
+                placeholder="Select channel to post your bet...",
+                options=channel_options,
+                min_values=1,
+                max_values=1,
+            )
+
+            async def channel_callback(channel_interaction: discord.Interaction):
+                selected_channel_id = int(channel_select.values[0])
+                await self._post_bet_to_channel(channel_interaction, bet_data, units, selected_channel_id)
+
+            channel_select.callback = channel_callback
+
+            # Create view with channel selection
+            view = discord.ui.View(timeout=300)
+            view.add_item(channel_select)
+
+            # Show bet summary and channel selection
+            await interaction.response.edit_message(
+                content=f"🎯 **Player Prop Bet Ready to Post**\n\n"
+                f"**Player:** {bet_data['player_name']}\n"
+                f"**Prop:** {bet_data['prop_type']}\n"
+                f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
+                f"**Units:** {units}\n\n"
+                f"**Select channel to post your bet:**",
+                view=view
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing channel selection: {e}")
+            await interaction.response.send_message(
+                "❌ Error showing channel selection. Please try again.",
+                ephemeral=True
+            )
+
+    async def _post_bet_to_channel(self, interaction: discord.Interaction, bet_data: dict, units: float, channel_id: int):
+        """Post the bet to the selected channel with image."""
+        try:
+            # Get the channel
+            channel = interaction.client.get_channel(channel_id)
+            if not channel:
+                await interaction.response.send_message(
+                    "❌ Selected channel not found. Please try again.",
+                    ephemeral=True
+                )
+                return
+
+            # Generate bet slip image
+            from utils.player_prop_image_generator import PlayerPropImageGenerator
+            import io
+            from datetime import datetime, timezone
+
+            generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
+            
+            # Get bet ID from database
+            bet_record = await self.db_manager.fetch_one(
+                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' AND player_name = %s AND player_prop_type = %s AND player_prop_line = %s AND player_prop_direction = %s AND odds = %s AND game_id = %s ORDER BY created_at DESC LIMIT 1",
+                (
+                    interaction.user.id,
+                    interaction.guild_id,
+                    bet_data["player_name"],
+                    bet_data["prop_type"],
+                    bet_data["line_value"],
+                    bet_data["bet_direction"],
+                    bet_data["odds"],
+                    bet_data["game_id"],
+                ),
+            )
+
+            bet_id = str(bet_record.get("bet_serial", "")) if bet_record else ""
+            timestamp = datetime.now(timezone.utc)
+
+            # Generate the bet slip image
+            bet_slip_image_bytes = generator.generate_player_prop_bet_image(
+                player_name=bet_data["player_name"],
+                team_name=bet_data.get("team_name", "Team"),
+                league=bet_data.get("league", "N/A"),
+                line=f"{bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}",
+                units=units,
+                output_path=None,
+                bet_id=bet_id,
+                timestamp=timestamp,
+                guild_id=str(interaction.guild_id),
+                odds=float(bet_data["odds"]),
+                units_display_mode="auto",
+                display_as_risk=False,
+            )
+
+            if bet_slip_image_bytes:
+                # Create Discord file
+                image_file = discord.File(
+                    io.BytesIO(bet_slip_image_bytes),
+                    filename=f"player_prop_slip_{bet_id}.png"
+                )
+
+                # Get capper data for webhook
+                capper_data = await self.db_manager.fetch_one(
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    (interaction.guild_id, interaction.user.id),
+                )
+                
+                webhook_username = (
+                    capper_data.get("display_name")
+                    if capper_data and capper_data.get("display_name")
+                    else interaction.user.display_name
+                )
+                webhook_avatar_url = None
+                if capper_data and capper_data.get("image_path"):
+                    from utils.image_url_converter import convert_image_path_to_url
+                    webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
+
+                # Post to channel
+                await channel.send(file=image_file)
+
+                # Update bet with channel_id
+                await self.db_manager.execute(
+                    "UPDATE bets SET channel_id = %s WHERE bet_serial = %s",
+                    (channel_id, bet_id)
+                )
+
+                # Show success message
+                await interaction.response.edit_message(
+                    content=f"✅ **Player Prop Bet Posted Successfully!**\n\n"
+                    f"**Player:** {bet_data['player_name']}\n"
+                    f"**Prop:** {bet_data['prop_type']}\n"
+                    f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
+                    f"**Units:** {units}\n\n"
+                    f"🎉 Your bet has been posted to <#{channel_id}>!",
+                    view=None
+                )
+
+            else:
+                await interaction.response.send_message(
+                    "❌ Error generating bet slip image. Please try again.",
+                    ephemeral=True
+                )
+
+        except Exception as e:
+            logger.error(f"Error posting bet to channel: {e}")
+            await interaction.response.send_message(
+                "❌ Error posting bet to channel. Please try again.",
                 ephemeral=True
             )
 
