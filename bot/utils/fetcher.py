@@ -226,6 +226,12 @@ class MainFetcher:
 
                 games = data.get("response", [])
                 games_saved = 0
+                
+                # Debug logging for AFL
+                if sport == "afl" and games:
+                    logger.info(f"Found {len(games)} AFL games, attempting to process...")
+                    if len(games) > 0:
+                        logger.debug(f"Sample AFL game structure: {json.dumps(games[0], indent=2)[:300]}...")
 
                 for game in games:
                     try:
@@ -233,6 +239,10 @@ class MainFetcher:
                         if mapped_game:
                             await self._save_game_to_db(mapped_game)
                             games_saved += 1
+                        else:
+                            # Log when mapping fails but don't treat as error
+                            if sport.lower() == "afl":
+                                logger.debug(f"Skipping AFL game due to mapping issues for {league['name']}")
                     except Exception as e:
                         logger.error(f"Error processing game for {league['name']}: {e}")
                         continue
@@ -301,6 +311,57 @@ class MainFetcher:
                 }
                 return game_data
 
+            # Handle AFL differently - they might have different structure
+            elif sport == "afl":
+                # AFL might use different field names
+                game_id = str(safe_get(game, "id", default=safe_get(game, "game_id", default=safe_get(game, "match_id", default=""))))
+                if not game_id:
+                    logger.error(f"Missing game ID for {sport}/{league['name']}")
+                    return None
+
+                # Get start time
+                start_time = iso_to_mysql_datetime(safe_get(game, "date", default=safe_get(game, "start_time", default="")))
+                if not start_time:
+                    logger.error(f"Missing start time for AFL game {game_id}")
+                    return None
+
+                # Get teams - AFL might use different structure
+                teams = safe_get(game, "teams", default={})
+                home_team = safe_get(teams, "home", default={})
+                away_team = safe_get(teams, "away", default={})
+
+                # Get team IDs
+                home_team_id = str(safe_get(home_team, "id", default="0"))
+                away_team_id = str(safe_get(away_team, "id", default="0"))
+
+                # Get score for AFL
+                score = {
+                    "home": safe_get(game, "scores", "home", "score", default=0),
+                    "away": safe_get(game, "scores", "away", "score", default=0),
+                }
+
+                # Build AFL game data
+                game_data = {
+                    "id": game_id,
+                    "api_game_id": safe_get(game, "api_game_id", default=game_id),
+                    "sport": "AFL",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_id": home_team_id,
+                    "away_team_id": away_team_id,
+                    "home_team_name": safe_get(home_team, "name", default="Unknown"),
+                    "away_team_name": safe_get(away_team, "name", default="Unknown"),
+                    "start_time": start_time,
+                    "end_time": None,
+                    "status": safe_get(game, "status", "long", default="Scheduled"),
+                    "score": json.dumps(score),
+                    "venue": safe_get(game, "venue", "name", default=None),
+                    "referee": safe_get(game, "referee", default=None),
+                    "raw_json": json.dumps(game),
+                    "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                }
+                return game_data
+
             # Common fields for all other sports
             teams = safe_get(game, "teams", default={})
             home_team = safe_get(teams, "home", default={})
@@ -310,8 +371,17 @@ class MainFetcher:
             # Get game ID from either game or fixture
             game_id = str(safe_get(game, "id", default=safe_get(fixture, "id", default="")))
             if not game_id:
-                logger.error(f"Missing game ID for {sport}/{league['name']}")
-                return None
+                # For AFL, try alternative field names
+                if sport.lower() == "afl":
+                    game_id = str(safe_get(game, "game_id", default=safe_get(game, "match_id", default="")))
+                    if not game_id:
+                        # Log the actual structure for debugging
+                        logger.warning(f"AFL game structure: {json.dumps(game, indent=2)[:500]}...")
+                        logger.error(f"Missing game ID for {sport}/{league['name']}")
+                        return None
+                else:
+                    logger.error(f"Missing game ID for {sport}/{league['name']}")
+                    return None
 
             # Get start time from either game or fixture
             start_time = iso_to_mysql_datetime(
@@ -345,6 +415,7 @@ class MainFetcher:
                     "away": safe_get(game, "scores", "away", "total", default=0),
                 }
             elif sport.lower() == "afl":
+                # AFL score handling moved to dedicated AFL handler above
                 score = {
                     "home": safe_get(game, "scores", "home", "score", default=0),
                     "away": safe_get(game, "scores", "away", "score", default=0),
