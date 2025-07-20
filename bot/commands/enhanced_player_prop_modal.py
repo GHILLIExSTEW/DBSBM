@@ -361,27 +361,21 @@ class PlayerPropSearchView(discord.ui.View):
     ):
         """Search for players using the enhanced search service."""
         try:
-            # Prompt user for search query since we don't have direct access to modal fields
-            await interaction.response.send_message(
-                "Please enter a player name to search for (e.g., 'Messi', 'Ronaldo', 'Haaland'):",
-                ephemeral=True,
-            )
-
-            # Show popular players for this league and team
+            # Show popular players for this league and team directly
             search_results = await self.player_search_service.get_popular_players(
-                self.league, self.team_name, limit=15
+                self.league, self.team_name, limit=25
             )
 
             if not search_results:
-                await interaction.followup.send(
-                    f"No players found for {self.league}. Please try a different league.",
+                await interaction.response.send_message(
+                    f"No players found for {self.team_name}. Please try a different team.",
                     ephemeral=True,
                 )
                 return
 
             # Create player selection dropdown
             options = []
-            for result in search_results[:25]:  # Discord limit is 25 options
+            for result in search_results:
                 # Add confidence indicator for team library players
                 confidence_indicator = "⭐" if result.confidence > 80 else "🔍"
                 label = f"{confidence_indicator} {result.player_name}"
@@ -418,19 +412,18 @@ class PlayerPropSearchView(discord.ui.View):
                 discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary)
             )
 
-            await interaction.followup.send(
-                content=f"**Popular players for {self.league}:**\n"
+            await interaction.response.edit_message(
+                content=f"**{self.team_name} Players:**\n"
                 f"⭐ = High confidence (team library)\n"
                 f"🔍 = Database match\n\n"
                 f"Select a player to continue:",
                 view=view,
-                ephemeral=True,
             )
 
         except Exception as e:
             logger.error(f"Error in player search: {e}")
             await interaction.response.send_message(
-                "❌ Error searching for players. Please try again.",
+                f"❌ Error searching for {self.team_name} players. Please try again.",
                 ephemeral=True,
             )
 
@@ -448,14 +441,19 @@ class PlayerPropSearchView(discord.ui.View):
                 )
                 return
 
-            # Create prop type options
+            # Create prop type options with better formatting
             options = []
             for prop_type, template in prop_templates.items():
+                # Format the range nicely
+                range_text = f"{template.min_value}-{template.max_value} {template.unit}"
+                if template.min_value == 0.0:
+                    range_text = f"0-{template.max_value} {template.unit}"
+                
                 options.append(
                     discord.SelectOption(
-                        label=prop_type.title(),
+                        label=template.label,
                         value=prop_type,
-                        description=f"{template.min_value}-{template.max_value} {template.unit}",
+                        description=range_text,
                     )
                 )
 
@@ -469,11 +467,13 @@ class PlayerPropSearchView(discord.ui.View):
 
             async def prop_callback(interaction: discord.Interaction):
                 selected_prop_type = prop_select.values[0]
+                template = prop_templates[selected_prop_type]
 
-                # Show success message and instructions to open modal
+                # Show success message with better formatting
                 await interaction.response.edit_message(
-                    content=f"✅ Selected **{selected_player}** for **{selected_prop_type}** prop.\n\n"
-                    f"Click 'Create Prop Bet' below to open the betting form with your selections!",
+                    content=f"✅ **{selected_player}** - **{template.label}**\n\n"
+                    f"📊 Range: {template.min_value}-{template.max_value} {template.unit}\n"
+                    f"🎯 Click 'Create Prop Bet' below to set your line and bet amount!",
                     view=None,
                 )
 
@@ -487,7 +487,9 @@ class PlayerPropSearchView(discord.ui.View):
             )
 
             await interaction.response.edit_message(
-                content=f"**Select prop type for {selected_player}:**", view=view
+                content=f"**Select prop type for {selected_player}:**\n"
+                f"Choose the stat you want to bet on:",
+                view=view
             )
 
         except Exception as e:
