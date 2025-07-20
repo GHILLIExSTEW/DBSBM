@@ -28,20 +28,20 @@ class SyncCog(commands.Cog):
             commands_list = [cmd.name for cmd in self.bot.tree.get_commands()]
             logger.debug("Commands to sync: %s", commands_list)
 
-            # Clear existing commands and sync globally
-            self.bot.tree.clear_commands(guild=None)
-            # synced = await self.bot.tree.sync()  # DISABLED: Prevent rate limit
+            # Sync commands to the current guild
+            guild_obj = discord.Object(id=interaction.guild_id)
+            synced = await self.bot.tree.sync(guild=guild_obj)
             logger.info(
-                "Global commands synced: %s",
-                [cmd.name for cmd in self.bot.tree.get_commands()],
+                "Guild commands synced: %s",
+                [cmd.name for cmd in synced],
             )
 
             # Log final command list for verification
-            global_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
-            logger.info("Final global commands: %s", global_commands)
+            guild_commands = [cmd.name for cmd in self.bot.tree.get_commands(guild=guild_obj)]
+            logger.info("Final guild commands: %s", guild_commands)
 
             await interaction.followup.send(
-                "Global commands synced successfully!", ephemeral=True
+                f"Commands synced successfully to guild! Synced {len(synced)} commands.", ephemeral=True
             )
         except Exception as e:
             logger.error("Failed to sync commands: %s", e, exc_info=True)
@@ -59,3 +59,8 @@ async def setup_sync_cog(bot):
     """Setup function to register the SyncCog."""
     await bot.add_cog(SyncCog(bot))
     logger.info("SyncCog loaded")
+
+async def setup(bot):
+    """Setup function for the cog loader."""
+    await bot.add_cog(SyncCog(bot))
+    logger.info("SyncCog loaded via setup function")

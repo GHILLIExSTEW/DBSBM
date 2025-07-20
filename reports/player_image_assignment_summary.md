@@ -1,0 +1,1004 @@
+# Player Image Assignment Summary
+
+**Total Players Processed:** 31888
+**Local Images Found:** 6895
+**No Images Found:** 23483
+**Duplicates Found:** 2834
+**Success Rate:** 21.6%
+
+## Teams with Images
+- AC Milan
+- ALBA Berlin
+- AS Monaco Basket
+- Adelaide Football Club
+- Admiral Vladivostok
+- Ak Bars Kazan
+- Alaves
+- Alfa Romeo Racing
+- Amur Khabarovsk
+- Anadolu Efes SK
+- Anaheim Ducks
+- Angers
+- Arizona Cardinals
+- Arizona Diamondbacks
+- Arsenal
+- Aston Martin Racing
+- Aston Villa
+- Atalanta
+- Ath Madrid
+- Athletic Bilbao
+- Atlanta Braves
+- Atlanta Dream
+- Atlanta Falcons
+- Atlanta Hawks
+- Atlanta United
+- Atletico Madrid
+- Austin FC
+- Auxerre
+- Avangard Omsk
+- Avtomobilist Yekaterinburg
+- BC Žalgiris
+- BWT Alpine Formula One Team
+- Baltimore Orioles
+- Baltimore Ravens
+- Barcelona
+- Baskonia
+- Bayer Leverkusen
+- Bayern Munich
+- Bayern München Basketball
+- Bochum
+- Bologna
+- Borussia Dortmund
+- Borussia Mönchengladbach
+- Boston Bruins
+- Boston Celtics
+- Boston Red Sox
+- Bournemouth
+- Brentford
+- Brest
+- Brighton
+- Brisbane Lions
+- Brooklyn Nets
+- Buffalo Bills
+- Buffalo Sabres
+- CF Montréal
+- CSKA Moscow
+- Cagliari
+- Calgary Flames
+- Carlton Football Club
+- Carolina Hurricanes
+- Carolina Panthers
+- Celta Vigo
+- Charlotte FC
+- Charlotte Hornets
+- Chelsea
+- Chiba Lotte Marines
+- Chicago Bears
+- Chicago Blackhawks
+- Chicago Bulls
+- Chicago Cubs
+- Chicago Fire
+- Chicago Sky
+- Chicago White Sox
+- Cincinnati Bengals
+- Cincinnati Reds
+- Cleveland Browns
+- Cleveland Cavaliers
+- Cleveland Guardians
+- Collingwood Football Club
+- Colorado Avalanche
+- Colorado Rapids
+- Colorado Rockies
+- Columbus Blue Jackets
+- Columbus Crew
+- Como
+- Connecticut Sun
+- Crystal Palace
+- DC United
+- Dallas Cowboys
+- Dallas Mavericks
+- Dallas Stars
+- Dallas Wings
+- Denver Broncos
+- Denver Nuggets
+- Detroit Lions
+- Detroit Pistons
+- Detroit Red Wings
+- Detroit Tigers
+- Dinamo Minsk
+- Doosan Bears
+- Dynamo Moscow
+- Edmonton Oilers
+- Eintracht Frankfurt
+- Empoli
+- Espanyol
+- Essendon Football Club
+- Everton
+- FC Augsburg
+- FC Barcelona Basquet
+- FC Cincinnati
+- FC Dallas
+- FC Heidenheim
+- Fenerbahçe Basketbol
+- Fiorentina
+- Florida Panthers
+- Freiburg
+- Fremantle Football Club
+- Fukuoka SoftBank Hawks
+- Fulham
+- Geelong Football Club
+- Genoa
+- Getafe
+- Girona
+- Gold Coast Football Club
+- Golden State Valkyries
+- Golden State Warriors
+- Greater Western Sydney Giants
+- Green Bay Packers
+- HC Sochi
+- Haas F1
+- Hanshin Tigers
+- Hanwha Eagles
+- Hawthorn Football Club
+- Hiroshima Toyo Carp
+- Hoffenheim
+- Holstein Kiel
+- Houston Astros
+- Houston Dynamo
+- Houston Rockets
+- Houston Texans
+- Indiana Fever
+- Indiana Pacers
+- Indianapolis Colts
+- Inter
+- Inter Miami
+- Inter Milan
+- Ipswich
+- Jacksonville Jaguars
+- Juventus
+- KK Crvena zvezda
+- KK Partizan
+- KT Wiz
+- Kansas City Chiefs
+- Kansas City Royals
+- Kia Tigers
+- Kiwoom Heroes
+- LA Galaxy
+- LG Twins
+- Las Palmas
+- Las Vegas Aces
+- Las Vegas Raiders
+- Lazio
+- Le Havre
+- Lecce
+- Leganes
+- Leicester
+- Lens
+- Lille
+- Liverpool
+- Lokomotiv Yaroslavl
+- Los Angeles Angels
+- Los Angeles Chargers
+- Los Angeles Clippers
+- Los Angeles Dodgers
+- Los Angeles FC
+- Los Angeles Kings
+- Los Angeles Lakers
+- Los Angeles Rams
+- Los Angeles Sparks
+- Lotte Giants
+- Lyon
+- Maccabi Tel Aviv BC
+- Mainz
+- Mallorca
+- Manchester City
+- Manchester United
+- Marseille
+- McLaren
+- Melbourne Football Club
+- Memphis Grizzlies
+- Mercedes
+- Metallurg Magnitogorsk
+- Miami Dolphins
+- Miami Heat
+- Miami Marlins
+- Milano
+- Milwaukee Brewers
+- Milwaukee Bucks
+- Minnesota Lynx
+- Minnesota Timberwolves
+- Minnesota Twins
+- Minnesota United
+- Minnesota Vikings
+- Minnesota Wild
+- Monaco
+- MoneyGram Haas F1 Team
+- Montpellier
+- Montreal Canadiens
+- Monza
+- NC Dinos
+- Nantes
+- Napoli
+- Nashville Predators
+- Nashville SC
+- New England Patriots
+- New England Rev.
+- New England Revolution
+- New Jersey Devils
+- New Orleans Pelicans
+- New Orleans Saints
+- New York City FC
+- New York Giants
+- New York Islanders
+- New York Jets
+- New York Knicks
+- New York Liberty
+- New York Mets
+- New York Rangers
+- New York Red Bulls
+- New York Yankees
+- Newcastle
+- Nice
+- North Melbourne Football Club
+- Nottingham Forest
+- Oakland Athletics
+- Oklahoma City Thunder
+- Olimpia Milano
+- Olympiacos BC
+- Oracle Red Bull Racing
+- Orix Buffaloes
+- Orlando City
+- Orlando Magic
+- Osasuna
+- Ottawa Senators
+- Panathinaikos BC
+- Paris Basketball
+- Paris SG
+- Parma Calcio 1913
+- Philadelphia 76ers
+- Philadelphia Eagles
+- Philadelphia Flyers
+- Philadelphia Phillies
+- Philadelphia Union
+- Phoenix Mercury
+- Phoenix Suns
+- Pittsburgh Penguins
+- Pittsburgh Pirates
+- Pittsburgh Steelers
+- Port Adelaide Football Club
+- Portland Timbers
+- Portland Trail Blazers
+- RB Leipzig
+- RasenBallsport Leipzig
+- Real Betis
+- Real Madrid
+- Real Madrid Baloncesto
+- Real Salt Lake
+- Real Sociedad
+- Red Bull
+- Rennes
+- Richmond Football Club
+- Roma
+- SKA Saint Petersburg
+- SSG Landers
+- Sacramento Kings
+- Saitama Seibu Lions
+- Salavat Yulaev Ufa
+- Samsung Lions
+- San Antonio Spurs
+- San Diego FC
+- San Diego Padres
+- San Francisco 49ers
+- San Francisco Giants
+- San Jose Earthquakes
+- San Jose Sharks
+- Scuderia AlphaTauri
+- Scuderia Ferrari HP
+- Seattle Kraken
+- Seattle Mariners
+- Seattle Seahawks
+- Seattle Sounders FC
+- Seattle Storm
+- Sevilla
+- Sibir Novosibirsk
+- Southampton
+- Spartak Moscow
+- Sporting Kansas City
+- St Etienne
+- St Kilda Football Club
+- St Pauli
+- Stade de Reims
+- Strasbourg
+- Stuttgart
+- Sydney Swans
+- Tampa Bay Buccaneers
+- Tampa Bay Lightning
+- Tampa Bay Rays
+- Tennessee Titans
+- Texas Rangers
+- Tohoku Rakuten Golden Eagles
+- Tokyo Yakult Swallows
+- Torino
+- Toronto Blue Jays
+- Toronto FC
+- Toronto Maple Leafs
+- Toronto Raptors
+- Tottenham
+- Toulouse
+- Traktor Chelyabinsk
+- Udinese
+- Union Berlin
+- Utah Hockey Club
+- Utah Jazz
+- Utah Mammoth
+- Valencia
+- Valladolid
+- Vallecano
+- Vancouver Canucks
+- Vancouver Whitecaps
+- Vegas Golden Knights
+- Venezia
+- Verona
+- Villarreal
+- Virtus Pallacanestro Bologna
+- Visa Cash App Racing Bulls Formula One Team
+- Vityaz Podolsk
+- Washington Capitals
+- Washington Commanders
+- Washington Mystics
+- Washington Nationals
+- Washington Wizards
+- Werder Bremen
+- West Coast Eagles
+- West Ham
+- Western Bulldogs
+- Williams
+- Winnipeg Jets
+- Wolfsburg
+- Wolves
+- Yokohama DeNA BayStars
+- Yomiuri Giants
+
+## Teams without Images
+- 1. FC Heidenheim
+- 1899 Hoffenheim
+- AC Milan
+- ALBA Berlin
+- AS Roma
+- Abilene Christian
+- Adelaide Football Club
+- Air Force
+- Akron
+- Alabama
+- Alabama A&M
+- Alabama State
+- Alaves
+- Alcorn State
+- Anadolu Efes SK
+- Anaheim Ducks
+- Angers
+- Apoel Nicosia
+- Appalachian State
+- Arizona
+- Arizona Cardinals
+- Arizona Diamondbacks
+- Arizona State
+- Arkansas
+- Arkansas Baptist
+- Arkansas State
+- Arkansas-Pine Bluff
+- Army
+- Arsenal
+- Aston Villa
+- Atalanta
+- Athletic Bilbao
+- Athletic Club
+- Atlanta Braves
+- Atlanta Falcons
+- Atlanta Hawks
+- Atlanta United
+- Atletico Madrid
+- Auburn
+- Augustana University (SD)
+- Austin FC
+- Austin Peay
+- Auxerre
+- Ave Maria
+- BSC Young Boys
+- BYU
+- Ball State
+- Ballkani
+- Baltimore Orioles
+- Baltimore Ravens
+- Barcelona
+- Barys Nur-Sultan
+- Baskonia
+- Bayer Leverkusen
+- Bayern Munich
+- Bayern München
+- Bayern München Basketball
+- Baylor
+- Benfica
+- Bethune-Cookman
+- Black Hills State
+- Bodo/Glimt
+- Boise State
+- Bologna
+- Borac Banja Luka
+- Borussia Dortmund
+- Borussia Mönchengladbach
+- Boston Celtics
+- Boston College
+- Boston Red Sox
+- Bournemouth
+- Bowling Green
+- Brentford
+- Brest
+- Brighton
+- Brooklyn Nets
+- Bryant
+- Bucknell
+- Buffalo Bills
+- Buffalo Sabres
+- Buffalo State
+- Butler
+- CF Montréal
+- Cagliari
+- Cal Poly
+- California
+- Campbell
+- Carlton Football Club
+- Carolina Hurricanes
+- Carolina Panthers
+- Catawba
+- Celje
+- Celta Vigo
+- Celtic
+- Central Arkansas
+- Central Connecticut
+- Central Michigan
+- Central State (OH)
+- Central Washington
+- Charleston Southern
+- Charlotte
+- Charlotte FC
+- Charlotte Hornets
+- Chattanooga
+- Chelsea
+- Chicago Bears
+- Chicago Blackhawks
+- Chicago Bulls
+- Chicago Fire
+- Cincinnati
+- Cincinnati Bengals
+- Cincinnati Reds
+- Clark Atlanta
+- Clemson
+- Cleveland Browns
+- Cleveland Cavaliers
+- Club Brugge KV
+- Coastal Carolina
+- Colgate
+- Collingwood Football Club
+- Colorado
+- Colorado Avalanche
+- Colorado State
+- Columbia
+- Columbus Blue Jackets
+- Columbus Crew
+- Como
+- Connecticut Sun
+- Cornell
+- Crystal Palace
+- DC United
+- Dallas Cowboys
+- Dallas Mavericks
+- Dartmouth
+- Davidson
+- Dayton
+- Delaware
+- Delaware State
+- Denver Broncos
+- Denver Nuggets
+- Detroit Lions
+- Detroit Pistons
+- Detroit Red Wings
+- Dečić
+- Dinamo Batumi
+- Dinamo Minsk
+- Dinamo Zagreb
+- Drake
+- Duke
+- Duquesne
+- Dynamo Kyiv
+- East
+- East Carolina
+- East Tennessee State
+- East Texas A&M
+- Eastern Illinois
+- Eastern Kentucky
+- Eastern Michigan
+- Eastern Washington
+- Edinboro
+- Edmonton Oilers
+- Edward Waters
+- Egnatia Rrogozhinë
+- Eintracht Frankfurt
+- Elon
+- Empoli
+- Erskine
+- Espanyol
+- Everton
+- FC Augsburg
+- FC Barcelona Basquet
+- FC Cincinnati
+- FC Differdange 03
+- FC Heidenheim
+- FC Lugano
+- FC Midtjylland
+- FC St. Pauli
+- FCSB
+- FK Crvena Zvezda
+- FK Partizan
+- FSV Mainz 05
+- Fenerbahce
+- Fenerbahçe Basketbol
+- Ferencvarosi TC
+- Ferris State
+- Feyenoord
+- Fiorentina
+- Flora Tallinn
+- Florida
+- Florida A&M
+- Florida Atlantic
+- Florida International
+- Florida Panthers
+- Florida State
+- Fordham
+- Fort Valley State
+- Franklin Pierce
+- Freiburg
+- Fremantle Football Club
+- Fresno State
+- Frostburg State
+- Fulham
+- Furman
+- Galatasaray
+- Gardner-Webb
+- Geelong Football Club
+- Genoa
+- Georgetown
+- Georgetown (KY)
+- Georgia
+- Georgia Southern
+- Georgia State
+- Georgia Tech
+- Getafe
+- Girona
+- Golden State Warriors
+- Grambling
+- Green Bay Packers
+- HJK helsinki
+- Hampton
+- Hamrun Spartans
+- Hanover
+- Hanshin Tigers
+- Harvard
+- Hawai'i
+- Hoffenheim
+- Hokkaido Nippon-Ham Fighters
+- Holstein Kiel
+- Holy Cross
+- Houston
+- Houston Astros
+- Houston Christian
+- Houston Dynamo
+- Houston Rockets
+- Houston Texans
+- Howard
+- Idaho
+- Idaho State
+- Illinois
+- Illinois State
+- Incarnate Word
+- Indiana
+- Indiana Pacers
+- Indiana State
+- Indiana Wesleyan
+- Indianapolis Colts
+- Inter
+- Iowa
+- Iowa State
+- Ipswich
+- Jackson State
+- Jacksonville Jaguars
+- Jacksonville State
+- Jagiellonia
+- James Madison
+- Jerry Rice Team
+- Juventus
+- KI Klaksvik
+- Kansas
+- Kansas City Chiefs
+- Kansas State
+- Kennesaw State
+- Kent State
+- Kentucky
+- Kentucky Christian
+- Kentucky State
+- L.A. Galaxy
+- LA Galaxy
+- LSU
+- Lafayette
+- Lamar
+- Lane
+- Larne
+- Las Palmas
+- Las Vegas Aces
+- Las Vegas Raiders
+- Lazio
+- Le Havre
+- Lecce
+- Leganes
+- Lehigh
+- Leicester
+- Lens
+- Liberty
+- Lille
+- Lincoln (CA)
+- Lincoln (PA)
+- Lincoln Red Imps FC
+- Lindenwood
+- Liverpool
+- Long Island University
+- Los Angeles Angels
+- Los Angeles Chargers
+- Los Angeles Clippers
+- Los Angeles Lakers
+- Los Angeles Rams
+- Louisiana
+- Louisiana Christian University
+- Louisiana Tech
+- Louisville
+- Ludogorets
+- Lyon
+- Lyon-Villeurbanne
+- Maccabi Tel Aviv
+- Maine
+- Mainz
+- Mallorca
+- Malmo FF
+- Manchester City
+- Manchester United
+- Marist
+- Marseille
+- Marshall
+- Maryland
+- McKendree
+- McNeese
+- Melbourne Football Club
+- Memphis
+- Memphis Grizzlies
+- Mercer
+- Mercyhurst
+- Merrimack
+- Metz
+- Miami
+- Miami (OH)
+- Miami Dolphins
+- Miami Heat
+- Miami Marlins
+- Michigan
+- Michigan State
+- Middle Tennessee
+- Miles College
+- Milwaukee Brewers
+- Milwaukee Bucks
+- Minnesota
+- Minnesota Timberwolves
+- Minnesota United
+- Minnesota Vikings
+- Minnesota Wild
+- Mississippi State
+- Mississippi Valley State
+- Missouri
+- Missouri State
+- Monaco
+- Monmouth
+- Montana
+- Montana State
+- Montpellier
+- Montreal Canadiens
+- Monza
+- Morehead State
+- Morehouse College
+- Morgan State
+- Mount Union
+- Murray State
+- NC State
+- Nantes
+- Napoli
+- Nashville Predators
+- Navy
+- Nebraska
+- Nevada
+- New England Patriots
+- New England Revolution
+- New Hampshire
+- New Mexico
+- New Mexico State
+- New Orleans Pelicans
+- New Orleans Saints
+- New York City FC
+- New York Giants
+- New York Islanders
+- New York Jets
+- New York Knicks
+- New York Liberty
+- New York Mets
+- New York Rangers
+- New York Red Bulls
+- New York Yankees
+- Newcastle
+- Nice
+- Nicholls
+- Norfolk State
+- North Alabama
+- North American University
+- North Carolina
+- North Carolina A&T
+- North Carolina Central
+- North Central College
+- North Dakota
+- North Dakota State
+- North Greenville
+- North Texas
+- Northern Arizona
+- Northern Colorado
+- Northern Illinois
+- Northern Iowa
+- Northern State
+- Northwestern
+- Northwestern State
+- Notre Dame
+- Nottingham Forest
+- Oakland Athletics
+- Ohio
+- Ohio State
+- Oklahoma
+- Oklahoma City Thunder
+- Oklahoma State
+- Old Dominion
+- Ole Miss
+- Olympiacos BC
+- Ordabasy
+- Oregon
+- Oregon State
+- Orlando City
+- Orlando Magic
+- Osasuna
+- Ottawa Senators
+- PAOK
+- PSV Eindhoven
+- Panathinaikos BC
+- Panevėžys
+- Paris Basketball
+- Paris SG
+- Paris Saint Germain
+- Parma
+- Parma Calcio 1913
+- Penn State
+- Pennsylvania
+- Petrocub
+- Philadelphia 76ers
+- Philadelphia Eagles
+- Philadelphia Phillies
+- Philadelphia Union
+- Phoenix Suns
+- Pittsburgh
+- Pittsburgh Penguins
+- Pittsburgh Pirates
+- Pittsburgh Steelers
+- Point University
+- Portland State
+- Portland Timbers
+- Portland Trail Blazers
+- Prairie View A&M
+- Presbyterian
+- Princeton
+- Purdue
+- Pyunik Yerevan
+- Qarabag
+- Quincy
+- RB Leipzig
+- Rangers
+- Rayo Vallecano
+- Real Betis
+- Real Madrid
+- Real Madrid Baloncesto
+- Real Salt Lake
+- Real Sociedad
+- Red Bull Salzburg
+- Reims
+- Rennes
+- Rhode Island
+- Richmond
+- Robert Morris
+- Roma
+- Roosevelt
+- Rutgers
+- Rīgas FS
+- SC Freiburg
+- SE Louisiana
+- SMU
+- SSG Landers
+- SV Elversberg
+- Sacramento Kings
+- Sacramento State
+- Sacred Heart
+- Saint Etienne
+- Saitama Seibu Lions
+- Sam Houston
+- Samford
+- San Antonio Spurs
+- San Diego
+- San Diego FC
+- San Diego Padres
+- San Diego State
+- San Francisco 49ers
+- San Francisco Giants
+- San Jose Earthquakes
+- San Jose Sharks
+- San José State
+- Savannah State
+- Seattle Mariners
+- Seattle Seahawks
+- Seattle Sounders FC
+- Seattle Storm
+- Sevilla
+- Shakhtar Donetsk
+- Shamrock Rovers
+- Shorter
+- Sioux Falls
+- Slavia Praha
+- Slovan Bratislava
+- South Alabama
+- South Carolina
+- South Carolina State
+- South Dakota
+- South Dakota State
+- South Florida
+- Southampton
+- Southeast Missouri State
+- Southern
+- Southern Illinois
+- Southern Miss
+- Southern Utah
+- Sparta Praha
+- Sporting CP
+- St Etienne
+- St. Anselm
+- St. Francis (PA)
+- St. Louis Blues
+- St. Louis Cardinals
+- St. Louis City SC
+- St. Thomas-Minnesota
+- Stade Brestois 29
+- Stanford
+- Stephen F. Austin
+- Stetson
+- Stonehill
+- Stony Brook
+- Strasbourg
+- Struga
+- Sturm Graz
+- Stuttgart
+- Syracuse
+- TCU
+- Tampa Bay Buccaneers
+- Tarleton State
+- Temple
+- Tennessee
+- Tennessee State
+- Tennessee Tech
+- Tennessee Titans
+- Texas
+- Texas A&M
+- Texas Southern
+- Texas State
+- Texas Tech
+- The Citadel
+- The New Saints
+- Tokyo Yakult Swallows
+- Toledo
+- Torino
+- Toronto Blue Jays
+- Toronto Maple Leafs
+- Toronto Raptors
+- Tottenham
+- Toulouse
+- Towson
+- Troy
+- Tulane
+- Tulsa
+- Tuskegee
+- Twente
+- UAB
+- UAlbany
+- UC Davis
+- UCF
+- UCLA
+- UConn
+- UE Santa Coloma
+- UL Monroe
+- UMass
+- UNLV
+- USC
+- UT Martin
+- UTEP
+- UTSA
+- UVA Wise
+- Udinese
+- Union Berlin
+- Union St. Gilloise
+- Upper Iowa
+- Utah
+- Utah Hockey Club
+- Utah Jazz
+- Utah State
+- Utah Tech
+- VMI
+- Valdosta State
+- Valencia
+- Valladolid
+- Vallecano
+- Valparaiso
+- Vancouver Canucks
+- Vancouver Whitecaps
+- Vanderbilt
+- Venezia
+- Verona
+- VfB Stuttgart
+- VfL Bochum
+- VfL Wolfsburg
+- Vikingur Reykjavik
+- Villanova
+- Villarreal
+- Virginia
+- Virginia Lynchburg
+- Virginia State
+- Virginia Tech
+- Virginia Union
+- Virtus
+- Wagner
+- Wake Forest
+- Warner
+- Washington
+- Washington Capitals
+- Washington Commanders
+- Washington State
+- Washington Wizards
+- Weber State
+- Werder Bremen
+- West
+- West Georgia
+- West Ham
+- West Virginia
+- West Virginia Wesleyan
+- Western Bulldogs
+- Western Carolina
+- Western Illinois
+- Western Kentucky
+- Western Michigan
+- Western Oregon
+- Wheeling
+- William & Mary
+- Winnipeg Jets
+- Winston-Salem
+- Wisconsin
+- Wofford
+- Wolves
+- Wyoming
+- Yale
+- Yomiuri Giants
+- Youngstown State
