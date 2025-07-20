@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 
 # Import all league dictionaries
 
@@ -278,23 +278,23 @@ def normalize_team_name(team_name: str, sport: str = None, league: str = None) -
     team_dict = {}
     if sport and league:
         if sport.lower() == "baseball" and league.upper() == "MLB":
-            from utils.league_dictionaries.team_mappings import MLB_TEAM_NAMES
+            from bot.utils.league_dictionaries.team_mappings import MLB_TEAM_NAMES
 
             team_dict = MLB_TEAM_NAMES
         elif sport.lower() == "football" and league.upper() == "NFL":
-            from utils.league_dictionaries.team_mappings import NFL_TEAM_NAMES
+            from bot.utils.league_dictionaries.team_mappings import NFL_TEAM_NAMES
 
             team_dict = NFL_TEAM_NAMES
         elif sport.lower() == "basketball" and league.upper() == "NBA":
-            from utils.league_dictionaries.team_mappings import NBA_TEAM_NAMES
+            from bot.utils.league_dictionaries.team_mappings import NBA_TEAM_NAMES
 
             team_dict = NBA_TEAM_NAMES
         elif sport.lower() == "hockey" and league.upper() == "NHL":
-            from utils.league_dictionaries.team_mappings import NHL_TEAM_NAMES
+            from bot.utils.league_dictionaries.team_mappings import NHL_TEAM_NAMES
 
             team_dict = NHL_TEAM_NAMES
         elif sport.lower() == "soccer" and league.upper() == "EPL":
-            from utils.league_dictionaries.team_mappings import EPL_TEAM_NAMES
+            from bot.utils.league_dictionaries.team_mappings import EPL_TEAM_NAMES
 
             team_dict = EPL_TEAM_NAMES
 

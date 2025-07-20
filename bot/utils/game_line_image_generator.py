@@ -36,7 +36,7 @@ def generate_player_prop_bet_image(
     import os
 
     # Determine if this is a non-team-based league (individual sport)
-    from config.leagues import LEAGUE_CONFIG
+    from bot.config.leagues import LEAGUE_CONFIG
 
     # Always use the league for sport_type lookup, not team_name
     league_key = None
@@ -142,8 +142,8 @@ class GameLineImageGenerator:
         """Generates a game line bet slip image."""
         import os
 
-        from config.asset_paths import get_sport_category_for_path
-        from config.image_settings import (
+        from bot.config.asset_paths import get_sport_category_for_path
+        from bot.config.image_settings import (
             BACKGROUND_COLOR,
             DEFAULT_PADDING,
             FOOTER_FONT_SIZE,
@@ -242,7 +242,7 @@ class GameLineImageGenerator:
             except Exception:
                 league_logo = None
         # Get proper league display name
-        from config.leagues import LEAGUE_CONFIG
+        from bot.config.leagues import LEAGUE_CONFIG
 
         league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
         logger.info(
@@ -503,7 +503,7 @@ class GameLineImageGenerator:
         )
 
         # Risk/Units (yellow, lock icons)
-        from utils.bet_utils import (
+        from bot.utils.bet_utils import (
             calculate_profit_from_odds,
             determine_risk_win_display_auto,
             format_units_display,
@@ -722,7 +722,7 @@ class GameLineImageGenerator:
         return y_base + text_y_offset + 50  # Return y position for next section
 
     def _load_team_logo(self, team_name: str, league: str):
-        from utils.asset_loader import asset_loader
+        from bot.utils.asset_loader import asset_loader
         from PIL import Image
         import os
 
@@ -754,7 +754,7 @@ class GameLineImageGenerator:
             )
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        from utils.asset_loader import asset_loader
+        from bot.utils.asset_loader import asset_loader
 
         return asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)

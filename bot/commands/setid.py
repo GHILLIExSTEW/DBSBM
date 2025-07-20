@@ -17,19 +17,19 @@ from discord.ui import (  # Corrected import for button decorator
 )
 from PIL import Image  # Keep Pillow for image processing
 
-from .admin import require_registered_guild
+from bot.commands.admin import require_registered_guild
 
 # Use relative imports
 try:
     # Import db_manager only for type hint if needed
-    # from ..data.db_manager import DatabaseManager
+    # from bot.data.db_manager import DatabaseManager
     # Import errors if needed
-    # from ..utils.errors import ...
+    # from bot.utils.errors import ...
     pass  # No specific service needed directly here? DB access via bot.db_manager
 except ImportError:
     # Fallback imports
-    # from data.db_manager import DatabaseManager
-    # from utils.errors import ...
+    # from bot.data.db_manager import DatabaseManager
+    # from bot.utils.errors import ...
     pass
 
 logger = logging.getLogger(__name__)

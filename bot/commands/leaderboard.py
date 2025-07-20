@@ -4,7 +4,7 @@ from io import BytesIO
 from discord import File, Interaction, app_commands
 from discord.ext import commands
 
-from utils.stats_image_generator import StatsImageGenerator
+from bot.utils.stats_image_generator import StatsImageGenerator
 
 logger = logging.getLogger(__name__)
 

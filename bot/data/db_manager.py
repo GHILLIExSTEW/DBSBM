@@ -5,27 +5,18 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from data.game_utils import get_league_abbreviation, normalize_team_name
+from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from bot.data.game_utils import get_league_abbreviation, normalize_team_name
 
 logger = logging.getLogger(__name__)
 
-try:
-    from ..config.database_mysql import (
-        MYSQL_DB,
-        MYSQL_HOST,
-        MYSQL_PASSWORD,
-        MYSQL_PORT,
-        MYSQL_USER,
-    )
-except ImportError:
-    from config.database_mysql import (
-        MYSQL_DB,
-        MYSQL_HOST,
-        MYSQL_PASSWORD,
-        MYSQL_PORT,
-        MYSQL_USER,
-    )
+from bot.config.database_mysql import (
+    MYSQL_DB,
+    MYSQL_HOST,
+    MYSQL_PASSWORD,
+    MYSQL_PORT,
+    MYSQL_USER,
+)
 
 if not MYSQL_DB:
     logger.critical("CRITICAL ERROR: MYSQL_DB environment variable is not set.")
@@ -1189,7 +1180,7 @@ class DatabaseManager:
     async def sync_games_from_api(self, force_season: int = None):
         """Sync games from API to database."""
         try:
-            from api.sports_api import SportsAPI
+            from bot.api.sports_api import SportsAPI
 
             api = SportsAPI(self)
             current_date = datetime.now().strftime("%Y-%m-%d")
@@ -1350,7 +1341,7 @@ class DatabaseManager:
             AND season = %s
             ORDER BY start_time ASC LIMIT 100
         """
-        from config.leagues import LEAGUE_ID_MAP
+        from bot.config.leagues import LEAGUE_ID_MAP
 
         league_id = LEAGUE_ID_MAP.get(league_name, "1")
         logger.info("[get_normalized_games_for_dropdown] Using league_id=%s", league_id)

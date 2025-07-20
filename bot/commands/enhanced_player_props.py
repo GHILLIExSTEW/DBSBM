@@ -11,15 +11,15 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import discord
-from config.leagues import LEAGUE_CONFIG
+from bot.config.leagues import LEAGUE_CONFIG
 from discord import ButtonStyle, File, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
 from commands.admin import require_registered_guild
 from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
-from utils.league_loader import get_all_sport_categories, get_leagues_by_sport
-from utils.player_prop_image_generator import PlayerPropImageGenerator
+from bot.utils.league_loader import get_all_sport_categories, get_leagues_by_sport
+from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ class PlayerPropsWorkflowView(View):
             return
         elif self.current_step == 3:
             # Step 3: Game selection
-            from data.game_utils import get_normalized_games_for_dropdown
+            from bot.data.game_utils import get_normalized_games_for_dropdown
 
             from commands.straight_betting import GameSelect
 
@@ -639,7 +639,7 @@ class PlayerPropsWorkflowView(View):
                 )
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
-                    from utils.image_url_converter import convert_image_path_to_url
+                    from bot.utils.image_url_converter import convert_image_path_to_url
 
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]

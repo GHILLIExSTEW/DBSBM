@@ -12,14 +12,14 @@ from discord.ext import commands  # Import commands for Cog
 from discord.ui import Select, View
 from PIL import Image  # Added for PIL Image handling
 
-from .admin import require_registered_guild
+from bot.commands.admin import require_registered_guild
 
 # Import necessary services and utils
 try:
-    from utils.stats_image_generator import StatsImageGenerator
+    from bot.utils.stats_image_generator import StatsImageGenerator
 except ImportError:
     try:
-        from ..utils.stats_image_generator import StatsImageGenerator
+        from bot.utils.stats_image_generator import StatsImageGenerator
     except ImportError:
         StatsImageGenerator = None
 

@@ -5,7 +5,7 @@ Tests for the environment validator utility.
 import os
 import pytest
 from unittest.mock import patch, MagicMock
-from utils.environment_validator import EnvironmentValidator, validate_environment
+from bot.utils.environment_validator import EnvironmentValidator, validate_environment
 
 
 class TestEnvironmentValidator:

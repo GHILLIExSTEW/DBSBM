@@ -13,7 +13,7 @@ from datetime import datetime
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from data.db_manager import DatabaseManager
+from bot.data.db_manager import DatabaseManager
 from dotenv import load_dotenv
 
 load_dotenv()

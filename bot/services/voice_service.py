@@ -10,12 +10,12 @@ from typing import Dict, Optional
 import discord
 
 try:
-    from ..data.cache_manager import CacheManager
-    from ..utils.errors import ServiceError
+    from bot.data.cache_manager import CacheManager
+    from bot.utils.errors import ServiceError
 except ImportError:
-    from data.cache_manager import CacheManager
+    from bot.data.cache_manager import CacheManager
 
-    from utils.errors import ServiceError
+    from bot.utils.errors import ServiceError
 
 logger = logging.getLogger(__name__)
 

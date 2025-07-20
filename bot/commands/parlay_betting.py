@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import discord
-from config.leagues import LEAGUE_CONFIG
-from data.game_utils import get_normalized_games_for_dropdown
+from bot.config.leagues import LEAGUE_CONFIG
+from bot.data.game_utils import get_normalized_games_for_dropdown
 from discord import (
     ButtonStyle,
     File,
@@ -23,15 +23,15 @@ from discord import (
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from utils.errors import ValidationError
-from utils.league_loader import (
+from bot.utils.errors import ValidationError
+from bot.utils.league_loader import (
     get_all_league_names,
     get_all_sport_categories,
     get_leagues_by_sport,
 )
-from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
-from .admin import require_registered_guild
+from bot.commands.admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
 
@@ -781,7 +781,7 @@ class BetDetailsModal(Modal):
 
             # Generate preview image
             try:
-                from utils.parlay_bet_image_generator import ParlayBetImageGenerator
+                from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
                 generator = ParlayBetImageGenerator(
                     guild_id=self.view_ref.original_interaction.guild_id
@@ -1658,7 +1658,7 @@ class ParlayBetWorkflowView(View):
 
             if is_manual:
                 # For manual entry, check if this is an individual sport
-                from config.leagues import LEAGUE_CONFIG
+                from bot.config.leagues import LEAGUE_CONFIG
 
                 league_conf = LEAGUE_CONFIG.get(league, {})
                 sport_type = league_conf.get("sport_type", "Team Sport")
@@ -2195,7 +2195,7 @@ class ParlayBetWorkflowView(View):
                 )
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
-                    from utils.image_url_converter import convert_image_path_to_url
+                    from bot.utils.image_url_converter import convert_image_path_to_url
 
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]

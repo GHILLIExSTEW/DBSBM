@@ -438,7 +438,7 @@ class BettingBot(commands.Bot):
             os.makedirs(os.path.dirname(webapp_log_path), exist_ok=True)
             with open(webapp_log_path, "a") as log_file:
                 self.webapp_process = subprocess.Popen(
-                    [sys.executable, os.path.join(BASE_DIR, "webapp.py")],
+                    [sys.executable, os.path.join(os.path.dirname(BASE_DIR), "webapp.py")],
                     stdout=log_file,
                     stderr=log_file,
                     text=True,

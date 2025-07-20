@@ -14,7 +14,7 @@ from discord.ext import commands  # Import commands for Cog
 # Use relative imports (assuming commands/ is sibling to services/, utils/)
 try:
     # Services will be accessed via self.bot.<service_name>
-    from ..services.admin_service import (  # Explicitly import AdminService type hint if needed
+    from bot.services.admin_service import (  # Explicitly import AdminService type hint if needed
         AdminService,
     )
 except ImportError:

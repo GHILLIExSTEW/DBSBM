@@ -11,10 +11,10 @@ from discord import ButtonStyle, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from .admin import require_registered_guild
+from bot.commands.admin import require_registered_guild
 
 # Import from same directory
-from .straight_betting import StraightBetWorkflowView
+from bot.commands.straight_betting import StraightBetWorkflowView
 
 logger = logging.getLogger(__name__)
 

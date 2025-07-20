@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from api.sports_api import APISportsFetcher
+from bot.api.sports_api import APISportsFetcher
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -21,11 +21,11 @@ async def test_enhanced_player_props():
     try:
         # Test 1: Import all required modules
         print("\n1️⃣ Testing imports...")
-        from config.prop_templates import (
+        from bot.config.prop_templates import (
             get_prop_groups_for_league,
             get_prop_templates_for_league,
         )
-        from services.player_search_service import PlayerSearchService
+        from bot.services.player_search_service import PlayerSearchService
 
         print("✅ All imports successful")
 
@@ -49,7 +49,7 @@ async def test_enhanced_player_props():
         # Test 4: Test database connection (if available)
         print("\n4️⃣ Testing database connection...")
         try:
-            from data.db_manager import DatabaseManager
+            from bot.data.db_manager import DatabaseManager
             from dotenv import load_dotenv
 
             # Load environment variables
@@ -83,7 +83,7 @@ async def test_enhanced_player_props():
 
         # Test 6: Test league configuration
         print("\n6️⃣ Testing league configuration...")
-        from config.leagues import LEAGUE_CONFIG
+        from bot.config.leagues import LEAGUE_CONFIG
 
         supported_leagues = []
         for league_key, config in LEAGUE_CONFIG.items():

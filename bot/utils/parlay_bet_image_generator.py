@@ -349,7 +349,7 @@ class ParlayBetImageGenerator:
         if not units:
             payout_text = "Units: X"
         else:
-            from utils.bet_utils import (
+            from bot.utils.bet_utils import (
                 determine_risk_win_display_auto,
                 format_units_display,
             )

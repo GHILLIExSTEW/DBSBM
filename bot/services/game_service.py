@@ -17,7 +17,7 @@ if not API_KEY:
 
 
 # Absolute imports
-from services.data_sync_service import DataSyncService
+from bot.services.data_sync_service import DataSyncService
 
 # Load environment variables for RUN_API_FETCH_ON_START
 RUN_API_FETCH_ON_START = os.getenv("RUN_API_FETCH_ON_START", "false").lower() == "true"

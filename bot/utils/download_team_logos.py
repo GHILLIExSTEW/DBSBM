@@ -8,7 +8,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # BASE_DIR is the parent of SCRIPT_DIR, which should be the 'betting-bot' root directory
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 
-# Add BASE_DIR to sys.path to allow imports like 'from config.asset_paths'
+# Add BASE_DIR to sys.path to allow imports like 'from bot.config.asset_paths'
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
@@ -22,12 +22,12 @@ import requests
 from PIL import Image, UnidentifiedImageError
 
 try:
-    from config.asset_paths import (
+    from bot.config.asset_paths import (
         DEFAULT_FALLBACK_CATEGORY,
         get_sport_category_for_path,
     )
-    from config.leagues import LEAGUE_IDS  # Contains league name to sport mapping
-    from config.team_mappings import normalize_team_name  # For sanitizing team names
+    from bot.config.leagues import LEAGUE_IDS  # Contains league name to sport mapping
+    from bot.config.team_mappings import normalize_team_name  # For sanitizing team names
 except ImportError as e:
     print(
         f"CRITICAL ERROR: Could not import from config package: {e}. "

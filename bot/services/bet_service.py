@@ -11,13 +11,8 @@ from zoneinfo import ZoneInfo
 import discord
 from aiomysql import IntegrityError
 
-try:
-    from ..data.db_manager import DatabaseManager
-    from ..utils.errors import BetServiceError
-except ImportError:
-    from data.db_manager import DatabaseManager
-
-    from utils.errors import BetServiceError
+from bot.data.db_manager import DatabaseManager
+from bot.utils.errors import BetServiceError
 
 logger = logging.getLogger(__name__)
 

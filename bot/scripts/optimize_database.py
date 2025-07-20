@@ -14,7 +14,7 @@ from typing import Any, Dict, List
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.db_manager import DatabaseManager
+from bot.data.db_manager import DatabaseManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

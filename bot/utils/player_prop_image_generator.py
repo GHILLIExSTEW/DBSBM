@@ -224,7 +224,7 @@ class PlayerPropImageGenerator:
         logo_display_size = (45, 45)
         league_upper = league.upper()
         league_lower = league.lower()
-        from config.asset_paths import get_sport_category_for_path
+        from bot.config.asset_paths import get_sport_category_for_path
 
         sport_category = get_sport_category_for_path(league_upper)
         league_logo_path = f"bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.png"
@@ -236,7 +236,7 @@ class PlayerPropImageGenerator:
         except Exception:
             league_logo = None
         # Get proper league display name
-        from config.leagues import LEAGUE_CONFIG
+        from bot.config.leagues import LEAGUE_CONFIG
 
         league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
 
@@ -410,7 +410,7 @@ class PlayerPropImageGenerator:
             )
 
         # Risk/Units (yellow, lock icons) - move below odds
-        from utils.bet_utils import (
+        from bot.utils.bet_utils import (
             calculate_profit_from_odds,
             determine_risk_win_display_auto,
             format_units_display,

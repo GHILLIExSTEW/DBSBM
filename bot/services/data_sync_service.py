@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from zoneinfo import ZoneInfo
 
-from config.leagues import LEAGUE_CONFIG
+from bot.config.leagues import LEAGUE_CONFIG
 from dateutil import parser
 from dotenv import load_dotenv
 
@@ -51,11 +51,11 @@ def safe_get(obj, *keys, default=""):
 
 
 try:
-    from ..config.api_settings import API_ENABLED
-    from ..data.cache_manager import CacheManager
+    from bot.config.api_settings import API_ENABLED
+    from bot.data.cache_manager import CacheManager
 except ImportError:
-    from config.api_settings import API_ENABLED
-    from data.cache_manager import CacheManager
+    from bot.config.api_settings import API_ENABLED
+    from bot.data.cache_manager import CacheManager
 
 
 logger = logging.getLogger(__name__)

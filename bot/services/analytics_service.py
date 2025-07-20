@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict, List
 
 try:
-    from ..utils.errors import AnalyticsServiceError
+    from bot.utils.errors import AnalyticsServiceError
 except ImportError:
-    from utils.errors import AnalyticsServiceError
+    from bot.utils.errors import AnalyticsServiceError
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ from typing import Optional
 import discord
 
 # Import directly from utils
-from config.asset_paths import get_sport_category_for_path
+from bot.config.asset_paths import get_sport_category_for_path
 from discord import Attachment, Interaction, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv

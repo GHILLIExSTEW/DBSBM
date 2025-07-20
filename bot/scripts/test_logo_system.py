@@ -10,8 +10,8 @@ import sys
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.asset_loader import asset_loader
-from config.asset_paths import get_sport_category_for_path
+from bot.utils.asset_loader import asset_loader
+from bot.config.asset_paths import get_sport_category_for_path
 
 
 def test_league_logo_loading():

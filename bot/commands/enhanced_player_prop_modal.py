@@ -8,12 +8,12 @@ VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
 import logging
 
 import discord
-from config.prop_templates import (
+from bot.config.prop_templates import (
     get_prop_groups_for_league,
     get_prop_templates_for_league,
     validate_prop_value,
 )
-from services.player_search_service import PlayerSearchService
+from bot.services.player_search_service import PlayerSearchService
 
 logger = logging.getLogger(__name__)
 
@@ -582,7 +582,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 return
 
             # Generate bet slip image
-            from utils.player_prop_image_generator import PlayerPropImageGenerator
+            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
             import io
             from datetime import datetime, timezone
 
@@ -639,7 +639,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 )
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
-                    from utils.image_url_converter import convert_image_path_to_url
+                    from bot.utils.image_url_converter import convert_image_path_to_url
                     webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
 
                 # Get webhook for the channel

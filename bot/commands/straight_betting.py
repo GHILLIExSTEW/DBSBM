@@ -16,15 +16,15 @@ from discord import ButtonStyle, File, Interaction, Message, SelectOption, TextC
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from utils.game_line_image_generator import GameLineImageGenerator
-from utils.image_url_converter import convert_image_path_to_url
-from utils.league_loader import (
+from bot.utils.game_line_image_generator import GameLineImageGenerator
+from bot.utils.image_url_converter import convert_image_path_to_url
+from bot.utils.league_loader import (
     get_all_league_names,
     get_all_sport_categories,
     get_leagues_by_sport,
 )
-from utils.modals import StraightBetDetailsModal
-from utils.player_prop_image_generator import PlayerPropImageGenerator
+from bot.utils.modals import StraightBetDetailsModal
+from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -845,7 +845,7 @@ class StraightBetWorkflowView(View):
 
             try:
                 # Fetch games using the correct method
-                from data.game_utils import get_normalized_games_for_dropdown
+                from bot.data.game_utils import get_normalized_games_for_dropdown
 
                 games = await get_normalized_games_for_dropdown(
                     self.bot.db_manager, league
@@ -1539,7 +1539,7 @@ class StraightBetDetailsModal(Modal):
         """Add team/opponent fields for manual entry"""
         if self.is_manual:
             # Get league config to check sport type
-            from config.leagues import LEAGUE_CONFIG
+            from bot.config.leagues import LEAGUE_CONFIG
 
             league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
             sport_type = league_conf.get("sport_type", "Team Sport")
@@ -1675,7 +1675,7 @@ class StraightBetDetailsModal(Modal):
             # Get values from inputs
             if self.is_manual:
                 # Get league config to check sport type
-                from config.leagues import LEAGUE_CONFIG
+                from bot.config.leagues import LEAGUE_CONFIG
 
                 league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
                 sport_type = league_conf.get("sport_type", "Team Sport")
