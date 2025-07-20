@@ -14,22 +14,14 @@ from PIL import Image  # Added for PIL Image handling
 
 from .admin import require_registered_guild
 
-# Use relative imports
+# Import necessary services and utils
 try:
-    # Import necessary services and utils
-    # Services will be accessed via self.bot.<service_name>
-    # from ..services.analytics_service import AnalyticsService # Not needed if accessed via bot
     from ..utils.stats_image_generator import StatsImageGenerator
-
-    # Import db_manager only for type hint if needed by View
-    # from ..data.db_manager import DatabaseManager
 except ImportError:
-    # Fallback imports
-    pass
-
-    from utils.stats_image_generator import StatsImageGenerator
-
-    # from data.db_manager import DatabaseManager
+    try:
+        from utils.stats_image_generator import StatsImageGenerator
+    except ImportError:
+        StatsImageGenerator = None
 
 logger = logging.getLogger(__name__)
 
@@ -426,6 +418,14 @@ class StatsCog(commands.Cog):
             f"Stats command initiated by {interaction.user} in guild {interaction.guild_id}"
         )
         try:
+            # Check if StatsImageGenerator is available
+            if StatsImageGenerator is None:
+                logger.error("StatsImageGenerator not available")
+                await interaction.response.send_message(
+                    "❌ Stats functionality not available (missing dependencies).", ephemeral=True
+                )
+                return
+            
             # Access db_manager attached to bot instance
             if not hasattr(self.bot, "db_manager"):
                 logger.error("db_manager not found on bot instance.")
