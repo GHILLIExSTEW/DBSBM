@@ -205,7 +205,7 @@ class ParlayBetImageGenerator:
         if bet_type == "game_line":
             # Centered layout: [Home Logo+Name]   VS   [Away Logo+Name]
             center_x = (card_x0 + card_x1) // 2
-            team_col_width = 180
+            team_col_width = 200  # Increased from 180 to give more space
             vs_width = draw.textlength("VS", font=self.font_vs_small)
             spacing = 32
             # Home team position
@@ -213,13 +213,28 @@ class ParlayBetImageGenerator:
             away_col_x = center_x + spacing // 2 + vs_width // 2
             logo_y = card_y + 20
             name_y = logo_y + logo_size[1] + 6
+            
+            # Helper function to truncate text if needed
+            def truncate_text(text, max_width, font):
+                if draw.textlength(text, font=font) <= max_width:
+                    return text
+                # Try to find a good truncation point
+                for i in range(len(text) - 1, 0, -1):
+                    truncated = text[:i] + "..."
+                    if draw.textlength(truncated, font=font) <= max_width:
+                        return truncated
+                return text[:10] + "..." if len(text) > 10 else text
+            
             # Home logo and name
             home_logo = self._load_team_logo(home_team, league)
             if home_logo:
                 home_logo = home_logo.convert("RGBA").resize(logo_size)
                 logo_x = home_col_x + team_col_width // 2 - logo_size[0] // 2
                 image.paste(home_logo, (int(logo_x), int(logo_y)), home_logo)
-            home_name_w = draw.textlength(home_team, font=team_font)
+            
+            # Truncate home team name if needed
+            home_team_display = truncate_text(home_team, team_col_width - 20, team_font)
+            home_name_w = draw.textlength(home_team_display, font=team_font)
             home_name_x = home_col_x + team_col_width // 2 - home_name_w // 2
             home_color = (
                 "#00ff66"
@@ -228,17 +243,21 @@ class ParlayBetImageGenerator:
             )
             draw.text(
                 (int(home_name_x), int(name_y)),
-                home_team,
+                home_team_display,
                 font=team_font,
                 fill=home_color,
             )
+            
             # Away logo and name
             away_logo = self._load_team_logo(away_team, league)
             if away_logo:
                 away_logo = away_logo.convert("RGBA").resize(logo_size)
                 logo_x = away_col_x + team_col_width // 2 - logo_size[0] // 2
                 image.paste(away_logo, (int(logo_x), int(logo_y)), away_logo)
-            away_name_w = draw.textlength(away_team, font=team_font)
+            
+            # Truncate away team name if needed
+            away_team_display = truncate_text(away_team, team_col_width - 20, team_font)
+            away_name_w = draw.textlength(away_team_display, font=team_font)
             away_name_x = away_col_x + team_col_width // 2 - away_name_w // 2
             away_color = (
                 "#00ff66"
@@ -247,7 +266,7 @@ class ParlayBetImageGenerator:
             )
             draw.text(
                 (int(away_name_x), int(name_y)),
-                away_team,
+                away_team_display,
                 font=team_font,
                 fill=away_color,
             )

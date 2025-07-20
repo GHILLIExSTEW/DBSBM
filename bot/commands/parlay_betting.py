@@ -859,6 +859,11 @@ class BetDetailsModal(Modal):
 
             # Advance workflow - add the leg to the parlay
             leg_details = self.view_ref.current_leg_construction_details.copy()
+            
+            # Defer the response to prevent modal from staying open
+            await interaction.response.defer(ephemeral=True)
+            
+            # Add the leg to the parlay
             await self.view_ref.add_leg(interaction, leg_details)
 
         except ValidationError as e:
@@ -986,7 +991,7 @@ class UnitsSelect(Select):
             self.parent_view.bet_details["units"] = float(value)
             self.parent_view.bet_details["display_as_risk"] = None
         logger.debug(f"Parlay Units selected: {value} by user {interaction.user.id}")
-        self.disabled = True
+        # Don't disable the select - allow users to change their selection
         # Update preview image with selected units, but do not proceed to channel selection yet
         try:
             # Get guild settings for units display mode
@@ -1346,7 +1351,7 @@ class ConfirmUnitsButton(Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
-        logger.debug(f"Confirm Units button clicked by user {interaction.user.id}")
+        logger.info(f"[PARLAY WORKFLOW] Confirm Units button clicked by user {interaction.user.id}")
         await self.parent_view._handle_units_selection(
             interaction, float(self.parent_view.bet_details["units"])
         )
@@ -1447,8 +1452,10 @@ class ParlayBetWorkflowView(View):
             leg_count = len(self.bet_details["legs"])
             summary_text = self._generate_parlay_summary_text()
             decision_view = LegDecisionView(self)
+            
+            # Edit the existing message using the original interaction
             await self.edit_message_for_current_leg(
-                modal_interaction,
+                self.original_interaction,
                 content=f"✅ Line added for Leg {leg_count}\n\n{summary_text}\n\nAdd another leg or finalize?",
                 view=decision_view,
                 embed=embed,
@@ -1950,6 +1957,7 @@ class ParlayBetWorkflowView(View):
             self.preview_image_bytes = None
 
     async def _handle_units_selection(self, interaction: Interaction, units: float):
+        logger.info(f"[PARLAY WORKFLOW] _handle_units_selection called for user {interaction.user.id} with units {units}")
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
 
@@ -2291,7 +2299,9 @@ class ParlayBetWorkflowView(View):
                     view=None,
                     file=None,
                 )
+                logger.info(f"[PARLAY WORKFLOW] Bet posted successfully, stopping workflow for user {interaction.user.id}")
                 self.stop()
+                return
 
             except Exception as e:
                 logger.error(
