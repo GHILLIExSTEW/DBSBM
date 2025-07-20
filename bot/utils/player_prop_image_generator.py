@@ -365,68 +365,22 @@ class PlayerPropImageGenerator:
             anchor="lt",
         )
 
-        # Prop type (centered below player name)
-        prop_acronyms = {
-            "points": "PTS",
-            "rebounds": "REB", 
-            "assists": "AST",
-            "steals": "STL",
-            "blocks": "BLK",
-            "turnovers": "TO",
-            "three_pointers_made": "3PM",
-            "field_goals_made": "FGM",
-            "field_goals_attempted": "FGA",
-            "free_throws_made": "FTM",
-            "free_throws_attempted": "FTA",
-            "runs_batted_in": "RBI",
-            "hits": "H",
-            "home_runs": "HR",
-            "stolen_bases": "SB",
-            "walks": "BB",
-            "strikeouts": "SO",
-            "earned_runs": "ER",
-            "innings_pitched": "IP",
-            "wins": "W",
-            "saves": "SV",
-            "goals": "G",
-            "shots": "S",
-            "passes": "P",
-            "tackles": "T",
-            "interceptions": "INT",
-            "yards": "YDS",
-            "touchdowns": "TD",
-            "receptions": "REC",
-            "carries": "CAR",
-            "passing_yards": "PYDS",
-            "rushing_yards": "RYDS",
-            "receiving_yards": "REYDS",
-        }
-        
-        prop_display = prop_acronyms.get(prop_type.lower(), prop_type.upper())
-        prop_w, prop_h = font_line.getbbox(prop_display)[2:]
-        prop_y = team_name_y + 16
+        # Remove prop_acronyms and use full, capitalized prop type
+        prop_full = prop_type.replace('_', ' ').title()
+        # Combine line and prop type for display
+        line_and_prop = f"{line} {prop_full}"
+        line_and_prop_w, line_and_prop_h = font_line.getbbox(line_and_prop)[2:]
+        line_and_prop_y = team_name_y + 16
         draw.text(
-            ((image_width - prop_w) // 2, prop_y),
-            prop_display,
-            font=font_line,
-            fill="white",
-            anchor="lt",
-        )
-
-        # Line (centered below prop type)
-        line_text = str(line)
-        line_w, line_h = font_line.getbbox(line_text)[2:]
-        line_y = prop_y + prop_h + 8
-        draw.text(
-            ((image_width - line_w) // 2, line_y),
-            line_text,
+            ((image_width - line_and_prop_w) // 2, line_and_prop_y),
+            line_and_prop,
             font=font_line,
             fill="white",
             anchor="lt",
         )
 
         # Separator line above odds
-        sep_above_odds_y = line_y + line_h + 18
+        sep_above_odds_y = line_and_prop_y + line_and_prop_h + 18
         draw.line(
             [(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)],
             fill="#aaaaaa",

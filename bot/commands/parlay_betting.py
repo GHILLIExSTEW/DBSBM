@@ -2307,7 +2307,7 @@ class ParlayCog(commands.Cog):
 
     @app_commands.command(
         name="parlay",
-        description="🎲 Create a multi-leg parlay - combine multiple bets for bigger payouts",
+        description="Create a multi-leg parlay - combine multiple bets for bigger payouts",
     )
     @require_registered_guild()
     async def parlay(self, interaction: Interaction):

@@ -31,7 +31,7 @@ class EnhancedPlayerPropsCog(commands.Cog):
 
     @app_commands.command(
         name="playerprops",
-        description="🏀 Place a player performance bet - points, rebounds, assists, etc.",
+        description="Place a player performance bet - points, rebounds, assists, etc.",
     )
     @require_registered_guild()
     async def playerprops(self, interaction: discord.Interaction):

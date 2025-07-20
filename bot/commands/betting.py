@@ -228,7 +228,7 @@ class BettingCog(commands.Cog):
 
     @app_commands.command(
         name="gameline",
-        description="🎯 Place a single game bet - moneyline, spread, or over/under",
+        description="Place a single game bet - moneyline, spread, or over/under",
     )
     @require_registered_guild()
     async def gameline(self, interaction: Interaction):

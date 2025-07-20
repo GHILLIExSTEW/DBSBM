@@ -506,7 +506,7 @@ class BetService:
                 player_name,
                 team_name,
                 sport,
-                prop_type,
+                prop_type.title(),  # Capitalize prop type
                 line_value,
                 bet_direction,
                 odds_float,
