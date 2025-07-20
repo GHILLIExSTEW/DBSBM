@@ -857,18 +857,9 @@ class BetDetailsModal(Modal):
                 logger.error(f"Error generating parlay preview image: {e}")
                 self.view_ref.preview_image_bytes = None
 
-            # Advance workflow
-            if hasattr(self.view_ref, "current_step"):
-                self.view_ref.current_step += 1
-                logger.info(
-                    f"[PARLAY MODAL] Advancing to step {self.view_ref.current_step}"
-                )
-                await self.view_ref.go_next(interaction)
-            else:
-                logger.error("View reference missing current_step attribute")
-                await interaction.response.send_message(
-                    "Error: Could not advance workflow", ephemeral=True
-                )
+            # Advance workflow - add the leg to the parlay
+            leg_details = self.view_ref.current_leg_construction_details.copy()
+            await self.view_ref.add_leg(interaction, leg_details)
 
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
@@ -1564,17 +1555,20 @@ class ParlayBetWorkflowView(View):
                     else:
                         logger.error("Parlay: No valid interaction context available")
             else:
-                # We have a message but couldn't edit it, try to send a followup
-                if interaction_context:
-                    await interaction_context.followup.send(
-                        content="⚠️ Display updated. Please continue with the parlay setup.",
-                        ephemeral=True,
-                    )
-                elif self.original_interaction:
-                    await self.original_interaction.followup.send(
-                        content="⚠️ Display updated. Please continue with the parlay setup.",
-                        ephemeral=True,
-                    )
+                # We have a message but couldn't edit it, try to send a followup notification
+                try:
+                    if interaction_context:
+                        await interaction_context.followup.send(
+                            content="⚠️ Please continue with the parlay setup above.",
+                            ephemeral=True,
+                        )
+                    elif self.original_interaction:
+                        await self.original_interaction.followup.send(
+                            content="⚠️ Please continue with the parlay setup above.",
+                            ephemeral=True,
+                        )
+                except:
+                    pass
                     
         except Exception as e:
             logger.exception(f"Parlay: Failed to create new message: {e}")
@@ -1597,11 +1591,13 @@ class ParlayBetWorkflowView(View):
         self.current_step += 1
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
         logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
+        
+        # Ensure view is properly cleared before adding new items
+        self.clear_items()
 
         if self.current_step == 1:
             # Step 1: Sport category selection
             sports = get_all_sport_categories()
-            self.clear_items()
             self.add_item(SportSelect(self, sports))
             self.add_item(CancelButton(self))
             await self.edit_message_for_current_leg(
@@ -1614,7 +1610,6 @@ class ParlayBetWorkflowView(View):
             # Step 2: League selection within selected sport
             sport = self.current_leg_construction_details.get("sport")
             leagues = get_leagues_by_sport(sport)
-            self.clear_items()
             self.add_item(LeagueSelect(self, leagues))
             self.add_item(CancelButton(self))
             await self.edit_message_for_current_leg(
@@ -1623,7 +1618,6 @@ class ParlayBetWorkflowView(View):
             return
         elif self.current_step == 3:
             # Step 3: Line type selection
-            self.clear_items()
             self.add_item(LineTypeSelect(self))
             self.add_item(CancelButton(self))
             await self.edit_message_for_current_leg(
@@ -1655,7 +1649,6 @@ class ParlayBetWorkflowView(View):
                     self.stop()
                     return
 
-                self.clear_items()
                 self.add_item(ParlayGameSelect(self, games))
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(
@@ -1787,7 +1780,6 @@ class ParlayBetWorkflowView(View):
             return
         elif self.current_step == 9:
             # Show units select with default preview
-            self.clear_items()
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
             self.add_item(CancelButton(self))
@@ -1836,7 +1828,6 @@ class ParlayBetWorkflowView(View):
                     self.stop()
                     return
 
-                self.clear_items()
                 self.add_item(ChannelSelect(self, available_channels))
                 self.add_item(FinalConfirmButton(self))
                 self.add_item(CancelButton(self))
