@@ -505,7 +505,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 view.add_item(confirm_button)
                 view.add_item(back_button)
                 
-                await interaction.response.edit_message(
+                # Send new message with file (can't edit with files)
+                await interaction.response.send_message(
                     content=f"🎯 **Player Prop Bet Preview**\n\n"
                     f"**Player:** {bet_data['player_name']}\n"
                     f"**Prop:** {prop_type}\n"
@@ -513,7 +514,8 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     f"**Units:** {units}\n\n"
                     f"**Preview your bet slip below:**",
                     view=view,
-                    file=file
+                    file=file,
+                    ephemeral=True
                 )
             else:
                 # Fallback if image generation fails
