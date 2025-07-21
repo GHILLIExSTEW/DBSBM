@@ -185,36 +185,44 @@ class PlatinumService:
     # Data Export
     async def create_data_export(self, guild_id: int, export_type: str,
                                export_format: str, created_by: int) -> int:
-        """Create a data export request for a Platinum guild."""
+        """Create a data export for a Platinum guild."""
         try:
+            logger.critical(f"[EXPORT DEBUG] create_data_export function ENTERED - guild_id={guild_id}, type={export_type}, format={export_format}")
+            
             if not await self.is_platinum_guild(guild_id):
-                return None
+                logger.critical(f"[EXPORT DEBUG] Not a platinum guild: {guild_id}")
+                return 0
                 
+            logger.critical(f"[EXPORT DEBUG] Platinum check passed for guild_id={guild_id}")
+            
             # Check export limit
-            recent_exports = await self.get_recent_exports(guild_id)
-            if len(recent_exports) >= 50:  # Platinum limit
-                return None
+            current_month = datetime.now().month
+            current_exports = await self.get_export_count(guild_id, current_month)
+            if current_exports >= 50:  # Platinum limit
+                logger.critical(f"[EXPORT DEBUG] Export limit reached for guild_id={guild_id}: {current_exports}/50")
+                return 0
                 
-            # Create the export record
-            result = await self.db_manager.execute(
+            logger.critical(f"[EXPORT DEBUG] Export limit check passed: {current_exports}/50")
+            
+            # Create export record
+            logger.critical(f"[EXPORT DEBUG] About to create DB record for export")
+            export_id = await self.db_manager.execute_and_get_id(
                 """
-                INSERT INTO data_exports (guild_id, export_type, export_format, created_by)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at)
+                VALUES (%s, %s, %s, %s, NOW())
                 """,
                 guild_id, export_type, export_format, created_by
             )
             
-            # Get the export ID
-            export_id = await self.db_manager.fetch_one(
-                "SELECT LAST_INSERT_ID() as id"
-            )
-            export_id = export_id['id'] if export_id else None
+            logger.critical(f"[EXPORT DEBUG] DB insert completed successfully. export_id={export_id}")
             
             if export_id:
-                logger.critical(f"[EXPORT DEBUG] DB insert complete, export_id={export_id}. Attempting to schedule background export task.")
+                logger.critical(f"[EXPORT DEBUG] export_id is valid: {export_id}. About to schedule background task.")
                 try:
                     # Use get_running_loop for reliability
                     loop = asyncio.get_running_loop()
+                    logger.critical(f"[EXPORT DEBUG] Got running loop successfully")
+                    
                     async def run_export_with_logging():
                         try:
                             logger.critical(f"[EXPORT DEBUG] Background export task starting for export_id={export_id}")
@@ -226,16 +234,26 @@ class PlatinumService:
                                 await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}")
                             except Exception as notify_error:
                                 logger.critical(f"[EXPORT DEBUG] Failed to send error notification for export_id={export_id}: {notify_error}")
+                    
+                    logger.critical(f"[EXPORT DEBUG] About to create task for export_id={export_id}")
                     task = loop.create_task(run_export_with_logging())
                     logger.critical(f"[EXPORT DEBUG] Background export task created and started for export_id={export_id}")
                 except Exception as e:
                     logger.critical(f"[EXPORT DEBUG] Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
                     await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}")
+            else:
+                logger.critical(f"[EXPORT DEBUG] export_id is None or 0 - DB insert may have failed")
+                
+            logger.critical(f"[EXPORT DEBUG] About to track feature usage for guild_id={guild_id}")
             await self.track_feature_usage(guild_id, "data_exports")
+            logger.critical(f"[EXPORT DEBUG] Feature usage tracked successfully")
+            
+            logger.critical(f"[EXPORT DEBUG] create_data_export function COMPLETED successfully. Returning export_id={export_id}")
             return export_id
+            
         except Exception as e:
-            logger.error(f"Error creating data export: {e}")
-            return None
+            logger.critical(f"[EXPORT DEBUG] CRITICAL ERROR in create_data_export: {e}", exc_info=True)
+            return 0
 
     def _handle_export_task_completion(self, task, export_id: int):
         """Handle completion of export background task."""
