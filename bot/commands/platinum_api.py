@@ -454,17 +454,41 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
+            # Debug: Log the first odds entry structure
+            if odds_data:
+                logger.info(f"First odds entry structure: {odds_data[0]}")
+            
             embed = discord.Embed(
                 title=f"💰 {sport.title()} Odds",
                 description=f"Found {len(odds_data)} odds entries",
                 color=0x9b59b6
             )
             for i, odds in enumerate(odds_data[:5]):
-                fixture_info = odds.get('fixture', {})
-                teams = fixture_info.get('teams', {})
-                home_team = teams.get('home', {}).get('name', 'Unknown')
-                away_team = teams.get('away', {}).get('name', 'Unknown')
+                # Try different possible structures for team names
+                home_team = "Unknown"
+                away_team = "Unknown"
                 
+                # Method 1: Check if teams are directly in odds
+                if 'teams' in odds:
+                    teams = odds['teams']
+                    home_team = teams.get('home', {}).get('name', 'Unknown')
+                    away_team = teams.get('away', {}).get('name', 'Unknown')
+                
+                # Method 2: Check if teams are in fixture
+                elif 'fixture' in odds:
+                    fixture_info = odds['fixture']
+                    if 'teams' in fixture_info:
+                        teams = fixture_info['teams']
+                        home_team = teams.get('home', {}).get('name', 'Unknown')
+                        away_team = teams.get('away', {}).get('name', 'Unknown')
+                
+                # Method 3: Check if teams are at root level with different keys
+                else:
+                    # Try common alternative field names
+                    home_team = odds.get('home_team', odds.get('home', 'Unknown'))
+                    away_team = odds.get('away_team', odds.get('away', 'Unknown'))
+                
+                # Get bookmaker and odds information
                 bookmakers = odds.get('bookmakers', [])
                 if bookmakers:
                     bookmaker_name = bookmakers[0].get('name', 'Unknown')
