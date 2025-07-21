@@ -215,16 +215,8 @@ class ParlayBetImageGenerator:
             right_margin = card_x1 - 20
             available_width = right_margin - left_margin
             
-            # Helper function to truncate text if needed
-            def truncate_text(text, max_width, font):
-                if draw.textlength(text, font=font) <= max_width:
-                    return text
-                # Try to find a good truncation point
-                for i in range(len(text) - 1, 0, -1):
-                    truncated = text[:i] + "..."
-                    if draw.textlength(truncated, font=font) <= max_width:
-                        return truncated
-                return text[:10] + "..." if len(text) > 10 else text
+            # Import team display name function
+            from bot.utils.team_display_names import get_team_display_name
             
             # Team (left-aligned)
             team_logo = self._load_team_logo(home_team, league)
@@ -232,7 +224,7 @@ class ParlayBetImageGenerator:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
             
-            team_display = truncate_text(home_team, 120, team_font)
+            team_display = get_team_display_name(home_team)
             team_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
             draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill=team_color)
             
@@ -240,7 +232,8 @@ class ParlayBetImageGenerator:
             vs_text = "VS"
             vs_font = self.font_vs_small
             vs_width = draw.textlength(vs_text, font=vs_font)
-            vs_x = left_margin + 140  # Position after team
+            team_name_width = draw.textlength(team_display, font=team_font)
+            vs_x = left_margin + team_name_width + 20  # Position after team name
             vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
             
@@ -251,14 +244,15 @@ class ParlayBetImageGenerator:
                 opponent_logo_x = vs_x + vs_width + 20
                 image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo)
             
-            opponent_display = truncate_text(away_team, 120, team_font)
+            opponent_display = get_team_display_name(away_team)
             opponent_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
             opponent_name_x = opponent_logo_x
             draw.text((int(opponent_name_x), int(name_y)), opponent_display, font=team_font, fill=opponent_color)
             
             # Line (to right of opponent)
             line_w = draw.textlength(line, font=line_font)
-            line_x = opponent_name_x + 140  # Position after opponent
+            opponent_name_width = draw.textlength(opponent_display, font=team_font)
+            line_x = opponent_name_x + opponent_name_width + 20  # Position after opponent name
             draw.text((int(line_x), int(line_y)), line, font=line_font, fill="#ffffff")
         elif bet_type == "player_prop":
             margin_left = card_x0 + 24
