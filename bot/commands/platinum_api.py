@@ -229,6 +229,91 @@ class APIFlowView(discord.ui.View):
             )
 
 
+class OddsPaginatedView(discord.ui.View):
+    def __init__(self, cog, odds_data: List[Dict], sport: str, page: int = 0, page_size: int = 5):
+        super().__init__(timeout=120)
+        self.cog = cog
+        self.odds_data = odds_data
+        self.sport = sport
+        self.page = page
+        self.page_size = page_size
+        self.total_pages = (len(odds_data) + page_size - 1) // page_size
+
+    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray, disabled=True)
+    async def previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await self.update_odds_display(interaction)
+
+    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page < self.total_pages - 1:
+            self.page += 1
+            await self.update_odds_display(interaction)
+
+    async def update_odds_display(self, interaction: discord.Interaction):
+        start_idx = self.page * self.page_size
+        end_idx = min(start_idx + self.page_size, len(self.odds_data))
+        page_odds = self.odds_data[start_idx:end_idx]
+
+        embed = discord.Embed(
+            title=f"💰 {self.sport.title()} Odds",
+            description=f"Page {self.page + 1} of {self.total_pages} • Showing {start_idx + 1}-{end_idx} of {len(self.odds_data)} entries",
+            color=0x9b59b6
+        )
+
+        for i, odds in enumerate(page_odds):
+            # Extract team names - try multiple approaches
+            home_team = "Unknown"
+            away_team = "Unknown"
+            
+            # Log the structure for debugging
+            logger.info(f"Odds entry structure: {odds}")
+            
+            # Try to get team names from various possible locations
+            if 'fixture' in odds and 'teams' in odds['fixture']:
+                teams = odds['fixture']['teams']
+                home_team = teams.get('home', {}).get('name', 'Unknown')
+                away_team = teams.get('away', {}).get('name', 'Unknown')
+            elif 'teams' in odds:
+                teams = odds['teams']
+                home_team = teams.get('home', {}).get('name', 'Unknown')
+                away_team = teams.get('away', {}).get('name', 'Unknown')
+            elif 'game' in odds and 'teams' in odds['game']:
+                teams = odds['game']['teams']
+                home_team = teams.get('home', {}).get('name', 'Unknown')
+                away_team = teams.get('away', {}).get('name', 'Unknown')
+            else:
+                # Try direct field access
+                home_team = odds.get('home_team', odds.get('home', 'Unknown'))
+                away_team = odds.get('away_team', odds.get('away', 'Unknown'))
+
+            # Get bookmaker and odds information
+            bookmakers = odds.get('bookmakers', [])
+            if bookmakers:
+                bookmaker_name = bookmakers[0].get('name', 'Unknown')
+                bets = bookmakers[0].get('bets', [])
+                if bets:
+                    bet_values = bets[0].get('values', [])
+                    odds_text = ', '.join([f"{v.get('value', 'N/A')}: {v.get('odd', 'N/A')}" for v in bet_values[:3]])
+                else:
+                    odds_text = "No odds available"
+            else:
+                odds_text = "No bookmakers available"
+
+            embed.add_field(
+                name=f"{start_idx + i + 1}. {home_team} vs {away_team}",
+                value=f"Bookmaker: {bookmaker_name}\nOdds: {odds_text}",
+                inline=False
+            )
+
+        # Update button states
+        self.previous_page.disabled = self.page == 0
+        self.next_page.disabled = self.page == self.total_pages - 1
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+
 class PlatinumAPICog(commands.Cog):
     """Platinum tier API query commands for direct sports data access."""
     
@@ -457,37 +542,46 @@ class PlatinumAPICog(commands.Cog):
             # Debug: Log the first odds entry structure
             if odds_data:
                 logger.info(f"First odds entry structure: {odds_data[0]}")
+                logger.info(f"Keys in first odds entry: {list(odds_data[0].keys())}")
             
+            # Create paginated view and show first page
+            view = OddsPaginatedView(self, odds_data, sport)
+            start_idx = 0
+            end_idx = min(5, len(odds_data))
+            page_odds = odds_data[start_idx:end_idx]
+
             embed = discord.Embed(
                 title=f"💰 {sport.title()} Odds",
-                description=f"Found {len(odds_data)} odds entries",
+                description=f"Page 1 of {view.total_pages} • Showing {start_idx + 1}-{end_idx} of {len(odds_data)} entries",
                 color=0x9b59b6
             )
-            for i, odds in enumerate(odds_data[:5]):
-                # Try different possible structures for team names
+
+            for i, odds in enumerate(page_odds):
+                # Extract team names - try multiple approaches
                 home_team = "Unknown"
                 away_team = "Unknown"
                 
-                # Method 1: Check if teams are directly in odds
-                if 'teams' in odds:
+                # Log the structure for debugging
+                logger.info(f"Odds entry structure: {odds}")
+                
+                # Try to get team names from various possible locations
+                if 'fixture' in odds and 'teams' in odds['fixture']:
+                    teams = odds['fixture']['teams']
+                    home_team = teams.get('home', {}).get('name', 'Unknown')
+                    away_team = teams.get('away', {}).get('name', 'Unknown')
+                elif 'teams' in odds:
                     teams = odds['teams']
                     home_team = teams.get('home', {}).get('name', 'Unknown')
                     away_team = teams.get('away', {}).get('name', 'Unknown')
-                
-                # Method 2: Check if teams are in fixture
-                elif 'fixture' in odds:
-                    fixture_info = odds['fixture']
-                    if 'teams' in fixture_info:
-                        teams = fixture_info['teams']
-                        home_team = teams.get('home', {}).get('name', 'Unknown')
-                        away_team = teams.get('away', {}).get('name', 'Unknown')
-                
-                # Method 3: Check if teams are at root level with different keys
+                elif 'game' in odds and 'teams' in odds['game']:
+                    teams = odds['game']['teams']
+                    home_team = teams.get('home', {}).get('name', 'Unknown')
+                    away_team = teams.get('away', {}).get('name', 'Unknown')
                 else:
-                    # Try common alternative field names
+                    # Try direct field access
                     home_team = odds.get('home_team', odds.get('home', 'Unknown'))
                     away_team = odds.get('away_team', odds.get('away', 'Unknown'))
-                
+
                 # Get bookmaker and odds information
                 bookmakers = odds.get('bookmakers', [])
                 if bookmakers:
@@ -500,15 +594,18 @@ class PlatinumAPICog(commands.Cog):
                         odds_text = "No odds available"
                 else:
                     odds_text = "No bookmakers available"
-                
+
                 embed.add_field(
-                    name=f"{i+1}. {home_team} vs {away_team}",
+                    name=f"{start_idx + i + 1}. {home_team} vs {away_team}",
                     value=f"Bookmaker: {bookmaker_name}\nOdds: {odds_text}",
                     inline=False
                 )
-            if len(odds_data) > 5:
-                embed.set_footer(text=f"Showing first 5 of {len(odds_data)} odds entries")
-            await interaction.followup.send(embed=embed)
+
+            # Update button states
+            view.previous_page.disabled = True
+            view.next_page.disabled = view.total_pages <= 1
+
+            await interaction.followup.send(embed=embed, view=view)
 
         elif query_type == 'live':
             live_matches = result.get('response', [])
