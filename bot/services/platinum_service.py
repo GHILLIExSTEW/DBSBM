@@ -233,7 +233,7 @@ class PlatinumService:
                         except Exception as e:
                             logger.critical(f"[EXPORT DEBUG] Background export task failed for export_id={export_id}: {e}", exc_info=True)
                             try:
-                                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}")
+                                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}", user_id)
                             except Exception as notify_error:
                                 logger.critical(f"[EXPORT DEBUG] Failed to send error notification for export_id={export_id}: {notify_error}")
                     
@@ -242,7 +242,7 @@ class PlatinumService:
                     logger.critical(f"[EXPORT DEBUG] Background export task created and started for export_id={export_id}")
                 except Exception as e:
                     logger.critical(f"[EXPORT DEBUG] Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
-                    await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}")
+                    await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}", user_id)
             else:
                 logger.critical(f"[EXPORT DEBUG] export_id is None or 0 - DB insert may have failed")
                 
@@ -283,7 +283,7 @@ class PlatinumService:
             if not export_data:
                 logger.warning(f"No data found for export_id={export_id}, type={export_type}")
                 await self._update_export_status(export_id, False, "No data found for export")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"No data found")
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "No data found", user_id)
                 return
             
             # Create the export file
@@ -297,18 +297,18 @@ class PlatinumService:
                 
                 # Send success notification
                 logger.info(f"Sending success notification for export_id={export_id}")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, True, file_path)
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, True, file_path, user_id)
                 
                 logger.info(f"Export {export_id} completed successfully: {file_path}")
             else:
                 logger.error(f"Failed to create export file for export_id={export_id}")
                 await self._update_export_status(export_id, False, "Failed to create file")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "Failed to create file")
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "Failed to create file", user_id)
                 
         except Exception as e:
             logger.error(f"Error generating export {export_id}: {e}", exc_info=True)
             await self._update_export_status(export_id, False, str(e))
-            await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e))
+            await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e), user_id)
 
     async def _get_export_data(self, guild_id: int, export_type: str, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get data for the specified export type."""
@@ -635,7 +635,7 @@ class PlatinumService:
             logger.error(f"Error updating export status: {e}")
 
     async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None, user_filter: Optional[int] = None):
-        """Send notification to user about export completion."""
+        """Send notification to user about export completion with the actual file."""
         try:
             logger.info(f"Sending export notification: guild_id={guild_id}, user_id={user_id}, success={success}")
             
@@ -670,40 +670,69 @@ class PlatinumService:
             if user_filter:
                 embed.add_field(name="User Filter", value=f"<@{user_filter}>", inline=True)
             
-            if success and file_path:
+            if success and file_path and os.path.exists(file_path):
                 embed.add_field(name="File", value=f"`{os.path.basename(file_path)}`", inline=False)
-                embed.set_footer(text="File saved to server exports directory")
+                embed.set_footer(text="File attached below")
+                
+                # Try to send file via DM first
+                notification_sent = False
+                try:
+                    logger.info(f"Attempting to send file via DM to user {user_id}")
+                    with open(file_path, 'rb') as file:
+                        discord_file = discord.File(file, filename=os.path.basename(file_path))
+                        await user.send(embed=embed, file=discord_file)
+                    notification_sent = True
+                    logger.info(f"Export file sent via DM to user {user_id}")
+                except Exception as dm_error:
+                    logger.warning(f"Failed to send file via DM to user {user_id}: {dm_error}")
+                    
+                    # If DM fails, try to send to a channel the user can see
+                    for channel in guild.text_channels:
+                        if channel.permissions_for(user).read_messages and channel.permissions_for(user).attach_files:
+                            try:
+                                logger.info(f"Attempting to send file to channel {channel.id}")
+                                with open(file_path, 'rb') as file:
+                                    discord_file = discord.File(file, filename=os.path.basename(file_path))
+                                    await channel.send(f"{user.mention}", embed=embed, file=discord_file)
+                                notification_sent = True
+                                logger.info(f"Export file sent to channel {channel.id}")
+                                break
+                            except Exception as channel_error:
+                                logger.warning(f"Failed to send file to channel {channel.id}: {channel_error}")
+                                continue
+                    
+                    # If file sending fails, try sending just the notification
+                    if not notification_sent:
+                        try:
+                            embed.add_field(name="File Access", value="File created but couldn't be sent. Contact an admin.", inline=False)
+                            await user.send(embed=embed)
+                            notification_sent = True
+                        except Exception as notify_error:
+                            logger.warning(f"Failed to send notification to user {user_id}: {notify_error}")
             else:
                 embed.add_field(name="Error", value=file_path or "Unknown error", inline=False)
                 embed.set_footer(text="Please try again or contact support")
-            
-            # Try to send DM first, then fallback to guild
-            notification_sent = False
-            try:
-                logger.info(f"Attempting to send DM to user {user_id} for export notification")
-                await user.send(embed=embed)
-                notification_sent = True
-                logger.info(f"Export notification sent via DM to user {user_id}")
-            except Exception as dm_error:
-                logger.warning(f"Failed to send DM to user {user_id}: {dm_error}")
                 
-                # If DM fails, try to send to a channel the user can see
-                for channel in guild.text_channels:
-                    if channel.permissions_for(user).read_messages:
-                        try:
-                            logger.info(f"Attempting to send notification to channel {channel.id}")
-                            await channel.send(f"{user.mention}", embed=embed)
-                            notification_sent = True
-                            logger.info(f"Export notification sent to channel {channel.id}")
-                            break
-                        except Exception as channel_error:
-                            logger.warning(f"Failed to send to channel {channel.id}: {channel_error}")
-                            continue
+                # Send error notification
+                try:
+                    await user.send(embed=embed)
+                    notification_sent = True
+                except Exception as notify_error:
+                    logger.warning(f"Failed to send error notification to user {user_id}: {notify_error}")
+                    notification_sent = False
             
             if not notification_sent:
                 logger.error(f"Failed to send export notification to user {user_id} in guild {guild_id}")
             else:
                 logger.info(f"Export notification successfully sent for export_id={export_id}")
+                
+                # Clean up the file after successful sending to save server space
+                if success and file_path and os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                        logger.info(f"Cleaned up export file: {file_path}")
+                    except Exception as cleanup_error:
+                        logger.warning(f"Failed to cleanup export file {file_path}: {cleanup_error}")
                             
         except Exception as e:
             logger.error(f"Error sending export notification: {e}", exc_info=True)
