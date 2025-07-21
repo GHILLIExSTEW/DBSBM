@@ -752,13 +752,81 @@ class AdminCog(commands.Cog):
         name="subscribe",
         description="Get the link to subscribe your server to premium features.",
     )
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def subscribe_command(self, interaction: Interaction):
         """Sends the subscription webpage link for premium services."""
-        subscription_url = "https://betting-server-manager.us/subscribe"
-        await interaction.response.send_message(
-            f"To subscribe your server to premium features, visit: {subscription_url}",
-            ephemeral=True,
-        )
+        try:
+            guild_id = interaction.guild_id
+            user = interaction.user
+            
+            # Check if user has authorized role - REQUIRED for all users
+            guild_settings = await self.bot.admin_service.get_guild_settings(guild_id)
+            if guild_settings and guild_settings.get('authorized_role'):
+                authorized_role_id = guild_settings['authorized_role']
+                has_authorized_role = any(role.id == authorized_role_id for role in user.roles)
+                if not has_authorized_role:
+                    await interaction.response.send_message(
+                        "❌ You need the authorized user role to use this command.", ephemeral=True
+                    )
+                    return
+            else:
+                # If no authorized role is set, only allow admins
+                if not user.guild_permissions.administrator:
+                    await interaction.response.send_message(
+                        "❌ You need administrator permissions to use this command.", ephemeral=True
+                    )
+                    return
+            
+            # Check if user is admin for subscription link
+            is_admin = user.guild_permissions.administrator
+            
+            embed = discord.Embed(
+                title="⭐ Premium Tier - Upgrade Available",
+                description="Unlock advanced features with Premium tier!",
+                color=0x00ff00
+            )
+            
+            embed.add_field(
+                name="Premium Features",
+                value="🎯 Advanced Betting Tools\n"
+                      "📊 Enhanced Analytics\n"
+                      "🔔 Custom Notifications\n"
+                      "🎨 Custom Branding\n"
+                      "📈 Performance Tracking\n"
+                      "⚡ Priority Support",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Pricing",
+                value="⭐ **Premium**: $49.99/month\n"
+                      "💎 **Platinum**: $99.99/month",
+                inline=True
+            )
+            
+            if is_admin:
+                subscription_url = "https://betting-server-manager.us/subscribe"
+                embed.add_field(
+                    name="Subscribe Now",
+                    value=f"[Click here to subscribe]({subscription_url})",
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="Contact Admin",
+                    value="Please contact a server administrator to upgrade to Premium tier.",
+                    inline=False
+                )
+            
+            embed.set_footer(text="Upgrade to unlock these powerful features!")
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Error in subscribe_command: {e}")
+            await interaction.response.send_message(
+                "❌ An error occurred while processing your request.", ephemeral=True
+            )
 
     # Cog specific error handler
     async def cog_app_command_error(
