@@ -18,7 +18,7 @@ class PlatinumCog(commands.Cog):
         """Handle errors for Platinum commands."""
         if isinstance(error, app_commands.MissingPermissions):
             await interaction.response.send_message(
-                "❌ You don't have permission to use this command.", ephemeral=True
+                "❌ You need 'Manage Server' permissions to use Platinum commands.", ephemeral=True
             )
         else:
             logger.error(f"Error in Platinum command: {error}")
@@ -27,13 +27,14 @@ class PlatinumCog(commands.Cog):
             )
 
     @app_commands.command(name="platinum", description="Check Platinum tier status or upgrade")
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def platinum_status(self, interaction: Interaction):
         """Check Platinum tier status or direct to subscription page."""
         try:
             guild_id = interaction.guild_id
             user = interaction.user
             
-            # Check if user has authorized role
+            # Check if user has authorized role - REQUIRED for all users
             guild_settings = await self.bot.admin_service.get_guild_settings(guild_id)
             if guild_settings and guild_settings.get('authorized_role'):
                 authorized_role_id = guild_settings['authorized_role']
@@ -41,6 +42,13 @@ class PlatinumCog(commands.Cog):
                 if not has_authorized_role:
                     await interaction.response.send_message(
                         "❌ You need the authorized user role to use this command.", ephemeral=True
+                    )
+                    return
+            else:
+                # If no authorized role is set, only allow admins
+                if not user.guild_permissions.administrator:
+                    await interaction.response.send_message(
+                        "❌ You need administrator permissions to use this command.", ephemeral=True
                     )
                     return
             
@@ -87,7 +95,7 @@ class PlatinumCog(commands.Cog):
                 embed.set_footer(text="Your Platinum subscription is active and ready to use!")
                 
             else:
-                # Check if user is admin
+                # Check if user is admin for upgrade link
                 is_admin = user.guild_permissions.administrator
                 
                 embed = discord.Embed(
