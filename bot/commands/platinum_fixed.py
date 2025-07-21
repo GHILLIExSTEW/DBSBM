@@ -98,49 +98,44 @@ class PlatinumCog(commands.Cog):
                 
                 embed.add_field(
                     name="Platinum Features",
-                    value="🔗 Webhook Integrations (10 max)\n"
-                          "🔔 Real-Time Alerts & Notifications\n"
-                          "📊 Data Export Tools (50/month)\n"
-                          "📈 Advanced Analytics Dashboard\n"
-                          "🌐 Direct API Access (All Sports)\n"
-                          "📱 Mobile App Push Notifications\n"
-                          "📋 Excel Analysis & Tax Reporting\n"
-                          "📊 Performance Tracking\n"
-                          "🔗 Third-party Tool Integration\n"
-                          "📈 Betting Pattern Analytics",
-                    inline=False
+                    value="🔗 Webhook Integrations\n"
+                          "📊 Advanced Analytics\n"
+                          "📤 Data Export Tools\n"
+                          "🔌 Direct API Access\n"
+                          "⚡ Real-Time Alerts\n"
+                          "🎨 Custom Branding",
+                    inline=True
                 )
                 
                 embed.add_field(
                     name="Pricing",
-                    value="$99.99/month",
+                    value="💎 **Platinum**: $99.99/month\n"
+                          "⭐ **Premium**: $49.99/month",
                     inline=True
                 )
                 
                 if is_admin:
                     embed.add_field(
                         name="Upgrade Now",
-                        value="[Visit Subscription Page](https://your-domain.com/subscription)",
-                        inline=True
+                        value="[Click here to upgrade](https://your-subscription-page.com)",
+                        inline=False
                     )
-                    embed.set_footer(text="Upgrade to Platinum for premium features!")
                 else:
                     embed.add_field(
                         name="Contact Admin",
                         value="Please contact a server administrator to upgrade to Platinum tier.",
-                        inline=True
+                        inline=False
                     )
-                    embed.set_footer(text="Only administrators can upgrade the server subscription.")
+                
+                embed.set_footer(text="Upgrade to unlock these powerful features!")
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed)
             
         except Exception as e:
-            logger.error(f"Error in platinum_status command: {e}")
+            logger.error(f"Error in platinum_status: {e}")
             await interaction.response.send_message(
                 "❌ An error occurred while checking Platinum status.", ephemeral=True
             )
-
-
 
     @app_commands.command(name="webhook", description="Create a webhook integration (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
@@ -149,18 +144,9 @@ class PlatinumCog(commands.Cog):
         interaction: Interaction,
         webhook_name: str,
         webhook_url: str,
-        webhook_type: str = app_commands.Choice(
-            name="Webhook Type",
-            choices=[
-                app_commands.Choice(name="Bet Created", value="bet_created"),
-                app_commands.Choice(name="Bet Resulted", value="bet_resulted"),
-                app_commands.Choice(name="User Activity", value="user_activity"),
-                app_commands.Choice(name="Analytics", value="analytics"),
-                app_commands.Choice(name="General", value="general")
-            ]
-        )
+        webhook_type: str
     ):
-        """Create a webhook integration for the server."""
+        """Create a webhook integration for Platinum tier."""
         try:
             guild_id = interaction.guild_id
             
@@ -171,36 +157,41 @@ class PlatinumCog(commands.Cog):
                 )
                 return
             
-            # Create webhook integration
-            success = await self.bot.platinum_service.create_webhook_integration(
+            # Validate webhook type
+            valid_types = ["bet_created", "bet_resulted", "user_activity", "analytics", "general"]
+            if webhook_type not in valid_types:
+                await interaction.response.send_message(
+                    f"❌ Invalid webhook type. Valid types: {', '.join(valid_types)}", 
+                    ephemeral=True
+                )
+                return
+            
+            # Create webhook
+            success = await self.bot.platinum_service.create_webhook(
                 guild_id, webhook_name, webhook_url, webhook_type
             )
             
             if success:
                 embed = discord.Embed(
-                    title="✅ Webhook Integration Created",
-                    description=f"Webhook `{webhook_name}` has been created successfully!",
+                    title="✅ Webhook Created",
+                    description=f"Webhook '{webhook_name}' has been created successfully!",
                     color=0x00ff00
                 )
-                embed.add_field(name="Name", value=webhook_name, inline=True)
                 embed.add_field(name="Type", value=webhook_type, inline=True)
-                embed.add_field(name="URL", value=f"`{webhook_url[:50]}...`", inline=False)
-                
-                # Get current webhook count
-                webhooks = await self.bot.platinum_service.get_webhook_integrations(guild_id)
-                embed.add_field(name="Total Webhooks", value=f"{len(webhooks)}/10", inline=True)
-                
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                embed.add_field(name="URL", value=f"`{webhook_url[:50]}...`", inline=True)
             else:
-                await interaction.response.send_message(
-                    "❌ Failed to create webhook integration. You may have reached the limit (10 webhooks).", 
-                    ephemeral=True
+                embed = discord.Embed(
+                    title="❌ Webhook Creation Failed",
+                    description="Failed to create webhook. Please try again.",
+                    color=0xff0000
                 )
-                
+            
+            await interaction.response.send_message(embed=embed)
+            
         except Exception as e:
-            logger.error(f"Error creating webhook: {e}")
+            logger.error(f"Error in create_webhook: {e}")
             await interaction.response.send_message(
-                "❌ An error occurred while creating the webhook integration.", ephemeral=True
+                "❌ An error occurred while creating the webhook.", ephemeral=True
             )
 
     @app_commands.command(name="export", description="Export server data (Platinum only)")
@@ -208,25 +199,10 @@ class PlatinumCog(commands.Cog):
     async def export_data(
         self,
         interaction: Interaction,
-        export_type: str = app_commands.Choice(
-            name="Export Type",
-            choices=[
-                app_commands.Choice(name="Bets", value="bets"),
-                app_commands.Choice(name="Users", value="users"),
-                app_commands.Choice(name="Analytics", value="analytics"),
-                app_commands.Choice(name="All", value="all")
-            ]
-        ),
-        format: str = app_commands.Choice(
-            name="Format",
-            choices=[
-                app_commands.Choice(name="CSV", value="csv"),
-                app_commands.Choice(name="JSON", value="json"),
-                app_commands.Choice(name="Excel", value="xlsx")
-            ]
-        )
+        export_type: str,
+        format: str
     ):
-        """Export server data in various formats."""
+        """Export server data for Platinum tier."""
         try:
             guild_id = interaction.guild_id
             
@@ -237,45 +213,59 @@ class PlatinumCog(commands.Cog):
                 )
                 return
             
-            # Create data export request
-            export_id = await self.bot.platinum_service.create_data_export(
+            # Validate export type
+            valid_types = ["bets", "users", "analytics", "all"]
+            if export_type not in valid_types:
+                await interaction.response.send_message(
+                    f"❌ Invalid export type. Valid types: {', '.join(valid_types)}", 
+                    ephemeral=True
+                )
+                return
+            
+            # Validate format
+            valid_formats = ["csv", "json", "xlsx"]
+            if format not in valid_formats:
+                await interaction.response.send_message(
+                    f"❌ Invalid format. Valid formats: {', '.join(valid_formats)}", 
+                    ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer()
+            
+            # Create export
+            success = await self.bot.platinum_service.create_export(
                 guild_id, export_type, format, interaction.user.id
             )
             
-            if export_id:
+            if success:
                 embed = discord.Embed(
-                    title="📊 Data Export Requested",
-                    description="Your data export has been queued for processing.",
+                    title="✅ Export Created",
+                    description=f"Data export '{export_type}' in {format.upper()} format is being prepared.",
                     color=0x00ff00
                 )
-                embed.add_field(name="Export ID", value=f"#{export_id}", inline=True)
                 embed.add_field(name="Type", value=export_type, inline=True)
-                embed.add_field(name="Format", value=format, inline=True)
-                embed.add_field(
-                    name="Status", 
-                    value="⏳ Processing...\nYou will receive a DM when it's ready.", 
-                    inline=False
-                )
-                
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                embed.add_field(name="Format", value=format.upper(), inline=True)
+                embed.set_footer(text="You will receive a notification when the export is ready.")
             else:
-                await interaction.response.send_message(
-                    "❌ Failed to create export request. You may have reached the limit (50 exports/month).", 
-                    ephemeral=True
+                embed = discord.Embed(
+                    title="❌ Export Failed",
+                    description="Failed to create export. Please try again.",
+                    color=0xff0000
                 )
-                
+            
+            await interaction.followup.send(embed=embed)
+            
         except Exception as e:
-            logger.error(f"Error creating data export: {e}")
-            await interaction.response.send_message(
-                "❌ An error occurred while creating the export request.", ephemeral=True
+            logger.error(f"Error in export_data: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while creating the export.", ephemeral=True
             )
-
-
 
     @app_commands.command(name="analytics", description="View Platinum analytics (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
     async def view_analytics(self, interaction: Interaction):
-        """View Platinum feature usage analytics."""
+        """View Platinum analytics for the server."""
         try:
             guild_id = interaction.guild_id
             
@@ -286,56 +276,53 @@ class PlatinumCog(commands.Cog):
                 )
                 return
             
-            # Get analytics
-            analytics = await self.bot.platinum_service.get_feature_analytics(guild_id)
-            limits = await self.bot.platinum_service.get_platinum_limits(guild_id)
+            await interaction.response.defer()
+            
+            # Get analytics data
+            analytics = await self.bot.platinum_service.get_analytics(guild_id)
             
             embed = discord.Embed(
-                title="📈 Platinum Analytics",
-                description="Feature usage statistics for your server:",
+                title="📊 Platinum Analytics",
+                description="Server analytics and usage statistics",
                 color=0x9b59b6
             )
             
-            if analytics:
-                # Show top 5 most used features
-                for i, feature in enumerate(analytics[:5], 1):
-                    embed.add_field(
-                        name=f"#{i} {feature['feature_name'].replace('_', ' ').title()}",
-                        value=f"**{feature['usage_count']}** uses\nLast: {feature['last_used'].strftime('%Y-%m-%d')}",
-                        inline=True
-                    )
-            else:
-                embed.add_field(
-                    name="No Data",
-                    value="No feature usage data available yet.",
-                    inline=False
-                )
+            embed.add_field(
+                name="Webhook Usage",
+                value=f"Active: {analytics.get('webhook_count', 0)}/10",
+                inline=True
+            )
             
-            # Show limits
-            if limits:
-                limits_text = []
-                for key, value in limits.items():
-                    if value:
-                        feature_name = key.replace('max_', '').replace('_platinum', '').replace('_', ' ').title()
-                        limits_text.append(f"**{feature_name}**: {value}")
-                
-                if limits_text:
-                    embed.add_field(
-                        name="Platinum Limits",
-                        value="\n".join(limits_text),
-                        inline=False
-                    )
+            embed.add_field(
+                name="Export Usage",
+                value=f"This month: {analytics.get('export_count', 0)}/50",
+                inline=True
+            )
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            embed.add_field(
+                name="API Usage",
+                value=f"Requests: {analytics.get('api_requests', 0)}",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="Most Used Features",
+                value=analytics.get('top_features', 'No data available'),
+                inline=False
+            )
+            
+            embed.set_footer(text="Analytics updated in real-time")
+            
+            await interaction.followup.send(embed=embed)
             
         except Exception as e:
-            logger.error(f"Error viewing analytics: {e}")
-            await interaction.response.send_message(
+            logger.error(f"Error in view_analytics: {e}")
+            await interaction.followup.send(
                 "❌ An error occurred while loading analytics.", ephemeral=True
             )
 
 
 async def setup(bot: commands.Bot):
-    """Set up the Platinum cog."""
+    """Setup function for the Platinum cog."""
     await bot.add_cog(PlatinumCog(bot))
-    logger.info("Platinum cog loaded successfully") 
+    logger.info("PlatinumCog loaded successfully") 

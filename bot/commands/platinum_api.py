@@ -71,11 +71,19 @@ class PlatinumAPICog(commands.Cog):
     async def api_teams(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
-                "football", "basketball", "baseball", "hockey", "rugby",
-                "handball", "mma", "formula1", "nfl", "afl"
+                app_commands.Choice(name="Football", value="football"),
+                app_commands.Choice(name="Basketball", value="basketball"),
+                app_commands.Choice(name="Baseball", value="baseball"),
+                app_commands.Choice(name="Hockey", value="hockey"),
+                app_commands.Choice(name="Rugby", value="rugby"),
+                app_commands.Choice(name="Handball", value="handball"),
+                app_commands.Choice(name="MMA", value="mma"),
+                app_commands.Choice(name="Formula 1", value="formula1"),
+                app_commands.Choice(name="NFL", value="nfl"),
+                app_commands.Choice(name="AFL", value="afl")
             ]
         ),
         league: Optional[int] = None,
@@ -165,7 +173,7 @@ class PlatinumAPICog(commands.Cog):
     async def api_players(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
                 "football", "basketball", "baseball", "hockey", "rugby",
@@ -265,7 +273,7 @@ class PlatinumAPICog(commands.Cog):
     async def api_fixtures(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
                 "football", "basketball", "baseball", "hockey", "rugby",
@@ -374,7 +382,7 @@ class PlatinumAPICog(commands.Cog):
     async def api_odds(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
                 "football", "basketball", "baseball", "hockey", "rugby",
@@ -474,7 +482,7 @@ class PlatinumAPICog(commands.Cog):
     async def api_leagues(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
                 "football", "basketball", "baseball", "hockey", "rugby",
@@ -567,7 +575,7 @@ class PlatinumAPICog(commands.Cog):
     async def api_live(
         self,
         interaction: Interaction,
-        sport: str = app_commands.Choice[str](
+        sport: str = app_commands.Choice(
             name="Sport",
             choices=[
                 "football", "basketball", "baseball", "hockey", "rugby",
