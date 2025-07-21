@@ -361,6 +361,11 @@ class SportsAPI:
             "SportsAPI initialized with API-Sports integration"
         )  # Changed from info to debug
 
+    @property
+    def api_key(self):
+        """Get the API key from environment variables."""
+        return API_KEY
+
     async def __aenter__(self):
         self.fetcher = await APISportsFetcher().__aenter__()
         return self
