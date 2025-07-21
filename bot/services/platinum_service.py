@@ -206,7 +206,7 @@ class PlatinumService:
             
             # Create export record
             logger.critical(f"[EXPORT DEBUG] About to create DB record for export")
-            export_id = await self.db_manager.execute_and_get_id(
+            result = await self.db_manager.execute(
                 """
                 INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at)
                 VALUES (%s, %s, %s, %s, NOW())
@@ -214,7 +214,9 @@ class PlatinumService:
                 guild_id, export_type, export_format, created_by
             )
             
-            logger.critical(f"[EXPORT DEBUG] DB insert completed successfully. export_id={export_id}")
+            # Extract the last_id from the result tuple
+            rowcount, export_id = result if result else (0, None)
+            logger.critical(f"[EXPORT DEBUG] DB insert completed. rowcount={rowcount}, export_id={export_id}")
             
             if export_id:
                 logger.critical(f"[EXPORT DEBUG] export_id is valid: {export_id}. About to schedule background task.")
