@@ -168,8 +168,22 @@ class TeamDropdown(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        team_id = int(self.values[0])
-        await self.parent_view.execute_query_with_team(interaction, self.sport, self.query_type, self.league_id, team_id)
+        try:
+            team_id = int(self.values[0])
+            logger.info(f"Team selected: {team_id} for sport={self.sport}, query_type={self.query_type}, league_id={self.league_id}")
+            await self.parent_view.execute_query_with_team(interaction, self.sport, self.query_type, self.league_id, team_id)
+        except Exception as e:
+            logger.error(f"Error in TeamDropdown callback: {e}", exc_info=True)
+            try:
+                await interaction.response.send_message(
+                    f"❌ An error occurred while processing your team selection: {str(e)}",
+                    ephemeral=True
+                )
+            except:
+                await interaction.followup.send(
+                    f"❌ An error occurred while processing your team selection: {str(e)}",
+                    ephemeral=True
+                )
 
     async def load_teams(self, interaction: discord.Interaction):
         """Load teams for the selected league."""
@@ -944,9 +958,12 @@ class PlatinumAPICog(commands.Cog):
     async def execute_query_with_team(self, interaction: discord.Interaction, sport: str, query_type: str, league_id: int, team_id: int):
         """Execute the final API query with team selection for players."""
         try:
+            logger.info(f"Starting execute_query_with_team: sport={sport}, query_type={query_type}, league_id={league_id}, team_id={team_id}")
+            
             # Check Platinum status
             guild_id = interaction.guild_id
             if not await self.cog.bot.platinum_service.is_platinum_guild(guild_id):
+                logger.warning(f"Non-platinum guild attempted to use API: {guild_id}")
                 await interaction.response.edit_message(
                     content="❌ This feature requires a Platinum subscription.",
                     embed=None,
@@ -954,6 +971,8 @@ class PlatinumAPICog(commands.Cog):
                 )
                 return
 
+            logger.info("Platinum status check passed, proceeding with API query")
+            
             await interaction.response.edit_message(
                 content="⏳ Querying API...",
                 embed=None,
@@ -973,7 +992,10 @@ class PlatinumAPICog(commands.Cog):
             # Make API request
             result = await self.cog.make_api_request(sport, query_type, params)
             
+            logger.info(f"API request completed, result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            
             if 'error' in result:
+                logger.error(f"API returned error: {result['error']}")
                 await interaction.followup.send(
                     f"❌ API Error: {result['error']}",
                     ephemeral=True
@@ -981,14 +1003,26 @@ class PlatinumAPICog(commands.Cog):
                 return
 
             # Process and display results
+            logger.info("Calling display_query_results")
             await self.cog.display_query_results(interaction, sport, query_type, result)
 
         except Exception as e:
-            logger.error(f"Error in API flow with team: {e}")
-            await interaction.followup.send(
-                "❌ An error occurred while processing your request.",
-                ephemeral=True
-            )
+            logger.error(f"Error in API flow with team: {e}", exc_info=True)
+            try:
+                await interaction.followup.send(
+                    f"❌ An error occurred while processing your request: {str(e)}",
+                    ephemeral=True
+                )
+            except Exception as followup_error:
+                logger.error(f"Failed to send error message: {followup_error}")
+                # Try to respond to the original interaction
+                try:
+                    await interaction.response.send_message(
+                        f"❌ An error occurred while processing your request: {str(e)}",
+                        ephemeral=True
+                    )
+                except:
+                    logger.error("Failed to send any error message to user")
 
     @app_commands.command(name="api", description="Interactive sports API query with dropdowns (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
