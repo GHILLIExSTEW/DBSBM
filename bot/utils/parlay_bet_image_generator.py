@@ -253,7 +253,9 @@ class ParlayBetImageGenerator:
             line_w = draw.textlength(line, font=line_font)
             opponent_name_width = draw.textlength(opponent_display, font=team_font)
             line_x = opponent_name_x + opponent_name_width + 20  # Position after opponent name
-            draw.text((int(line_x), int(line_y)), line, font=line_font, fill="#ffffff")
+            # Center line vertically with team names and VS
+            line_y_centered = card_center_y - line_font.size // 2
+            draw.text((int(line_x), int(line_y_centered)), line, font=line_font, fill="#ffffff")
         elif bet_type == "player_prop":
             margin_left = card_x0 + 24
             name_y = card_y + 32
