@@ -314,31 +314,34 @@ class PlatinumService:
         """Get data for the specified export type."""
         try:
             if export_type == "bets":
-                query = "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC"
+                query = "SELECT * FROM bets WHERE guild_id = %s"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
                     params.append(user_id)
+                query += " ORDER BY created_at DESC"
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "users":
-                query = "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC"
+                query = "SELECT * FROM users WHERE guild_id = %s"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
                     params.append(user_id)
+                query += " ORDER BY created_at DESC"
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "analytics":
-                query = "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC"
+                query = "SELECT * FROM platinum_analytics WHERE guild_id = %s"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
                     params.append(user_id)
+                query += " ORDER BY last_used DESC"
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "all":
                 # Combine all data types with user filtering
-                bets_query = "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC"
-                users_query = "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC"
-                analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC"
+                bets_query = "SELECT * FROM bets WHERE guild_id = %s"
+                users_query = "SELECT * FROM users WHERE guild_id = %s"
+                analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = %s"
                 
                 params = [guild_id]
                 if user_id:
@@ -346,6 +349,10 @@ class PlatinumService:
                     users_query += " AND user_id = %s"
                     analytics_query += " AND user_id = %s"
                     params.append(user_id)
+                
+                bets_query += " ORDER BY created_at DESC"
+                users_query += " ORDER BY created_at DESC"
+                analytics_query += " ORDER BY last_used DESC"
                 
                 bets = await self.db_manager.fetch_all(bets_query, *params)
                 users = await self.db_manager.fetch_all(users_query, *params)
@@ -724,7 +731,7 @@ class PlatinumService:
             if not notification_sent:
                 logger.error(f"Failed to send export notification to user {user_id} in guild {guild_id}")
             else:
-                logger.info(f"Export notification successfully sent for export_id={export_id}")
+                logger.info(f"Export notification successfully sent to user {user_id}")
                 
                 # Clean up the file after successful sending to save server space
                 if success and file_path and os.path.exists(file_path):
