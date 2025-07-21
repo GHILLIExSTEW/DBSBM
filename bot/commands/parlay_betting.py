@@ -1303,7 +1303,7 @@ class TeamSelect(Select):
 
         # Use enhanced player prop modal for player props
         if line_type == "player_prop":
-            from commands.parlay_enhanced_player_prop_modal import (
+            from bot.commands.parlay_enhanced_player_prop_modal import (
                 ParlayEnhancedPlayerPropModal,
             )
 
@@ -1702,7 +1702,7 @@ class ParlayBetWorkflowView(View):
                     # For individual sports, skip team selection and go directly to modal
                     if line_type == "player_prop":
                         # Use enhanced player prop modal
-                        from commands.parlay_enhanced_player_prop_modal import (
+                        from bot.commands.parlay_enhanced_player_prop_modal import (
                             ParlayEnhancedPlayerPropModal,
                         )
 

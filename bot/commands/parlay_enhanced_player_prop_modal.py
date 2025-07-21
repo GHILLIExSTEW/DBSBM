@@ -220,11 +220,8 @@ class ParlayEnhancedPlayerPropModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         """Handle modal submission with validation."""
+        logger.info(f"[PARLAY ENHANCED MODAL] Modal submitted for user {interaction.user.id}")
         try:
-            # Set skip increment flag so go_next does not double-increment
-            if self.view_ref:
-                self.view_ref._skip_increment = True
-
             # Validate and process inputs
             validation_result = await self._validate_inputs()
 
@@ -242,17 +239,16 @@ class ParlayEnhancedPlayerPropModal(Modal):
             # Generate preview image
             await self._generate_preview_image(bet_data)
 
-            # Advance workflow
-            if hasattr(self.view_ref, "current_step"):
-                self.view_ref.current_step += 1
-                logger.info(
-                    f"[PARLAY ENHANCED MODAL] Advancing to step {self.view_ref.current_step}"
-                )
-                await self.view_ref.go_next(interaction)
+            # Send a quick response to close the modal
+            await interaction.response.send_message("✅ Processing your player prop...", ephemeral=True)
+            
+            # Add the leg to the parlay using the view's add_leg method
+            if hasattr(self.view_ref, "add_leg"):
+                await self.view_ref.add_leg(interaction, bet_data)
             else:
-                logger.error("View reference missing current_step attribute")
-                await interaction.response.send_message(
-                    "Error: Could not advance workflow", ephemeral=True
+                logger.error("View reference missing add_leg method")
+                await interaction.followup.send(
+                    "❌ Error: Could not add leg to parlay", ephemeral=True
                 )
 
         except Exception as e:
@@ -345,26 +341,27 @@ class ParlayEnhancedPlayerPropModal(Modal):
 
     def _store_bet_data(self, bet_data: dict):
         """Store the validated bet data in the view reference."""
+        logger.info(f"[PARLAY ENHANCED MODAL] Storing bet data: {bet_data.get('player_name', 'unknown')} - {bet_data.get('line', 'unknown')}")
         if not self.view_ref:
             return
 
-        # Store in current leg construction details
+        # Store in current leg construction details with proper parlay format
         self.view_ref.current_leg_construction_details.update(
             {
+                "line_type": "player_prop",  # Use line_type for consistency
                 "player_name": bet_data["player_name"],
                 "player_id": bet_data["player_id"],
-                "team_name": bet_data["team_name"],
-                "prop_type": bet_data["prop_type"],
-                "line_value": bet_data["line_value"],
-                "bet_direction": bet_data["bet_direction"],
-                "odds": bet_data["odds"],
-                "odds_str": bet_data["odds_str"],
-                "line": bet_data["line"],
-                "league": bet_data["league"],
-                "bet_type": "player_prop",
+                "team": bet_data["team_name"],  # Use 'team' for consistency
                 "home_team_name": bet_data["team_name"],
                 "away_team_name": bet_data["player_name"],  # For player image display
                 "selected_team": bet_data["team_name"],
+                "prop_type": bet_data["prop_type"],
+                "line_value": bet_data["line_value"],
+                "bet_direction": bet_data["bet_direction"],
+                "line": bet_data["line"],
+                "odds": bet_data["odds"],
+                "odds_str": bet_data["odds_str"],
+                "league": bet_data["league"],
             }
         )
 
@@ -380,6 +377,7 @@ class ParlayEnhancedPlayerPropModal(Modal):
             # Prepare leg data for preview
             leg_data = {
                 "bet_type": "player_prop",
+                "line_type": "player_prop",
                 "league": bet_data["league"],
                 "home_team": bet_data["team_name"],
                 "away_team": bet_data["player_name"],

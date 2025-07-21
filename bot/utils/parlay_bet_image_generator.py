@@ -259,12 +259,12 @@ class ParlayBetImageGenerator:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 image.paste(team_logo, (margin_left, name_y - 8), team_logo)
             # Player name
-            player_name_x = margin_left + logo_size[0] + 12
+            player_name_x = margin_left + logo_size[0] + 25  # Increased spacing from 12 to 25
             draw.text(
                 (player_name_x, name_y), player_name, font=team_font, fill="#ffffff"
             )
             # Line (below player name)
-            line_y = name_y + 38
+            line_y = name_y + 50  # Increased spacing from 38 to 50
             draw.text((player_name_x, line_y), line, font=line_font, fill="#ffffff")
         # Odds badge (right side, vertically centered)
         badge_w = 90
