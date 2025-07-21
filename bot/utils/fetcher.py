@@ -547,7 +547,7 @@ class MainFetcher:
                         DELETE FROM api_games 
                         WHERE status IN (
                             'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
-                            'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted'
+                            'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted', 'Completed'
                         )
                         OR start_time < %s
                     """, (current_time,))

@@ -212,7 +212,19 @@ class PlatinumService:
             
             if export_id:
                 # Start the export generation in the background
-                asyncio.create_task(self._generate_export(export_id, guild_id, export_type, export_format, created_by))
+                logger.info(f"Starting background export task for export_id={export_id}")
+                try:
+                    # Create the task and store it for potential monitoring
+                    task = asyncio.create_task(
+                        self._generate_export(export_id, guild_id, export_type, export_format, created_by)
+                    )
+                    # Add error handling for the task
+                    task.add_done_callback(lambda t: self._handle_export_task_completion(t, export_id))
+                    logger.info(f"Background export task created for export_id={export_id}")
+                except Exception as e:
+                    logger.error(f"Failed to start background export task for export_id={export_id}: {e}")
+                    # Try to send immediate error notification
+                    await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}")
                 
             await self.track_feature_usage(guild_id, "data_exports")
             return export_id
@@ -220,36 +232,56 @@ class PlatinumService:
             logger.error(f"Error creating data export: {e}")
             return None
 
+    def _handle_export_task_completion(self, task, export_id: int):
+        """Handle completion of export background task."""
+        try:
+            if task.cancelled():
+                logger.warning(f"Export task {export_id} was cancelled")
+            elif task.exception():
+                logger.error(f"Export task {export_id} failed with exception: {task.exception()}")
+            else:
+                logger.info(f"Export task {export_id} completed successfully")
+        except Exception as e:
+            logger.error(f"Error in export task completion handler for {export_id}: {e}")
+
     async def _generate_export(self, export_id: int, guild_id: int, export_type: str, export_format: str, created_by: int):
         """Generate the actual export file and send notification."""
         try:
-            logger.info(f"Starting export generation for export_id={export_id}")
+            logger.info(f"Starting export generation for export_id={export_id}, type={export_type}, format={export_format}")
             
             # Generate the export data
+            logger.info(f"Fetching export data for export_id={export_id}")
             export_data = await self._get_export_data(guild_id, export_type)
             
+            logger.info(f"Export data fetched for export_id={export_id}: {len(export_data) if isinstance(export_data, list) else 'dict'} items")
+            
             if not export_data:
+                logger.warning(f"No data found for export_id={export_id}, type={export_type}")
                 await self._update_export_status(export_id, False, "No data found for export")
                 await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "No data found")
                 return
             
             # Create the export file
+            logger.info(f"Creating export file for export_id={export_id}")
             file_path = await self._create_export_file(export_data, export_type, export_format, export_id)
             
             if file_path:
+                logger.info(f"Export file created successfully for export_id={export_id}: {file_path}")
                 # Update export status to completed
                 await self._update_export_status(export_id, True, file_path)
                 
                 # Send success notification
+                logger.info(f"Sending success notification for export_id={export_id}")
                 await self._send_export_notification(guild_id, created_by, export_type, export_format, True, file_path)
                 
                 logger.info(f"Export {export_id} completed successfully: {file_path}")
             else:
+                logger.error(f"Failed to create export file for export_id={export_id}")
                 await self._update_export_status(export_id, False, "Failed to create file")
                 await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "Failed to create file")
                 
         except Exception as e:
-            logger.error(f"Error generating export {export_id}: {e}")
+            logger.error(f"Error generating export {export_id}: {e}", exc_info=True)
             await self._update_export_status(export_id, False, str(e))
             await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e))
 
@@ -388,12 +420,16 @@ class PlatinumService:
     async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None):
         """Send notification to user about export completion."""
         try:
+            logger.info(f"Sending export notification: guild_id={guild_id}, user_id={user_id}, success={success}")
+            
             guild = self.bot.get_guild(guild_id)
             if not guild:
+                logger.error(f"Guild {guild_id} not found for export notification")
                 return
                 
             user = guild.get_member(user_id)
             if not user:
+                logger.error(f"User {user_id} not found in guild {guild_id} for export notification")
                 return
             
             embed = discord.Embed(
@@ -414,20 +450,35 @@ class PlatinumService:
                 embed.set_footer(text="Please try again or contact support")
             
             # Try to send DM first, then fallback to guild
+            notification_sent = False
             try:
+                logger.info(f"Attempting to send DM to user {user_id} for export notification")
                 await user.send(embed=embed)
-            except:
+                notification_sent = True
+                logger.info(f"Export notification sent via DM to user {user_id}")
+            except Exception as dm_error:
+                logger.warning(f"Failed to send DM to user {user_id}: {dm_error}")
+                
                 # If DM fails, try to send to a channel the user can see
                 for channel in guild.text_channels:
                     if channel.permissions_for(user).read_messages:
                         try:
+                            logger.info(f"Attempting to send notification to channel {channel.id}")
                             await channel.send(f"{user.mention}", embed=embed)
+                            notification_sent = True
+                            logger.info(f"Export notification sent to channel {channel.id}")
                             break
-                        except:
+                        except Exception as channel_error:
+                            logger.warning(f"Failed to send to channel {channel.id}: {channel_error}")
                             continue
+            
+            if not notification_sent:
+                logger.error(f"Failed to send export notification to user {user_id} in guild {guild_id}")
+            else:
+                logger.info(f"Export notification successfully sent for export_id={export_id}")
                             
         except Exception as e:
-            logger.error(f"Error sending export notification: {e}")
+            logger.error(f"Error sending export notification: {e}", exc_info=True)
             
     async def get_recent_exports(self, guild_id: int, days: int = 30) -> List[Dict[str, Any]]:
         """Get recent data exports for a guild."""

@@ -329,6 +329,7 @@ class BettingBot(commands.Bot):
             "maintenance.py",
             "odds.py",  # New odds command
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
+            "platinum_api.py",  # Platinum API commands
         ]
         loaded_commands = []
         for filename in cog_files:
