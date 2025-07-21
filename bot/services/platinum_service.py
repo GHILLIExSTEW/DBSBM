@@ -367,44 +367,102 @@ class PlatinumService:
 
     async def _write_csv_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
         """Write data to CSV file."""
-        if not data:
-            return
+        try:
+            import csv
             
-        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-            if export_type == "all":
-                # Handle multiple data types
-                for data_type, data_list in data.items():
-                    if data_list:
-                        writer = csv.DictWriter(csvfile, fieldnames=data_list[0].keys())
+            if not data:
+                logger.warning(f"No data to write for CSV export: {export_type}")
+                # Create empty CSV with headers
+                with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    csvfile.write("No data available\n")
+                return
+                
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                if export_type == "all":
+                    # Handle multiple data types
+                    for data_type, data_list in data.items():
+                        if data_list and len(data_list) > 0:
+                            # Get field names from first row
+                            fieldnames = list(data_list[0].keys())
+                            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                            writer.writeheader()
+                            writer.writerows(data_list)
+                        else:
+                            # Write empty section for this data type
+                            csvfile.write(f"\n{data_type.upper()} DATA\n")
+                            csvfile.write("No data available\n")
+                else:
+                    # Single data type
+                    if len(data) > 0:
+                        fieldnames = list(data[0].keys())
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                         writer.writeheader()
-                        writer.writerows(data_list)
-            else:
-                writer = csv.DictWriter(csvfile, fieldnames=data[0].keys())
-                writer.writeheader()
-                writer.writerows(data)
+                        writer.writerows(data)
+                    else:
+                        csvfile.write("No data available\n")
+                        
+            logger.info(f"CSV file written successfully: {file_path}")
+            
+        except Exception as e:
+            logger.error(f"Error writing CSV file {file_path}: {e}", exc_info=True)
+            raise
 
     async def _write_json_file(self, data: List[Dict[str, Any]], file_path: str):
         """Write data to JSON file."""
-        with open(file_path, 'w', encoding='utf-8') as jsonfile:
-            json.dump(data, jsonfile, indent=2, default=str)
+        try:
+            import json
+            
+            if not data:
+                logger.warning("No data to write for JSON export")
+                # Create empty JSON structure
+                empty_data = {"message": "No data available", "timestamp": str(datetime.utcnow())}
+                with open(file_path, 'w', encoding='utf-8') as jsonfile:
+                    json.dump(empty_data, jsonfile, indent=2, default=str)
+                return
+                
+            with open(file_path, 'w', encoding='utf-8') as jsonfile:
+                json.dump(data, jsonfile, indent=2, default=str)
+                
+            logger.info(f"JSON file written successfully: {file_path}")
+            
+        except Exception as e:
+            logger.error(f"Error writing JSON file {file_path}: {e}", exc_info=True)
+            raise
 
     async def _write_xlsx_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
         """Write data to XLSX file."""
         try:
             import pandas as pd
             
+            if not data:
+                logger.warning("No data to write for XLSX export")
+                # Create empty Excel file with message
+                df = pd.DataFrame({"message": ["No data available"], "timestamp": [str(datetime.utcnow())]})
+                df.to_excel(file_path, index=False)
+                return
+            
             if export_type == "all":
                 # Create Excel file with multiple sheets
                 with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
                     for data_type, data_list in data.items():
-                        if data_list:
+                        if data_list and len(data_list) > 0:
                             df = pd.DataFrame(data_list)
                             df.to_excel(writer, sheet_name=data_type, index=False)
+                        else:
+                            # Create empty sheet for this data type
+                            empty_df = pd.DataFrame({"message": ["No data available"], "timestamp": [str(datetime.utcnow())]})
+                            empty_df.to_excel(writer, sheet_name=data_type, index=False)
             else:
                 df = pd.DataFrame(data)
                 df.to_excel(file_path, index=False)
+                
+            logger.info(f"XLSX file written successfully: {file_path}")
+            
         except ImportError:
             logger.error("pandas not available for XLSX export")
+            raise
+        except Exception as e:
+            logger.error(f"Error writing XLSX file {file_path}: {e}", exc_info=True)
             raise
 
     async def _update_export_status(self, export_id: int, is_completed: bool, file_path: str = None):
@@ -646,25 +704,6 @@ class PlatinumService:
         except Exception as e:
             logger.error(f"Error getting export count: {e}")
             return 0
-
-    async def test_export_system(self, guild_id: int, user_id: int) -> bool:
-        """Test the export system by creating a simple test export."""
-        try:
-            logger.info(f"Testing export system for guild_id={guild_id}")
-            
-            # Create a test export
-            export_id = await self.create_data_export(guild_id, "analytics", "json", user_id)
-            
-            if export_id:
-                logger.info(f"Test export created successfully with ID: {export_id}")
-                return True
-            else:
-                logger.error("Test export creation failed")
-                return False
-                
-        except Exception as e:
-            logger.error(f"Test export system failed: {e}", exc_info=True)
-            return False
 
     async def create_webhook(self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str) -> bool:
         """Create a webhook integration (alias for create_webhook_integration)."""
