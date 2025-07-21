@@ -204,17 +204,27 @@ class TeamDropdown(discord.ui.Select):
                 
                 # Add individual teams (limit to 24 for dropdown)
                 for team in teams[:24]:  # 24 + "All Teams" = 25 total
-                    team_info = team.get('team', {})
-                    name = team_info.get('name', 'Unknown')
-                    team_id = team_info.get('id', 0)
+                    # Handle different response structures
+                    if isinstance(team, dict):
+                        # Direct team object (like in the API response)
+                        name = team.get('name', 'Unknown')
+                        team_id = team.get('id', 0)
+                    else:
+                        # Nested team object (fallback)
+                        team_info = team.get('team', {})
+                        name = team_info.get('name', 'Unknown')
+                        team_id = team_info.get('id', 0)
+                    
                     if team_id and name != 'Unknown':
-                        self.options.append(
-                            discord.SelectOption(
-                                label=name[:100],  # Limit label length
-                                value=str(team_id),
-                                description=f"Team ID: {team_id}"
+                        # Filter out league names (like "American League", "National League")
+                        if name.lower() not in ['american league', 'national league']:
+                            self.options.append(
+                                discord.SelectOption(
+                                    label=name[:100],  # Limit label length
+                                    value=str(team_id),
+                                    description=f"Team ID: {team_id}"
+                                )
                             )
-                        )
                 
                 # If no valid teams found, fall back to "All Teams"
                 if len(self.options) == 1:  # Only "All Teams" option
@@ -282,13 +292,12 @@ class APIFlowView(discord.ui.View):
         # Update the embed description
         if len(team_dropdown.options) > 1:
             embed.description = "Select a team to get players from:"
+            # Update the message with the new embed
+            await interaction.edit_original_response(embed=embed, view=view)
         else:
             embed.description = "No teams found. Getting all players from the league..."
             # Auto-select "All Teams" if no teams found
             await self.execute_query_with_team(interaction, sport, query_type, league_id, 0)
-            return
-        
-        await interaction.edit_original_response(embed=embed, view=view)
 
     async def execute_query(self, interaction: discord.Interaction, sport: str, query_type: str, league_id: int):
         """Execute the final API query and send results."""
