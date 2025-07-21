@@ -68,10 +68,15 @@ class PlatinumCog(commands.Cog):
                 
                 embed.add_field(
                     name="Active Features",
-                    value="✅ Webhook Integrations\n"
+                    value="✅ Advanced Betting Tools\n"
+                          "✅ Enhanced Analytics\n"
+                          "✅ Custom Notifications\n"
+                          "✅ Custom Branding\n"
+                          "✅ Performance Tracking\n"
+                          "✅ Priority Support\n"
+                          "✅ Webhook Integrations\n"
                           "✅ Real-Time Alerts\n"
                           "✅ Data Export Tools\n"
-                          "✅ Advanced Analytics\n"
                           "✅ Direct API Access",
                     inline=True
                 )
@@ -106,12 +111,16 @@ class PlatinumCog(commands.Cog):
                 
                 embed.add_field(
                     name="Platinum Features",
-                    value="🔗 Webhook Integrations\n"
-                          "📊 Advanced Analytics\n"
+                    value="🎯 Advanced Betting Tools\n"
+                          "📊 Enhanced Analytics\n"
+                          "🔔 Custom Notifications\n"
+                          "🎨 Custom Branding\n"
+                          "📈 Performance Tracking\n"
+                          "⚡ Priority Support\n"
+                          "🔗 Webhook Integrations\n"
                           "📤 Data Export Tools\n"
                           "🔌 Direct API Access\n"
-                          "⚡ Real-Time Alerts\n"
-                          "🎨 Custom Branding",
+                          "⚡ Real-Time Alerts",
                     inline=True
                 )
                 

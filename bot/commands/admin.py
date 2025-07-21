@@ -749,11 +749,11 @@ class AdminCog(commands.Cog):
             # Cannot easily followup here if initial response failed
 
     @app_commands.command(
-        name="subscribe",
+        name="premium",
         description="Get the link to subscribe your server to premium features.",
     )
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def subscribe_command(self, interaction: Interaction):
+    async def premium_command(self, interaction: Interaction):
         """Sends the subscription webpage link for premium services."""
         try:
             guild_id = interaction.guild_id
@@ -820,10 +820,10 @@ class AdminCog(commands.Cog):
             
             embed.set_footer(text="Upgrade to unlock these powerful features!")
             
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed)
             
         except Exception as e:
-            logger.error(f"Error in subscribe_command: {e}")
+            logger.error(f"Error in premium_command: {e}")
             await interaction.response.send_message(
                 "❌ An error occurred while processing your request.", ephemeral=True
             )
