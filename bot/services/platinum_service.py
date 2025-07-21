@@ -1,6 +1,7 @@
 import logging
 import json
 import asyncio
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import discord
@@ -194,6 +195,7 @@ class PlatinumService:
             if len(recent_exports) >= 50:  # Platinum limit
                 return None
                 
+            # Create the export record
             result = await self.db_manager.execute(
                 """
                 INSERT INTO data_exports (guild_id, export_type, export_format, created_by)
@@ -202,11 +204,230 @@ class PlatinumService:
                 guild_id, export_type, export_format, created_by
             )
             
+            # Get the export ID
+            export_id = await self.db_manager.fetch_one(
+                "SELECT LAST_INSERT_ID() as id"
+            )
+            export_id = export_id['id'] if export_id else None
+            
+            if export_id:
+                # Start the export generation in the background
+                asyncio.create_task(self._generate_export(export_id, guild_id, export_type, export_format, created_by))
+                
             await self.track_feature_usage(guild_id, "data_exports")
-            return result
+            return export_id
         except Exception as e:
             logger.error(f"Error creating data export: {e}")
             return None
+
+    async def _generate_export(self, export_id: int, guild_id: int, export_type: str, export_format: str, created_by: int):
+        """Generate the actual export file and send notification."""
+        try:
+            logger.info(f"Starting export generation for export_id={export_id}")
+            
+            # Generate the export data
+            export_data = await self._get_export_data(guild_id, export_type)
+            
+            if not export_data:
+                await self._update_export_status(export_id, False, "No data found for export")
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "No data found")
+                return
+            
+            # Create the export file
+            file_path = await self._create_export_file(export_data, export_type, export_format, export_id)
+            
+            if file_path:
+                # Update export status to completed
+                await self._update_export_status(export_id, True, file_path)
+                
+                # Send success notification
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, True, file_path)
+                
+                logger.info(f"Export {export_id} completed successfully: {file_path}")
+            else:
+                await self._update_export_status(export_id, False, "Failed to create file")
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "Failed to create file")
+                
+        except Exception as e:
+            logger.error(f"Error generating export {export_id}: {e}")
+            await self._update_export_status(export_id, False, str(e))
+            await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e))
+
+    async def _get_export_data(self, guild_id: int, export_type: str) -> List[Dict[str, Any]]:
+        """Get data for the specified export type."""
+        try:
+            if export_type == "bets":
+                return await self.db_manager.fetch_all(
+                    "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC",
+                    guild_id
+                )
+            elif export_type == "users":
+                return await self.db_manager.fetch_all(
+                    "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC",
+                    guild_id
+                )
+            elif export_type == "analytics":
+                return await self.db_manager.fetch_all(
+                    "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC",
+                    guild_id
+                )
+            elif export_type == "all":
+                # Combine all data types
+                bets = await self.db_manager.fetch_all("SELECT * FROM bets WHERE guild_id = %s", guild_id)
+                users = await self.db_manager.fetch_all("SELECT * FROM users WHERE guild_id = %s", guild_id)
+                analytics = await self.db_manager.fetch_all("SELECT * FROM platinum_analytics WHERE guild_id = %s", guild_id)
+                
+                return {
+                    "bets": bets,
+                    "users": users,
+                    "analytics": analytics
+                }
+            else:
+                return []
+        except Exception as e:
+            logger.error(f"Error getting export data: {e}")
+            return []
+
+    async def _create_export_file(self, data: List[Dict[str, Any]], export_type: str, export_format: str, export_id: int) -> str:
+        """Create the export file in the specified format."""
+        try:
+            import json
+            import csv
+            from datetime import datetime
+            
+            # Create exports directory if it doesn't exist
+            exports_dir = "exports"
+            os.makedirs(exports_dir, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{export_type}_{export_format}_{timestamp}_{export_id}"
+            
+            if export_format == "csv":
+                file_path = os.path.join(exports_dir, f"{filename}.csv")
+                await self._write_csv_file(data, file_path, export_type)
+            elif export_format == "json":
+                file_path = os.path.join(exports_dir, f"{filename}.json")
+                await self._write_json_file(data, file_path)
+            elif export_format == "xlsx":
+                file_path = os.path.join(exports_dir, f"{filename}.xlsx")
+                await self._write_xlsx_file(data, file_path, export_type)
+            else:
+                return None
+                
+            return file_path
+        except Exception as e:
+            logger.error(f"Error creating export file: {e}")
+            return None
+
+    async def _write_csv_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
+        """Write data to CSV file."""
+        if not data:
+            return
+            
+        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+            if export_type == "all":
+                # Handle multiple data types
+                for data_type, data_list in data.items():
+                    if data_list:
+                        writer = csv.DictWriter(csvfile, fieldnames=data_list[0].keys())
+                        writer.writeheader()
+                        writer.writerows(data_list)
+            else:
+                writer = csv.DictWriter(csvfile, fieldnames=data[0].keys())
+                writer.writeheader()
+                writer.writerows(data)
+
+    async def _write_json_file(self, data: List[Dict[str, Any]], file_path: str):
+        """Write data to JSON file."""
+        with open(file_path, 'w', encoding='utf-8') as jsonfile:
+            json.dump(data, jsonfile, indent=2, default=str)
+
+    async def _write_xlsx_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
+        """Write data to XLSX file."""
+        try:
+            import pandas as pd
+            
+            if export_type == "all":
+                # Create Excel file with multiple sheets
+                with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                    for data_type, data_list in data.items():
+                        if data_list:
+                            df = pd.DataFrame(data_list)
+                            df.to_excel(writer, sheet_name=data_type, index=False)
+            else:
+                df = pd.DataFrame(data)
+                df.to_excel(file_path, index=False)
+        except ImportError:
+            logger.error("pandas not available for XLSX export")
+            raise
+
+    async def _update_export_status(self, export_id: int, is_completed: bool, file_path: str = None):
+        """Update the export status in the database."""
+        try:
+            if is_completed:
+                await self.db_manager.execute(
+                    """
+                    UPDATE data_exports 
+                    SET is_completed = TRUE, file_path = %s, completed_at = NOW()
+                    WHERE id = %s
+                    """,
+                    file_path, export_id
+                )
+            else:
+                await self.db_manager.execute(
+                    """
+                    UPDATE data_exports 
+                    SET is_completed = FALSE, file_path = %s, completed_at = NOW()
+                    WHERE id = %s
+                    """,
+                    file_path, export_id
+                )
+        except Exception as e:
+            logger.error(f"Error updating export status: {e}")
+
+    async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None):
+        """Send notification to user about export completion."""
+        try:
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                return
+                
+            user = guild.get_member(user_id)
+            if not user:
+                return
+            
+            embed = discord.Embed(
+                title="📊 Export Complete" if success else "❌ Export Failed",
+                description=f"Your {export_type} export in {export_format.upper()} format is ready!" if success else f"Failed to create {export_type} export in {export_format.upper()} format.",
+                color=0x00ff00 if success else 0xff0000,
+                timestamp=datetime.utcnow()
+            )
+            
+            embed.add_field(name="Type", value=export_type, inline=True)
+            embed.add_field(name="Format", value=export_format.upper(), inline=True)
+            
+            if success and file_path:
+                embed.add_field(name="File", value=f"`{os.path.basename(file_path)}`", inline=False)
+                embed.set_footer(text="File saved to server exports directory")
+            else:
+                embed.add_field(name="Error", value=file_path or "Unknown error", inline=False)
+                embed.set_footer(text="Please try again or contact support")
+            
+            # Try to send DM first, then fallback to guild
+            try:
+                await user.send(embed=embed)
+            except:
+                # If DM fails, try to send to a channel the user can see
+                for channel in guild.text_channels:
+                    if channel.permissions_for(user).read_messages:
+                        try:
+                            await channel.send(f"{user.mention}", embed=embed)
+                            break
+                        except:
+                            continue
+                            
+        except Exception as e:
+            logger.error(f"Error sending export notification: {e}")
             
     async def get_recent_exports(self, guild_id: int, days: int = 30) -> List[Dict[str, Any]]:
         """Get recent data exports for a guild."""
