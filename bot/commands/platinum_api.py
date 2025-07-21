@@ -295,7 +295,17 @@ class OddsPaginatedView(discord.ui.View):
                 bets = bookmakers[0].get('bets', [])
                 if bets:
                     bet_values = bets[0].get('values', [])
-                    odds_text = ', '.join([f"{v.get('value', 'N/A')}: {v.get('odd', 'N/A')}" for v in bet_values[:3]])
+                    # Convert decimal odds to American odds
+                    odds_text_parts = []
+                    for v in bet_values[:3]:
+                        value = v.get('value', 'N/A')
+                        decimal_odd = v.get('odd', 'N/A')
+                        if decimal_odd != 'N/A':
+                            american_odd = self.cog.decimal_to_american(decimal_odd)
+                            odds_text_parts.append(f"{value}: {american_odd}")
+                        else:
+                            odds_text_parts.append(f"{value}: N/A")
+                    odds_text = ', '.join(odds_text_parts)
                 else:
                     odds_text = "No odds available"
             else:
@@ -459,7 +469,22 @@ class PlatinumAPICog(commands.Cog):
             'tennis': 'https://v1.tennis.api-sports.io',
             'volleyball': 'https://v1.volleyball.api-sports.io',
         }
-        
+
+    def decimal_to_american(self, decimal_odds: float) -> str:
+        """Convert decimal odds to American odds format."""
+        try:
+            decimal_odds = float(decimal_odds)
+            if decimal_odds >= 2.0:
+                # Underdog odds (positive)
+                american_odds = int((decimal_odds - 1) * 100)
+                return f"+{american_odds}"
+            else:
+                # Favorite odds (negative)
+                american_odds = int(-100 / (decimal_odds - 1))
+                return str(american_odds)
+        except (ValueError, TypeError, ZeroDivisionError):
+            return "N/A"
+
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         """Handle errors for Platinum API commands."""
         if isinstance(error, app_commands.MissingPermissions):
@@ -728,7 +753,17 @@ class PlatinumAPICog(commands.Cog):
                     bets = bookmakers[0].get('bets', [])
                     if bets:
                         bet_values = bets[0].get('values', [])
-                        odds_text = ', '.join([f"{v.get('value', 'N/A')}: {v.get('odd', 'N/A')}" for v in bet_values[:3]])
+                        # Convert decimal odds to American odds
+                        odds_text_parts = []
+                        for v in bet_values[:3]:
+                            value = v.get('value', 'N/A')
+                            decimal_odd = v.get('odd', 'N/A')
+                            if decimal_odd != 'N/A':
+                                american_odd = self.decimal_to_american(decimal_odd)
+                                odds_text_parts.append(f"{value}: {american_odd}")
+                            else:
+                                odds_text_parts.append(f"{value}: N/A")
+                        odds_text = ', '.join(odds_text_parts)
                     else:
                         odds_text = "No odds available"
                 else:
