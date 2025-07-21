@@ -9,21 +9,35 @@ from typing import Union
 
 import aiohttp
 import discord
-from bot.api.sports_api import SportsAPI
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from bot.services.live_game_channel_service import LiveGameChannelService
 
-from bot.utils.game_line_image_generator import GameLineImageGenerator
-from bot.utils.parlay_image_generator import ParlayImageGenerator
-from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
-from bot.utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
-from bot.utils.performance_monitor import get_performance_monitor, background_monitoring
-from bot.utils.error_handler import (
-    get_error_handler,
-    initialize_default_recovery_strategies,
-)
+# Try to import with bot prefix first, then without
+try:
+    from bot.api.sports_api import SportsAPI
+    from bot.services.live_game_channel_service import LiveGameChannelService
+    from bot.utils.game_line_image_generator import GameLineImageGenerator
+    from bot.utils.parlay_image_generator import ParlayImageGenerator
+    from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+    from bot.utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
+    from bot.utils.performance_monitor import get_performance_monitor, background_monitoring
+    from bot.utils.error_handler import (
+        get_error_handler,
+        initialize_default_recovery_strategies,
+    )
+except ImportError:
+    from api.sports_api import SportsAPI
+    from services.live_game_channel_service import LiveGameChannelService
+    from utils.game_line_image_generator import GameLineImageGenerator
+    from utils.parlay_image_generator import ParlayImageGenerator
+    from utils.player_prop_image_generator import PlayerPropImageGenerator
+    from utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
+    from utils.performance_monitor import get_performance_monitor, background_monitoring
+    from utils.error_handler import (
+        get_error_handler,
+        initialize_default_recovery_strategies,
+    )
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -69,17 +83,29 @@ else:
     else:
         print(f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
 
-from bot.data.db_manager import DatabaseManager
-from bot.services.admin_service import AdminService
-from bot.services.analytics_service import AnalyticsService
-from bot.services.bet_service import BetService
-from bot.services.data_sync_service import DataSyncService
-from bot.services.game_service import GameService
-from bot.services.user_service import UserService
-from bot.services.voice_service import VoiceService
-from bot.services.platinum_service import PlatinumService
-
-from bot.commands.sync_cog import setup_sync_cog
+# Try to import with bot prefix first, then without
+try:
+    from bot.data.db_manager import DatabaseManager
+    from bot.services.admin_service import AdminService
+    from bot.services.analytics_service import AnalyticsService
+    from bot.services.bet_service import BetService
+    from bot.services.data_sync_service import DataSyncService
+    from bot.services.game_service import GameService
+    from bot.services.user_service import UserService
+    from bot.services.voice_service import VoiceService
+    from bot.services.platinum_service import PlatinumService
+    from bot.commands.sync_cog import setup_sync_cog
+except ImportError:
+    from data.db_manager import DatabaseManager
+    from services.admin_service import AdminService
+    from services.analytics_service import AnalyticsService
+    from services.bet_service import BetService
+    from services.data_sync_service import DataSyncService
+    from services.game_service import GameService
+    from services.user_service import UserService
+    from services.voice_service import VoiceService
+    from services.platinum_service import PlatinumService
+    from commands.sync_cog import setup_sync_cog
 
 # --- Environment Variable Validation ---
 # Define required environment variables
@@ -94,7 +120,10 @@ REQUIRED_ENV_VARS = {
 }
 
 try:
-    from bot.utils.environment_validator import validate_environment
+    try:
+        from bot.utils.environment_validator import validate_environment
+    except ImportError:
+        from utils.environment_validator import validate_environment
 
     if not validate_environment():
         logger.critical("Environment validation failed. Please check your .env file.")
@@ -299,14 +328,13 @@ class BettingBot(commands.Bot):
             "schedule.py",
             "maintenance.py",
             "odds.py",  # New odds command
-            "platinum.py",  # Platinum tier commands
-            "platinum_api.py",  # Platinum API query commands
+            "platinum_fixed.py",  # Platinum tier commands (fixed version)
         ]
         loaded_commands = []
         for filename in cog_files:
             file_path = os.path.join(commands_dir, filename)
             if os.path.exists(file_path):
-                extension = f"commands.{filename[:-3]}"
+                extension = f"bot.commands.{filename[:-3]}"
                 try:
                     await self.load_extension(extension)
                     loaded_commands.append(extension)
