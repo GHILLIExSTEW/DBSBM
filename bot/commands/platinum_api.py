@@ -145,7 +145,89 @@ class LeagueDropdown(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         league_id = int(self.values[0])
-        await self.parent_view.execute_query(interaction, self.sport, self.query_type, league_id)
+        
+        # For players query, show team selection
+        if self.query_type == 'players':
+            await self.parent_view.show_team_dropdown(interaction, self.sport, self.query_type, league_id)
+        else:
+            # For other queries, execute directly
+            await self.parent_view.execute_query(interaction, self.sport, self.query_type, league_id)
+
+
+class TeamDropdown(discord.ui.Select):
+    def __init__(self, parent_view, sport: str, query_type: str, league_id: int):
+        self.parent_view = parent_view
+        self.sport = sport
+        self.query_type = query_type
+        self.league_id = league_id
+        super().__init__(
+            placeholder="Loading teams...",
+            min_values=1,
+            max_values=1,
+            options=[discord.SelectOption(label="Loading...", value="loading")],
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        team_id = int(self.values[0])
+        await self.parent_view.execute_query_with_team(interaction, self.sport, self.query_type, self.league_id, team_id)
+
+    async def load_teams(self, interaction: discord.Interaction):
+        """Load teams for the selected league."""
+        try:
+            # Build parameters for teams query
+            params = {"league": self.league_id}
+            if self.sport in ["football", "basketball", "baseball", "hockey"]:
+                params["season"] = datetime.now().year
+
+            logger.info(f"Loading teams for sport={self.sport}, league={self.league_id}, params={params}")
+
+            # Make API request to get teams
+            result = await self.parent_view.cog.make_api_request(self.sport, 'teams', params)
+            
+            logger.info(f"Teams API response: {result}")
+            
+            if 'error' in result or not result.get('response'):
+                logger.warning(f"Teams API failed or returned no data: {result}")
+                # If teams API fails, provide a generic option
+                self.options = [
+                    discord.SelectOption(label="All Teams", value="0", description="Get players from all teams")
+                ]
+            else:
+                teams = result.get('response', [])
+                logger.info(f"Found {len(teams)} teams")
+                self.options = []
+                
+                # Add "All Teams" option
+                self.options.append(
+                    discord.SelectOption(label="All Teams", value="0", description="Get players from all teams")
+                )
+                
+                # Add individual teams (limit to 24 for dropdown)
+                for team in teams[:24]:  # 24 + "All Teams" = 25 total
+                    team_info = team.get('team', {})
+                    name = team_info.get('name', 'Unknown')
+                    team_id = team_info.get('id', 0)
+                    if team_id and name != 'Unknown':
+                        self.options.append(
+                            discord.SelectOption(
+                                label=name[:100],  # Limit label length
+                                value=str(team_id),
+                                description=f"Team ID: {team_id}"
+                            )
+                        )
+                
+                # If no valid teams found, fall back to "All Teams"
+                if len(self.options) == 1:  # Only "All Teams" option
+                    logger.warning("No valid teams found in API response")
+            
+            self.placeholder = "Select a team..."
+            
+        except Exception as e:
+            logger.error(f"Error loading teams: {e}", exc_info=True)
+            self.options = [
+                discord.SelectOption(label="All Teams", value="0", description="Get players from all teams")
+            ]
+            self.placeholder = "Select a team..."
 
 
 class APIFlowView(discord.ui.View):
@@ -179,6 +261,34 @@ class APIFlowView(discord.ui.View):
         view.add_item(LeagueDropdown(self, sport, query_type))
         
         await interaction.response.edit_message(embed=embed, view=view)
+
+    async def show_team_dropdown(self, interaction: discord.Interaction, sport: str, query_type: str, league_id: int):
+        """Show the team dropdown for players queries."""
+        embed = discord.Embed(
+            title=f"🔍 API Query - {sport.title()} {query_type.title()}",
+            description="Loading teams for the selected league...",
+            color=0x9b59b6
+        )
+        
+        view = discord.ui.View(timeout=120)
+        team_dropdown = TeamDropdown(self, sport, query_type, league_id)
+        view.add_item(team_dropdown)
+        
+        await interaction.response.edit_message(embed=embed, view=view)
+        
+        # Load teams asynchronously
+        await team_dropdown.load_teams(interaction)
+        
+        # Update the embed description
+        if len(team_dropdown.options) > 1:
+            embed.description = "Select a team to get players from:"
+        else:
+            embed.description = "No teams found. Getting all players from the league..."
+            # Auto-select "All Teams" if no teams found
+            await self.execute_query_with_team(interaction, sport, query_type, league_id, 0)
+            return
+        
+        await interaction.edit_original_response(embed=embed, view=view)
 
     async def execute_query(self, interaction: discord.Interaction, sport: str, query_type: str, league_id: int):
         """Execute the final API query and send results."""
@@ -313,7 +423,7 @@ class OddsPaginatedView(discord.ui.View):
 
             embed.add_field(
                 name=f"{start_idx + i + 1}. {home_team} vs {away_team}",
-                value=f"Bookmaker: {bookmaker_name}\nOdds: {odds_text}",
+                value=f"Odds: {odds_text}",
                 inline=False
             )
 
@@ -771,7 +881,7 @@ class PlatinumAPICog(commands.Cog):
 
                 embed.add_field(
                     name=f"{start_idx + i + 1}. {home_team} vs {away_team}",
-                    value=f"Bookmaker: {bookmaker_name}\nOdds: {odds_text}",
+                    value=f"Odds: {odds_text}",
                     inline=False
                 )
 
@@ -821,6 +931,55 @@ class PlatinumAPICog(commands.Cog):
                         inline=True
                     )
                 await interaction.followup.send(embed=embed)
+
+    async def execute_query_with_team(self, interaction: discord.Interaction, sport: str, query_type: str, league_id: int, team_id: int):
+        """Execute the final API query with team selection for players."""
+        try:
+            # Check Platinum status
+            guild_id = interaction.guild_id
+            if not await self.cog.bot.platinum_service.is_platinum_guild(guild_id):
+                await interaction.response.edit_message(
+                    content="❌ This feature requires a Platinum subscription.",
+                    embed=None,
+                    view=None
+                )
+                return
+
+            await interaction.response.edit_message(
+                content="⏳ Querying API...",
+                embed=None,
+                view=None
+            )
+
+            # Build parameters for players query
+            params = {"league": league_id}
+            if team_id > 0:
+                params["team"] = team_id
+            
+            # Add season for players query
+            params["season"] = datetime.now().year
+
+            logger.info(f"Executing API query with team: sport={sport}, type={query_type}, league={league_id}, team={team_id}, params={params}")
+            
+            # Make API request
+            result = await self.cog.make_api_request(sport, query_type, params)
+            
+            if 'error' in result:
+                await interaction.followup.send(
+                    f"❌ API Error: {result['error']}",
+                    ephemeral=True
+                )
+                return
+
+            # Process and display results
+            await self.cog.display_query_results(interaction, sport, query_type, result)
+
+        except Exception as e:
+            logger.error(f"Error in API flow with team: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while processing your request.",
+                ephemeral=True
+            )
 
     @app_commands.command(name="api", description="Interactive sports API query with dropdowns (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
