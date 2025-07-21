@@ -314,6 +314,133 @@ class OddsPaginatedView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
 
+class GenericPaginatedView(discord.ui.View):
+    def __init__(self, cog, data: List[Dict], sport: str, query_type: str, page: int = 0, page_size: int = 10):
+        super().__init__(timeout=120)
+        self.cog = cog
+        self.data = data
+        self.sport = sport
+        self.query_type = query_type
+        self.page = page
+        self.page_size = page_size
+        self.total_pages = (len(data) + page_size - 1) // page_size
+
+    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.gray, disabled=True)
+    async def previous_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await self.update_display(interaction)
+
+    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.gray)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page < self.total_pages - 1:
+            self.page += 1
+            await self.update_display(interaction)
+
+    async def update_display(self, interaction: discord.Interaction):
+        start_idx = self.page * self.page_size
+        end_idx = min(start_idx + self.page_size, len(self.data))
+        page_data = self.data[start_idx:end_idx]
+
+        # Get title and emoji based on query type
+        titles = {
+            'leagues': ('🏆', 'Leagues'),
+            'players': ('👥', 'Players'),
+            'teams': ('⚽', 'Teams'),
+            'fixtures': ('🏟️', 'Fixtures'),
+            'live': ('🔴', 'Live Matches')
+        }
+        
+        emoji, title_name = titles.get(self.query_type, ('📋', 'Results'))
+        
+        embed = discord.Embed(
+            title=f"{emoji} {self.sport.title()} {title_name}",
+            description=f"Page {self.page + 1} of {self.total_pages} • Showing {start_idx + 1}-{end_idx} of {len(self.data)} entries",
+            color=0x9b59b6
+        )
+
+        # Process data based on query type
+        if self.query_type == 'leagues':
+            for i, league in enumerate(page_data):
+                league_info = league.get('league', {})
+                name = league_info.get('name', 'Unknown')
+                country = league_info.get('country', 'Unknown')
+                type_name = league_info.get('type', 'Unknown')
+                
+                embed.add_field(
+                    name=f"{start_idx + i + 1}. {name}",
+                    value=f"Country: {country}\nType: {type_name}",
+                    inline=True
+                )
+
+        elif self.query_type == 'players':
+            for i, player in enumerate(page_data):
+                player_info = player.get('player', {})
+                name = player_info.get('name', 'Unknown')
+                age = player_info.get('age', 'Unknown')
+                nationality = player_info.get('nationality', 'Unknown')
+                
+                embed.add_field(
+                    name=f"{start_idx + i + 1}. {name}",
+                    value=f"Age: {age}\nNationality: {nationality}",
+                    inline=True
+                )
+
+        elif self.query_type == 'teams':
+            for i, team in enumerate(page_data):
+                team_info = team.get('team', {})
+                name = team_info.get('name', 'Unknown')
+                country = team_info.get('country', 'Unknown')
+                founded = team_info.get('founded', 'Unknown')
+                
+                embed.add_field(
+                    name=f"{start_idx + i + 1}. {name}",
+                    value=f"Country: {country}\nFounded: {founded}",
+                    inline=True
+                )
+
+        elif self.query_type == 'fixtures':
+            for i, fixture in enumerate(page_data):
+                teams = fixture.get('teams', {})
+                home_team = teams.get('home', {}).get('name', 'Unknown')
+                away_team = teams.get('away', {}).get('name', 'Unknown')
+                fixture_info = fixture.get('fixture', {})
+                date = fixture_info.get('date', 'Unknown')
+                status = fixture_info.get('status', {}).get('short', 'Unknown')
+                
+                embed.add_field(
+                    name=f"{start_idx + i + 1}. {home_team} vs {away_team}",
+                    value=f"Date: {date}\nStatus: {status}",
+                    inline=True
+                )
+
+        elif self.query_type == 'live':
+            for i, match in enumerate(page_data):
+                teams = match.get('teams', {})
+                home_team = teams.get('home', {}).get('name', 'Unknown')
+                away_team = teams.get('away', {}).get('name', 'Unknown')
+                
+                goals = match.get('goals', {})
+                home_goals = goals.get('home', 0)
+                away_goals = goals.get('away', 0)
+                
+                fixture_info = match.get('fixture', {})
+                status = fixture_info.get('status', {}).get('short', 'Unknown')
+                elapsed = fixture_info.get('status', {}).get('elapsed', 0)
+                
+                embed.add_field(
+                    name=f"{start_idx + i + 1}. {home_team} {home_goals} - {away_goals} {away_team}",
+                    value=f"Status: {status}\nElapsed: {elapsed}'",
+                    inline=True
+                )
+
+        # Update button states
+        self.previous_page.disabled = self.page == 0
+        self.next_page.disabled = self.page == self.total_pages - 1
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+
 class PlatinumAPICog(commands.Cog):
     """Platinum tier API query commands for direct sports data access."""
     
@@ -401,25 +528,28 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title=f"🏆 {sport.title()} Leagues",
-                description=f"Found {len(leagues)} leagues",
-                color=0x9b59b6
-            )
-            for i, league in enumerate(leagues[:10]):
-                league_info = league.get('league', {})
-                name = league_info.get('name', 'Unknown')
-                country = league_info.get('country', 'Unknown')
-                type_name = league_info.get('type', 'Unknown')
-                
-                embed.add_field(
-                    name=f"{i+1}. {name}",
-                    value=f"Country: {country}\nType: {type_name}",
-                    inline=True
-                )
+            # Use pagination if more than 10 results
             if len(leagues) > 10:
-                embed.set_footer(text=f"Showing first 10 of {len(leagues)} leagues")
-            await interaction.followup.send(embed=embed)
+                view = GenericPaginatedView(self, leagues, sport, 'leagues')
+                await view.update_display(interaction)
+            else:
+                embed = discord.Embed(
+                    title=f"🏆 {sport.title()} Leagues",
+                    description=f"Found {len(leagues)} leagues",
+                    color=0x9b59b6
+                )
+                for i, league in enumerate(leagues):
+                    league_info = league.get('league', {})
+                    name = league_info.get('name', 'Unknown')
+                    country = league_info.get('country', 'Unknown')
+                    type_name = league_info.get('type', 'Unknown')
+                    
+                    embed.add_field(
+                        name=f"{i+1}. {name}",
+                        value=f"Country: {country}\nType: {type_name}",
+                        inline=True
+                    )
+                await interaction.followup.send(embed=embed)
 
         elif query_type == 'players':
             players = result.get('response', [])
@@ -436,25 +566,28 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title=f"👥 {sport.title()} Players",
-                description=f"Found {len(players)} players",
-                color=0x9b59b6
-            )
-            for i, player in enumerate(players[:10]):
-                player_info = player.get('player', {})
-                name = player_info.get('name', 'Unknown')
-                age = player_info.get('age', 'Unknown')
-                nationality = player_info.get('nationality', 'Unknown')
-                
-                embed.add_field(
-                    name=f"{i+1}. {name}",
-                    value=f"Age: {age}\nNationality: {nationality}",
-                    inline=True
-                )
+            # Use pagination if more than 10 results
             if len(players) > 10:
-                embed.set_footer(text=f"Showing first 10 of {len(players)} players")
-            await interaction.followup.send(embed=embed)
+                view = GenericPaginatedView(self, players, sport, 'players')
+                await view.update_display(interaction)
+            else:
+                embed = discord.Embed(
+                    title=f"👥 {sport.title()} Players",
+                    description=f"Found {len(players)} players",
+                    color=0x9b59b6
+                )
+                for i, player in enumerate(players):
+                    player_info = player.get('player', {})
+                    name = player_info.get('name', 'Unknown')
+                    age = player_info.get('age', 'Unknown')
+                    nationality = player_info.get('nationality', 'Unknown')
+                    
+                    embed.add_field(
+                        name=f"{i+1}. {name}",
+                        value=f"Age: {age}\nNationality: {nationality}",
+                        inline=True
+                    )
+                await interaction.followup.send(embed=embed)
 
         elif query_type == 'teams':
             teams = result.get('response', [])
@@ -467,25 +600,28 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title=f"🏈 {sport.title()} Teams",
-                description=f"Found {len(teams)} teams",
-                color=0x9b59b6
-            )
-            for i, team in enumerate(teams[:10]):
-                team_info = team.get('team', {})
-                name = team_info.get('name', 'Unknown')
-                country = team_info.get('country', 'Unknown')
-                founded = team_info.get('founded', 'Unknown')
-                
-                embed.add_field(
-                    name=f"{i+1}. {name}",
-                    value=f"Country: {country}\nFounded: {founded}",
-                    inline=True
-                )
+            # Use pagination if more than 10 results
             if len(teams) > 10:
-                embed.set_footer(text=f"Showing first 10 of {len(teams)} teams")
-            await interaction.followup.send(embed=embed)
+                view = GenericPaginatedView(self, teams, sport, 'teams')
+                await view.update_display(interaction)
+            else:
+                embed = discord.Embed(
+                    title=f"🏈 {sport.title()} Teams",
+                    description=f"Found {len(teams)} teams",
+                    color=0x9b59b6
+                )
+                for i, team in enumerate(teams):
+                    team_info = team.get('team', {})
+                    name = team_info.get('name', 'Unknown')
+                    country = team_info.get('country', 'Unknown')
+                    founded = team_info.get('founded', 'Unknown')
+                    
+                    embed.add_field(
+                        name=f"{i+1}. {name}",
+                        value=f"Country: {country}\nFounded: {founded}",
+                        inline=True
+                    )
+                await interaction.followup.send(embed=embed)
 
         elif query_type == 'fixtures':
             fixtures = result.get('response', [])
@@ -498,27 +634,30 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title=f"📅 {sport.title()} Fixtures",
-                description=f"Found {len(fixtures)} fixtures",
-                color=0x9b59b6
-            )
-            for i, fixture in enumerate(fixtures[:10]):
-                teams = fixture.get('teams', {})
-                home_team = teams.get('home', {}).get('name', 'Unknown')
-                away_team = teams.get('away', {}).get('name', 'Unknown')
-                fixture_info = fixture.get('fixture', {})
-                date = fixture_info.get('date', 'Unknown')
-                status = fixture_info.get('status', {}).get('short', 'Unknown')
-                
-                embed.add_field(
-                    name=f"{i+1}. {home_team} vs {away_team}",
-                    value=f"Date: {date}\nStatus: {status}",
-                    inline=True
-                )
+            # Use pagination if more than 10 results
             if len(fixtures) > 10:
-                embed.set_footer(text=f"Showing first 10 of {len(fixtures)} fixtures")
-            await interaction.followup.send(embed=embed)
+                view = GenericPaginatedView(self, fixtures, sport, 'fixtures')
+                await view.update_display(interaction)
+            else:
+                embed = discord.Embed(
+                    title=f"📅 {sport.title()} Fixtures",
+                    description=f"Found {len(fixtures)} fixtures",
+                    color=0x9b59b6
+                )
+                for i, fixture in enumerate(fixtures):
+                    teams = fixture.get('teams', {})
+                    home_team = teams.get('home', {}).get('name', 'Unknown')
+                    away_team = teams.get('away', {}).get('name', 'Unknown')
+                    fixture_info = fixture.get('fixture', {})
+                    date = fixture_info.get('date', 'Unknown')
+                    status = fixture_info.get('status', {}).get('short', 'Unknown')
+                    
+                    embed.add_field(
+                        name=f"{i+1}. {home_team} vs {away_team}",
+                        value=f"Date: {date}\nStatus: {status}",
+                        inline=True
+                    )
+                await interaction.followup.send(embed=embed)
 
         elif query_type == 'odds':
             odds_data = result.get('response', [])
@@ -618,32 +757,35 @@ class PlatinumAPICog(commands.Cog):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
-            embed = discord.Embed(
-                title=f"🔴 Live {sport.title()} Matches",
-                description=f"Found {len(live_matches)} live matches",
-                color=0xff0000
-            )
-            for i, match in enumerate(live_matches[:10]):
-                teams = match.get('teams', {})
-                home_team = teams.get('home', {}).get('name', 'Unknown')
-                away_team = teams.get('away', {}).get('name', 'Unknown')
-                
-                goals = match.get('goals', {})
-                home_goals = goals.get('home', 0)
-                away_goals = goals.get('away', 0)
-                
-                fixture_info = match.get('fixture', {})
-                status = fixture_info.get('status', {}).get('short', 'Unknown')
-                elapsed = fixture_info.get('status', {}).get('elapsed', 0)
-                
-                embed.add_field(
-                    name=f"{i+1}. {home_team} {home_goals} - {away_goals} {away_team}",
-                    value=f"Status: {status}\nElapsed: {elapsed}'",
-                    inline=True
-                )
+            # Use pagination if more than 10 results
             if len(live_matches) > 10:
-                embed.set_footer(text=f"Showing first 10 of {len(live_matches)} live matches")
-            await interaction.followup.send(embed=embed)
+                view = GenericPaginatedView(self, live_matches, sport, 'live')
+                await view.update_display(interaction)
+            else:
+                embed = discord.Embed(
+                    title=f"🔴 Live {sport.title()} Matches",
+                    description=f"Found {len(live_matches)} live matches",
+                    color=0xff0000
+                )
+                for i, match in enumerate(live_matches):
+                    teams = match.get('teams', {})
+                    home_team = teams.get('home', {}).get('name', 'Unknown')
+                    away_team = teams.get('away', {}).get('name', 'Unknown')
+                    
+                    goals = match.get('goals', {})
+                    home_goals = goals.get('home', 0)
+                    away_goals = goals.get('away', 0)
+                    
+                    fixture_info = match.get('fixture', {})
+                    status = fixture_info.get('status', {}).get('short', 'Unknown')
+                    elapsed = fixture_info.get('status', {}).get('elapsed', 0)
+                    
+                    embed.add_field(
+                        name=f"{i+1}. {home_team} {home_goals} - {away_goals} {away_team}",
+                        value=f"Status: {status}\nElapsed: {elapsed}'",
+                        inline=True
+                    )
+                await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="api", description="Interactive sports API query with dropdowns (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
