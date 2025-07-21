@@ -77,6 +77,7 @@ from bot.services.data_sync_service import DataSyncService
 from bot.services.game_service import GameService
 from bot.services.user_service import UserService
 from bot.services.voice_service import VoiceService
+from bot.services.platinum_service import PlatinumService
 
 from bot.commands.sync_cog import setup_sync_cog
 
@@ -260,6 +261,7 @@ class BettingBot(commands.Bot):
         self.webapp_process = None
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
+        self.platinum_service = PlatinumService(self.db_manager, self)
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
@@ -297,6 +299,8 @@ class BettingBot(commands.Bot):
             "schedule.py",
             "maintenance.py",
             "odds.py",  # New odds command
+            "platinum.py",  # Platinum tier commands
+            "platinum_api.py",  # Platinum API query commands
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -612,6 +616,7 @@ class BettingBot(commands.Bot):
             self.game_service.start(),
             self.data_sync_service.start(),
             self.live_game_channel_service.start(),
+            self.platinum_service.start(),
         ]
 
         # Initialize rate limiter

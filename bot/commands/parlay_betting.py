@@ -1409,6 +1409,7 @@ class ParlayBetWorkflowView(View):
         self, modal_interaction: Interaction, leg_details: Dict[str, Any], file=None
     ):
         logger.info(f"[PARLAY WORKFLOW] Adding leg: {leg_details.get('line_type', 'unknown')} - {leg_details.get('team', 'unknown')} vs {leg_details.get('opponent', 'unknown')}")
+        logger.info(f"[PARLAY WORKFLOW] Leg details: {leg_details}")
         try:
             # Add the leg to the parlay
             if "legs" not in self.bet_details:

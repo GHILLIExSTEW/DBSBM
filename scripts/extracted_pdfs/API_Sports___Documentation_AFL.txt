@@ -1,0 +1,3517 @@
+# Extracted from: API-Sports - Documentation AFL.pdf
+# Original file: C:\Users\kaleb\OneDrive\Desktop\DBSBM\bot\data\api_sports_docs\API-Sports - Documentation AFL.pdf
+# Extracted on: 1753061290.7085774
+================================================================================
+
+
+--- Page 1 ---
+API-AFL(1.2.4)
+support:https://dashboard.api-football.comURL: https://api-sports.io
+Introduction
+Welcome to Api-AFL! You can use our API to access all API endpoints, which can get information about
+AFL (Australian Football League).
+We have language bindings in C, C#, cURL, Dart, Go, Java, Javascript, NodeJs, Objective-c, OCaml, Php,
+PowerShell, Python, Ruby, Shell and Swift! You can view code examples in the dark area to the right, and
+you can switch the programming language of the examples with the tabs in the top right.
+Authentication
+We uses API keys to allow access to the API. You can register a new API key in rapidapi or directly on our
+dashboard.
+The accounts on RapidAPI and on our Dashboard are dissociated. Each of these registration methods has
+its own URL and API-KEY. You must therefore adapt your scripts according to your subscription by
+adapting the URL and your API-KEY.
+RAPIDAPI : https://api-afl.p.rapidapi.com/
+API-SPORTS : https://v1.afl.api-sports.io/
+Our API expects for the API key to be included in all API requests to the server in a header that looks like
+the following:
+Make sure to replace XxXxXxXxXxXxXxXxXxXxXxXx  with your API key.
+REQUESTS HEADERS & CORS
+The API is configured to work only with GET requests and allows only the headers listed below:|7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 1/61
+
+--- Page 2 ---
+x-rapidapi-host
+x-rapidapi-key
+x-apisports-key
+If you make non-GET requests or add headers that are not in the list, you will receive an error from the API.
+Some frameworks (especially in JS, nodeJS..) automatically add extra headers, you have to make sure to
+remove them in order to get a response from the API.
+RAPIDAPI Account
+All information related to your subscription are available on the rapidApi developer dashboard.
+The RapidAPI developer dashboard is where you can see all of your apps, locate API keys, view analytics,
+and manage billing settings.
+To access the dashboard, simply login to RapidAPI and select 'My Apps' in the top-right menu.
+Alternatively, you can head directly to https://rapidapi.com/developer/dashboard.
+In the main dashboard, you will see account-wide analytics and account information. To get more detailed
+information, you can select tabs on the left-hand side of the screen.
+App Specific Analytics
+Using the RapidAPI dashboard, you can also view analytics specific to each app in your account. To do so,
+switch over to the 'Analytics' tab of your application in the dashboard.
+On the top of the page, you'll be able to see a chart with all the calls being made to all the APIs your app is
+connected to. You'll also be able to see a log with all the request data. You are also able to filter these
+analytics to only show certain APIs within the app.
+In each graph, you can view the following metrics:
+API Calls : how many requests are being made
+Error rates : how many requests are error some
+Latency : how long (on average) requests take to execute
+You may change the time period you're looking at by clicking the calendar icon and choosing a time range.
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+server: The current version of the API proxy used by RapidAPI.
+x-ratelimit-requests-limit : The number of requests the plan you are currently subscribed to
+allows you to make, before incurring overages.7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 2/61
+
+--- Page 3 ---
+x-ratelimit-requests-remaining : The number of requests remaining before you reach the limit
+of requests your application is allowed to make, before experiencing overage charges.
+X-RapidAPI-Proxy-Response : This header is set to true when the RapidAPI proxy generates the
+response, (i.e. the response is not generated from our servers)
+API-SPORTS Account
+If you decided to subscribe directly on our site, you have a dashboard at your disposal at the following url:
+dashboard
+It allows you to:
+To follow your consumption in real time
+Manage your subscription and change it if necessary
+Check the status of our servers
+Test all endpoints without writing a line of code.
+You can also consult all this information directly through the API by calling the endpoint status.
+This call does not count against the daily quota.
+get"https://v1.afl.api-sports.io/status"
+// response
+    "get": "status"
+    "parameters" : 
+    "errors" : 
+    "results" : 1
+    "response" : 
+        "account" : 
+            "firstname" : "xxxx"
+            "lastname" : "XXXXXX"
+            "email": "xxx@xxx.com"
+        
+        "subscription" : 
+            "plan": "Free"
+            "end": "2020-04-10T23:24:27+00:00"
+            "active" : true
+        
+        "requests" : 
+            "current" : 12
+            "limit_day" : 100
+        
+(
+)
+;
+{
+,
+[
+]
+,
+[
+]
+,
+,
+{
+{
+,
+,
+}
+,
+{
+,
+,
+}
+,
+{
+,
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 3/61
+
+--- Page 4 ---
+    
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+x-ratelimit-requests-limit : The number of requests allocated per day according to your
+subscription.
+x-ratelimit-requests-remaining : The number of remaining requests per day according to your
+subscription.
+X-RateLimit-Limit : Maximum number of API calls per minute.
+X-RateLimit-Remaining : Number of API calls remaining before reaching the limit per minute.
+Dashboard
+Requests
+}
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 4/61
+
+--- Page 5 ---
+Live tester
+Architecture7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 5/61
+
+--- Page 6 ---
+Logos / Images
+Calls to logos/images do not count towards your daily quota and are provided for free. However these
+calls are subject to a rate per second & minute, it is recommended to save this data on your side in order
+not to slow down or impact the user experience of your application or website. For this you can use CDNs
+such as bunny.net.
+We have a tutorial available here, which explains how to set up your own media system with BunnyCDN.
+Logos, images and trademarks delivered through the API are provided solely for identification and
+descriptive purposes (e.g., identifying leagues, teams, players or venues). We does not own any of these
+visual assets, and no intellectual property rights are claimed over them. Some images or data may be
+subject to intellectual property or trademark rights held by third parties (including but not limited to
+leagues, federations, or clubs). The use of such content in your applications, websites, or products may
+require additional authorization or licensing from the respective rights holders. You are fully responsible
+for ensuring that your usage of any logos, images, or branded content complies with applicable laws in
+your country or the countries where your services are made available.We are not affiliated with, sponsored
+by, or endorsed by any sports league, federation, or brand featured in the data provided.
+Sample Scripts
+Here are some examples of how the API is used in the main development languages.7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 6/61
+
+--- Page 7 ---
+ You have to replace {endpoint}  by the real name of the endpoint you want to call, like leagues  or
+teams for example. In all the sample scripts we will use the leagues  endpoint as example.
+Also you will have to replace XxXxXxXxXxXxXxXxXxXxXx  with your API-KEY provided in the dashboard or
+on rapidapi.
+C
+libcurl
+CURL *curl
+CURLcode res
+curl = curl_easy_init
+ifcurl 
+  curl_easy_setopt curl, CURLOPT_CUSTOMREQUEST, "GET"
+  curl_easy_setopt curl, CURLOPT_URL, "https://v1.afl.api-sports.io/leagues"
+  curl_easy_setopt curl, CURLOPT_FOLLOWLOCATION, 1L
+  curl_easy_setopt curl, CURLOPT_DEFAULT_PROTOCOL, "https"
+  struct curl_slist *headers = NULL
+  headers = curl_slist_append headers, "x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx"
+  headers = curl_slist_append headers, "x-rapidapi-host: v1.afl.api-sports.io"
+  curl_easy_setopt curl, CURLOPT_HTTPHEADER, headers
+  res = curl_easy_perform curl
+curl_easy_cleanup curl
+C#
+RestSharp
+var client = new RestClient "https://v1.afl.api-sports.io/leagues"
+client.Timeout = -1
+var request = new RestRequest Method.GET
+request.AddHeader "x-rapidapi-key" , "XxXxXxXxXxXxXxXxXxXxXxXx"
+request.AddHeader "x-rapidapi-host" , "v1.afl.api-sports.io"
+;
+;
+(
+)
+;
+(
+)
+{
+(
+)
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+}
+(
+)
+;
+(
+)
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 7/61
+
+--- Page 8 ---
+ IRestResponse response = client.Execute request
+Console.WriteLine response.Content
+cURL
+Curl
+curl --request GET 
+    --url https://v1.afl.api-sports.io/leagues 
+    --header 'x-rapidapi-host: v1.afl.api-sports.io'  
+    --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+Dart
+http
+var headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.afl.api-sports.io'
+var request = httpRequest 'GET' Uriparse'https://v1.afl.api-sports.io/leagues'
+request headers addAllheaders
+httpStreamedResponse response = await request send
+if response statusCode == 200 
+  printawait response streambytesToString
+else 
+  printresponse reasonPhrase
+(
+)
+;
+(
+)
+;
+\
+\
+\
+{
+:
+,
+:
+}
+;
+.
+(
+,
+.
+(
+.
+.
+(
+)
+;
+.
+.
+(
+)
+;
+(
+.
+)
+{
+(
+.
+.
+(
+)
+)
+;
+}
+{
+(
+.
+)
+;
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 8/61
+
+--- Page 9 ---
+Go
+Native
+package main
+import 
+  "fmt"
+  "net/http"
+  "io/ioutil"
+func main 
+  url := "https://v1.afl.api-sports.io/leagues"
+  method := "GET"
+  client := &httpClient 
+  
+  req err := httpNewRequest method url nil
+  if err != nil 
+    fmt Println err
+    return
+  
+  reqHeaderAdd"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  reqHeaderAdd"x-rapidapi-host"  "v1.afl.api-sports.io"
+  res err := client Doreq
+  if err != nil 
+    fmt Println err
+    return
+  
+  defer resBodyClose
+  body err := ioutil ReadAll resBody
+  if err != nil 
+    fmt Println err
+    return
+  
+  fmtPrintln stringbody
+(
+)
+(
+)
+{
+.
+{
+}
+,
+.
+(
+,
+,
+)
+{
+.
+(
+)
+}
+.
+.
+(
+,
+)
+.
+.
+(
+,
+)
+,
+.
+(
+)
+{
+.
+(
+)
+}
+.
+.
+(
+)
+,
+.
+(
+.
+)
+{
+.
+(
+)
+}
+.
+(
+(
+)
+)
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 9/61
+
+--- Page 10 ---
+ Java
+OkHttp
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.afl.api-sports.io"
+var requestOptions = 
+  method : 'GET'
+  headers : myHeaders
+  redirect : 'follow'
+Unirest
+Unirest setTimeouts 0 0
+HttpResponse String response = Unirest get"https://v1.afl.api-sports.io/leagues"
+  header"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  header"x-rapidapi-host"  "v1.afl.api-sports.io"
+  asString
+Javascript
+Fetch
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.afl.api-sports.io"
+var requestOptions = 
+  method: 'GET'
+  headers: myHeaders
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,
+}
+;
+.
+(
+,
+)
+;
+<
+>
+.
+(
+.
+(
+,
+)
+.
+(
+,
+)
+.
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 10/61
+
+--- Page 11 ---
+  redirect : 'follow'
+fetch"https://v1.afl.api-sports.io/leagues"  requestOptions
+  thenresponse  => response text
+  thenresult => console logresult
+  catcherror => console log'error'  error
+jQuery
+var settings = 
+  "url": "https://v1.afl.api-sports.io/leagues"
+  "method" : "GET"
+  "timeout" : 0
+  "headers" : 
+    "x-rapidapi-key" : "XxXxXxXxXxXxXxXxXxXxXxXx"
+    "x-rapidapi-host" : "v1.afl.api-sports.io"
+  
+$ajaxsettings donefunction  response  
+  console logresponse
+XHR
+var xhr = new XMLHttpRequest
+xhrwithCredentials = true
+xhraddEventListener "readystatechange"  function  
+  ifthisreadyState === 4 
+    console logthisresponseText
+  
+xhropen"GET" "https://v1.afl.api-sports.io/leagues"
+xhrsetRequestHeader "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+xhrsetRequestHeader "x-rapidapi-host"  "v1.afl.api-sports.io"
+xhrsend
+}
+;
+(
+,
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+,
+)
+)
+;
+{
+,
+,
+,
+{
+,
+}
+,
+}
+;
+.
+(
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+;
+.
+;
+.
+(
+,
+(
+)
+{
+(
+.
+)
+{
+.
+(
+.
+)
+;
+}
+}
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 11/61
+
+--- Page 12 ---
+NodeJs
+Axios
+var axios = require 'axios'
+var config = 
+  method  'get'
+  url 'https://v1.afl.api-sports.io/leagues'
+  headers  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.afl.api-sports.io'
+  
+axiosconfig
+thenfunction  response  
+  console logJSONstringify response data
+catchfunction  error 
+  console logerror
+Native
+var https = require 'follow-redirects' https
+var fs = require 'fs'
+var options = 
+  'method'  'GET'
+  'hostname'  'v1.afl.api-sports.io'
+  'path' '/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.afl.api-sports.io'
+  
+  'maxRedirects'  20
+var req = httpsrequest options  function  res 
+  var chunks = 
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+)
+.
+(
+(
+)
+{
+.
+(
+.
+(
+.
+)
+)
+;
+}
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+.
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+,
+:
+}
+;
+.
+(
+,
+(
+)
+{
+[
+]
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 12/61
+
+--- Page 13 ---
+  reson"data" function  chunk 
+    chunks pushchunk
+  
+  reson"end" function  chunk 
+    var body = Buffer concatchunks
+    console logbodytoString
+  
+  reson"error"  function  error 
+    console errorerror
+  
+reqend
+Requests
+var request = require 'request'
+var options = 
+  'method'  'GET'
+  'url' 'https://v1.afl.api-sports.io/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.afl.api-sports.io'
+  
+request options  function  error response  
+  if error throw new Errorerror
+  console logresponse body
+Unirest
+var unirest = require 'unirest'
+var req = unirest 'GET' 'https://v1.afl.api-sports.io/leagues'
+  headers
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.afl.api-sports.io'
+  
+  endfunction  res 
+    if reserror throw new Errorreserror
+    console logresraw_body
+  
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+.
+(
+.
+(
+)
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+}
+)
+;
+.
+(
+)
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+,
+(
+,
+)
+{
+(
+)
+(
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;
+(
+)
+;
+(
+,
+)
+.
+(
+{
+:
+,
+:
+}
+)
+.
+(
+(
+)
+{
+(
+.
+)
+(
+.
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 13/61
+
+--- Page 14 ---
+ Objective-c
+NSURLSession
+#import <Foundation /Foundation h>
+dispatch_semaphore_t sema = dispatch_semaphore_create 0
+NSMutableURLRequest *request = NSMutableURLRequest requestWithURL NSURL URLWithS
+  cachePolicy NSURLRequestUseProtocolCachePolicy
+  timeoutInterval 10.0
+NSDictionary *headers = @
+  @"x-rapidapi-key"  @"XxXxXxXxXxXxXxXxXxXxXxXx"
+  @"x-rapidapi-host"  @"v1.afl.api-sports.io"
+request setAllHTTPHeaderFields headers
+request setHTTPMethod @"GET"
+NSURLSession *session = NSURLSession sharedSession
+NSURLSessionDataTask *dataTask = session dataTaskWithRequest request
+completionHandler ^NSData *data NSURLResponse *response  NSError *error 
+  if error 
+    NSLog@"%@" error
+    dispatch_semaphore_signal sema
+   else 
+    NSHTTPURLResponse *httpResponse = NSHTTPURLResponse * response
+    NSError *parseError = nil
+    NSDictionary *responseDictionary = NSJSONSerialization JSONObjectWithData dat
+    NSLog@"%@"responseDictionary
+    dispatch_semaphore_signal sema
+  
+dataTask resume
+dispatch_semaphore_wait sema DISPATCH_TIME_FOREVER
+.
+(
+)
+;
+[
+:
+[
+:
+:
+]
+;
+{
+:
+,
+:
+}
+;
+[
+:
+]
+;
+[
+:
+]
+;
+[
+]
+;
+[
+:
+:
+(
+,
+,
+)
+{
+(
+)
+{
+(
+,
+)
+;
+(
+)
+;
+}
+{
+(
+)
+;
+;
+[
+:
+(
+,
+)
+;
+(
+)
+;
+}
+}
+]
+;
+[
+]
+;
+(
+,
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 14/61
+
+--- Page 15 ---
+OCaml
+Cohttp
+open Lwt
+open Cohttp
+open Cohttp_lwt_unix
+let reqBody =
+  let uri = Uriof_string "https://v1.afl.api-sports.io/leagues"  in
+  let headers = Header init 
+    |> fun h -> Header add h "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    |> fun h -> Header add h "x-rapidapi-host"  "v1.afl.api-sports.io"
+  in
+  Client call ~headers `GET uri >>= fun _resp body ->
+  body |> Cohttp_lwt Bodyto_string >|= fun body -> body
+let  =
+  let respBody = Lwt_main run reqBody in
+  print_endline respBody
+Php
+cURL
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/leagues'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+.
+.
+(
+)
+.
+.
+.
+(
+,
+)
+.
+.
+(
+)
+.
+(
+)
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 15/61
+
+--- Page 16 ---
+  CURLOPT_HTTPHEADER  => array
+    'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Request2
+<?php
+require_once  'HTTP/Request2.php'
+$request  = new HTTP_Request2
+$request ->setUrl'https://v1.afl.api-sports.io/leagues'
+$request ->setMethod HTTP_Request2 ::METHOD_GET
+$request ->setConfig array
+  'follow_redirects'  => TRUE
+$request ->setHeader array
+  'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  => 'v1.afl.api-sports.io'
+try 
+  $response  = $request ->send
+  if $response ->getStatus  == 200 
+    echo $response ->getBody
+  
+  else 
+    echo 'Unexpected HTTP status: '  . $response ->getStatus  . ' ' .
+    $response ->getReasonPhrase
+  
+catchHTTP_Request2_Exception  $e 
+  echo 'Error: '  . $e->getMessage
+Http
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.afl.api-sports.io/leagues'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;
+(
+(
+)
+)
+;
+(
+(
+,
+)
+)
+;
+{
+(
+)
+;
+(
+(
+)
+)
+{
+(
+)
+;
+}
+{
+(
+)
+(
+)
+;
+}
+}
+(
+)
+{
+(
+)
+;
+}
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 16/61
+
+--- Page 17 ---
+     'x-rapidapi-host'  => 'v1.afl.api-sports.io'
+    'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+PowerShell
+RestMethod
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers Add"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+$headers Add"x-rapidapi-host"  "v1.afl.api-sports.io"
+$response = Invoke-RestMethod 'https://v1.afl.api-sports.io/leagues'  -Method 'GET'
+$response | ConvertTo -Json
+Python
+http.client
+import httpclient
+conn = httpclientHTTPSConnection "v1.afl.api-sports.io"
+headers = 
+    'x-rapidapi-host'  "v1.afl.api-sports.io"
+    'x-rapidapi-key'  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    
+connrequest "GET" "/leagues"  headers =headers
+res = conngetresponse
+data = resread
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+.
+(
+,
+)
+.
+.
+.
+(
+)
+{
+:
+,
+:
+}
+.
+(
+,
+,
+)
+.
+(
+)
+.
+(
+)7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 17/61
+
+--- Page 18 ---
+printdatadecode"utf-8"
+Requests
+url = "https://v1.afl.api-sports.io/leagues"
+payload=
+headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.afl.api-sports.io'
+response = requests request "GET" url headers =headers  data=payload
+printresponse text
+Ruby
+Net::HTTP
+require 'uri'
+require 'net/http'
+require 'openssl'
+url = URI"https://v1.afl.api-sports.io/leagues"
+http = NetHTTPnewurlhost urlport
+httpuse_ssl = true
+httpverify_mode = OpenSSL SSLVERIFY_NONE
+request = NetHTTPGetnewurl
+request "x-rapidapi-host"  = 'v1.afl.api-sports.io'
+request "x-rapidapi-key"  = 'XxXxXxXxXxXxXxXxXxXxXxXx'
+response = httprequest request
+puts response read_body
+(
+.
+(
+)
+)
+{
+}
+{
+:
+,
+:
+}
+.
+(
+,
+,
+,
+)
+(
+.
+)
+(
+)
+::
+.
+(
+.
+,
+.
+)
+.
+.
+::
+::
+::
+::
+.
+(
+)
+[
+]
+[
+]
+.
+(
+)
+.7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 18/61
+
+--- Page 19 ---
+Shell
+Httpie
+http --follow --timeout 3600 GET 'https://v1.afl.api-sports.io/leagues'  
+ x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'  
+ x-rapidapi-host: 'v1.afl.api-sports.io'
+wget
+wget --no-check-certificate --quiet 
+  --method GET 
+  --timeout =0 
+  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'  
+  --header 'x-rapidapi-host: v1.afl.api-sports.io'  
+   'https://v1.afl.api-sports.io/leagues'
+Swift
+URLSession
+import Foundation
+#if canImport FoundationNetworking
+import FoundationNetworking
+#endif
+var semaphore = DispatchSemaphore  value 0
+var request = URLRequest url URLstring "https://v1.afl.api-sports.io/leagues" !
+request addValue "XxXxXxXxXxXxXxXxXxXxXxXx"  forHTTPHeaderField  "x-rapidapi-key"
+request addValue "v1.afl.api-sports.io"  forHTTPHeaderField  "x-rapidapi-host"
+request httpMethod = "GET"
+\
+\
+\
+\
+\
+\
+\
+(
+)
+(
+:
+)
+(
+:
+(
+:
+)
+.
+(
+,
+:
+)
+.
+(
+,
+:
+)
+.7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 19/61
+
+--- Page 20 ---
+ let task = URLSession shareddataTask with request   data response  error in
+  guard let data = data else 
+    printStringdescribing  error
+    semaphore signal
+    return
+  
+  printStringdata data encoding  utf8!
+  semaphore signal
+taskresume
+semaphore wait
+Databases Solutions
+Enhance Your Data Management with Aiven
+Integrating databases into your application can greatly enhance data management and storage. If you're
+looking for high-performing, flexible, and secure database solutions, we recommend checking out Aiven.
+Aiven is a cloud platform that offers a range of managed database services, including relational
+databases, NoSQL databases, streaming data processing systems, and much more. Their offerings
+include PostgreSQL , MySQL, Cassandra , Redis, Kafka, and many other databases, all with
+simplified management, high availability, and advanced security.
+Moreover, Aiven provides a free tier to get started, along with testing credits to explore their offerings. This
+opportunity allows you to evaluate their platform and determine if it meets your needs.
+One particularly attractive feature of Aiven is that they work with multiple cloud providers, including
+Google Cloud , Amazon Web Services (AWS) , Microsoft Azure , DigitalOcean , and more.
+This means you have the flexibility to choose the best cloud infrastructure for your project.
+In terms of reliability, Aiven is committed to providing a 99.99% Service Level Agreement (SLA), ensuring
+continuous and highly available service.
+To test their services, visit this page.
+.
+.
+(
+:
+)
+{
+,
+,
+{
+(
+(
+:
+)
+)
+.
+(
+)
+}
+(
+(
+:
+,
+:
+.
+)
+)
+.
+(
+)
+}
+.
+(
+)
+.
+(
+)7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 20/61
+
+--- Page 21 ---
+If you're a developer, explore their DEV center for technical information.
+Check out Aiven's documentation for detailed information on their services and features.
+By integrating Aiven with our API, you can efficiently store, manage, and analyze your data while taking
+advantage of their cloud database solutions' flexibility and scalability.
+Real-Time Data Management with Firebase
+When you're looking for a real-time data management solution for your application, Firebase's Realtime
+Database is a powerful choice. Explore how Firebase can enhance real-time data management for your
+application.
+Firebase's Realtime Database offers a cloud-based real-time database that synchronizes data in real-time
+across users and devices. This makes it an ideal choice for applications that require instant data updates.
+Why Choose Firebase's Realtime Database?
+Real-Time Data: Firebase allows you to store real-time data, meaning that updates are instantly
+propagated to all connected users.
+Easy Synchronization: Data is automatically synchronized across all devices, providing a consistent
+and real-time user experience.
+Built-In Security: Firebase offers flexible security rules to control data access and ensure privacy.
+Simplified Integration: Firebase's Realtime Database easily integrates with other Firebase services,
+simplifying backend management.
+Helpful Links:
+Explore Firebase's Realtime Database: Discover the features and advantages of Firebase's Realtime
+Database for efficient real-time data management.
+Firebase's Realtime Database Documentation: Refer to the comprehensive documentation for
+Firebase's Realtime Database for a smooth integration.
+A tutorial describing each step is available on our blog here.
+Timezone7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 21/61
+
+--- Page 22 ---
+timezone
+Get the list of available timezone to be used in the games and odds endpoint.
+Parameters: This endpoint does not require any parameters.
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/timezone'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'x-rapidapi-key
+required
+GET/timezone
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 22/61
+
+--- Page 23 ---
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "timezone"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 425
+,
+"response" : -
+[
+"Africa/Abidjan" ,
+"Africa/Accra" ,
+"Africa/Addis_Ababa" ,
+"Africa/Algiers" ,
+"Africa/Asmara" ,
+"Africa/Bamako" ,
+"Africa/Bangui" ,
+"Africa/Banjul" ,
+"Africa/Bissau" ,
+"Africa/Blantyre" ,
+"Africa/Brazzaville" ,
+"Africa/Bujumbura"
+]
+}Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 23/61
+
+--- Page 24 ---
+Seasons
+seasons
+Return the list of all available seasons.
+All seasons are only 4-digit keys, so for a league whose season is 2022-2023  the season in the API will
+be 2022.
+All seasons  can be used in other endpoints as parameter.
+Parameters: This endpoint does not require any parameters.
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyx-rapidapi-key
+required
+GET/seasons
+Copy7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 24/61
+
+--- Page 25 ---
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/seasons'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "seasons"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 13
+,Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 25/61
+
+--- Page 26 ---
+Leagues"response" : -
+[
+2011,
+2012,
+2013,
+2014,
+2015,
+2016,
+2017,
+2018,
+2019,
+2020,
+2021,
+2022,
+2023
+]
+}
+leagues
+Get the list of available leagues.
+The league id are unique in the API and leagues keep it across all seasons
+You can find all the leagues ids on our Dashboard.
+Parameters: Most of the parameters of this endpoint can be used together.
+QUERY PARAMETERS
+integer
+The id of the league
+integerid
+season7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 26/61
+
+--- Page 27 ---
+Default:"YYYY"
+The season of the league
+any
+Enum:"true" "false"
+The state of the league
+string
+A valid timezone
+HEADER PARAMETERS
+string
+You rapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/leagues'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => arraycurrent
+timezone
+x-rapidapi-key
+required
+GET/leagues
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 27/61
+
+--- Page 28 ---
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "leagues"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 13
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 28/61
+
+--- Page 29 ---
+Teams
+teams
+Return a list of available teams.
+The team id are unique in the API.
+You can find all the teams ids on our Dashboard.
+Parameters: You can call this endpoint without any parameters to get the complete list.
+This endpoint is updated every day
+QUERY PARAMETERS
+integer
+The id of the team
+string
+The name of the team
+integer
+The id of the league | Requires the field season
+integer
+Default:"YYYY"
+The season of the league | Requires the field League`
+string>= 3 characters
+The name of the team
+HEADER PARAMETERS
+string
+Your RapidAPI Keyid
+name
+league
+season
+search
+x-rapidapi-key
+required7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 29/61
+
+--- Page 30 ---
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/teams'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200GET/teams
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/jsonContent type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 30/61
+
+--- Page 31 ---
+Expand allCollapse all Copy
+{"get": "teams"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 18
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+statistics
+Return teams statistics for a given season.
+Parameters: This endpoint requires at least theses parameters : id, season.
+This endpoint is updated every day
+QUERY PARAMETERS7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 31/61
+
+--- Page 32 ---
+integer
+The id of the team
+integer
+Default:"YYYY"
+The season of the league
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/teams/statistics?id=1&season=2023
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'id
+required
+season
+required
+x-rapidapi-key
+required
+GET/teams/statistics
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+(
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 32/61
+
+--- Page 33 ---
+Players   
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "teams/statistics"
+,
+"parameters" : -
+{
+"id": "1"
+,
+"season" : "2023"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+players
+Return a list of available players.Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 33/61
+
+--- Page 34 ---
+The player id are unique in the API and keep it among all the competitions in which they participate.
+Parameters: This endpoint requires at least one of theses parameters : id, team, name, search.
+This endpoint is updated every day
+QUERY PARAMETERS
+integer
+The id of the player
+string
+The name of the player
+integer
+The id of the team | Requires the field Season
+integer
+Default:"YYYY"
+The season of the league | Requires the field Team
+string>= 3 characters
+The name of the player
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samplesid
+name
+team
+season
+search
+x-rapidapi-key
+required
+GET/players7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 34/61
+
+--- Page 35 ---
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/players?season=2023&team=1'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "players"
+,
+"parameters" : -
+{
+"season" : "2023"
+,
+"team": "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 37
+,Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 35/61
+
+--- Page 36 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 36/61
+
+--- Page 37 ---
+statistics
+Return the statistics of a player for a given season.
+Parameters: This endpoint requires at least theses parameters : id, season.
+This endpoint is updated every day
+QUERY PARAMETERS
+integer
+The id of the player
+integer
+Default:"YYYY"
+A valid season
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_initid
+season
+x-rapidapi-key
+required
+GET/players/statistics
+Copy
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 37/61
+
+--- Page 38 ---
+ curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/players/statistics?id=3&season=20
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "players/statistics"
+,
+"parameters" : -
+{
+"id": "3"
+,
+"season" : "2023"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 38/61
+
+--- Page 39 ---
+Games
+games
+Return the list of games according to the given parameters.
+For all requests to games you can add the query parameter timezone  to your request in order to retrieve
+the list of games in the timezone of your choice like “Europe/London“. In case the timezone is not
+recognized, empty or is not part of the endpoint timezone  list, the UTC value will be applied by default.
+To know the list of available timezones you have to use the endpoint timezone .
+Available Status
+NS : Not Started
+Q1 : 1st Quarter
+Q2 : 2nd Quarter
+Q3 : 3rd Quarter
+Q4 : 4th Quarter
+QT : Quarter Time
+ER : End Of Regulation
+FT : Full Time
+HT : Half Time
+CANC : Cancelled (Game cancelled and not rescheduled)
+PST : Postponed (Game postponed and waiting for a new Game date)
+Parameters: This endpoint requires at least one of these parameters : id, date, league, season, team.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+string
+Default:"YYYY-MM-DD"
+A valid dateid
+date7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 39/61
+
+--- Page 40 ---
+integer
+The id of the league | Requires the field Season
+integer
+Default:"YYYY"
+The season of the league | Requires the field League.
+integer
+The id of the team | Requires the field Season
+string
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/games?date=2022-09-01'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0league
+season
+team
+timezone
+x-rapidapi-key
+required
+GET/games
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 40/61
+
+--- Page 41 ---
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games"
+,
+"parameters" : -
+{
+"date": "2022-09-01"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+quarters
+Return team scores by quarter for on or several games id.
+Parameters: This endpoint requires at least one of theses parameters : id, ids, date.Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 41/61
+
+--- Page 42 ---
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+stringMaximum of 10 games ids
+Value:"id-id-id"
+One or more games ids
+string
+Default:"YYYY-MM-DD"
+A valid date
+string
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl arrayid
+ids
+date
+timezone
+x-rapidapi-key
+required
+GET/games/quarters
+Copy
+(
+)
+;
+(
+,
+(7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 42/61
+
+--- Page 43 ---
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/games/quarters?id=2515'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/quarters"
+,
+"parameters" : -
+{
+"id": "2515"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+eventsContent type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 43/61
+
+--- Page 44 ---
+Return the list of events for one or several games id.
+Parameters: This endpoint requires at least one of theses parameters : id, ids, date.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+stringMaximum of 10 games ids
+Value:"id-id-id"
+One or more games ids
+string
+Default:"YYYY-MM-DD"
+A valid date
+string
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Casesid
+ids
+date
+timezone
+x-rapidapi-key
+required
+GET/games/events7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 44/61
+
+--- Page 45 ---
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/games/events?id=2515'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all CopyContent type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 45/61
+
+--- Page 46 ---
+{"get": "games/events"
+,
+"parameters" : -
+{
+"id": "2515"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+teams statistics
+Return teams statistics for one or several games id.
+Parameters: This endpoint requires at least one of theses parameters : id, ids, date.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+stringMaximum of 10 games ids
+Value:"id-id-id"
+One or more games ids
+string
+Default:"YYYY-MM-DD"
+A valid date
+string
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Keyid
+ids
+date
+timezone
+x-rapidapi-key
+required7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 46/61
+
+--- Page 47 ---
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/games/statistics/teams?id=2515'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200GET/games/statistics/teams
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 47/61
+
+--- Page 48 ---
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/statistics/teams"
+,
+"parameters" : -
+{
+"id": "2515"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+players statistics
+Return players statistics for one or several games id.
+Parameters: This endpoint requires at least one of theses parameters : id, ids, date.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+stringMaximum of 10 games ids
+Value:"id-id-id"
+One or more games ids
+string
+Default:"YYYY-MM-DD"
+A valid date
+string
+A valid timezoneid
+ids
+date
+timezoneContent type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 48/61
+
+--- Page 49 ---
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/games/statistics/players?id=2515'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curlx-rapidapi-key
+required
+GET/games/statistics/players
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 49/61
+
+--- Page 50 ---
+Standings curl_close $curl
+echo $response
+Response samples
+200
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/statistics/players"
+,
+"parameters" : -
+{
+"id": "2515"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+standings
+Return the standings of a competition in relation to a given season.
+Parameters: This endpoint requires at least two parameters league and season.
+This endpoint is updated every hour
+QUERY PARAMETERSContent type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 50/61
+
+--- Page 51 ---
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the league
+integer
+The id of the team | Requires the field season
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/standings?season=2023&league=1'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'league
+required
+season
+required
+team
+x-rapidapi-key
+required
+GET/standings
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 51/61
+
+--- Page 52 ---
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings"
+,
+"parameters" : -
+{
+"season" : "2023"
+,
+"league" : "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 18
+,Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 52/61
+
+--- Page 53 ---
+Odds"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+odds
+Return the list of available odds for games.
+We provide pre-match odds between 1 and 7 days before the game.
+We keep a 7-day history (The availability of odds may vary according to the games, seasons and
+bookmakers)
+Parameters: This endpoint requires at least one of theses parameters : game.
+Odds are updated four times a day7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 53/61
+
+--- Page 54 ---
+QUERY PARAMETERS
+integer
+The id of the game
+integer
+The id of the bookmaker
+integer
+The id of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/odds?game=2742&bookmaker=1'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1game
+required
+bookmaker
+bet
+x-rapidapi-key
+required
+GET/odds
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 54/61
+
+--- Page 55 ---
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds"
+,
+"parameters" : -
+{
+"game": "2742"
+,
+"bookmaker" : "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+bets
+Return the list of available bets for odds.
+All bets id can be used in endpoint odds as filters
+Parameters: You can call this endpoint without any parameters to get the complete list.Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 55/61
+
+--- Page 56 ---
+QUERY PARAMETERS
+integer
+The id of the bet
+string>= 3 characters
+The name of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/odds/bets'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'id
+search
+x-rapidapi-key
+required
+GET/odds/bets
+Copy
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 56/61
+
+--- Page 57 ---
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds/bets"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 39
+,Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 57/61
+
+--- Page 58 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 58/61
+
+--- Page 59 ---
+bookmakers
+Return the list of available bookmakers for odds.
+All bookmakers id can be used in endpoint odds as filters.
+Parameters: You can call this endpoint without any parameters to get the complete list.
+QUERY PARAMETERS
+integer
+The id of the bookmaker
+string>= 3 characters
+The name of the bookmaker
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Casesid
+search
+x-rapidapi-key
+required
+GET/odds/bookmakers
+Copy7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 59/61
+
+--- Page 60 ---
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.afl.api-sports.io/odds/bookmakers'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-beta-api-sports-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.afl.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Response samples
+200
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds/bookmakers"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 14
+,Content type7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 60/61
+
+--- Page 61 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:21 PM API-Sports - Documentation AFL
+https://api-sports.io/documentation/afl/v1 61/61

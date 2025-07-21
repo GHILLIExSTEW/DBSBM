@@ -1,0 +1,3767 @@
+# Extracted from: API-Sports - Documentation Basketball.pdf
+# Original file: C:\Users\kaleb\OneDrive\Desktop\DBSBM\bot\data\api_sports_docs\API-Sports - Documentation Basketball.pdf
+# Extracted on: 1753061290.7085774
+================================================================================
+
+
+--- Page 1 ---
+API-BASKETBALL(1.5.2)
+support:https://dashboard.api-football.comURL: https://www.api-basketball.com
+Introduction
+Welcome to Api-Basketball! You can use our API to access all API endpoints, which can get information
+about Basketball Leagues & Cups.
+We have language bindings in C, C#, cURL, Dart, Go, Java, Javascript, NodeJs, Objective-c, OCaml, Php,
+PowerShell, Python, Ruby, Shell and Swift! You can view code examples in the dark area to the right, and
+you can switch the programming language of the examples with the tabs in the top right.
+Authentication
+We uses API keys to allow access to the API. You can register a new API key in rapidapi or directly on our
+dashboard.
+The accounts on RapidAPI and on our Dashboard are dissociated. Each of these registration methods has
+its own URL and API-KEY. You must therefore adapt your scripts according to your subscription by
+adapting the URL and your API-KEY.
+RAPIDAPI : https://api-basketball.p.rapidapi.com/
+API-SPORTS : https://v1.basketball.api-sports.io/
+Our API expects for the API key to be included in all API requests to the server in a header that looks like
+the following:
+Make sure to replace XxXxXxXxXxXxXxXxXxXxXxXx  with your API key.
+REQUESTS HEADERS & CORS
+The API is configured to work only with GET requests and allows only the headers listed below:|7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 1/67
+
+--- Page 2 ---
+x-rapidapi-host
+x-rapidapi-key
+x-apisports-key
+If you make non-GET requests or add headers that are not in the list, you will receive an error from the API.
+Some frameworks (especially in JS, nodeJS..) automatically add extra headers, you have to make sure to
+remove them in order to get a response from the API.
+RAPIDAPI Account
+All information related to your subscription are available on the rapidApi developer dashboard.
+The RapidAPI developer dashboard is where you can see all of your apps, locate API keys, view analytics,
+and manage billing settings.
+To access the dashboard, simply login to RapidAPI and select 'My Apps' in the top-right menu.
+Alternatively, you can head directly to https://rapidapi.com/developer/dashboard.
+In the main dashboard, you will see account-wide analytics and account information. To get more detailed
+information, you can select tabs on the left-hand side of the screen.
+App Specific Analytics
+Using the RapidAPI dashboard, you can also view analytics specific to each app in your account. To do so,
+switch over to the 'Analytics' tab of your application in the dashboard.
+On the top of the page, you'll be able to see a chart with all the calls being made to all the APIs your app is
+connected to. You'll also be able to see a log with all the request data. You are also able to filter these
+analytics to only show certain APIs within the app.
+In each graph, you can view the following metrics:
+API Calls : how many requests are being made
+Error rates : how many requests are error some
+Latency : how long (on average) requests take to execute
+You may change the time period you're looking at by clicking the calendar icon and choosing a time range.
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+server: The current version of the API proxy used by RapidAPI.
+x-ratelimit-requests-limit : The number of requests the plan you are currently subscribed to
+allows you to make, before incurring overages.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 2/67
+
+--- Page 3 ---
+x-ratelimit-requests-remaining : The number of requests remaining before you reach the limit
+of requests your application is allowed to make, before experiencing overage charges.
+X-RapidAPI-Proxy-Response : This header is set to true when the RapidAPI proxy generates the
+response, (i.e. the response is not generated from our servers)
+API-SPORTS Account
+If you decided to subscribe directly on our site, you have a dashboard at your disposal at the following url:
+dashboard
+It allows you to:
+To follow your consumption in real time
+Manage your subscription and change it if necessary
+Check the status of our servers
+Test all endpoints without writing a line of code.
+You can also consult all this information directly through the API by calling the endpoint status.
+This call does not count against the daily quota.
+get"https://v1.basketball.api-sports.io/status"
+// response
+    "get": "status"
+    "parameters" : 
+    "errors" : 
+    "results" : 1
+    "response" : 
+        "account" : 
+            "firstname" : "xxxx"
+            "lastname" : "XXXXXX"
+            "email": "xxx@xxx.com"
+        
+        "subscription" : 
+            "plan": "Free"
+            "end": "2020-04-10T23:24:27+00:00"
+            "active" : true
+        
+        "requests" : 
+            "current" : 12
+            "limit_day" : 100
+        
+(
+)
+;
+{
+,
+[
+]
+,
+[
+]
+,
+,
+{
+{
+,
+,
+}
+,
+{
+,
+,
+}
+,
+{
+,
+}7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 3/67
+
+--- Page 4 ---
+    
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+x-ratelimit-requests-limit : The number of requests allocated per day according to your
+subscription.
+x-ratelimit-requests-remaining : The number of remaining requests per day according to your
+subscription.
+X-RateLimit-Limit : Maximum number of API calls per minute.
+X-RateLimit-Remaining : Number of API calls remaining before reaching the limit per minute.
+Dashboard
+Requests
+}
+}7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 4/67
+
+--- Page 5 ---
+Live tester
+Architecture7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 5/67
+
+--- Page 6 ---
+Logos / Images
+Calls to logos/images do not count towards your daily quota and are provided for free. However these
+calls are subject to a rate per second & minute, it is recommended to save this data on your side in order
+not to slow down or impact the user experience of your application or website. For this you can use CDNs
+such as bunny.net.
+We have a tutorial available here, which explains how to set up your own media system with BunnyCDN.
+Logos, images and trademarks delivered through the API are provided solely for identification and
+descriptive purposes (e.g., identifying leagues, teams, players or venues). We does not own any of these
+visual assets, and no intellectual property rights are claimed over them. Some images or data may be
+subject to intellectual property or trademark rights held by third parties (including but not limited to
+leagues, federations, or clubs). The use of such content in your applications, websites, or products may
+require additional authorization or licensing from the respective rights holders. You are fully responsible
+for ensuring that your usage of any logos, images, or branded content complies with applicable laws in
+your country or the countries where your services are made available. We are not affiliated with, sponsored
+by, or endorsed by any sports league, federation, or brand featured in the data provided.
+Sample Scripts
+Here are some examples of how the API is used in the main development languages.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 6/67
+
+--- Page 7 ---
+ You have to replace {endpoint}  by the real name of the endpoint you want to call, like leagues  or
+games for example. In all the sample scripts we will use the leagues  endpoint as example.
+Also you will have to replace XxXxXxXxXxXxXxXxXxXxXx  with your API-KEY provided in the dashboard or
+on rapidapi.
+C
+libcurl
+CURL *curl
+CURLcode res
+curl = curl_easy_init
+ifcurl 
+  curl_easy_setopt curl, CURLOPT_CUSTOMREQUEST, "GET"
+  curl_easy_setopt curl, CURLOPT_URL, "https://v1.basketball.api-sports.io/leagues
+  curl_easy_setopt curl, CURLOPT_FOLLOWLOCATION, 1L
+  curl_easy_setopt curl, CURLOPT_DEFAULT_PROTOCOL, "https"
+  struct curl_slist *headers = NULL
+  headers = curl_slist_append headers, "x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx"
+  headers = curl_slist_append headers, "x-rapidapi-host: v1.basketball.api-sports.
+  curl_easy_setopt curl, CURLOPT_HTTPHEADER, headers
+  res = curl_easy_perform curl
+curl_easy_cleanup curl
+C#
+RestSharp
+var client = new RestClient "https://v1.basketball.api-sports.io/leagues"
+client.Timeout = -1
+var request = new RestRequest Method.GET
+request.AddHeader "x-rapidapi-key" , "XxXxXxXxXxXxXxXxXxXxXxXx"
+request.AddHeader "x-rapidapi-host" , "v1.basketball.api-sports.io"
+;
+;
+(
+)
+;
+(
+)
+{
+(
+)
+;
+(
+(
+)
+;
+(
+)
+;
+;
+(
+)
+(
+(
+)
+;
+(
+)
+;
+}
+(
+)
+;
+(
+)
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 7/67
+
+--- Page 8 ---
+ IRestResponse response = client.Execute request
+Console.WriteLine response.Content
+cURL
+Curl
+curl --request GET 
+    --url https://v1.basketball.api-sports.io/leagues 
+    --header 'x-rapidapi-host: v1.basketball.api-sports.io'  
+    --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+Dart
+http
+var headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.basketball.api-sports.io'
+var request = httpRequest 'GET' Uriparse'https://v1.basketball.api-sports.io/l
+request headers addAllheaders
+httpStreamedResponse response = await request send
+if response statusCode == 200 
+  printawait response streambytesToString
+else 
+  printresponse reasonPhrase
+(
+)
+;
+(
+)
+;
+\
+\
+\
+{
+:
+,
+:
+}
+;
+.
+(
+,
+.
+(
+.
+.
+(
+)
+;
+.
+.
+(
+)
+;
+(
+.
+)
+{
+(
+.
+.
+(
+)
+)
+;
+}
+{
+(
+.
+)
+;
+}7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 8/67
+
+--- Page 9 ---
+Go
+Native
+package main
+import 
+  "fmt"
+  "net/http"
+  "io/ioutil"
+func main 
+  url := "https://v1.basketball.api-sports.io/leagues"
+  method := "GET"
+  client := &httpClient 
+  
+  req err := httpNewRequest method url nil
+  if err != nil 
+    fmt Println err
+    return
+  
+  reqHeaderAdd"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  reqHeaderAdd"x-rapidapi-host"  "v1.basketball.api-sports.io"
+  res err := client Doreq
+  if err != nil 
+    fmt Println err
+    return
+  
+  defer resBodyClose
+  body err := ioutil ReadAll resBody
+  if err != nil 
+    fmt Println err
+    return
+  
+  fmtPrintln stringbody
+(
+)
+(
+)
+{
+.
+{
+}
+,
+.
+(
+,
+,
+)
+{
+.
+(
+)
+}
+.
+.
+(
+,
+)
+.
+.
+(
+,
+)
+,
+.
+(
+)
+{
+.
+(
+)
+}
+.
+.
+(
+)
+,
+.
+(
+.
+)
+{
+.
+(
+)
+}
+.
+(
+(
+)
+)
+}7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 9/67
+
+--- Page 10 ---
+ Java
+OkHttp
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.basketball.api-sports.io"
+var requestOptions = 
+  method : 'GET'
+  headers : myHeaders
+  redirect : 'follow'
+Unirest
+Unirest setTimeouts 0 0
+HttpResponse String response = Unirest get"https://v1.basketball.api-sports.io/l
+  header"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  header"x-rapidapi-host"  "v1.basketball.api-sports.io"
+  asString
+Javascript
+Fetch
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.basketball.api-sports.io"
+var requestOptions = 
+  method: 'GET'
+  headers: myHeaders
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,
+}
+;
+.
+(
+,
+)
+;
+<
+>
+.
+(
+.
+(
+,
+)
+.
+(
+,
+)
+.
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 10/67
+
+--- Page 11 ---
+  redirect : 'follow'
+fetch"https://v1.basketball.api-sports.io/leagues"  requestOptions
+  thenresponse  => response text
+  thenresult => console logresult
+  catcherror => console log'error'  error
+jQuery
+var settings = 
+  "url": "https://v1.basketball.api-sports.io/leagues"
+  "method" : "GET"
+  "timeout" : 0
+  "headers" : 
+    "x-rapidapi-key" : "XxXxXxXxXxXxXxXxXxXxXxXx"
+    "x-rapidapi-host" : "v1.basketball.api-sports.io"
+  
+$ajaxsettings donefunction  response  
+  console logresponse
+XHR
+var xhr = new XMLHttpRequest
+xhrwithCredentials = true
+xhraddEventListener "readystatechange"  function  
+  ifthisreadyState === 4 
+    console logthisresponseText
+  
+xhropen"GET" "https://v1.basketball.api-sports.io/leagues"
+xhrsetRequestHeader "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+xhrsetRequestHeader "x-rapidapi-host"  "v1.basketball.api-sports.io"
+xhrsend
+}
+;
+(
+,
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+,
+)
+)
+;
+{
+,
+,
+,
+{
+,
+}
+,
+}
+;
+.
+(
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+;
+.
+;
+.
+(
+,
+(
+)
+{
+(
+.
+)
+{
+.
+(
+.
+)
+;
+}
+}
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 11/67
+
+--- Page 12 ---
+NodeJs
+Axios
+var axios = require 'axios'
+var config = 
+  method  'get'
+  url 'https://v1.basketball.api-sports.io/leagues'
+  headers  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.basketball.api-sports.io'
+  
+axiosconfig
+thenfunction  response  
+  console logJSONstringify response data
+catchfunction  error 
+  console logerror
+Native
+var https = require 'follow-redirects' https
+var fs = require 'fs'
+var options = 
+  'method'  'GET'
+  'hostname'  'v1.basketball.api-sports.io'
+  'path' '/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.basketball.api-sports.io'
+  
+  'maxRedirects'  20
+var req = httpsrequest options  function  res 
+  var chunks = 
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+)
+.
+(
+(
+)
+{
+.
+(
+.
+(
+.
+)
+)
+;
+}
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+.
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+,
+:
+}
+;
+.
+(
+,
+(
+)
+{
+[
+]
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 12/67
+
+--- Page 13 ---
+  reson"data" function  chunk 
+    chunks pushchunk
+  
+  reson"end" function  chunk 
+    var body = Buffer concatchunks
+    console logbodytoString
+  
+  reson"error"  function  error 
+    console errorerror
+  
+reqend
+Requests
+var request = require 'request'
+var options = 
+  'method'  'GET'
+  'url' 'https://v1.basketball.api-sports.io/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.basketball.api-sports.io'
+  
+request options  function  error response  
+  if error throw new Errorerror
+  console logresponse body
+Unirest
+var unirest = require 'unirest'
+var req = unirest 'GET' 'https://v1.basketball.api-sports.io/leagues'
+  headers
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.basketball.api-sports.io'
+  
+  endfunction  res 
+    if reserror throw new Errorreserror
+    console logresraw_body
+  
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+.
+(
+.
+(
+)
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+}
+)
+;
+.
+(
+)
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+,
+(
+,
+)
+{
+(
+)
+(
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;
+(
+)
+;
+(
+,
+)
+.
+(
+{
+:
+,
+:
+}
+)
+.
+(
+(
+)
+{
+(
+.
+)
+(
+.
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 13/67
+
+--- Page 14 ---
+ Objective-c
+NSURLSession
+#import <Foundation /Foundation h>
+dispatch_semaphore_t sema = dispatch_semaphore_create 0
+NSMutableURLRequest *request = NSMutableURLRequest requestWithURL NSURL URLWithS
+  cachePolicy NSURLRequestUseProtocolCachePolicy
+  timeoutInterval 10.0
+NSDictionary *headers = @
+  @"x-rapidapi-key"  @"XxXxXxXxXxXxXxXxXxXxXxXx"
+  @"x-rapidapi-host"  @"v1.basketball.api-sports.io"
+request setAllHTTPHeaderFields headers
+request setHTTPMethod @"GET"
+NSURLSession *session = NSURLSession sharedSession
+NSURLSessionDataTask *dataTask = session dataTaskWithRequest request
+completionHandler ^NSData *data NSURLResponse *response  NSError *error 
+  if error 
+    NSLog@"%@" error
+    dispatch_semaphore_signal sema
+   else 
+    NSHTTPURLResponse *httpResponse = NSHTTPURLResponse * response
+    NSError *parseError = nil
+    NSDictionary *responseDictionary = NSJSONSerialization JSONObjectWithData dat
+    NSLog@"%@"responseDictionary
+    dispatch_semaphore_signal sema
+  
+dataTask resume
+dispatch_semaphore_wait sema DISPATCH_TIME_FOREVER
+.
+(
+)
+;
+[
+:
+[
+:
+:
+]
+;
+{
+:
+,
+:
+}
+;
+[
+:
+]
+;
+[
+:
+]
+;
+[
+]
+;
+[
+:
+:
+(
+,
+,
+)
+{
+(
+)
+{
+(
+,
+)
+;
+(
+)
+;
+}
+{
+(
+)
+;
+;
+[
+:
+(
+,
+)
+;
+(
+)
+;
+}
+}
+]
+;
+[
+]
+;
+(
+,
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 14/67
+
+--- Page 15 ---
+OCaml
+Cohttp
+open Lwt
+open Cohttp
+open Cohttp_lwt_unix
+let reqBody =
+  let uri = Uriof_string "https://v1.basketball.api-sports.io/leagues"  in
+  let headers = Header init 
+    |> fun h -> Header add h "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    |> fun h -> Header add h "x-rapidapi-host"  "v1.basketball.api-sports.io"
+  in
+  Client call ~headers `GET uri >>= fun _resp body ->
+  body |> Cohttp_lwt Bodyto_string >|= fun body -> body
+let  =
+  let respBody = Lwt_main run reqBody in
+  print_endline respBody
+Php
+cURL
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.basketball.api-sports.io/leagues'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+.
+.
+(
+)
+.
+.
+.
+(
+,
+)
+.
+.
+(
+)
+.
+(
+)
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,
+,7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 15/67
+
+--- Page 16 ---
+  CURLOPT_HTTPHEADER  => array
+    'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.basketball.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Request2
+<?php
+require_once  'HTTP/Request2.php'
+$request  = new HTTP_Request2
+$request ->setUrl'https://v1.basketball.api-sports.io/leagues'
+$request ->setMethod HTTP_Request2 ::METHOD_GET
+$request ->setConfig array
+  'follow_redirects'  => TRUE
+$request ->setHeader array
+  'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+try 
+  $response  = $request ->send
+  if $response ->getStatus  == 200 
+    echo $response ->getBody
+  
+  else 
+    echo 'Unexpected HTTP status: '  . $response ->getStatus  . ' ' .
+    $response ->getReasonPhrase
+  
+catchHTTP_Request2_Exception  $e 
+  echo 'Error: '  . $e->getMessage
+Http
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/leagues'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;
+(
+(
+)
+)
+;
+(
+(
+,
+)
+)
+;
+{
+(
+)
+;
+(
+(
+)
+)
+{
+(
+)
+;
+}
+{
+(
+)
+(
+)
+;
+}
+}
+(
+)
+{
+(
+)
+;
+}
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 16/67
+
+--- Page 17 ---
+     'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+    'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+PowerShell
+RestMethod
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers Add"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+$headers Add"x-rapidapi-host"  "v1.basketball.api-sports.io"
+$response = Invoke-RestMethod 'https://v1.basketball.api-sports.io/leagues'  -Metho
+$response | ConvertTo -Json
+Python
+http.client
+import httpclient
+conn = httpclientHTTPSConnection "v1.basketball.api-sports.io"
+headers = 
+    'x-rapidapi-host'  "v1.basketball.api-sports.io"
+    'x-rapidapi-key'  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    
+connrequest "GET" "/leagues"  headers =headers
+res = conngetresponse
+data = resread
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+.
+(
+,
+)
+.
+.
+.
+(
+)
+{
+:
+,
+:
+}
+.
+(
+,
+,
+)
+.
+(
+)
+.
+(
+)7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 17/67
+
+--- Page 18 ---
+printdatadecode"utf-8"
+Requests
+url = "https://v1.basketball.api-sports.io/leagues"
+payload=
+headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.basketball.api-sports.io'
+response = requests request "GET" url headers =headers  data=payload
+printresponse text
+Ruby
+Net::HTTP
+require 'uri'
+require 'net/http'
+require 'openssl'
+url = URI"https://v1.basketball.api-sports.io/leagues"
+http = NetHTTPnewurlhost urlport
+httpuse_ssl = true
+httpverify_mode = OpenSSL SSLVERIFY_NONE
+request = NetHTTPGetnewurl
+request "x-rapidapi-host"  = 'v1.basketball.api-sports.io'
+request "x-rapidapi-key"  = 'XxXxXxXxXxXxXxXxXxXxXxXx'
+response = httprequest request
+puts response read_body
+(
+.
+(
+)
+)
+{
+}
+{
+:
+,
+:
+}
+.
+(
+,
+,
+,
+)
+(
+.
+)
+(
+)
+::
+.
+(
+.
+,
+.
+)
+.
+.
+::
+::
+::
+::
+.
+(
+)
+[
+]
+[
+]
+.
+(
+)
+.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 18/67
+
+--- Page 19 ---
+ Shell
+Httpie
+http --follow --timeout 3600 GET 'https://v1.basketball.api-sports.io/leagues'  
+ x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'  
+ x-rapidapi-host: 'v1.basketball.api-sports.io'
+wget
+wget --no-check-certificate --quiet 
+  --method GET 
+  --timeout =0 
+  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'  
+  --header 'x-rapidapi-host: v1.basketball.api-sports.io'  
+   'https://v1.basketball.api-sports.io/leagues'
+Swift
+URLSession
+import Foundation
+#if canImport FoundationNetworking
+import FoundationNetworking
+#endif
+var semaphore = DispatchSemaphore  value 0
+var request = URLRequest url URLstring "https://v1.basketball.api-sports.io/lea
+request addValue "XxXxXxXxXxXxXxXxXxXxXxXx"  forHTTPHeaderField  "x-rapidapi-key"
+request addValue "v1.basketball.api-sports.io"  forHTTPHeaderField  "x-rapidapi-ho
+request httpMethod = "GET"
+\
+\
+\
+\
+\
+\
+\
+(
+)
+(
+:
+)
+(
+:
+(
+:
+.
+(
+,
+:
+)
+.
+(
+,
+:
+.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 19/67
+
+--- Page 20 ---
+ let task = URLSession shareddataTask with request   data response  error in
+  guard let data = data else 
+    printStringdescribing  error
+    semaphore signal
+    return
+  
+  printStringdata data encoding  utf8!
+  semaphore signal
+taskresume
+semaphore wait
+Changelog
+(1.5.6)
+Endpoint leagues
+Add field coverage
+Endpoint games
+Add endpoint games/statistics/teams
+Add endpoint games/statistics/players
+Add field venue
+Add endpoint players
+CDN
+Optimizing Sports Websites with BunnyCDN
+.
+.
+(
+:
+)
+{
+,
+,
+{
+(
+(
+:
+)
+)
+.
+(
+)
+}
+(
+(
+:
+,
+:
+.
+)
+)
+.
+(
+)
+}
+.
+(
+)
+.
+(
+)7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 20/67
+
+--- Page 21 ---
+BunnyCDN is a Content Delivery Network (CDN) that delivers a global content distribution experience. With
+strategically positioned servers, BunnyCDN ensures swift and reliable delivery of static content, optimizing
+website performance with features like intelligent image optimization, sophisticated caching, and
+advanced security measures.
+Unlocking Media Delivery Excellence with BunnyCDN:
+Quick Configuration: Set up your media CDN in just 5 minutes. Define cache times, customize your
+domain – it's that simple.
+Global Accessibility: Leverage BunnyCDN's expansive server network for swift and dependable
+content delivery worldwide.
+Customized Configuration: Tailor caching, define cache times, and implement CORS headers to
+create an efficient and seamless user experience.
+Own Your Domain: Personalize your media delivery with your domain, enhancing your brand's online
+presence.
+Robust Security: BunnyCDN integrates advanced security features, guaranteeing a secure
+environment for delivering your content.
+Responsive Performance: Experience responsive performance without the need for prior media
+downloads. Discover the capabilities of BunnyCDN for optimized media delivery.
+A tutorial is available here on our blog to help you configure it.
+Databases Solutions
+Enhance Your Data Management with Aiven
+Integrating databases into your application can greatly enhance data management and storage. If you're
+looking for high-performing, flexible, and secure database solutions, we recommend checking out Aiven.
+Aiven is a cloud platform that offers a range of managed database services, including relational
+databases, NoSQL databases, streaming data processing systems, and much more. Their offerings
+include PostgreSQL , MySQL, Cassandra , Redis, Kafka, and many other databases, all with
+simplified management, high availability, and advanced security.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 21/67
+
+--- Page 22 ---
+Moreover, Aiven provides a free tier to get started, along with testing credits to explore their offerings. This
+opportunity allows you to evaluate their platform and determine if it meets your needs.
+One particularly attractive feature of Aiven is that they work with multiple cloud providers, including
+Google Cloud , Amazon Web Services (AWS) , Microsoft Azure , DigitalOcean , and more.
+This means you have the flexibility to choose the best cloud infrastructure for your project.
+In terms of reliability, Aiven is committed to providing a 99.99% Service Level Agreement (SLA), ensuring
+continuous and highly available service.
+To test their services, visit this page.
+If you're a developer, explore their DEV center for technical information.
+Check out Aiven's documentation for detailed information on their services and features.
+By integrating Aiven with our API, you can efficiently store, manage, and analyze your data while taking
+advantage of their cloud database solutions' flexibility and scalability.
+Real-Time Data Management with Firebase
+When you're looking for a real-time data management solution for your application, Firebase's Realtime
+Database is a powerful choice. Explore how Firebase can enhance real-time data management for your
+application.
+Firebase's Realtime Database offers a cloud-based real-time database that synchronizes data in real-time
+across users and devices. This makes it an ideal choice for applications that require instant data updates.
+Why Choose Firebase's Realtime Database?
+Real-Time Data: Firebase allows you to store real-time data, meaning that updates are instantly
+propagated to all connected users.
+Easy Synchronization: Data is automatically synchronized across all devices, providing a consistent
+and real-time user experience.
+Built-In Security: Firebase offers flexible security rules to control data access and ensure privacy.
+Simplified Integration: Firebase's Realtime Database easily integrates with other Firebase services,
+simplifying backend management.
+Helpful Links:
+Explore Firebase's Realtime Database: Discover the features and advantages of Firebase's Realtime
+Database for efficient real-time data management.
+Firebase's Realtime Database Documentation: Refer to the comprehensive documentation for
+Firebase's Realtime Database for a smooth integration.
+A tutorial describing each step is available on our blog here.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 22/67
+
+--- Page 23 ---
+Widgets
+Our widgets are completely free and work with all our plans including the free plan.
+To integrate the widgets to your site you just have to copy/paste  the code provided and fill in the tags
+needed for the widget to work properly. If you integrate several widgets on the same page a single theme
+will be applied for all widgets. Also you will only have to integrate the script tag once.
+For all widgets the following tags are needed :
+data-host  : v1.basketball.api-sports.io or api-basketball.p.rapidapi.com depending on whether you
+have subscribed with us or RapidApi.
+data-key  : Indicate your API-KEY obtained on our Dashboard or on RapidApi.
+data-theme  : If you leave the field empty, the default theme will be applied, otherwise the possible
+values are grey or dark. It is also possible to indicate false which will not display any theme and lets you
+customize the widget with your own css.
+data-show-errors  : By default false, used for debugging, with a value of true it allows to display the
+errors.
+Widgets use the requests associated with your account and therefore they will stop working if your daily
+limit is reached. You can track all requests made directly in the dashboard.
+Security :
+When using these widgets it is important to be aware that your API-KEY will be visible to the users of your
+site, it is possible to protect yourself from this by allowing only the desired domains in our dashboard. This
+way no one else can use your API-KEY for you. If you have already set up your widget and have not
+activated this option, you can reset your API-KEY and activate this option after.
+Debugging :
+If the widget does not display the requested information, it is possible to set the data-show-errors  tag
+to true to display error messages directly in the widget and in the console. This can be due to several
+things like : (Non-exhaustive list)
+You have reached your daily number of requests
+Tags are incorrectly filled in
+Your API-KEY is incorrect
+Tutorials :7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 23/67
+
+--- Page 24 ---
+HOW CUSTOM API-FOOTBALL WIDGETS
+HOW TO CHANGE WIDGET ATTRIBUTES DYNAMICALLY
+Changelog :
+2.0.3
+Starting version with widgets Games and Standings
+Sources :
+All the sources to make your own CSS can be downloaded here :
+2.0.3 files
+Games
+Display the list of matches grouped by competition according to the parameters used.
+The matches are automatically updated according to the selected frequency data-refresh .
+You can find all the leagues ids on our Dashboard.
+Example of the widget with the default theme
+QUERY PARAMETERS
+string
+Enum:"v1.basketball.api-sports.io"
+ "api-
+basketball.p.rapidapi.com"
+string
+Your Api Key
+integer >15data-host
+required
+data-key
+required
+data-refresh7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 24/67
+
+--- Page 25 ---
+Number in seconds corresponding to the desired data update frequency. If
+you indicate 0 or leave this field empty the data will not be updated
+automatically
+stringYYYY-MM-DD
+Fill in the desired date. If empty the current date is automatically applied
+integer
+Fill in the desired league id
+integer= 4 charactersYYYY
+Fill in the desired season
+string
+If you leave the field empty, the default  theme will be applied, otherwise
+the possible values are grey or dark
+string
+Enum:truefalse
+Displays the toolbar allowing to change the view between the current,
+finished or upcoming fixtures and to change the date
+string
+Enum:truefalse
+If true display teams logos
+string
+Enum:truefalse
+If true allows to load a modal containing all the details of the fixture
+string
+Enum:truefalse
+If true allows to load a modal containing the standings
+string
+Enum:truefalse
+If true display teams logos and players images in the modal
+string
+Enum:truefalse
+By default false, used for debugging, with a value of true it allows to
+display the errorsdata-date
+data-league
+data-season
+data-theme
+data-show-toolbar
+data-show-logos
+data-modal-game
+data-modal-standings
+data-modal-show-logos
+data-show-errors7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 25/67
+
+--- Page 26 ---
+Request samples
+Html
+div idwg-api-basketball-games
+     data-host v1.basketball.api-sports.io
+     data-key Your-Api-Key-Here
+     data-date
+     data-league
+     data-season
+     data-theme
+     data-refresh 15
+     data-show-toolbar true
+     data-show-errors false
+     data-show-logos true
+     data-modal-game true
+     data-modal-standings true
+     data-modal-show-logos true
+div
+script
+    typemodule
+    srchttps://widgets.api-sports.io/2.0.3/widgets.js
+scriptGET/widgets/Games
+Copy
+<
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+>
+</
+>
+<
+=
+"
+"
+=
+"
+"
+>
+</
+>
+Standings
+Display the ranking of a competition according to the parameters used.
+You can find all the leagues ids on our Dashboard.7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 26/67
+
+--- Page 27 ---
+Example of the widget with the available themes
+QUERY PARAMETERS
+string
+Enum:"v1.basketball.api-sports.io"
+ "api-
+basketball.p.rapidapi.com"
+string
+Your Api Key
+integer
+Fill in the desired league id
+integer= 4 charactersYYYY
+Fill in the desired season
+string
+If you leave the field empty, the default  theme will be applied, otherwise the
+possible values are grey or dark
+string
+Enum:truefalse
+By default false, used for debugging, with a value of true it allows to
+display the errors
+string
+Enum:truefalse
+If true display teams logosdata-host
+required
+data-key
+required
+data-league
+data-season
+required
+data-theme
+data-show-errors
+data-show-logos7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 27/67
+
+--- Page 28 ---
+TimezoneRequest samples
+Html
+div idwg-api-basketball-standings
+    data-host v1.basketball.api-sports.io
+    data-key Your-Api-Key-Here
+    data-league 12
+    data-season 2021-2022
+    data-theme
+    data-show-errors false
+    data-show-logos true
+    classwg_loader
+div
+script
+    typemodule
+    srchttps://widgets.api-sports.io/2.0.3/widgets.js
+scriptGET/widgets/standings
+Copy
+<
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+=
+"
+"
+>
+</
+>
+<
+=
+"
+"
+=
+"
+"
+>
+</
+>
+timezone
+Get the list of available timezone to be used in the games endpoint.
+This endpoint does not require any parameters.
+HEADER PARAMETERS
+string x-rapidapi-key7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 28/67
+
+--- Page 29 ---
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/timezone'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200required
+GET/timezone
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all CopyContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 29/67
+
+--- Page 30 ---
+Seasons
+{"get": "timezone"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 425
+,
+"response" : -
+[
+"Africa/Abidjan" ,
+"Africa/Accra" ,
+"Africa/Addis_Ababa" ,
+"Africa/Algiers" ,
+"Africa/Asmara"
+]
+}
+seasons
+All seasons  can be used in other endpoints as filters.
+This endpoint does not require any parameters.
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OKx-rapidapi-key
+required7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 30/67
+
+--- Page 31 ---
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/seasons'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200GET/seasons
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "seasons"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 8
+,Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 31/67
+
+--- Page 32 ---
+Countries"response" : -
+[
+"2015-2016" ,
+"2016-2017" ,
+2017,
+"2017-2018" ,
+2018,
+"2018-2019" ,
+2019,
+"2019-2020"
+]
+}
+countries
+Get the list of available countries.
+The idname and code fields can be used in other endpoints as filters.
+All the parameters of this endpoint can be used together.
+QUERY PARAMETERS
+integer
+The id of the country
+string
+Example:name=USA
+The name of the country
+string= 2 characters
+Example:code=EN
+The code of the countryid
+name
+code7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 32/67
+
+--- Page 33 ---
+string>= 3 characters
+Example:search=USA
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/countries'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samplessearch
+x-rapidapi-key
+required
+GET/countries
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 33/67
+
+--- Page 34 ---
+Leagues200
+application/json
+Expand allCollapse all Copy
+{
+"get": "countries"
+,
+"parameters" : -
+{
+"search" : "usa"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+leagues
+Get the list of available leagues and cups.
+The league id are unique in the API and leagues keep it across all seasons
+This endpoint also returns the coverage  of each competition, which makes it possible to know what is
+available for leagues or cups.
+The values returned by the coverage indicate the data available at the moment you call the API, so for a
+competition that has not yet started, it is normal to have all the features set to False. This will be updated
+once the competition has started.
+The coverage of a competition can vary from season to season and values set to True do not guarantee
+100% data availability.Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 34/67
+
+--- Page 35 ---
+You can find all the leagues ids on our Dashboard.
+Most of the parameters of this endpoint can be used together.
+QUERY PARAMETERS
+integer
+The id of the league
+string
+Example:name=NBA
+The name of the league
+integer
+The id of the country
+string
+Example:country=USA
+The name of the country
+string
+Enum:"league" "cup"
+Example:type=league
+The type of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+string>= 3 characters
+Example:search=NBA
+The name of the league
+string= 2 characters
+Example:code=FR
+The code of the country
+HEADER PARAMETERS
+string
+You rapidAPI Key
+Responsesid
+name
+country_id
+country
+type
+season
+search
+code
+x-rapidapi-key
+required7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 35/67
+
+--- Page 36 ---
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/leagues'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200GET/leagues
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "leagues"
+,
+"parameters" : -
+{
+"id": "12"
+,
+"season" : "2023-2024"
+}
+,
+"errors" : 
+[ ]
+,Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 36/67
+
+--- Page 37 ---
+Teams"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+teams
+Get data about teams.
+The team id are unique in the API and teams keep it among all the leagues/cups in which they
+participate.
+You can find all the teams ids on our Dashboard.
+This endpoint requires at least one parameter.
+QUERY PARAMETERS
+integer
+The id of the team
+string
+Example:name=Denver Nuggets
+The name of the team
+integer
+The id of the country
+string
+The name of the country
+integer
+The id of the leagueid
+name
+country_id
+country
+league7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 37/67
+
+--- Page 38 ---
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+string>= 3 characters
+Example:search=Denver
+The name of the team
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/teams'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '139'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'season
+search
+x-rapidapi-key
+required
+GET/teams
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 38/67
+
+--- Page 39 ---
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "teams"
+,
+"parameters" : -
+{
+"name": "Denver Nuggets"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+statistics
+QUERY PARAMETERS
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+integer
+The id of the teamleague
+required
+season
+required
+team
+requiredContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 39/67
+
+--- Page 40 ---
+stringYYYY-MM-DD
+Example:date=2021-05-12
+A Limit Date
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/statistics'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'season'  => '2019-2020'
+'team' => '139'
+'league'  => '12'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->senddate
+x-rapidapi-key
+required
+GET/statistics
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+,
+,
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 40/67
+
+--- Page 41 ---
+Players$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "statistics"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"season" : "2019-2020"
+,
+"team": "139"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 5
+,
+"response" : -
+{
+"league" :  … +
+{
+}
+,
+"country" :  … +
+{
+}
+,
+"team":  … +
+{
+}
+,
+"games":  … +
+{
+}
+,
+"points" :  … +
+{
+}
+}
+}
+playersContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 41/67
+
+--- Page 42 ---
+Get data about players.
+The players id are unique in the API and players keep it among all the leagues/cups in which they
+participate.
+This endpoint requires at least one parameter.
+QUERY PARAMETERS
+integer
+The id of the player
+integer
+The id of the team
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2023-2024
+A valid season
+string>= 3 characters
+Example:search=Malith
+The name of the player
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Casesid
+team
+season
+search
+x-rapidapi-key
+required
+GET/players7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 42/67
+
+--- Page 43 ---
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/players'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'team' => '1'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "players"
+,
+"parameters" : -
+{
+"team": "1"
+,
+"season" : "2023-2024"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 16
+,Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 43/67
+
+--- Page 44 ---
+Standings"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+standings
+Get the standings for a league.
+Return a table of one or more rankings according to the league / cup. Some competitions have several
+rankings in a year, regular season, pre season etc…
+To know the list of available stages or groups you have to use the endpoint standings/stages or
+standings/groups
+Standings are updated every hours
+QUERY PARAMETERS7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 44/67
+
+--- Page 45 ---
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+integer
+The id of the team
+string
+Example:stage=NBA - Regular Season
+A valid stage
+string
+Example:group=Eastern Conference
+A valid group
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequestleague
+required
+season
+required
+team
+stage
+group
+x-rapidapi-key
+required
+GET/standings
+Copy
+\
+;
+\
+\
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 45/67
+
+--- Page 46 ---
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/standings'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'league'  => '12'
+'season'  => '2019-2020'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+,
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"season" : "2019-2020"
+,
+"team": "137"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+[
+]
+]
+}
+standings/stagesContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 46/67
+
+--- Page 47 ---
+Get the list of available stages for a league to be used in the standings endpoint.
+QUERY PARAMETERS
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/standings/stages'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'league
+required
+season
+required
+x-rapidapi-key
+required
+GET/standings/stages
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 47/67
+
+--- Page 48 ---
+ $client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings/stages"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"season" : "2019-2020"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+"NBA - Regular Season"
+]
+}
+standings/groups
+Get the list of available groups for a league to be used in the standings endpoint.
+QUERY PARAMETERS
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022league
+required
+season
+requiredContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 48/67
+
+--- Page 49 ---
+The season of the league
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+—201 Created
+ Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/standings/groups'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samplesx-rapidapi-key
+required
+GET/standings/groups
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 49/67
+
+--- Page 50 ---
+Games200
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings/groups"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"season" : "2019-2020"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 8
+,
+"response" : -
+[
+"Western Conference" ,
+"Eastern Conference" ,
+"Atlantic" ,
+"Southeast" ,
+"Central" ,
+"Northwest" ,
+"Pacific" ,
+"Southwest"
+]
+}
+games
+For all requests to games you can add the query parameter timezone  to your request in order to retrieve
+the list of games in the time zone of your choice like “Europe/London“
+To know the list of available time zones you have to use the endpoint timezoneContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 50/67
+
+--- Page 51 ---
+Available status
+NS : Not Started
+Q1 : Quarter 1 (In Play)
+Q2 : Quarter 2 (In Play)
+Q3 : Quarter 3 (In Play)
+Q4 : Quarter 4 (In Play)
+OT : Over Time (In Play)
+BT : Break Time (In Play)
+HT : Halftime (In Play)
+FT : Game Finished (Game Finished)
+AOT : After Over Time (Game Finished)
+POST : Game Postponed
+CANC : Game Cancelled
+SUSP : Game Suspended
+AWD : Game Awarded
+ABD : Game Abandoned
+Games are updated every 15 seconds
+This endpoint requires at least one parameter.
+QUERY PARAMETERS
+integer
+The id of the game
+stringYYYY-MM-DD
+Example:date=2019-11-23
+A valid date
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+integer
+The id of the team
+string
+Example:timezone=Europe/London
+A valid timezone
+HEADER PARAMETERSid
+date
+league
+season
+team
+timezone7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 51/67
+
+--- Page 52 ---
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/games'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'date' => '2019-11-23'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200x-rapidapi-key
+required
+GET/games
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 52/67
+
+--- Page 53 ---
+application/json
+Expand allCollapse all Copy
+{
+"get": "games"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"date": "2019-11-23"
+,
+"team": "134"
+,
+"timezone" : "europe/london"
+,
+"season" : "2019-2020"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+teams statistics
+Get teams statistics from one or several games ids.
+Statistics are updated every 30-120 seconds
+This endpoint need at least one parameter.
+QUERY PARAMETERS
+string
+The id of the game
+stringMaximum of 20 games ids
+Value:"id-id-id"
+One or more games ids
+HEADER PARAMETERS
+stringid
+ids
+x-rapidapi-keyContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 53/67
+
+--- Page 54 ---
+Your RapidAPI Key
+Responses
+200 OK
+ Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/games/statistics/te
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '391053'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200required
+GET/games/statistics/teams
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 54/67
+
+--- Page 55 ---
+application/json
+Expand allCollapse all Copy
+{
+"get": "games"
+,
+"parameters" : -
+{
+"id": "391053"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 2
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+players statistics
+Get players statistics from one or several games ids.
+Also possible to get all statistics from a player id and a season.
+Statistics are updated every 30-120 seconds
+This endpoint need at least one parameter.
+QUERY PARAMETERS
+string
+The id of the game
+stringMaximum of 20 games ids
+Value:"id-id-id"
+One or more games ids
+integer
+The id of the player
+stringid
+ids
+player
+seasonContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 55/67
+
+--- Page 56 ---
+A valid season
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+ Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/games/statistics/pl
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '391053'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBodyx-rapidapi-key
+required
+GET/games/statistics/players
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 56/67
+
+--- Page 57 ---
+Response samples
+200
+application/json
+Expand allCollapse all Copy
+{
+"get": "games"
+,
+"parameters" : -
+{
+"id": "391053"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 18
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+h2hContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 57/67
+
+--- Page 58 ---
+Get heads to heads between two teams.
+QUERY PARAMETERS
+stringid-id
+Example:h2h=132-134
+The ids of the teams
+stringYYYY-MM-DD
+Example:date=2019-12-05
+A valid date
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the league
+string
+Example:timezone=Europe/London
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Casesh2h
+required
+date
+league
+season
+timezone
+x-rapidapi-key
+required
+GET/games/h2h7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 58/67
+
+--- Page 59 ---
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/games'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'h2h' => '132-134'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all CopyContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 59/67
+
+--- Page 60 ---
+Odds
+{"get": "games"
+,
+"parameters" : -
+{
+"league" : "12"
+,
+"h2h": "132-134"
+,
+"season" : "2019-2020"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 4
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+odds
+Get odds from games or leagues.
+We provide pre-match odds between 1 and 7 days before the game.
+We keep a 7-day history (The availability of odds may vary according to the leagues, seasons, games and
+bookmakers)
+Odds are updated once a day
+QUERY PARAMETERS
+integer
+The id of the league
+string[ 4 .. 9 ] charactersYYYY or YYYY-YYYY
+Example:season=2021-2022
+The season of the leagueleague
+season7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 60/67
+
+--- Page 61 ---
+integer
+The id of the game
+integer
+The id of the bookmaker
+integer
+The id of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/odds'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'season'  => '2019-2020'
+'bet' => '1'
+'bookmaker'  => '6'
+'game' => '1912'
+'league'  => '12'game
+bookmaker
+bet
+x-rapidapi-key
+required
+GET/odds
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+,
+,
+,
+,
+)
+)
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 61/67
+
+--- Page 62 ---
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds"
+,
+"parameters" : -
+{
+"bet": "2"
+,
+"game": "1912"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+bookmakers
+Get all available bookmakers.
+All bookmakers id can be used in endpoint odds as filters.
+QUERY PARAMETERSContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 62/67
+
+--- Page 63 ---
+integer
+The id of the bookmaker
+string>= 3 characters
+Example:search=Bwin
+The name of the bookmaker
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/bookmakers'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponseid
+search
+x-rapidapi-key
+required
+GET/bookmakers
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 63/67
+
+--- Page 64 ---
+echo $response ->getBody
+Response samples
+200
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "bookmakers"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 15
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+bets
+Get all available bets.Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 64/67
+
+--- Page 65 ---
+All bets id can be used in endpoint odds as filters
+QUERY PARAMETERS
+integer
+The id of the bet
+string>= 3 characters
+Example:search=under
+The name of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.basketball.api-sports.io/bets'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'id
+search
+x-rapidapi-key
+required
+GET/bets
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 65/67
+
+--- Page 66 ---
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all CopyContent type7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 66/67
+
+--- Page 67 ---
+{"get": "bets"
+,
+"parameters" : -
+{
+"search" : "under"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 7
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:21 PM API-Sports - Documentation Basketball
+https://api-sports.io/documentation/basketball/v1 67/67

@@ -31,11 +31,17 @@ class SubscriptionService:
                 True,
             )
 
-            # Update guild settings to mark as paid
+            # Update guild settings based on plan type
+            subscription_level = plan_type
             await self.db_manager.execute(
-                "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = %s WHERE guild_id = %s",
+                subscription_level,
                 guild_id,
             )
+
+            # Enable Platinum features if applicable
+            if plan_type == "platinum":
+                await self.enable_platinum_features(guild_id)
 
             return True
         except Exception as e:
@@ -105,19 +111,19 @@ class SubscriptionService:
             logger.error(f"Error deactivating subscription for guild {guild_id}: {e}")
             return False
 
-    async def check_subscription_status(self, guild_id: int) -> bool:
-        """Check if a guild has an active subscription."""
+    async def check_subscription_status(self, guild_id: int) -> str:
+        """Check if a guild has an active subscription and return the level."""
         try:
             result = await self.db_manager.fetch_one(
                 "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
                 guild_id,
             )
-            return bool(result and result.get("subscription_level") == "premium")
+            return result.get("subscription_level", "free") if result else "free"
         except Exception as e:
             logger.error(
                 f"Error checking subscription status for guild {guild_id}: {e}"
             )
-            return False
+            return "free"
 
     async def renew_subscription(self, guild_id: int) -> bool:
         """Renew a guild's subscription."""
@@ -166,3 +172,127 @@ class SubscriptionService:
                 f"Error getting subscription details for guild {guild_id}: {e}"
             )
             return None
+
+    async def enable_platinum_features(self, guild_id: int) -> bool:
+        """Enable all Platinum features for a guild."""
+        try:
+            # Enable Platinum features in guild_settings
+            await self.db_manager.execute(
+                """
+                UPDATE guild_settings SET 
+                    platinum_features_enabled = TRUE,
+                    custom_branding_enabled = TRUE,
+                    advanced_analytics_enabled = TRUE,
+                    api_access_enabled = TRUE,
+                    priority_support_enabled = TRUE,
+                    custom_commands_enabled = TRUE,
+                    advanced_reporting_enabled = TRUE,
+                    multi_guild_sync_enabled = TRUE,
+                    webhook_integration_enabled = TRUE,
+                    custom_embeds_enabled = TRUE,
+                    real_time_alerts_enabled = TRUE,
+                    data_export_enabled = TRUE
+                WHERE guild_id = %s
+                """,
+                guild_id,
+            )
+
+            # Create Platinum features record
+            await self.db_manager.execute(
+                """
+                INSERT INTO platinum_features (
+                    guild_id, advanced_analytics, custom_branding, api_integration,
+                    priority_support, custom_commands, advanced_reporting,
+                    multi_guild_sync, webhook_integration, custom_embeds,
+                    real_time_alerts, data_export
+                ) VALUES (%s, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
+                ON DUPLICATE KEY UPDATE
+                    advanced_analytics = TRUE,
+                    custom_branding = TRUE,
+                    api_integration = TRUE,
+                    priority_support = TRUE,
+                    custom_commands = TRUE,
+                    advanced_reporting = TRUE,
+                    multi_guild_sync = TRUE,
+                    webhook_integration = TRUE,
+                    custom_embeds = TRUE,
+                    real_time_alerts = TRUE,
+                    data_export = TRUE
+                """,
+                guild_id,
+            )
+
+            return True
+        except Exception as e:
+            logger.error(f"Error enabling Platinum features for guild {guild_id}: {e}")
+            return False
+
+    async def disable_platinum_features(self, guild_id: int) -> bool:
+        """Disable all Platinum features for a guild."""
+        try:
+            # Disable Platinum features in guild_settings
+            await self.db_manager.execute(
+                """
+                UPDATE guild_settings SET 
+                    platinum_features_enabled = FALSE,
+                    custom_branding_enabled = FALSE,
+                    advanced_analytics_enabled = FALSE,
+                    api_access_enabled = FALSE,
+                    priority_support_enabled = FALSE,
+                    custom_commands_enabled = FALSE,
+                    advanced_reporting_enabled = FALSE,
+                    multi_guild_sync_enabled = FALSE,
+                    webhook_integration_enabled = FALSE,
+                    custom_embeds_enabled = FALSE,
+                    real_time_alerts_enabled = FALSE,
+                    data_export_enabled = FALSE
+                WHERE guild_id = %s
+                """,
+                guild_id,
+            )
+
+            # Disable Platinum features record
+            await self.db_manager.execute(
+                """
+                UPDATE platinum_features SET
+                    advanced_analytics = FALSE,
+                    custom_branding = FALSE,
+                    api_integration = FALSE,
+                    priority_support = FALSE,
+                    custom_commands = FALSE,
+                    advanced_reporting = FALSE,
+                    multi_guild_sync = FALSE,
+                    webhook_integration = FALSE,
+                    custom_embeds = FALSE,
+                    real_time_alerts = FALSE,
+                    data_export = FALSE
+                WHERE guild_id = %s
+                """,
+                guild_id,
+            )
+
+            return True
+        except Exception as e:
+            logger.error(f"Error disabling Platinum features for guild {guild_id}: {e}")
+            return False
+
+    async def get_platinum_features(self, guild_id: int) -> Dict[str, Any]:
+        """Get Platinum features status for a guild."""
+        try:
+            result = await self.db_manager.fetch_one(
+                "SELECT * FROM platinum_features WHERE guild_id = %s",
+                guild_id,
+            )
+            return result if result else {}
+        except Exception as e:
+            logger.error(f"Error getting Platinum features for guild {guild_id}: {e}")
+            return {}
+
+    async def is_platinum_guild(self, guild_id: int) -> bool:
+        """Check if a guild has Platinum subscription."""
+        try:
+            subscription_level = await self.check_subscription_status(guild_id)
+            return subscription_level == "platinum"
+        except Exception as e:
+            logger.error(f"Error checking Platinum status for guild {guild_id}: {e}")
+            return False

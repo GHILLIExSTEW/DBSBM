@@ -269,17 +269,20 @@ class ParlayEnhancedPlayerPropModal(Modal):
                 }
 
             # Search for player
+            logger.info(f"[PARLAY ENHANCED MODAL] Searching for player: {player_name} in league: {self.league}")
             search_results = await self.player_search_service.search_players(
                 player_name, self.league, limit=1, min_confidence=70.0
             )
 
             if not search_results:
+                logger.warning(f"[PARLAY ENHANCED MODAL] No players found for: {player_name}")
                 return {
                     "valid": False,
                     "error": f'Player "{player_name}" not found. Try a different search term.',
                 }
 
             selected_player = search_results[0]
+            logger.info(f"[PARLAY ENHANCED MODAL] Selected player: {selected_player.player_name} from {selected_player.team_name}")
 
             # Validate prop type
             prop_type = self.prop_type.value.strip().lower()
@@ -322,8 +325,8 @@ class ParlayEnhancedPlayerPropModal(Modal):
             return {
                 "valid": True,
                 "bet_data": {
-                    "player_name": selected_player.name,
-                    "player_id": selected_player.player_id,
+                    "player_name": selected_player.player_name,
+                    "player_id": None,  # PlayerSearchResult doesn't have player_id
                     "team_name": selected_player.team_name,
                     "prop_type": prop_type,
                     "line_value": line_value,

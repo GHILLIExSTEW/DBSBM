@@ -1,0 +1,3737 @@
+# Extracted from: API-Sports - Documentation NFL & NCAA.pdf
+# Original file: C:\Users\kaleb\OneDrive\Desktop\DBSBM\bot\data\api_sports_docs\API-Sports - Documentation NFL & NCAA.pdf
+# Extracted on: 1753061290.7085774
+================================================================================
+
+
+--- Page 1 ---
+API-AMERICAN-FOOTBALL(1.4.7)
+support:https://dashboard.api-football.comURL: https://api-sports.io
+Introduction
+Welcome to Api-American-Football! You can use our API to access all API endpoints, which can get
+information about NFL & NCAA.
+We have language bindings in C, C#, cURL, Dart, Go, Java, Javascript, NodeJs, Objective-c, OCaml, Php,
+PowerShell, Python, Ruby, Shell and Swift! You can view code examples in the dark area to the right, and
+you can switch the programming language of the examples with the tabs in the top right.
+Authentication
+We uses API keys to allow access to the API. You can register a new API key in rapidapi or directly on our
+dashboard.
+The accounts on RapidAPI and on our Dashboard are dissociated. Each of these registration methods has
+its own URL and API-KEY. You must therefore adapt your scripts according to your subscription by
+adapting the URL and your API-KEY.
+RAPIDAPI : https://api-american-football.p.rapidapi.com/
+API-SPORTS : https://v1.american-football.api-sports.io/
+Our API expects for the API key to be included in all API requests to the server in a header that looks like
+the following:
+Make sure to replace XxXxXxXxXxXxXxXxXxXxXxXx  with your API key.
+REQUESTS HEADERS & CORS
+The API is configured to work only with GET requests and allows only the headers listed below:|7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 1/66
+
+--- Page 2 ---
+x-rapidapi-host
+x-rapidapi-key
+x-apisports-key
+If you make non-GET requests or add headers that are not in the list, you will receive an error from the API.
+Some frameworks (especially in JS, nodeJS..) automatically add extra headers, you have to make sure to
+remove them in order to get a response from the API.
+RAPIDAPI Account
+All information related to your subscription are available on the rapidApi developer dashboard.
+The RapidAPI developer dashboard is where you can see all of your apps, locate API keys, view analytics,
+and manage billing settings.
+To access the dashboard, simply login to RapidAPI and select 'My Apps' in the top-right menu.
+Alternatively, you can head directly to https://rapidapi.com/developer/dashboard.
+In the main dashboard, you will see account-wide analytics and account information. To get more detailed
+information, you can select tabs on the left-hand side of the screen.
+App Specific Analytics
+Using the RapidAPI dashboard, you can also view analytics specific to each app in your account. To do so,
+switch over to the 'Analytics' tab of your application in the dashboard.
+On the top of the page, you'll be able to see a chart with all the calls being made to all the APIs your app is
+connected to. You'll also be able to see a log with all the request data. You are also able to filter these
+analytics to only show certain APIs within the app.
+In each graph, you can view the following metrics:
+API Calls : how many requests are being made
+Error rates : how many requests are error some
+Latency : how long (on average) requests take to execute
+You may change the time period you're looking at by clicking the calendar icon and choosing a time range.
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+server: The current version of the API proxy used by RapidAPI.
+x-ratelimit-requests-limit : The number of requests the plan you are currently subscribed to
+allows you to make, before incurring overages.7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 2/66
+
+--- Page 3 ---
+x-ratelimit-requests-remaining : The number of requests remaining before you reach the limit
+of requests your application is allowed to make, before experiencing overage charges.
+X-RapidAPI-Proxy-Response : This header is set to true when the RapidAPI proxy generates the
+response, (i.e. the response is not generated from our servers)
+API-SPORTS Account
+If you decided to subscribe directly on our site, you have a dashboard at your disposal at the following url:
+dashboard
+It allows you to:
+To follow your consumption in real time
+Manage your subscription and change it if necessary
+Check the status of our servers
+Test all endpoints without writing a line of code.
+You can also consult all this information directly through the API by calling the endpoint status.
+This call does not count against the daily quota.
+get"https://v1.american-football.api-sports.io/status"
+// response
+    "get": "status"
+    "parameters" : 
+    "errors" : 
+    "results" : 1
+    "response" : 
+        "account" : 
+            "firstname" : "xxxx"
+            "lastname" : "XXXXXX"
+            "email": "xxx@xxx.com"
+        
+        "subscription" : 
+            "plan": "Free"
+            "end": "2020-04-10T23:24:27+00:00"
+            "active" : true
+        
+        "requests" : 
+            "current" : 12
+            "limit_day" : 100
+        
+(
+)
+;
+{
+,
+[
+]
+,
+[
+]
+,
+,
+{
+{
+,
+,
+}
+,
+{
+,
+,
+}
+,
+{
+,
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 3/66
+
+--- Page 4 ---
+    
+Headers sent as response
+When consuming our API, you will always receive the following headers appended to the response:
+x-ratelimit-requests-limit : The number of requests allocated per day according to your
+subscription.
+x-ratelimit-requests-remaining : The number of remaining requests per day according to your
+subscription.
+X-RateLimit-Limit : Maximum number of API calls per minute.
+X-RateLimit-Remaining : Number of API calls remaining before reaching the limit per minute.
+Dashboard
+Requests
+}
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 4/66
+
+--- Page 5 ---
+Live tester
+Architecture7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 5/66
+
+--- Page 6 ---
+Logos / Images
+Calls to logos/images do not count towards your daily quota and are provided for free. However these
+calls are subject to a rate per second & minute, it is recommended to save this data on your side in order
+not to slow down or impact the user experience of your application or website. For this you can use CDNs
+such as bunny.net.
+We have a tutorial available here, which explains how to set up your own media system with BunnyCDN.
+Logos, images and trademarks delivered through the API are provided solely for identification and
+descriptive purposes (e.g., identifying leagues, teams, players or venues). We does not own any of these
+visual assets, and no intellectual property rights are claimed over them. Some images or data may be
+subject to intellectual property or trademark rights held by third parties (including but not limited to
+leagues, federations, or clubs). The use of such content in your applications, websites, or products may
+require additional authorization or licensing from the respective rights holders. You are fully responsible
+for ensuring that your usage of any logos, images, or branded content complies with applicable laws in
+your country or the countries where your services are made available.We are not affiliated with, sponsored
+by, or endorsed by any sports league, federation, or brand featured in the data provided.
+Sample Scripts
+Here are some examples of how the API is used in the main development languages.7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 6/66
+
+--- Page 7 ---
+ You have to replace {endpoint}  by the real name of the endpoint you want to call, like leagues  or
+games for example. In all the sample scripts we will use the leagues  endpoint as example.
+Also you will have to replace XxXxXxXxXxXxXxXxXxXxXx  with your API-KEY provided in the dashboard or
+on rapidapi.
+C
+libcurl
+CURL *curl
+CURLcode res
+curl = curl_easy_init
+ifcurl 
+  curl_easy_setopt curl, CURLOPT_CUSTOMREQUEST, "GET"
+  curl_easy_setopt curl, CURLOPT_URL, "https://v1.american-football.api-sports.io/
+  curl_easy_setopt curl, CURLOPT_FOLLOWLOCATION, 1L
+  curl_easy_setopt curl, CURLOPT_DEFAULT_PROTOCOL, "https"
+  struct curl_slist *headers = NULL
+  headers = curl_slist_append headers, "x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx"
+  headers = curl_slist_append headers, "x-rapidapi-host: v1.american-football.api-
+  curl_easy_setopt curl, CURLOPT_HTTPHEADER, headers
+  res = curl_easy_perform curl
+curl_easy_cleanup curl
+C#
+RestSharp
+var client = new RestClient "https://v1.american-football.api-sports.io/leagues"
+client.Timeout = -1
+var request = new RestRequest Method.GET
+request.AddHeader "x-rapidapi-key" , "XxXxXxXxXxXxXxXxXxXxXxXx"
+request.AddHeader "x-rapidapi-host" , "v1.american-football.api-sports.io"
+;
+;
+(
+)
+;
+(
+)
+{
+(
+)
+;
+(
+(
+)
+;
+(
+)
+;
+;
+(
+)
+(
+(
+)
+;
+(
+)
+;
+}
+(
+)
+;
+(
+)
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 7/66
+
+--- Page 8 ---
+ 
+ IRestResponse response = client.Execute request
+Console.WriteLine response.Content
+cURL
+Curl
+curl --request GET 
+    --url https://v1.american-football.api-sports.io/leagues 
+    --header 'x-rapidapi-host: v1.american-football.api-sports.io'  
+    --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+Dart
+http
+var headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.american-football.api-sports.io'
+var request = httpRequest 'GET' Uriparse'https://v1.american-football.api-spor
+request headers addAllheaders
+httpStreamedResponse response = await request send
+if response statusCode == 200 
+  printawait response streambytesToString
+else 
+  printresponse reasonPhrase
+(
+)
+;
+(
+)
+;
+\
+\
+\
+{
+:
+,
+:
+}
+;
+.
+(
+,
+.
+(
+.
+.
+(
+)
+;
+.
+.
+(
+)
+;
+(
+.
+)
+{
+(
+.
+.
+(
+)
+)
+;
+}
+{
+(
+.
+)
+;
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 8/66
+
+--- Page 9 ---
+Go
+Native
+package main
+import 
+  "fmt"
+  "net/http"
+  "io/ioutil"
+func main 
+  url := "https://v1.american-football.api-sports.io/leagues"
+  method := "GET"
+  client := &httpClient 
+  
+  req err := httpNewRequest method url nil
+  if err != nil 
+    fmt Println err
+    return
+  
+  reqHeaderAdd"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  reqHeaderAdd"x-rapidapi-host"  "v1.american-football.api-sports.io"
+  res err := client Doreq
+  if err != nil 
+    fmt Println err
+    return
+  
+  defer resBodyClose
+  body err := ioutil ReadAll resBody
+  if err != nil 
+    fmt Println err
+    return
+  
+  fmtPrintln stringbody
+(
+)
+(
+)
+{
+.
+{
+}
+,
+.
+(
+,
+,
+)
+{
+.
+(
+)
+}
+.
+.
+(
+,
+)
+.
+.
+(
+,
+)
+,
+.
+(
+)
+{
+.
+(
+)
+}
+.
+.
+(
+)
+,
+.
+(
+.
+)
+{
+.
+(
+)
+}
+.
+(
+(
+)
+)
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 9/66
+
+--- Page 10 ---
+ Java
+OkHttp
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.american-football.api-sports.io"
+var requestOptions = 
+  method : 'GET'
+  headers : myHeaders
+  redirect : 'follow'
+Unirest
+Unirest setTimeouts 0 0
+HttpResponse String response = Unirest get"https://v1.american-football.api-spor
+  header"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+  header"x-rapidapi-host"  "v1.american-football.api-sports.io"
+  asString
+Javascript
+Fetch
+var myHeaders = new Headers
+myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+myHeaders append"x-rapidapi-host"  "v1.american-football.api-sports.io"
+var requestOptions = 
+  method: 'GET'
+  headers: myHeaders
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,
+}
+;
+.
+(
+,
+)
+;
+<
+>
+.
+(
+.
+(
+,
+)
+.
+(
+,
+)
+.
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+{
+,
+,7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 10/66
+
+--- Page 11 ---
+  redirect : 'follow'
+fetch"https://v1.american-football.api-sports.io/leagues"  requestOptions
+  thenresponse  => response text
+  thenresult => console logresult
+  catcherror => console log'error'  error
+jQuery
+var settings = 
+  "url": "https://v1.american-football.api-sports.io/leagues"
+  "method" : "GET"
+  "timeout" : 0
+  "headers" : 
+    "x-rapidapi-key" : "XxXxXxXxXxXxXxXxXxXxXxXx"
+    "x-rapidapi-host" : "v1.american-football.api-sports.io"
+  
+$ajaxsettings donefunction  response  
+  console logresponse
+XHR
+var xhr = new XMLHttpRequest
+xhrwithCredentials = true
+xhraddEventListener "readystatechange"  function  
+  ifthisreadyState === 4 
+    console logthisresponseText
+  
+xhropen"GET" "https://v1.american-football.api-sports.io/leagues"
+xhrsetRequestHeader "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+xhrsetRequestHeader "x-rapidapi-host"  "v1.american-football.api-sports.io"
+xhrsend
+}
+;
+(
+,
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+)
+)
+.
+(
+.
+(
+,
+)
+)
+;
+{
+,
+,
+,
+{
+,
+}
+,
+}
+;
+.
+(
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+;
+.
+;
+.
+(
+,
+(
+)
+{
+(
+.
+)
+{
+.
+(
+.
+)
+;
+}
+}
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+,
+)
+;
+.
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 11/66
+
+--- Page 12 ---
+NodeJs
+Axios
+var axios = require 'axios'
+var config = 
+  method  'get'
+  url 'https://v1.american-football.api-sports.io/leagues'
+  headers  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.american-football.api-sports.io'
+  
+axiosconfig
+thenfunction  response  
+  console logJSONstringify response data
+catchfunction  error 
+  console logerror
+Native
+var https = require 'follow-redirects' https
+var fs = require 'fs'
+var options = 
+  'method'  'GET'
+  'hostname'  'v1.american-football.api-sports.io'
+  'path' '/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.american-football.api-sports.io'
+  
+  'maxRedirects'  20
+var req = httpsrequest options  function  res 
+  var chunks = 
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+)
+.
+(
+(
+)
+{
+.
+(
+.
+(
+.
+)
+)
+;
+}
+)
+.
+(
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+(
+)
+.
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+,
+:
+}
+;
+.
+(
+,
+(
+)
+{
+[
+]
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 12/66
+
+--- Page 13 ---
+  reson"data" function  chunk 
+    chunks pushchunk
+  
+  reson"end" function  chunk 
+    var body = Buffer concatchunks
+    console logbodytoString
+  
+  reson"error"  function  error 
+    console errorerror
+  
+reqend
+Requests
+var request = require 'request'
+var options = 
+  'method'  'GET'
+  'url' 'https://v1.american-football.api-sports.io/leagues'
+  'headers'  
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.american-football.api-sports.io'
+  
+request options  function  error response  
+  if error throw new Errorerror
+  console logresponse body
+Unirest
+var unirest = require 'unirest'
+var req = unirest 'GET' 'https://v1.american-football.api-sports.io/leagues'
+  headers
+    'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host'  'v1.american-football.api-sports.io'
+  
+  endfunction  res 
+    if reserror throw new Errorreserror
+    console logresraw_body
+  
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+.
+(
+.
+(
+)
+)
+;
+}
+)
+;
+.
+(
+,
+(
+)
+{
+.
+(
+)
+;
+}
+)
+;
+}
+)
+;
+.
+(
+)
+;
+(
+)
+;
+{
+:
+,
+:
+,
+:
+{
+:
+,
+:
+}
+}
+;
+(
+,
+(
+,
+)
+{
+(
+)
+(
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;
+(
+)
+;
+(
+,
+)
+.
+(
+{
+:
+,
+:
+}
+)
+.
+(
+(
+)
+{
+(
+.
+)
+(
+.
+)
+;
+.
+(
+.
+)
+;
+}
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 13/66
+
+--- Page 14 ---
+ Objective-c
+NSURLSession
+#import <Foundation /Foundation h>
+dispatch_semaphore_t sema = dispatch_semaphore_create 0
+NSMutableURLRequest *request = NSMutableURLRequest requestWithURL NSURL URLWithS
+  cachePolicy NSURLRequestUseProtocolCachePolicy
+  timeoutInterval 10.0
+NSDictionary *headers = @
+  @"x-rapidapi-key"  @"XxXxXxXxXxXxXxXxXxXxXxXx"
+  @"x-rapidapi-host"  @"v1.american-football.api-sports.io"
+request setAllHTTPHeaderFields headers
+request setHTTPMethod @"GET"
+NSURLSession *session = NSURLSession sharedSession
+NSURLSessionDataTask *dataTask = session dataTaskWithRequest request
+completionHandler ^NSData *data NSURLResponse *response  NSError *error 
+  if error 
+    NSLog@"%@" error
+    dispatch_semaphore_signal sema
+   else 
+    NSHTTPURLResponse *httpResponse = NSHTTPURLResponse * response
+    NSError *parseError = nil
+    NSDictionary *responseDictionary = NSJSONSerialization JSONObjectWithData dat
+    NSLog@"%@"responseDictionary
+    dispatch_semaphore_signal sema
+  
+dataTask resume
+dispatch_semaphore_wait sema DISPATCH_TIME_FOREVER
+.
+(
+)
+;
+[
+:
+[
+:
+:
+]
+;
+{
+:
+,
+:
+}
+;
+[
+:
+]
+;
+[
+:
+]
+;
+[
+]
+;
+[
+:
+:
+(
+,
+,
+)
+{
+(
+)
+{
+(
+,
+)
+;
+(
+)
+;
+}
+{
+(
+)
+;
+;
+[
+:
+(
+,
+)
+;
+(
+)
+;
+}
+}
+]
+;
+[
+]
+;
+(
+,
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 14/66
+
+--- Page 15 ---
+ OCaml
+Cohttp
+open Lwt
+open Cohttp
+open Cohttp_lwt_unix
+let reqBody =
+  let uri = Uriof_string "https://v1.american-football.api-sports.io/%7Bendpoint%
+  let headers = Header init 
+    |> fun h -> Header add h "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    |> fun h -> Header add h "x-rapidapi-host"  "v1.american-football.api-sports.io
+  in
+  Client call ~headers `GET uri >>= fun _resp body ->
+  body |> Cohttp_lwt Bodyto_string >|= fun body -> body
+let  =
+  let respBody = Lwt_main run reqBody in
+  print_endline respBody
+Php
+cURL
+$curl = curl_init
+curl_setopt_array $curl array
+  CURLOPT_URL  => 'https://v1.american-football.api-sports.io/leagues'
+  CURLOPT_RETURNTRANSFER  => true
+  CURLOPT_ENCODING  => ''
+  CURLOPT_MAXREDIRS  => 10
+  CURLOPT_TIMEOUT  => 0
+  CURLOPT_FOLLOWLOCATION  => true
+  CURLOPT_HTTP_VERSION  => CURL_HTTP_VERSION_1_1
+.
+.
+(
+)
+.
+.
+.
+(
+,
+)
+.
+.
+(
+)
+.
+(
+)
+(
+)
+;
+(
+,
+(
+,
+,
+,
+,
+,
+,
+,7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 15/66
+
+--- Page 16 ---
+  CURLOPT_CUSTOMREQUEST  => 'GET'
+  CURLOPT_HTTPHEADER  => array
+    'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+    'x-rapidapi-host: v1.american-football.api-sports.io'
+  
+$response  = curl_exec $curl
+curl_close $curl
+echo $response
+Request2
+<?php
+require_once  'HTTP/Request2.php'
+$request  = new HTTP_Request2
+$request ->setUrl'https://v1.american-football.api-sports.io/leagues'
+$request ->setMethod HTTP_Request2 ::METHOD_GET
+$request ->setConfig array
+  'follow_redirects'  => TRUE
+$request ->setHeader array
+  'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+try 
+  $response  = $request ->send
+  if $response ->getStatus  == 200 
+    echo $response ->getBody
+  
+  else 
+    echo 'Unexpected HTTP status: '  . $response ->getStatus  . ' ' .
+    $response ->getReasonPhrase
+  
+catchHTTP_Request2_Exception  $e 
+  echo 'Error: '  . $e->getMessage
+Http
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/leagues'
+$request ->setRequestMethod 'GET'
+,
+(
+,
+)
+,
+)
+)
+;
+(
+)
+;
+(
+)
+;
+;
+;
+(
+)
+;
+(
+)
+;
+(
+)
+;
+(
+(
+)
+)
+;
+(
+(
+,
+)
+)
+;
+{
+(
+)
+;
+(
+(
+)
+)
+{
+(
+)
+;
+}
+{
+(
+)
+(
+)
+;
+}
+}
+(
+)
+{
+(
+)
+;
+}
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 16/66
+
+--- Page 17 ---
+ $request ->setHeaders array
+    'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+    'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+PowerShell
+RestMethod
+$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+$headers Add"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
+$headers Add"x-rapidapi-host"  "v1.american-football.api-sports.io"
+$response = Invoke-RestMethod 'https://v1.american-football.api-sports.io/leagues'
+$response | ConvertTo -Json
+Python
+http.client
+import httpclient
+conn = httpclientHTTPSConnection "v1.american-football.api-sports.io"
+headers = 
+    'x-rapidapi-host'  "v1.american-football.api-sports.io"
+    'x-rapidapi-key'  "XxXxXxXxXxXxXxXxXxXxXxXx"
+    
+connrequest "GET" "/leagues"  headers =headers
+res = conngetresponse
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+.
+(
+,
+)
+.
+(
+,
+)
+.
+.
+.
+(
+)
+{
+:
+,
+:
+}
+.
+(
+,
+,
+)
+.
+(
+)7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 17/66
+
+--- Page 18 ---
+data = resread
+printdatadecode"utf-8"
+Requests
+url = "https://v1.american-football.api-sports.io/leagues"
+payload=
+headers = 
+  'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
+  'x-rapidapi-host'  'v1.american-football.api-sports.io'
+response = requests request "GET" url headers =headers  data=payload
+printresponse text
+Ruby
+Net::HTTP
+require 'uri'
+require 'net/http'
+require 'openssl'
+url = URI"https://v1.american-football.api-sports.io/leagues"
+http = NetHTTPnewurlhost urlport
+httpuse_ssl = true
+httpverify_mode = OpenSSL SSLVERIFY_NONE
+request = NetHTTPGetnewurl
+request "x-rapidapi-host"  = 'v1.american-football.api-sports.io'
+request "x-rapidapi-key"  = 'XxXxXxXxXxXxXxXxXxXxXxXx'
+response = httprequest request
+puts response read_body
+.
+(
+)
+(
+.
+(
+)
+)
+{
+}
+{
+:
+,
+:
+}
+.
+(
+,
+,
+,
+)
+(
+.
+)
+(
+)
+::
+.
+(
+.
+,
+.
+)
+.
+.
+::
+::
+::
+::
+.
+(
+)
+[
+]
+[
+]
+.
+(
+)
+.7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 18/66
+
+--- Page 19 ---
+ Shell
+Httpie
+http --follow --timeout 3600 GET 'https://v1.american-football.api-sports.io/leagu
+ x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'  
+ x-rapidapi-host: 'v1.american-football.api-sports.io'
+wget
+wget --no-check-certificate --quiet 
+  --method GET 
+  --timeout =0 
+  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'  
+  --header 'x-rapidapi-host: v1.american-football.api-sports.io'  
+   'https://v1.american-football.api-sports.io/leagues'
+Swift
+URLSession
+import Foundation
+#if canImport FoundationNetworking
+import FoundationNetworking
+#endif
+var semaphore = DispatchSemaphore  value 0
+var request = URLRequest url URLstring "https://v1.american-football.api-sports
+request addValue "XxXxXxXxXxXxXxXxXxXxXxXx"  forHTTPHeaderField  "x-rapidapi-key"
+request addValue "v1.american-football.api-sports.io"  forHTTPHeaderField  "x-rapi
+request httpMethod = "GET"
+\
+\
+\
+\
+\
+\
+(
+)
+(
+:
+)
+(
+:
+(
+:
+.
+(
+,
+:
+)
+.
+(
+,
+:
+.7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 19/66
+
+--- Page 20 ---
+ let task = URLSession shareddataTask with request   data response  error in
+  guard let data = data else 
+    printStringdescribing  error
+    semaphore signal
+    return
+  
+  printStringdata data encoding  utf8!
+  semaphore signal
+taskresume
+semaphore wait
+CDN
+Optimizing Sports Websites with BunnyCDN
+BunnyCDN is a Content Delivery Network (CDN) that delivers a global content distribution experience. With
+strategically positioned servers, BunnyCDN ensures swift and reliable delivery of static content, optimizing
+website performance with features like intelligent image optimization, sophisticated caching, and
+advanced security measures.
+Unlocking Media Delivery Excellence with BunnyCDN:
+Quick Configuration: Set up your media CDN in just 5 minutes. Define cache times, customize your
+domain – it's that simple.
+Global Accessibility: Leverage BunnyCDN's expansive server network for swift and dependable
+content delivery worldwide.
+Customized Configuration: Tailor caching, define cache times, and implement CORS headers to
+create an efficient and seamless user experience.
+Own Your Domain: Personalize your media delivery with your domain, enhancing your brand's online
+presence.
+Robust Security: BunnyCDN integrates advanced security features, guaranteeing a secure
+environment for delivering your content.
+.
+.
+(
+:
+)
+{
+,
+,
+{
+(
+(
+:
+)
+)
+.
+(
+)
+}
+(
+(
+:
+,
+:
+.
+)
+)
+.
+(
+)
+}
+.
+(
+)
+.
+(
+)7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 20/66
+
+--- Page 21 ---
+Responsive Performance: Experience responsive performance without the need for prior media
+downloads. Discover the capabilities of BunnyCDN for optimized media delivery.
+A tutorial is available here on our blog to help you configure it.
+Databases Solutions
+Enhance Your Data Management with Aiven
+Integrating databases into your application can greatly enhance data management and storage. If you're
+looking for high-performing, flexible, and secure database solutions, we recommend checking out Aiven.
+Aiven is a cloud platform that offers a range of managed database services, including relational
+databases, NoSQL databases, streaming data processing systems, and much more. Their offerings
+include PostgreSQL , MySQL, Cassandra , Redis, Kafka, and many other databases, all with
+simplified management, high availability, and advanced security.
+Moreover, Aiven provides a free tier to get started, along with testing credits to explore their offerings. This
+opportunity allows you to evaluate their platform and determine if it meets your needs.
+One particularly attractive feature of Aiven is that they work with multiple cloud providers, including
+Google Cloud , Amazon Web Services (AWS) , Microsoft Azure , DigitalOcean , and more.
+This means you have the flexibility to choose the best cloud infrastructure for your project.
+In terms of reliability, Aiven is committed to providing a 99.99% Service Level Agreement (SLA), ensuring
+continuous and highly available service.
+To test their services, visit this page.
+If you're a developer, explore their DEV center for technical information.
+Check out Aiven's documentation for detailed information on their services and features.
+By integrating Aiven with our API, you can efficiently store, manage, and analyze your data while taking
+advantage of their cloud database solutions' flexibility and scalability.
+Real-Time Data Management with Firebase7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 21/66
+
+--- Page 22 ---
+When you're looking for a real-time data management solution for your application, Firebase's Realtime
+Database is a powerful choice. Explore how Firebase can enhance real-time data management for your
+application.
+Firebase's Realtime Database offers a cloud-based real-time database that synchronizes data in real-time
+across users and devices. This makes it an ideal choice for applications that require instant data updates.
+Why Choose Firebase's Realtime Database?
+Real-Time Data: Firebase allows you to store real-time data, meaning that updates are instantly
+propagated to all connected users.
+Easy Synchronization: Data is automatically synchronized across all devices, providing a consistent
+and real-time user experience.
+Built-In Security: Firebase offers flexible security rules to control data access and ensure privacy.
+Simplified Integration: Firebase's Realtime Database easily integrates with other Firebase services,
+simplifying backend management.
+Helpful Links:
+Explore Firebase's Realtime Database: Discover the features and advantages of Firebase's Realtime
+Database for efficient real-time data management.
+Firebase's Realtime Database Documentation: Refer to the comprehensive documentation for
+Firebase's Realtime Database for a smooth integration.
+A tutorial describing each step is available on our blog here.
+Timezone
+timezone
+Returns the list of timezone set that can be used in the endpoint games.
+Parameters: This endpoint does not require any parameters.
+HEADER PARAMETERS
+string
+Your RapidAPI Keyx-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 22/66
+
+--- Page 23 ---
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/timezone'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samplesGET/timezone
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 23/66
+
+--- Page 24 ---
+Seasons200 401 404 429 500
+application/json
+Expand allCollapse all Copy
+{
+"get": "timezone"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 425
+,
+"response" : -
+[
+"Africa/Abidjan" ,
+"Africa/Accra" ,
+"Africa/Addis_Ababa" ,
+"Africa/Algiers" ,
+"Africa/Asmara" ,
+"Africa/Bamako"
+]
+}
+seasons
+Return the list of all available seasons for all competitions.
+All seasons are only 4-digit keys, so for a league whose season is 2018-2019  the season in the API will
+be 2018.
+All seasons  can be used in other endpoints as filters.
+Parameters: This endpoint does not require any parameters.
+HEADER PARAMETERSContent type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 24/66
+
+--- Page 25 ---
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/seasons'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBodyx-rapidapi-key
+required
+GET/seasons
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 25/66
+
+--- Page 26 ---
+LeaguesResponse samples
+200 401 404 429 500
+application/json
+Expand allCollapse all Copy
+{
+"get": "seasons"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 13
+,
+"response" : -
+[
+2022,
+2021,
+2020,
+2019,
+2018,
+2017,
+2016,
+2015,
+2014,
+2013,
+2012,
+2011,
+2010
+]
+}
+leaguesContent type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 26/66
+
+--- Page 27 ---
+Return the list of all available competitions.
+The league id are unique in the API and competitions keep it across all seasons
+This endpoint contains a field named coverage  that indicates for each season of a competition the data
+that are available.
+QUERY PARAMETERS
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the league
+string
+Enum:"true" "false"
+HEADER PARAMETERS
+string
+You rapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Errorid
+season
+current
+x-rapidapi-key
+required
+GET/leagues7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 27/66
+
+--- Page 28 ---
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/leagues'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "leagues"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 2
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 28/66
+
+--- Page 29 ---
+Teams
+teams
+Return a set of data about the teams.
+The team id are unique in the API and teams keep it among all the competitions in which they
+participate.
+Parameters: This endpoint requires at least one parameter.
+This endpoint is updated every day
+QUERY PARAMETERS
+integer
+The id of the team
+integer
+A valid League id
+integer
+A valid season
+string
+The name of the team
+string
+The code of the team
+string>= 3 characters
+The name of the team
+HEADER PARAMETERS
+string
+Your RapidAPI Keyid
+league
+season
+name
+code
+search
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 29/66
+
+--- Page 30 ---
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/teams'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBodyGET/teams
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 30/66
+
+--- Page 31 ---
+PlayersResponse samples
+200 401 404 429 500
+application/json
+Expand allCollapse all Copy
+{
+"get": "teams"
+,
+"parameters" : -
+{
+"id": "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+players
+Return a set of data about the players.
+The players id are unique in the API and keep it among all the competitions in which they participate.
+Not all data is available for all players.
+Parameters: This endpoint requires at least one parameter.
+This endpoint is updated every day
+QUERY PARAMETERSContent type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 31/66
+
+--- Page 32 ---
+integer
+The id of the player
+string
+The name of the player
+integer
+The id of the team
+integer
+Default:"YYYY"
+The season
+string>= 3 characters
+The name of the player
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samplesid
+name
+team
+season
+search
+x-rapidapi-key
+required
+GET/players7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 32/66
+
+--- Page 33 ---
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/players'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "players"
+,
+"parameters" : -
+{
+"id": "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 33/66
+
+--- Page 34 ---
+statistics
+Return the statistics of a player for the whole season.
+The statistics of the players are different depending on the positions they occupy in the formation, so they
+are grouped into different groups.
+Available Groups
+Defense
+Kicking
+Passing
+Punting
+Receiving
+Returning
+Rushing
+Scoring
+Data for this endpoint start from 2022 season
+Parameters: This endpoint requires at least two parameters id or team and season.
+This endpoint is updated every day
+QUERY PARAMETERS
+integer
+The id of the player
+integer
+The id of the team
+integer>= 3 characters
+Default:"YYYY"
+The season
+HEADER PARAMETERS
+string
+Your RapidAPI Keyid
+team
+season
+required
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 34/66
+
+--- Page 35 ---
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+ Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/players/stat
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1' 'season'  => '2022'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBodyGET/players/statistics
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+,
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 35/66
+
+--- Page 36 ---
+InjuriesResponse samples
+200 401 404 429 500
+application/json
+Expand allCollapse all Copy
+{
+"get": "players/statistics"
+,
+"parameters" : -
+{
+"id": "1"
+,
+"season" : "2022"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+injuries
+Return the list of injured players.
+There is no preserved history, only the currently injured players appear in this endpoint.
+Parameters: This endpoint requires at least one parameter id or team.
+This endpoint is updated every hour
+QUERY PARAMETERSContent type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 36/66
+
+--- Page 37 ---
+integer
+The id of the player
+integer
+The id of the team
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/injuries'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'player'  => '53'player
+team
+x-rapidapi-key
+required
+GET/injuries
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 37/66
+
+--- Page 38 ---
+Games$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "injuries"
+,
+"parameters" : -
+{
+"player" : "53"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 38/66
+
+--- Page 39 ---
+games
+Return the list of games according to the given parameters.
+For all requests to games you can add the query parameter timezone  to your request in order to retrieve
+the list of games in the time zone of your choice like “Europe/London“. In case the timezone is not
+recognized, empty or is not part of the endpoint timezone  list, the UTC value will be applied by default
+To know the list of available timezones you have to use the endpoint timezone .
+Available Status
+NS : Not Started
+Q1 : First Quarter (In Play)
+Q2 : Second Quarter (In Play)
+Q3 : Third Quarter (In Play)
+Q4 : Fourth Quarter (In Play)
+OT : Overtime (In Play)
+HT : Halftime (In Play)
+FT : Finished (Game Finished)
+AOT : After Over Time (Game Finished)
+CANC : Cancelled (Game cancelled and not rescheduled)
+PST : Postponed (Game postponed and waiting for a new game date)
+Parameters: This endpoint requires at least one of these parameters id, date, league, team,
+live, h2h.
+Games are updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+string
+Default:"YYYY-MM-DD"
+A valid date
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the leagueid
+date
+league
+season7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 39/66
+
+--- Page 40 ---
+integer
+The id of the team
+string
+Default:"id-id"
+Example:h2h=h2h=2-3
+Two teams Ids
+string
+Default:"al"
+Value:"all"
+Example:live=live=all
+string
+A valid timezone
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samplesteam
+h2h
+live
+timezone
+x-rapidapi-key
+required
+GET/games7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 40/66
+
+--- Page 41 ---
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/games'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'date' => '2022-09-30'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games"
+,
+"parameters" : -
+{
+"date": "2022-09-30"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 6
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 41/66
+
+--- Page 42 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+events
+Return the list of events for one game id.
+Parameters: This endpoint requires at least one parameter.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requestsid
+required
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 42/66
+
+--- Page 43 ---
+500 Internal Server Error
+ Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/games/events
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1986'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500GET/games/events
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/events"
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 43/66
+
+--- Page 44 ---
+"parameters" : -
+{
+"id": "1986"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 7
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+teams statistics
+Return team statistics from a game id.
+Parameters: This endpoint requires at least one parameter.
+This endpoint is updated every 30 seconds
+QUERY PARAMETERS
+integer
+The id of the game
+integer
+The id of the team
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responsesid
+required
+team
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 44/66
+
+--- Page 45 ---
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+ Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/games/statis
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1985'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samplesGET/games/statistics/teams
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 45/66
+
+--- Page 46 ---
+200 401 404 429 500
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/statistics/teams"
+,
+"parameters" : -
+{
+"id": "1985"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 2
+,
+"response" : -
+[
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+players statistics
+Return players statistics from a game id.
+The statistics of the players are different depending on the positions they occupy in the formation, so they
+are grouped into different groups.
+Available Groups
+defensive
+fumbles
+interceptions
+kick_returns
+kicking
+passing
+punt_returns
+punting
+receiving
+rushing
+Parameters: This endpoint requires at least one parameter.
+This endpoint is updated every 30 secondsContent type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 46/66
+
+--- Page 47 ---
+QUERY PARAMETERS
+integer
+The id of the game
+string
+Enum:"defensive" "fumbles" "interceptions" "kick_returns"
+"kicking" "passing" "punt_returns" "punting" "receiving"
+"rushing"
+A valid group
+integer
+The id of the team
+integer
+The id of the player
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samplesid
+required
+group
+team
+player
+x-rapidapi-key
+required
+GET/games/statistics/players7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 47/66
+
+--- Page 48 ---
+ PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/games/statis
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'id' => '1985'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "games/statistics/players"
+,
+"parameters" : -
+{
+"id": "1985"
+,
+"team": "22"
+,
+"player" : "4515"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 48/66
+
+--- Page 49 ---
+Standings
+}
+standings
+Return the standings of a competition in relation to a given season.
+To know the list of available conferences  or divisions  you have to use the endpoint
+standings/conferences  or standings/divisions .
+Parameters: This endpoint requires at least two parameters league and season.
+This endpoint is updated every hour
+QUERY PARAMETERS
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the league
+integer
+The id of the team
+string
+A valid conference
+string
+A valid division
+HEADER PARAMETERSleague
+required
+season
+required
+team
+conference
+division7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 49/66
+
+--- Page 50 ---
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/standings'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'league'  => '1'
+'season'  => '2022'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'x-rapidapi-key
+required
+GET/standings
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+,
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 50/66
+
+--- Page 51 ---
+ $client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings"
+,
+"parameters" : -
+{
+"league" : "1"
+,
+"season" : "2022"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 32
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 51/66
+
+--- Page 52 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}
+conferences
+Return the list of available conferences for a competition to be used in the standings  endpoint.7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 52/66
+
+--- Page 53 ---
+Parameters: This endpoint requires at least two parameters league and season.
+QUERY PARAMETERS
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the league
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRubyleague
+required
+season
+required
+x-rapidapi-key
+required
+GET/standings/conferences
+Copy7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 53/66
+
+--- Page 54 ---
+ $client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/standings/co
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+\
+;
+\
+\
+;
+(
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings/conferences"
+,
+"parameters" : -
+{
+"league" : "2"
+,
+"season" : "2022"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 28
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 54/66
+
+--- Page 55 ---
+"response" : -
+[
+"Atlantic Coast" ,
+"American Athletic" ,
+"Big 12" ,
+"Big Ten" ,
+"Conference USA" ,
+"FBS Independents" ,
+"Mid-American" ,
+"Mountain West" ,
+"Pacific-12" ,
+"Southeastern Conference" ,
+"Sun Belt" ,
+"Big Sky" ,
+"Big South" ,
+"Colonial Athletic Association" ,
+"Ivy League" ,
+"Mid-Eastern Athletic" ,
+"Northeast" ,
+"Missouri Valley" ,
+"Ohio Valley" ,
+"Patriot League" ,
+"Pioneer" ,
+"Southern" ,
+"Southland" ,
+"Southwestern Athletic" ,
+"Central Intercollegiate Athletic Association" ,
+"Northern Sun" ,
+"Pennsylvania State Athletic" ,
+"Southern Intercollegiate Athletic"
+]
+}
+divisions
+Return the list of available divisions for a competition to be used in the standings  endpoint.
+Parameters: This endpoint requires at least two parameters league and season.
+QUERY PARAMETERS7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 55/66
+
+--- Page 56 ---
+integer
+The id of the league
+integer
+Default:"YYYY"
+The season of the league
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+401 Unauthorized
+404 Not Found
+429 Too Many Requests
+500 Internal Server Error
+Request samples
+PhpPythonNodeJavaScriptCurlRuby
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/standings/di
+$request ->setRequestMethod 'GET'league
+required
+season
+required
+x-rapidapi-key
+required
+GET/standings/divisions
+Copy
+\
+;
+\
+\
+;
+(
+(
+)
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 56/66
+
+--- Page 57 ---
+ $request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200 401 404 429 500
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "standings/divisions"
+,
+"parameters" : -
+{
+"league" : "2"
+,
+"season" : "2022"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 8
+,
+"response" : -
+[
+"Atlantic" ,
+"Coastal" ,
+"Main",
+"East",
+"West",
+"Mountain" ,
+"North",
+"South"
+]
+}Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 57/66
+
+--- Page 58 ---
+Odds
+odds
+Return the list of available odds for games.
+We provide pre-match odds between 1 and 7 days before the game.
+We keep a 7-day history (The availability of odds may vary according to the games, seasons and
+bookmakers)
+Parameters: This endpoint requires at least one of theses parameters : game.
+Odds are updated four times a day
+QUERY PARAMETERS
+integer
+The id of the game
+integer
+The id of the bookmaker
+integer
+The id of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responsesgame
+required
+bookmaker
+bet
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 58/66
+
+--- Page 59 ---
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/odds'
+$request ->setRequestMethod 'GET'
+$request ->setQuery new httpQueryString array
+'game' => '7532'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200GET/odds
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+\
+(
+(
+)
+)
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds"
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 59/66
+
+--- Page 60 ---
+"parameters" : -
+{
+"game": "7532"
+,
+"bookmaker" : "1"
+}
+,
+"errors" : 
+[ ]
+,
+"results" : 1
+,
+"response" : -
+[
+ … +
+{
+}
+]
+}
+bets
+Return the list of available bets for odds.
+All bets id can be used in endpoint odds as filters
+Parameters: You can call this endpoint without any parameters to get the complete list.
+QUERY PARAMETERS
+integer
+The id of the bet
+string>= 3 characters
+The name of the bet
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OKid
+search
+x-rapidapi-key
+required7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 60/66
+
+--- Page 61 ---
+ Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequest
+$request ->setRequestUrl 'https://v1.american-football.api-sports.io/odds/bets'
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200GET/odds/bets
+Copy
+\
+;
+\
+\
+;
+(
+)
+;
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds/bets"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 78
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 61/66
+
+--- Page 62 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+…,+
+{
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 62/66
+
+--- Page 63 ---
+ … ,
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 63/66
+
+--- Page 64 ---
+bookmakers
+Return the list of available bookmakers for odds.
+All bookmakers id can be used in endpoint odds as filters.
+Parameters: You can call this endpoint without any parameters to get the complete list.
+QUERY PARAMETERS
+integer
+The id of the bookmaker
+string>= 3 characters
+The name of the bookmaker
+HEADER PARAMETERS
+string
+Your RapidAPI Key
+Responses
+200 OK
+Request samples
+PhpPythonNodeJavaScriptCurlRubyUse Cases
+$client = new httpClient
+$request  = new httpClientRequestid
+search
+x-rapidapi-key
+required
+GET/odds/bookmakers
+Copy
+\
+;
+\
+\
+;7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 64/66
+
+--- Page 65 ---
+ $request ->setRequestUrl 'https://v1.american-football.api-sports.io/odds/bookmak
+$request ->setRequestMethod 'GET'
+$request ->setHeaders array
+'x-rapidapi-host'  => 'v1.american-football.api-sports.io'
+'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
+$client->enqueue $request ->send
+$response  = $client->getResponse
+echo $response ->getBody
+Response samples
+200
+(
+(
+)
+;
+(
+(
+,
+)
+)
+;
+(
+)
+(
+)
+;
+(
+)
+;
+(
+)
+;
+application/json
+Expand allCollapse all Copy
+{
+"get": "odds/bookmakers"
+,
+"parameters" : 
+[ ]
+,
+"errors" : 
+[ ]
+,
+"results" : 18
+,Content type7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 65/66
+
+--- Page 66 ---
+"response" : -
+[
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … ,+
+{
+}
+ … +
+{
+}
+]
+}7/20/25, 9:19 PM API-Sports - Documentation NFL & NCAA
+https://api-sports.io/documentation/nfl/v1 66/66
