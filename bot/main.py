@@ -704,18 +704,17 @@ class BettingBot(commands.Bot):
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
         # Only sync commands if not in scheduler mode
-        # DISABLED: Automatic command sync removed to avoid Discord rate limits
-        # if not os.getenv("SCHEDULER_MODE"):
-        #     try:
-        #         # Single point of command syncing
-        #         success = await self.sync_commands_with_retry()
-        #         if not success:
-        #             logger.error("Failed to sync commands after retries")
-        #             return
-        #         global_commands = [cmd.name for cmd in self.tree.get_commands()]
-        #         logger.info("Final global commands: %s", global_commands)
-        #     except Exception as e:
-        #         logger.error("Failed to sync command tree: %s", e, exc_info=True)
+        if not os.getenv("SCHEDULER_MODE"):
+            try:
+                # Single point of command syncing
+                success = await self.sync_commands_with_retry()
+                if not success:
+                    logger.error("Failed to sync commands after retries")
+                    return
+                global_commands = [cmd.name for cmd in self.tree.get_commands()]
+                logger.info("Final global commands: %s", global_commands)
+            except Exception as e:
+                logger.error("Failed to sync command tree: %s", e, exc_info=True)
         logger.info("------ Bot is Ready ------")
 
     async def on_guild_join(self, guild: discord.Guild):
@@ -732,10 +731,9 @@ class BettingBot(commands.Bot):
             guild_obj = discord.Object(id=guild.id)
             self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
-            # DISABLED: Remove automatic sync to avoid rate limits
-            # await self.tree.sync(guild=guild_obj)
+            await self.tree.sync(guild=guild_obj)
             logger.info(
-                f"(SYNC DISABLED) Would have synced setup command to new guild {guild.id}"
+                f"Successfully synced setup command to new guild {guild.id}"
             )
         except Exception as e:
             logger.error(
@@ -751,10 +749,9 @@ class BettingBot(commands.Bot):
             for cmd in self.tree.get_commands():
                 if cmd.name != "load_logos":
                     self.tree.add_command(cmd, guild=guild_obj)
-            # DISABLED: Remove automatic sync to avoid rate limits
-            # await self.tree.sync(guild=guild_obj)
+            await self.tree.sync(guild=guild_obj)
             logger.info(
-                f"(SYNC DISABLED) Would have synced all commands to guild {guild_id} after setup completion"
+                f"Successfully synced all commands to guild {guild_id} after setup completion"
             )
         except Exception as e:
             logger.error(
