@@ -107,13 +107,7 @@ class ParlayBetImageGenerator:
         for i, leg in enumerate(legs):
             self._draw_leg(draw, image, leg, int(y), int(image_width))
             # Divider line between legs, move up to just below leg content
-            if i < n_legs - 1:
-                divider_y = int(y + leg_height - 60)  # move divider up even more
-                draw.line(
-                    [(40, divider_y), (int(image_width) - 40, divider_y)],
-                    fill="#444444",
-                    width=2,
-                )
+            # Removed divider line between legs for cleaner appearance
             y += leg_height
 
         if finalized:
@@ -233,7 +227,7 @@ class ParlayBetImageGenerator:
             vs_font = self.font_vs_small
             vs_width = draw.textlength(vs_text, font=vs_font)
             team_name_width = draw.textlength(team_display, font=team_font)
-            vs_x = left_margin + team_name_width + 20  # Position after team name
+            vs_x = left_margin + team_name_width + 35  # Increased spacing from 20 to 35
             vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
             
@@ -241,7 +235,7 @@ class ParlayBetImageGenerator:
             opponent_logo = self._load_team_logo(away_team, league)
             if opponent_logo:
                 opponent_logo = opponent_logo.convert("RGBA").resize(logo_size)
-                opponent_logo_x = vs_x + vs_width + 20
+                opponent_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
                 image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo)
             
             opponent_display = get_team_display_name(away_team)

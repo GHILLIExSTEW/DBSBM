@@ -695,9 +695,6 @@ class BetDetailsModal(Modal):
         self.add_item(self.odds_input)
 
     async def on_submit(self, interaction: Interaction):
-        # Set skip increment flag so go_next does not double-increment
-        if self.view_ref:
-            self.view_ref._skip_increment = True
         try:
             # Check if view_ref is properly set
             if not self.view_ref:
@@ -860,8 +857,8 @@ class BetDetailsModal(Modal):
             # Advance workflow - add the leg to the parlay
             leg_details = self.view_ref.current_leg_construction_details.copy()
             
-            # Defer the response to prevent modal from staying open
-            await interaction.response.defer(ephemeral=True)
+            # Send a quick response to close the modal
+            await interaction.response.send_message("✅ Processing your bet details...", ephemeral=True)
             
             # Add the leg to the parlay
             await self.view_ref.add_leg(interaction, leg_details)
@@ -1135,8 +1132,15 @@ class AddAnotherLegButton(Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
+        logger.info(f"[PARLAY WORKFLOW] AddAnotherLegButton clicked by user {interaction.user.id}")
+        
+        # Reset to start of workflow for new leg
         self.parent_view.current_step = 0
         self.parent_view.current_leg_construction_details = {}
+        
+        # Disable the button to prevent double-clicks
+        self.disabled = True
+        
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
@@ -1404,6 +1408,7 @@ class ParlayBetWorkflowView(View):
     async def add_leg(
         self, modal_interaction: Interaction, leg_details: Dict[str, Any], file=None
     ):
+        logger.info(f"[PARLAY WORKFLOW] Adding leg: {leg_details.get('line_type', 'unknown')} - {leg_details.get('team', 'unknown')} vs {leg_details.get('opponent', 'unknown')}")
         try:
             # Add the leg to the parlay
             if "legs" not in self.bet_details:
@@ -1461,6 +1466,16 @@ class ParlayBetWorkflowView(View):
                 embed=embed,
                 file=preview_file,
             )
+            
+            # Send a follow-up message to confirm the leg was added
+            try:
+                await modal_interaction.followup.send(
+                    f"✅ Leg {leg_count} added successfully!",
+                    ephemeral=True
+                )
+            except:
+                # If followup fails, that's okay - the main message was updated
+                pass
         except Exception as e:
             logger.error(f"Error in add_leg: {e}")
             await modal_interaction.response.send_message(
@@ -1591,10 +1606,6 @@ class ParlayBetWorkflowView(View):
 
     async def go_next(self, interaction: Interaction):
         """Advance to the next step in the parlay workflow."""
-        if hasattr(self, "_skip_increment") and self._skip_increment:
-            self._skip_increment = False
-            return
-
         self.current_step += 1
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
         logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
