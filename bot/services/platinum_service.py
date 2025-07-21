@@ -211,35 +211,26 @@ class PlatinumService:
             export_id = export_id['id'] if export_id else None
             
             if export_id:
-                # Start the export generation in the background
-                logger.info(f"Starting background export task for export_id={export_id}")
+                logger.critical(f"[EXPORT DEBUG] DB insert complete, export_id={export_id}. Attempting to schedule background export task.")
                 try:
-                    # Get the current event loop
-                    loop = asyncio.get_event_loop()
-                    
-                    # Create the task with proper error handling
+                    # Use get_running_loop for reliability
+                    loop = asyncio.get_running_loop()
                     async def run_export_with_logging():
                         try:
-                            logger.info(f"Background export task starting for export_id={export_id}")
+                            logger.critical(f"[EXPORT DEBUG] Background export task starting for export_id={export_id}")
                             await self._generate_export(export_id, guild_id, export_type, export_format, created_by)
-                            logger.info(f"Background export task completed for export_id={export_id}")
+                            logger.critical(f"[EXPORT DEBUG] Background export task completed for export_id={export_id}")
                         except Exception as e:
-                            logger.error(f"Background export task failed for export_id={export_id}: {e}", exc_info=True)
-                            # Try to send error notification
+                            logger.critical(f"[EXPORT DEBUG] Background export task failed for export_id={export_id}: {e}", exc_info=True)
                             try:
                                 await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}")
                             except Exception as notify_error:
-                                logger.error(f"Failed to send error notification for export_id={export_id}: {notify_error}")
-                    
-                    # Create and start the task
+                                logger.critical(f"[EXPORT DEBUG] Failed to send error notification for export_id={export_id}: {notify_error}")
                     task = loop.create_task(run_export_with_logging())
-                    logger.info(f"Background export task created and started for export_id={export_id}")
-                    
+                    logger.critical(f"[EXPORT DEBUG] Background export task created and started for export_id={export_id}")
                 except Exception as e:
-                    logger.error(f"Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
-                    # Try to send immediate error notification
+                    logger.critical(f"[EXPORT DEBUG] Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
                     await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}")
-                
             await self.track_feature_usage(guild_id, "data_exports")
             return export_id
         except Exception as e:
