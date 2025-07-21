@@ -280,6 +280,15 @@ class PlatinumService:
             
             logger.info(f"Export data fetched for export_id={export_id}: {len(export_data) if isinstance(export_data, list) else 'dict'} items")
             
+            # Log sample of raw data for debugging
+            if export_data:
+                if isinstance(export_data, list) and len(export_data) > 0:
+                    logger.info(f"Sample raw data (first item): {export_data[0]}")
+                elif isinstance(export_data, dict):
+                    for key, value in export_data.items():
+                        if isinstance(value, list) and len(value) > 0:
+                            logger.info(f"Sample raw data for {key} (first item): {value[0]}")
+            
             if not export_data:
                 logger.warning(f"No data found for export_id={export_id}, type={export_type}")
                 await self._update_export_status(export_id, False, "No data found for export")
@@ -374,27 +383,29 @@ class PlatinumService:
         try:
             import json
             import csv
+            import tempfile
             from datetime import datetime
             
-            # Create exports directory if it doesn't exist
-            exports_dir = "exports"
-            os.makedirs(exports_dir, exist_ok=True)
+            # Use system temp directory instead of local exports directory
+            temp_dir = tempfile.gettempdir()
+            logger.info(f"Creating export file in temp directory: {temp_dir}")
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{export_type}_{export_format}_{timestamp}_{export_id}"
             
             if export_format == "csv":
-                file_path = os.path.join(exports_dir, f"{filename}.csv")
+                file_path = os.path.join(temp_dir, f"{filename}.csv")
                 await self._write_csv_file(data, file_path, export_type)
             elif export_format == "json":
-                file_path = os.path.join(exports_dir, f"{filename}.json")
+                file_path = os.path.join(temp_dir, f"{filename}.json")
                 await self._write_json_file(data, file_path)
             elif export_format == "xlsx":
-                file_path = os.path.join(exports_dir, f"{filename}.xlsx")
+                file_path = os.path.join(temp_dir, f"{filename}.xlsx")
                 await self._write_xlsx_file(data, file_path, export_type)
             else:
                 return None
                 
+            logger.info(f"Export file created at: {file_path}")
             return file_path
         except Exception as e:
             logger.error(f"Error creating export file: {e}")
@@ -458,21 +469,27 @@ class PlatinumService:
                 cleaned_item = {}
                 
                 if export_type == "bets":
-                    # Format betting data for better readability
+                    # Format betting data for better readability based on actual schema
+                    bet_details = item.get('bet_details', {})
+                    if isinstance(bet_details, str):
+                        try:
+                            import json
+                            bet_details = json.loads(bet_details)
+                        except:
+                            bet_details = {}
+                    
                     cleaned_item = {
-                        "Bet ID": item.get('id', 'N/A'),
-                        "User": item.get('user_name', 'Unknown'),
+                        "Bet Serial": item.get('bet_serial', 'N/A'),
+                        "User ID": item.get('user_id', 'N/A'),
                         "Date": self._format_datetime(item.get('created_at')),
-                        "Sport": item.get('sport', 'N/A'),
                         "League": item.get('league', 'N/A'),
-                        "Teams": f"{item.get('away_team', 'N/A')} @ {item.get('home_team', 'N/A')}",
                         "Bet Type": item.get('bet_type', 'N/A'),
-                        "Selection": item.get('selection', 'N/A'),
-                        "Odds": item.get('odds', 'N/A'),
-                        "Amount": f"${item.get('amount', 0):.2f}",
-                        "Potential Win": f"${item.get('potential_win', 0):.2f}",
+                        "Bet Details": str(bet_details)[:100] + "..." if len(str(bet_details)) > 100 else str(bet_details),
+                        "Units": f"{item.get('units', 0):.2f}",
                         "Status": item.get('status', 'pending').title(),
-                        "Result": item.get('result', 'N/A')
+                        "Result": item.get('result', 'N/A'),
+                        "Confirmed": "Yes" if item.get('confirmed', False) else "No",
+                        "Updated": self._format_datetime(item.get('updated_at'))
                     }
                 elif export_type == "users":
                     # Format user data for better readability
@@ -501,7 +518,7 @@ class PlatinumService:
                     for key, value in item.items():
                         if isinstance(value, dict):
                             cleaned_item[key] = str(value)[:100] + "..." if len(str(value)) > 100 else str(value)
-                        elif isinstance(value, (datetime, str)) and 'date' in key.lower() or 'time' in key.lower():
+                        elif isinstance(value, (datetime, str)) and ('date' in key.lower() or 'time' in key.lower()):
                             cleaned_item[key] = self._format_datetime(value)
                         else:
                             cleaned_item[key] = str(value)[:50] + "..." if len(str(value)) > 50 else str(value)
