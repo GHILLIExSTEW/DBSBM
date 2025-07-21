@@ -50,10 +50,15 @@ class PlatinumAPICog(commands.Cog):
             if not base_url:
                 return {'error': f'Unsupported sport: {sport}'}
             
-            url = f"{base_url}/{endpoint}"
+            # Special handling for odds endpoint
+            if endpoint == 'odds':
+                # Use the correct odds endpoint structure
+                url = f"https://v1.{sport}.api-sports.io/odds"
+            else:
+                url = f"{base_url}/{endpoint}"
+                
             headers = {
-                'x-rapidapi-key': api_key,
-                'x-rapidapi-host': base_url.replace('https://', '')
+                'x-apisports-key': api_key
             }
             
             async with aiohttp.ClientSession() as session:
@@ -62,7 +67,9 @@ class PlatinumAPICog(commands.Cog):
                         data = await response.json()
                         return data
                     else:
-                        return {'error': f'API request failed with status {response.status}'}
+                        error_text = await response.text()
+                        logger.error(f"API request failed with status {response.status}: {error_text}")
+                        return {'error': f'API request failed with status {response.status}: {error_text}'}
                         
         except Exception as e:
             logger.error(f"Error making API request: {e}")
@@ -178,6 +185,20 @@ class PlatinumAPICog(commands.Cog):
             
             await interaction.response.defer()
             
+            # Check if required parameters are provided
+            if not any([team, league, search]):
+                embed = discord.Embed(
+                    title="❌ Missing Parameters",
+                    description="You need to provide at least one of the following:\n"
+                               "• `league`: League ID (e.g., 39 for Premier League)\n"
+                               "• `team`: Team ID\n"
+                               "• `search`: Player name to search for\n\n"
+                               "**Example:** `/api_players football league:39 season:2024`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
             # Build parameters
             params = {}
             if team:
@@ -188,6 +209,8 @@ class PlatinumAPICog(commands.Cog):
                 params['season'] = season
             if search:
                 params['search'] = search
+            
+            logger.info(f"Making API request for players: sport={sport}, params={params}")
             
             # Make API request
             result = await self.make_api_request(sport, 'players', params)
@@ -206,7 +229,11 @@ class PlatinumAPICog(commands.Cog):
             if not players:
                 embed = discord.Embed(
                     title="👥 Players Query",
-                    description="No players found for the specified criteria.",
+                    description="No players found for the specified criteria.\n\n"
+                               "**Try:**\n"
+                               "• Use `/api_leagues` to find league IDs\n"
+                               "• Use `/api_teams` to find team IDs\n"
+                               "• Check if the season is valid for the league",
                     color=0x9b59b6
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
@@ -362,16 +389,32 @@ class PlatinumAPICog(commands.Cog):
             
             await interaction.response.defer()
             
+            # Check if required parameters are provided
+            if not any([fixture, league]):
+                embed = discord.Embed(
+                    title="❌ Missing Parameters",
+                    description="You need to provide at least one of the following:\n"
+                               "• `fixture`: Fixture ID (from /api_fixtures)\n"
+                               "• `league`: League ID (e.g., 39 for Premier League)\n\n"
+                               "**Note:** Odds are only available for upcoming or recent matches.\n\n"
+                               "**Example:** `/api_odds football league:39 season:2024`",
+                    color=0xff0000
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+            
             # Build parameters
             params = {}
             if fixture:
-                params['fixture'] = fixture
+                params['game'] = fixture  # API-Sports uses 'game' not 'fixture'
             if league:
                 params['league'] = league
             if season:
                 params['season'] = season
             if bookmaker:
                 params['bookmaker'] = bookmaker
+            
+            logger.info(f"Making API request for odds: sport={sport}, params={params}")
             
             # Make API request
             result = await self.make_api_request(sport, 'odds', params)
@@ -390,7 +433,15 @@ class PlatinumAPICog(commands.Cog):
             if not odds_data:
                 embed = discord.Embed(
                     title="💰 Odds Query",
-                    description="No odds found for the specified criteria.",
+                    description="No odds found for the specified criteria.\n\n"
+                               "**Possible reasons:**\n"
+                               "• No upcoming matches in this league/season\n"
+                               "• Odds not yet available for these matches\n"
+                               "• League doesn't provide odds data\n\n"
+                               "**Try:**\n"
+                               "• Use `/api_fixtures` to find recent/upcoming matches\n"
+                               "• Use `/api_leagues` to find league IDs\n"
+                               "• Check if the season is current",
                     color=0x9b59b6
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
