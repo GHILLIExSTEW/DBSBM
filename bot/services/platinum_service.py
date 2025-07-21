@@ -214,15 +214,29 @@ class PlatinumService:
                 # Start the export generation in the background
                 logger.info(f"Starting background export task for export_id={export_id}")
                 try:
-                    # Create the task and store it for potential monitoring
-                    task = asyncio.create_task(
-                        self._generate_export(export_id, guild_id, export_type, export_format, created_by)
-                    )
-                    # Add error handling for the task
-                    task.add_done_callback(lambda t: self._handle_export_task_completion(t, export_id))
-                    logger.info(f"Background export task created for export_id={export_id}")
+                    # Get the current event loop
+                    loop = asyncio.get_event_loop()
+                    
+                    # Create the task with proper error handling
+                    async def run_export_with_logging():
+                        try:
+                            logger.info(f"Background export task starting for export_id={export_id}")
+                            await self._generate_export(export_id, guild_id, export_type, export_format, created_by)
+                            logger.info(f"Background export task completed for export_id={export_id}")
+                        except Exception as e:
+                            logger.error(f"Background export task failed for export_id={export_id}: {e}", exc_info=True)
+                            # Try to send error notification
+                            try:
+                                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}")
+                            except Exception as notify_error:
+                                logger.error(f"Failed to send error notification for export_id={export_id}: {notify_error}")
+                    
+                    # Create and start the task
+                    task = loop.create_task(run_export_with_logging())
+                    logger.info(f"Background export task created and started for export_id={export_id}")
+                    
                 except Exception as e:
-                    logger.error(f"Failed to start background export task for export_id={export_id}: {e}")
+                    logger.error(f"Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
                     # Try to send immediate error notification
                     await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}")
                 
@@ -633,7 +647,25 @@ class PlatinumService:
             logger.error(f"Error getting export count: {e}")
             return 0
 
-    # Webhook Methods (fix method names)
+    async def test_export_system(self, guild_id: int, user_id: int) -> bool:
+        """Test the export system by creating a simple test export."""
+        try:
+            logger.info(f"Testing export system for guild_id={guild_id}")
+            
+            # Create a test export
+            export_id = await self.create_data_export(guild_id, "analytics", "json", user_id)
+            
+            if export_id:
+                logger.info(f"Test export created successfully with ID: {export_id}")
+                return True
+            else:
+                logger.error("Test export creation failed")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Test export system failed: {e}", exc_info=True)
+            return False
+
     async def create_webhook(self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str) -> bool:
         """Create a webhook integration (alias for create_webhook_integration)."""
         return await self.create_webhook_integration(guild_id, webhook_name, webhook_url, webhook_type)

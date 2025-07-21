@@ -279,6 +279,50 @@ class PlatinumCog(commands.Cog):
                 "❌ An error occurred while creating the export.", ephemeral=True
             )
 
+    @app_commands.command(name="test_export", description="Test the export system (Platinum only)")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def test_export(self, interaction: Interaction):
+        """Test the export system to verify it's working."""
+        try:
+            guild_id = interaction.guild_id
+            
+            # Check Platinum status
+            if not await self.bot.platinum_service.is_platinum_guild(guild_id):
+                await interaction.response.send_message(
+                    "❌ This feature requires a Platinum subscription.", ephemeral=True
+                )
+                return
+            
+            await interaction.response.defer()
+            
+            # Test the export system
+            success = await self.bot.platinum_service.test_export_system(guild_id, interaction.user.id)
+            
+            if success:
+                embed = discord.Embed(
+                    title="🧪 Export System Test",
+                    description="Export system test initiated successfully.",
+                    color=0x00ff00
+                )
+                embed.add_field(name="Status", value="✅ Test Export Created", inline=True)
+                embed.add_field(name="Type", value="analytics", inline=True)
+                embed.add_field(name="Format", value="JSON", inline=True)
+                embed.set_footer(text="Check logs for detailed progress and notification delivery.")
+            else:
+                embed = discord.Embed(
+                    title="❌ Export System Test Failed",
+                    description="Export system test failed. Check logs for details.",
+                    color=0xff0000
+                )
+            
+            await interaction.followup.send(embed=embed)
+            
+        except Exception as e:
+            logger.error(f"Error in test_export: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while testing the export system.", ephemeral=True
+            )
+
     @app_commands.command(name="analytics", description="View Platinum analytics (Platinum only)")
     @app_commands.checks.has_permissions(administrator=True)
     async def view_analytics(self, interaction: Interaction):
