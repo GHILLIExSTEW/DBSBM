@@ -14,8 +14,8 @@ from pathlib import Path
 bot_dir = Path(__file__).parent.parent / "bot"
 sys.path.insert(0, str(bot_dir))
 
-from data.db_manager import DatabaseManager
-from utils.environment_validator import load_environment_variables
+from bot.data.db_manager import DatabaseManager
+from bot.utils.environment_validator import validate_environment
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +28,7 @@ async def run_platinum_migration():
     """Run the Platinum tier database migration."""
     try:
         # Load environment variables
-        load_environment_variables()
+        validate_environment()
         logger.info("✅ Environment variables loaded")
         
         # Initialize database manager

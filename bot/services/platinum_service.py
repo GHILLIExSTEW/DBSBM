@@ -288,4 +288,86 @@ class PlatinumService:
             return result if result else {}
         except Exception as e:
             logger.error(f"Error getting Platinum limits: {e}")
-            return {} 
+            return {}
+
+    # Analytics Methods
+    async def get_analytics(self, guild_id: int) -> Dict[str, Any]:
+        """Get comprehensive analytics for a Platinum guild."""
+        try:
+            analytics = {}
+            
+            # Get webhook count
+            webhooks = await self.get_webhook_integrations(guild_id)
+            analytics['webhook_count'] = len(webhooks)
+            
+            # Get export count for current month
+            from datetime import datetime
+            current_month = datetime.now().month
+            exports = await self.get_recent_exports(guild_id, days=30)
+            analytics['export_count'] = len(exports)
+            
+            # Get API usage (placeholder for now)
+            analytics['api_requests'] = 0
+            
+            # Get top features
+            feature_analytics = await self.get_feature_analytics(guild_id)
+            if feature_analytics:
+                top_features = [f"{feat['feature_name']}: {feat['usage_count']}" for feat in feature_analytics[:3]]
+                analytics['top_features'] = '\n'.join(top_features)
+            else:
+                analytics['top_features'] = 'No data available'
+            
+            return analytics
+        except Exception as e:
+            logger.error(f"Error getting analytics: {e}")
+            return {
+                'webhook_count': 0,
+                'export_count': 0,
+                'api_requests': 0,
+                'top_features': 'Error loading data'
+            }
+
+    async def get_webhook_count(self, guild_id: int) -> int:
+        """Get the number of active webhooks for a guild."""
+        try:
+            webhooks = await self.get_webhook_integrations(guild_id)
+            return len(webhooks)
+        except Exception as e:
+            logger.error(f"Error getting webhook count: {e}")
+            return 0
+
+    async def get_export_count(self, guild_id: int, month: int) -> int:
+        """Get the number of exports for a specific month."""
+        try:
+            from datetime import datetime
+            current_year = datetime.now().year
+            start_date = datetime(current_year, month, 1)
+            
+            if month == 12:
+                end_date = datetime(current_year + 1, 1, 1)
+            else:
+                end_date = datetime(current_year, month + 1, 1)
+            
+            exports = await self.db_manager.fetch_all(
+                """
+                SELECT COUNT(*) as count FROM data_exports 
+                WHERE guild_id = %s AND created_at >= %s AND created_at < %s
+                """,
+                guild_id, start_date, end_date
+            )
+            
+            return exports[0]['count'] if exports else 0
+        except Exception as e:
+            logger.error(f"Error getting export count: {e}")
+            return 0
+
+    # Webhook Methods (fix method names)
+    async def create_webhook(self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str) -> bool:
+        """Create a webhook integration (alias for create_webhook_integration)."""
+        return await self.create_webhook_integration(guild_id, webhook_name, webhook_url, webhook_type)
+
+    # Export Methods (fix method names)
+    async def create_export(self, guild_id: int, export_type: str, export_format: str, created_by: int) -> bool:
+        """Create a data export (alias for create_data_export)."""
+        result = await self.create_data_export(guild_id, export_type, export_format, created_by)
+        return result is not None 
