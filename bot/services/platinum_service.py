@@ -184,10 +184,10 @@ class PlatinumService:
 
     # Data Export
     async def create_data_export(self, guild_id: int, export_type: str,
-                               export_format: str, created_by: int) -> int:
+                               export_format: str, created_by: int, user_id: Optional[int] = None) -> int:
         """Create a data export for a Platinum guild."""
         try:
-            logger.critical(f"[EXPORT DEBUG] create_data_export function ENTERED - guild_id={guild_id}, type={export_type}, format={export_format}")
+            logger.critical(f"[EXPORT DEBUG] create_data_export function ENTERED - guild_id={guild_id}, type={export_type}, format={export_format}, user_filter={user_id}")
             
             if not await self.is_platinum_guild(guild_id):
                 logger.critical(f"[EXPORT DEBUG] Not a platinum guild: {guild_id}")
@@ -208,10 +208,10 @@ class PlatinumService:
             logger.critical(f"[EXPORT DEBUG] About to create DB record for export")
             result = await self.db_manager.execute(
                 """
-                INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at)
-                VALUES (%s, %s, %s, %s, NOW())
+                INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at, user_filter)
+                VALUES (%s, %s, %s, %s, NOW(), %s)
                 """,
-                guild_id, export_type, export_format, created_by
+                guild_id, export_type, export_format, created_by, user_id
             )
             
             # Extract the last_id from the result tuple
@@ -228,7 +228,7 @@ class PlatinumService:
                     async def run_export_with_logging():
                         try:
                             logger.critical(f"[EXPORT DEBUG] Background export task starting for export_id={export_id}")
-                            await self._generate_export(export_id, guild_id, export_type, export_format, created_by)
+                            await self._generate_export(export_id, guild_id, export_type, export_format, created_by, user_id)
                             logger.critical(f"[EXPORT DEBUG] Background export task completed for export_id={export_id}")
                         except Exception as e:
                             logger.critical(f"[EXPORT DEBUG] Background export task failed for export_id={export_id}: {e}", exc_info=True)
@@ -269,21 +269,21 @@ class PlatinumService:
         except Exception as e:
             logger.error(f"Error in export task completion handler for {export_id}: {e}")
 
-    async def _generate_export(self, export_id: int, guild_id: int, export_type: str, export_format: str, created_by: int):
+    async def _generate_export(self, export_id: int, guild_id: int, export_type: str, export_format: str, created_by: int, user_id: Optional[int] = None):
         """Generate the actual export file and send notification."""
         try:
             logger.info(f"Starting export generation for export_id={export_id}, type={export_type}, format={export_format}")
             
             # Generate the export data
             logger.info(f"Fetching export data for export_id={export_id}")
-            export_data = await self._get_export_data(guild_id, export_type)
+            export_data = await self._get_export_data(guild_id, export_type, user_id)
             
             logger.info(f"Export data fetched for export_id={export_id}: {len(export_data) if isinstance(export_data, list) else 'dict'} items")
             
             if not export_data:
                 logger.warning(f"No data found for export_id={export_id}, type={export_type}")
                 await self._update_export_status(export_id, False, "No data found for export")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "No data found")
+                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"No data found")
                 return
             
             # Create the export file
@@ -310,29 +310,46 @@ class PlatinumService:
             await self._update_export_status(export_id, False, str(e))
             await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e))
 
-    async def _get_export_data(self, guild_id: int, export_type: str) -> List[Dict[str, Any]]:
+    async def _get_export_data(self, guild_id: int, export_type: str, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get data for the specified export type."""
         try:
             if export_type == "bets":
-                return await self.db_manager.fetch_all(
-                    "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC",
-                    guild_id
-                )
+                query = "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC"
+                params = [guild_id]
+                if user_id:
+                    query += " AND user_id = %s"
+                    params.append(user_id)
+                return await self.db_manager.fetch_all(query, *params)
             elif export_type == "users":
-                return await self.db_manager.fetch_all(
-                    "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC",
-                    guild_id
-                )
+                query = "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC"
+                params = [guild_id]
+                if user_id:
+                    query += " AND user_id = %s"
+                    params.append(user_id)
+                return await self.db_manager.fetch_all(query, *params)
             elif export_type == "analytics":
-                return await self.db_manager.fetch_all(
-                    "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC",
-                    guild_id
-                )
+                query = "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC"
+                params = [guild_id]
+                if user_id:
+                    query += " AND user_id = %s"
+                    params.append(user_id)
+                return await self.db_manager.fetch_all(query, *params)
             elif export_type == "all":
-                # Combine all data types
-                bets = await self.db_manager.fetch_all("SELECT * FROM bets WHERE guild_id = %s", guild_id)
-                users = await self.db_manager.fetch_all("SELECT * FROM users WHERE guild_id = %s", guild_id)
-                analytics = await self.db_manager.fetch_all("SELECT * FROM platinum_analytics WHERE guild_id = %s", guild_id)
+                # Combine all data types with user filtering
+                bets_query = "SELECT * FROM bets WHERE guild_id = %s ORDER BY created_at DESC"
+                users_query = "SELECT * FROM users WHERE guild_id = %s ORDER BY created_at DESC"
+                analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = %s ORDER BY last_used DESC"
+                
+                params = [guild_id]
+                if user_id:
+                    bets_query += " AND user_id = %s"
+                    users_query += " AND user_id = %s"
+                    analytics_query += " AND user_id = %s"
+                    params.append(user_id)
+                
+                bets = await self.db_manager.fetch_all(bets_query, *params)
+                users = await self.db_manager.fetch_all(users_query, *params)
+                analytics = await self.db_manager.fetch_all(analytics_query, *params)
                 
                 return {
                     "bets": bets,
@@ -377,38 +394,45 @@ class PlatinumService:
             return None
 
     async def _write_csv_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
-        """Write data to CSV file."""
+        """Write data to CSV file with improved formatting."""
         try:
             import csv
             
             if not data:
                 logger.warning(f"No data to write for CSV export: {export_type}")
-                # Create empty CSV with headers
+                # Create empty CSV with message
                 with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-                    csvfile.write("No data available\n")
+                    csvfile.write("No data available for export\n")
                 return
                 
             with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
                 if export_type == "all":
-                    # Handle multiple data types
+                    # Handle multiple data types with better formatting
                     for data_type, data_list in data.items():
+                        csvfile.write(f"\n{'='*50}\n")
+                        csvfile.write(f"{data_type.upper()} DATA\n")
+                        csvfile.write(f"{'='*50}\n")
+                        
                         if data_list and len(data_list) > 0:
-                            # Get field names from first row
-                            fieldnames = list(data_list[0].keys())
-                            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                            writer.writeheader()
-                            writer.writerows(data_list)
+                            # Clean and format the data
+                            cleaned_data = self._clean_export_data(data_list, data_type)
+                            if cleaned_data:
+                                fieldnames = list(cleaned_data[0].keys())
+                                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                                writer.writeheader()
+                                writer.writerows(cleaned_data)
                         else:
-                            # Write empty section for this data type
-                            csvfile.write(f"\n{data_type.upper()} DATA\n")
                             csvfile.write("No data available\n")
                 else:
-                    # Single data type
+                    # Single data type with improved formatting
                     if len(data) > 0:
-                        fieldnames = list(data[0].keys())
-                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                        writer.writeheader()
-                        writer.writerows(data)
+                        # Clean and format the data
+                        cleaned_data = self._clean_export_data(data, export_type)
+                        if cleaned_data:
+                            fieldnames = list(cleaned_data[0].keys())
+                            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                            writer.writeheader()
+                            writer.writerows(cleaned_data)
                     else:
                         csvfile.write("No data available\n")
                         
@@ -418,21 +442,131 @@ class PlatinumService:
             logger.error(f"Error writing CSV file {file_path}: {e}", exc_info=True)
             raise
 
+    def _clean_export_data(self, data: List[Dict[str, Any]], export_type: str) -> List[Dict[str, Any]]:
+        """Clean and format export data for better readability."""
+        try:
+            cleaned_data = []
+            
+            for item in data:
+                cleaned_item = {}
+                
+                if export_type == "bets":
+                    # Format betting data for better readability
+                    cleaned_item = {
+                        "Bet ID": item.get('id', 'N/A'),
+                        "User": item.get('user_name', 'Unknown'),
+                        "Date": self._format_datetime(item.get('created_at')),
+                        "Sport": item.get('sport', 'N/A'),
+                        "League": item.get('league', 'N/A'),
+                        "Teams": f"{item.get('away_team', 'N/A')} @ {item.get('home_team', 'N/A')}",
+                        "Bet Type": item.get('bet_type', 'N/A'),
+                        "Selection": item.get('selection', 'N/A'),
+                        "Odds": item.get('odds', 'N/A'),
+                        "Amount": f"${item.get('amount', 0):.2f}",
+                        "Potential Win": f"${item.get('potential_win', 0):.2f}",
+                        "Status": item.get('status', 'pending').title(),
+                        "Result": item.get('result', 'N/A')
+                    }
+                elif export_type == "users":
+                    # Format user data for better readability
+                    cleaned_item = {
+                        "User ID": item.get('user_id', 'N/A'),
+                        "Username": item.get('username', 'Unknown'),
+                        "Joined": self._format_datetime(item.get('created_at')),
+                        "Total Bets": item.get('total_bets', 0),
+                        "Wins": item.get('wins', 0),
+                        "Losses": item.get('losses', 0),
+                        "Win Rate": f"{item.get('win_rate', 0):.1f}%",
+                        "Total Wagered": f"${item.get('total_wagered', 0):.2f}",
+                        "Total Won": f"${item.get('total_won', 0):.2f}",
+                        "Net Profit": f"${item.get('net_profit', 0):.2f}"
+                    }
+                elif export_type == "analytics":
+                    # Format analytics data for better readability
+                    cleaned_item = {
+                        "Feature": item.get('feature_name', 'N/A'),
+                        "Last Used": self._format_datetime(item.get('last_used')),
+                        "Usage Count": item.get('usage_count', 0),
+                        "Guild ID": item.get('guild_id', 'N/A')
+                    }
+                else:
+                    # Generic formatting for unknown types
+                    for key, value in item.items():
+                        if isinstance(value, dict):
+                            cleaned_item[key] = str(value)[:100] + "..." if len(str(value)) > 100 else str(value)
+                        elif isinstance(value, (datetime, str)) and 'date' in key.lower() or 'time' in key.lower():
+                            cleaned_item[key] = self._format_datetime(value)
+                        else:
+                            cleaned_item[key] = str(value)[:50] + "..." if len(str(value)) > 50 else str(value)
+                
+                cleaned_data.append(cleaned_item)
+            
+            return cleaned_data
+            
+        except Exception as e:
+            logger.error(f"Error cleaning export data: {e}")
+            return data  # Return original data if cleaning fails
+
+    def _format_datetime(self, value) -> str:
+        """Format datetime values for better readability."""
+        try:
+            if isinstance(value, str):
+                # Try to parse string datetime
+                from datetime import datetime
+                try:
+                    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                    return dt.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    return value
+            elif hasattr(value, 'strftime'):
+                return value.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                return str(value)
+        except:
+            return str(value)
+
     async def _write_json_file(self, data: List[Dict[str, Any]], file_path: str):
-        """Write data to JSON file."""
+        """Write data to JSON file with improved formatting."""
         try:
             import json
             
             if not data:
                 logger.warning("No data to write for JSON export")
                 # Create empty JSON structure
-                empty_data = {"message": "No data available", "timestamp": str(datetime.utcnow())}
+                empty_data = {
+                    "message": "No data available for export",
+                    "timestamp": str(datetime.utcnow()),
+                    "export_status": "empty"
+                }
                 with open(file_path, 'w', encoding='utf-8') as jsonfile:
                     json.dump(empty_data, jsonfile, indent=2, default=str)
                 return
                 
+            # Clean and format the data for JSON
+            cleaned_data = []
+            for item in data:
+                cleaned_item = {}
+                for key, value in item.items():
+                    if isinstance(value, dict):
+                        cleaned_item[key] = value
+                    elif isinstance(value, (datetime, str)) and ('date' in key.lower() or 'time' in key.lower()):
+                        cleaned_item[key] = self._format_datetime(value)
+                    else:
+                        cleaned_item[key] = value
+                cleaned_data.append(cleaned_item)
+            
+            # Create structured JSON output
+            json_output = {
+                "export_info": {
+                    "timestamp": str(datetime.utcnow()),
+                    "total_records": len(cleaned_data),
+                    "export_status": "completed"
+                },
+                "data": cleaned_data
+            }
+                
             with open(file_path, 'w', encoding='utf-8') as jsonfile:
-                json.dump(data, jsonfile, indent=2, default=str)
+                json.dump(json_output, jsonfile, indent=2, default=str)
                 
             logger.info(f"JSON file written successfully: {file_path}")
             
@@ -500,7 +634,7 @@ class PlatinumService:
         except Exception as e:
             logger.error(f"Error updating export status: {e}")
 
-    async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None):
+    async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None, user_filter: Optional[int] = None):
         """Send notification to user about export completion."""
         try:
             logger.info(f"Sending export notification: guild_id={guild_id}, user_id={user_id}, success={success}")
@@ -515,15 +649,26 @@ class PlatinumService:
                 logger.error(f"User {user_id} not found in guild {guild_id} for export notification")
                 return
             
+            # Get user filter info if specified
+            user_filter_info = ""
+            if user_filter:
+                filtered_user = guild.get_member(user_filter)
+                if filtered_user:
+                    user_filter_info = f" for @{filtered_user.display_name}"
+                else:
+                    user_filter_info = f" for user {user_filter}"
+            
             embed = discord.Embed(
                 title="📊 Export Complete" if success else "❌ Export Failed",
-                description=f"Your {export_type} export in {export_format.upper()} format is ready!" if success else f"Failed to create {export_type} export in {export_format.upper()} format.",
+                description=f"Your {export_type} export{user_filter_info} in {export_format.upper()} format is ready!" if success else f"Failed to create {export_type} export{user_filter_info} in {export_format.upper()} format.",
                 color=0x00ff00 if success else 0xff0000,
                 timestamp=datetime.utcnow()
             )
             
             embed.add_field(name="Type", value=export_type, inline=True)
             embed.add_field(name="Format", value=export_format.upper(), inline=True)
+            if user_filter:
+                embed.add_field(name="User Filter", value=f"<@{user_filter}>", inline=True)
             
             if success and file_path:
                 embed.add_field(name="File", value=f"`{os.path.basename(file_path)}`", inline=False)
@@ -721,7 +866,11 @@ class PlatinumService:
         return await self.create_webhook_integration(guild_id, webhook_name, webhook_url, webhook_type)
 
     # Export Methods (fix method names)
-    async def create_export(self, guild_id: int, export_type: str, export_format: str, created_by: int) -> bool:
+    async def create_export(self, guild_id: int, export_type: str, export_format: str, created_by: int, user_id: Optional[int] = None) -> bool:
         """Create a data export (alias for create_data_export)."""
-        result = await self.create_data_export(guild_id, export_type, export_format, created_by)
-        return result is not None 
+        try:
+            export_id = await self.create_data_export(guild_id, export_type, export_format, created_by, user_id)
+            return export_id is not None and export_id > 0
+        except Exception as e:
+            logger.error(f"Error in create_export alias: {e}")
+            return False 

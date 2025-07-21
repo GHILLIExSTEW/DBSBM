@@ -217,7 +217,8 @@ class PlatinumCog(commands.Cog):
         self,
         interaction: Interaction,
         export_type: str,
-        format: str
+        format: str,
+        user: Optional[discord.Member] = None
     ):
         """Export server data for Platinum tier."""
         try:
@@ -250,9 +251,9 @@ class PlatinumCog(commands.Cog):
             
             await interaction.response.defer()
             
-            # Create export
+            # Create export with user filter if specified
             success = await self.bot.platinum_service.create_export(
-                guild_id, export_type, format, interaction.user.id
+                guild_id, export_type, format, interaction.user.id, user.id if user else None
             )
             
             if success:
@@ -263,6 +264,10 @@ class PlatinumCog(commands.Cog):
                 )
                 embed.add_field(name="Type", value=export_type, inline=True)
                 embed.add_field(name="Format", value=format.upper(), inline=True)
+                if user:
+                    embed.add_field(name="User Filter", value=f"@{user.display_name}", inline=True)
+                else:
+                    embed.add_field(name="User Filter", value="All Users", inline=True)
                 embed.set_footer(text="You will receive a notification when the export is ready.")
             else:
                 embed = discord.Embed(
