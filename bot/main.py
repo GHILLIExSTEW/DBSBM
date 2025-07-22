@@ -354,7 +354,7 @@ class BettingBot(commands.Bot):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
             try:
-                # Get all commands
+                # Get all commands BEFORE clearing anything
                 all_commands = self.tree.get_commands()
                 if not all_commands:
                     logger.error("No commands found")
@@ -366,8 +366,13 @@ class BettingBot(commands.Bot):
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
 
-                # Clear all commands and add setup command globally
+                # Store all commands that should go to guilds
+                guild_commands = [cmd for cmd in all_commands if cmd.name not in ("setup", "load_logos", "down", "up")]
+
+                # Clear all commands globally first
                 self.tree.clear_commands(guild=None)
+                
+                # Add setup command globally
                 self.tree.add_command(setup_command, guild=None)
                 await self.tree.sync()
                 logger.info("Global setup command synced")
@@ -422,9 +427,8 @@ class BettingBot(commands.Bot):
                         )
                     else:
                         # Add all commands except setup, load_logos, and maintenance commands to the guild
-                        for cmd in all_commands:
-                            if cmd.name not in ("setup", "load_logos", "down", "up"):
-                                self.tree.add_command(cmd, guild=guild_obj)
+                        for cmd in guild_commands:
+                            self.tree.add_command(cmd, guild=guild_obj)
                         logger.info(
                             f"Synced commands to guild {guild_id} (subscription: {subscription_level})"
                         )
