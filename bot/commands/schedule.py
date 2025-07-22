@@ -284,79 +284,61 @@ class SportSelect(Select):
         else:
             await interaction.response.edit_message(content=f"Schedule data for {sport} is not available yet.", view=None)
 
-class LeagueSelect(Select):
+class LeagueSelect(View):
     def __init__(self):
-        options = [
+        super().__init__(timeout=60)
+        
+    @discord.ui.select(
+        placeholder="Choose a league...",
+        options=[
             discord.SelectOption(label="NFL", value="nfl", description="National Football League"),
             discord.SelectOption(label="NCAA Football", value="ncaa_football", description="College Football")
         ]
-        super().__init__(placeholder="Choose a league...", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        league = self.values[0]
+    )
+    async def league_callback(self, interaction: discord.Interaction, select: Select):
+        league = select.values[0]
         
         if league == "nfl":
             view = WeekSelect("nfl")
             await interaction.response.edit_message(content="Select a week:", view=view)
         elif league == "ncaa_football":
-            view = WeekSelect("ncaa_football")
+            view = NCAAWeekSelect()
             await interaction.response.edit_message(content="Select a week:", view=view)
         else:
             await interaction.response.edit_message(content=f"Schedule data for {league} is not available yet.", view=None)
 
-class WeekSelect(Select):
+class WeekSelect(View):
     def __init__(self, league: str):
+        super().__init__(timeout=60)
         self.league = league
-        
-        if league == "nfl":
-            options = [
-                discord.SelectOption(label="Week 1", value="week_1"),
-                discord.SelectOption(label="Week 2", value="week_2"),
-                discord.SelectOption(label="Week 3", value="week_3"),
-                discord.SelectOption(label="Week 4", value="week_4"),
-                discord.SelectOption(label="Week 5", value="week_5"),
-                discord.SelectOption(label="Week 6", value="week_6"),
-                discord.SelectOption(label="Week 7", value="week_7"),
-                discord.SelectOption(label="Week 8", value="week_8"),
-                discord.SelectOption(label="Week 9", value="week_9"),
-                discord.SelectOption(label="Week 10", value="week_10"),
-                discord.SelectOption(label="Week 11", value="week_11"),
-                discord.SelectOption(label="Week 12", value="week_12"),
-                discord.SelectOption(label="Week 13", value="week_13"),
-                discord.SelectOption(label="Week 14", value="week_14"),
-                discord.SelectOption(label="Week 15", value="week_15"),
-                discord.SelectOption(label="Week 16", value="week_16"),
-                discord.SelectOption(label="Week 17", value="week_17"),
-                discord.SelectOption(label="Week 18", value="week_18"),
-                discord.SelectOption(label="Playoffs", value="playoffs"),
-                discord.SelectOption(label="Championship", value="championship")
-            ]
-        elif league == "ncaa_football":
-            options = [
-                discord.SelectOption(label="Week 1", value="week_1"),
-                discord.SelectOption(label="Week 2", value="week_2"),
-                discord.SelectOption(label="Week 3", value="week_3"),
-                discord.SelectOption(label="Week 4", value="week_4"),
-                discord.SelectOption(label="Week 5", value="week_5"),
-                discord.SelectOption(label="Week 6", value="week_6"),
-                discord.SelectOption(label="Week 7", value="week_7"),
-                discord.SelectOption(label="Week 8", value="week_8"),
-                discord.SelectOption(label="Week 9", value="week_9"),
-                discord.SelectOption(label="Week 10", value="week_10"),
-                discord.SelectOption(label="Week 11", value="week_11"),
-                discord.SelectOption(label="Week 12", value="week_12"),
-                discord.SelectOption(label="Week 13", value="week_13"),
-                discord.SelectOption(label="Week 14", value="week_14"),
-                discord.SelectOption(label="Week 15", value="week_15"),
-                discord.SelectOption(label="Bowl Games", value="bowl_games")
-            ]
-        else:
-            options = []
-            
-        super().__init__(placeholder="Choose a week...", options=options)
 
-    async def callback(self, interaction: discord.Interaction):
-        week = self.values[0]
+    @discord.ui.select(
+        placeholder="Choose a week...",
+        options=[
+            discord.SelectOption(label="Week 1", value="week_1"),
+            discord.SelectOption(label="Week 2", value="week_2"),
+            discord.SelectOption(label="Week 3", value="week_3"),
+            discord.SelectOption(label="Week 4", value="week_4"),
+            discord.SelectOption(label="Week 5", value="week_5"),
+            discord.SelectOption(label="Week 6", value="week_6"),
+            discord.SelectOption(label="Week 7", value="week_7"),
+            discord.SelectOption(label="Week 8", value="week_8"),
+            discord.SelectOption(label="Week 9", value="week_9"),
+            discord.SelectOption(label="Week 10", value="week_10"),
+            discord.SelectOption(label="Week 11", value="week_11"),
+            discord.SelectOption(label="Week 12", value="week_12"),
+            discord.SelectOption(label="Week 13", value="week_13"),
+            discord.SelectOption(label="Week 14", value="week_14"),
+            discord.SelectOption(label="Week 15", value="week_15"),
+            discord.SelectOption(label="Week 16", value="week_16"),
+            discord.SelectOption(label="Week 17", value="week_17"),
+            discord.SelectOption(label="Week 18", value="week_18"),
+            discord.SelectOption(label="Playoffs", value="playoffs"),
+            discord.SelectOption(label="Championship", value="championship")
+        ]
+    )
+    async def week_callback(self, interaction: discord.Interaction, select: Select):
+        week = select.values[0]
         
         try:
             if self.league == "nfl":
@@ -500,6 +482,99 @@ class WeekSelect(Select):
             if day != "BYE WEEK" and y_position < height - 200:
                 draw.line([(100, y_position - 10), (width - 100, y_position - 10)], 
                          fill='#cccccc', width=1)
+
+class NCAAWeekSelect(View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @discord.ui.select(
+        placeholder="Choose a week...",
+        options=[
+            discord.SelectOption(label="Week 1", value="week_1"),
+            discord.SelectOption(label="Week 2", value="week_2"),
+            discord.SelectOption(label="Week 3", value="week_3"),
+            discord.SelectOption(label="Week 4", value="week_4"),
+            discord.SelectOption(label="Week 5", value="week_5"),
+            discord.SelectOption(label="Week 6", value="week_6"),
+            discord.SelectOption(label="Week 7", value="week_7"),
+            discord.SelectOption(label="Week 8", value="week_8"),
+            discord.SelectOption(label="Week 9", value="week_9"),
+            discord.SelectOption(label="Week 10", value="week_10"),
+            discord.SelectOption(label="Week 11", value="week_11"),
+            discord.SelectOption(label="Week 12", value="week_12"),
+            discord.SelectOption(label="Week 13", value="week_13"),
+            discord.SelectOption(label="Week 14", value="week_14"),
+            discord.SelectOption(label="Week 15", value="week_15"),
+            discord.SelectOption(label="Bowl Games", value="bowl_games")
+        ]
+    )
+    async def week_callback(self, interaction: discord.Interaction, select: Select):
+        week = select.values[0]
+        
+        try:
+            image_path = await self.generate_placeholder_schedule_image(interaction.guild, week)
+            await interaction.response.send_message(file=discord.File(image_path))
+            os.remove(image_path)  # Clean up temp file
+            
+        except Exception as e:
+            logger.error(f"Error generating schedule image: {e}")
+            await interaction.response.send_message("Error generating schedule image.", ephemeral=True)
+
+    async def generate_placeholder_schedule_image(self, guild, week: str):
+        """Generate placeholder schedule image for other leagues"""
+        try:
+            # Create base image
+            image = self._create_schedule_base_image(guild)
+            draw = ImageDraw.Draw(image)
+            
+            # Load fonts
+            try:
+                header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+                text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+            except:
+                header_font = ImageFont.load_default()
+                text_font = ImageFont.load_default()
+            
+            # Add placeholder text
+            draw.text((600, 800), f"Schedule data for {week} coming soon!", font=header_font, fill='#ffffff', anchor="mm")
+            
+            # Save to temp file
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+            image.save(temp_file.name)
+            return temp_file.name
+            
+        except Exception as e:
+            logger.error(f"Error generating placeholder schedule image: {e}")
+            raise
+
+    def _create_schedule_base_image(self, guild):
+        """Create the base image with branding and layout"""
+        # Create base image
+        image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
+        draw = ImageDraw.Draw(image)
+        
+        # Load fonts
+        try:
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+        except:
+            title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
+            text_font = ImageFont.load_default()
+        
+        # Add PlayTracker Pro branding
+        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        
+        # Add guild name
+        guild_name = guild.name if guild else "Unknown Guild"
+        draw.text((600, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add copyright watermark
+        current_year = datetime.now().year
+        draw.text((600, 1550), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
+        
+        return image
 
 class ScheduleCog(commands.Cog):
     def __init__(self, bot):
