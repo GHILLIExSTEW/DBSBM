@@ -369,7 +369,7 @@ class PlayerPropImageGenerator:
         # Combine line and prop type for display
         line_and_prop = f"{line} {prop_full}"
         line_and_prop_w, line_and_prop_h = font_line.getbbox(line_and_prop)[2:]
-        line_and_prop_y = team_name_y + 16
+        line_and_prop_y = team_name_y + 40  # Increased from 16 to 40 for more vertical space
         draw.text(
             ((image_width - line_and_prop_w) // 2, line_and_prop_y),
             line_and_prop,

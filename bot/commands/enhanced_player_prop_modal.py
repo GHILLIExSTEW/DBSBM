@@ -736,6 +736,18 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     from bot.utils.image_url_converter import convert_image_path_to_url
                     webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
 
+                # Get member role for mention
+                member_role_id = None
+                guild_settings = await self.db_manager.fetch_one(
+                    "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                    (str(interaction.guild_id),),
+                )
+                if guild_settings and guild_settings.get("member_role"):
+                    member_role_id = guild_settings["member_role"]
+
+                # Prepare content with member role mention
+                content = f"<@&{member_role_id}>" if member_role_id else None
+
                 # Get webhook for the channel
                 webhooks = await channel.webhooks()
                 webhook = None
@@ -751,6 +763,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
                 # Post to channel using webhook
                 await webhook.send(
+                    content=content,
                     file=image_file,
                     username=webhook_username,
                     avatar_url=webhook_avatar_url
