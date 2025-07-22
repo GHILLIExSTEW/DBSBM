@@ -86,13 +86,14 @@ TEAM_SCHEDULES = {
 }
 
 class ScheduleTypeSelect(View):
-    def __init__(self):
+    def __init__(self, cog=None):
         super().__init__(timeout=60)
-        
+        self.cog = cog
+
     @discord.ui.button(label="League Schedule", style=discord.ButtonStyle.primary)
     async def league_schedule(self, interaction: discord.Interaction, button: Button):
         # Create league selection view
-        view = LeagueSelect()
+        view = LeagueSelect(self.cog)
         await interaction.response.edit_message(content="Select a league:", view=view)
         
     @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
@@ -363,8 +364,9 @@ class SportSelect(Select):
             await interaction.response.edit_message(content=f"Schedule data for {sport} is not available yet.", view=None)
 
 class LeagueSelect(View):
-    def __init__(self):
+    def __init__(self, cog=None):
         super().__init__(timeout=60)
+        self.cog = cog
         
     @discord.ui.select(
         placeholder="Choose a league...",
@@ -377,18 +379,20 @@ class LeagueSelect(View):
         league = select.values[0]
         
         if league == "nfl":
-            view = WeekSelect("nfl")
-            await interaction.response.edit_message(content="Select a week:", view=view)
+            view = WeekSelect("nfl", self.cog)
         elif league == "ncaa_football":
-            view = NCAAWeekSelect()
-            await interaction.response.edit_message(content="Select a week:", view=view)
+            view = NCAAWeekSelect(self.cog)
         else:
-            await interaction.response.edit_message(content=f"Schedule data for {league} is not available yet.", view=None)
+            await interaction.response.edit_message(content="League not supported yet.", view=None)
+            return
+            
+        await interaction.response.edit_message(content="Select a week:", view=view)
 
 class WeekSelect(View):
-    def __init__(self, league: str):
+    def __init__(self, league: str, cog=None):
         super().__init__(timeout=60)
         self.league = league
+        self.cog = cog
 
     @discord.ui.select(
         placeholder="Choose a week...",
@@ -430,8 +434,14 @@ class WeekSelect(View):
     async def generate_schedule_image(self, guild, week: str, league="NFL"):
         """Generate schedule image for a specific week and league"""
         try:
-            # Create base image
-            image = self._create_schedule_base_image(guild, league, week)
+            # Create base image using cog reference
+            if self.cog:
+                image = self.cog._create_schedule_base_image(guild, league, week)
+            else:
+                # Fallback: create basic image
+                image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
+                draw = ImageDraw.Draw(image)
+                draw.text((600, 800), "Error: Could not access image creation method", fill='#ffffff', anchor="mm")
             
             # Add schedule data
             self._add_schedule_data(image, week)
@@ -546,8 +556,9 @@ class WeekSelect(View):
                     y_position += 15
 
 class NCAAWeekSelect(View):
-    def __init__(self):
+    def __init__(self, cog=None):
         super().__init__(timeout=60)
+        self.cog = cog
 
     @discord.ui.select(
         placeholder="Choose a week...",
@@ -583,28 +594,35 @@ class NCAAWeekSelect(View):
             await interaction.response.send_message("Error generating schedule image.", ephemeral=True)
 
     async def generate_placeholder_schedule_image(self, guild, week: str):
-        """Generate placeholder schedule image for other leagues"""
+        """Generate placeholder schedule image for NCAA"""
         try:
-            # Create base image
-            image = self._create_schedule_base_image(guild, "NCAA", week)
+            # Create base image using cog reference
+            if self.cog:
+                image = self.cog._create_schedule_base_image(guild, "NCAA", week)
+            else:
+                # Fallback: create basic image
+                image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
+                draw = ImageDraw.Draw(image)
+                draw.text((600, 800), "Error: Could not access image creation method", fill='#ffffff', anchor="mm")
+            
             draw = ImageDraw.Draw(image)
             
-            # Load fonts
+            # Add placeholder text
             try:
-                header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
-                text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+                text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 32)
             except:
-                header_font = ImageFont.load_default()
                 text_font = ImageFont.load_default()
             
-            # Add placeholder text
-            draw.text((600, 800), f"Schedule data for {week} coming soon!", font=header_font, fill='#ffffff', anchor="mm")
+            draw.text((600, 800), f"NCAA Schedule for {week.replace('_', ' ').title()}", 
+                     font=text_font, fill='#ffffff', anchor="mm")
+            draw.text((600, 850), "Coming Soon!", font=text_font, fill='#ffffff', anchor="mm")
             
-            # Save to temp file
+            # Save to temporary file
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            image.save(temp_file.name)
-            return temp_file.name
+            image.save(temp_file.name, 'PNG')
+            temp_file.close()
             
+            return temp_file.name
         except Exception as e:
             logger.error(f"Error generating placeholder schedule image: {e}")
             raise
@@ -722,13 +740,122 @@ class ScheduleCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
+        """Create the base image with branding and layout"""
+        # Create base image
+        image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
+        draw = ImageDraw.Draw(image)
+        
+        # Load fonts
+        try:
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 52)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+        except:
+            title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
+            text_font = ImageFont.load_default()
+        
+        # Add Bet Tracking AI branding
+        draw.text((600, 40), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
+        
+        # Add subtitle
+        if guild:
+            subtitle_text = f"{guild.name.upper()}"
+        else:
+            subtitle_text = "BET TRACKING AI GUILD"
+        draw.text((600, 100), subtitle_text, font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add league and schedule type info on new line
+        schedule_type = week.replace('_', ' ').title()
+        draw.text((600, 140), f"{league.upper()} {schedule_type} SCHEDULE", font=text_font, fill='#ffffff', anchor="mm")
+        
+        # Add logos
+        try:
+            # Add Bet Tracking AI logo on the left
+            ptp_logo_path = "bot/static/logos/default_image.png"
+            if os.path.exists(ptp_logo_path):
+                ptp_logo = Image.open(ptp_logo_path)
+                ptp_logo = ptp_logo.resize((80, 80))  # Made larger
+                # Convert to RGBA if needed
+                if ptp_logo.mode != 'RGBA':
+                    ptp_logo = ptp_logo.convert('RGBA')
+                # Add a white background rectangle first
+                draw.rectangle([40, 10, 120, 90], fill='#ffffff', outline='#000000', width=2)
+                image.paste(ptp_logo, (40, 10), ptp_logo)
+                # Add text label
+                draw.text((80, 95), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+                logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
+            else:
+                logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
+                # Add fallback rectangle
+                draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+                draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+            
+            # Add guild logo on the right - works for ALL guilds
+            if guild:
+                # Try multiple possible guild logo paths
+                guild_logo_paths = [
+                    f"bot/static/guilds/{guild.id}/default_image.png",
+                    f"bot/static/guilds/{guild.id}/background_image.png",
+                    f"bot/static/guilds/{guild.id}/logo.png",
+                    f"bot/static/guilds/{guild.id}/guild_logo.png"
+                ]
+                
+                guild_logo_loaded = False
+                for guild_logo_path in guild_logo_paths:
+                    if os.path.exists(guild_logo_path):
+                        try:
+                            guild_logo = Image.open(guild_logo_path)
+                            guild_logo = guild_logo.resize((80, 80))  # Made larger
+                            # Convert to RGBA if needed
+                            if guild_logo.mode != 'RGBA':
+                                guild_logo = guild_logo.convert('RGBA')
+                            # Add a white background rectangle first
+                            draw.rectangle([1080, 10, 1160, 90], fill='#ffffff', outline='#000000', width=2)
+                            image.paste(guild_logo, (1080, 10), guild_logo)
+                            # Add guild name label
+                            guild_name_short = guild.name[:8] if len(guild.name) > 8 else guild.name
+                            draw.text((1120, 95), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                            logger.info(f"Added guild logo from {guild_logo_path}")
+                            guild_logo_loaded = True
+                            break
+                        except Exception as e:
+                            logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
+                            continue
+                
+                if not guild_logo_loaded:
+                    # No guild logo found, create a custom guild indicator
+                    draw.rectangle([1080, 10, 1160, 90], fill='#4a90e2', outline='#ffffff', width=2)
+                    guild_name_short = guild.name[:6] if len(guild.name) > 6 else guild.name
+                    draw.text((1120, 50), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                    logger.info(f"No guild logo found for {guild.name}, using custom indicator")
+            else:
+                # No guild context, show generic indicator
+                draw.rectangle([1080, 10, 1160, 90], fill='#666666', outline='#ffffff', width=2)
+                draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
+                logger.warning("No guild context available")
+        except Exception as e:
+            logger.error(f"Could not load logos: {e}")
+            # Add fallback colored rectangles for debugging
+            draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+            draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+            draw.rectangle([1080, 10, 1160, 90], fill='#00ff00', outline='#ffffff', width=2)
+            draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
+        
+        # Add copyright watermark
+        current_year = datetime.now().year
+        draw.text((600, 1580), f"© Bet Tracking AI {current_year}", font=text_font, fill='#666666', anchor="mm")
+        
+        return image
+
     @app_commands.command(name="schedule", description="View sports schedules")
     async def schedule_command(self, interaction: discord.Interaction):
         """Main schedule command that initiates the flow"""
         logger.info(f"Schedule command initiated by {interaction.user.name} in guild {interaction.guild_id}")
         
         # Create the initial view with League Schedule vs Team Schedule buttons
-        view = ScheduleTypeSelect()
+        view = ScheduleTypeSelect(self)
         await interaction.response.send_message("Choose schedule type:", view=view, ephemeral=True)
 
 async def setup(bot):
