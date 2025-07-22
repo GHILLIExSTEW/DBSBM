@@ -237,14 +237,15 @@ class TeamWeekSelect(View):
         return temp_file.name
     
     def _create_schedule_base_image(self, guild):
-        # Create base image (same as league schedule)
+        """Create the base image with branding and layout"""
+        # Create base image
         image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
         draw = ImageDraw.Draw(image)
         
         # Load fonts
         try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 52)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
             text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
         except:
             title_font = ImageFont.load_default()
@@ -252,11 +253,10 @@ class TeamWeekSelect(View):
             text_font = ImageFont.load_default()
         
         # Add PlayTracker Pro branding
-        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 60), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add guild name
-        guild_name = guild.name if guild else "Unknown Guild"
-        draw.text((600, 120), f"{guild_name} Team Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        # Add subtitle
+        draw.text((600, 130), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
@@ -434,15 +434,19 @@ class WeekSelect(View):
         """Add NFL schedule data to the image"""
         draw = ImageDraw.Draw(image)
         
-        # Load fonts
+        # Load fonts with better sizing
         try:
-            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 42)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 28)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 22)
             small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
+            time_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 20)
         except:
             header_font = ImageFont.load_default()
+            title_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
             small_font = ImageFont.load_default()
+            time_font = ImageFont.load_default()
         
         # Get image dimensions
         width, height = image.size
@@ -451,37 +455,54 @@ class WeekSelect(View):
         games = NFL_SCHEDULE_2025_2026.get(week, [])
         if not games:
             # If no data for this week, show placeholder
-            draw.text((100, 500), f"No schedule data available for {week.replace('_', ' ').title()}", 
-                     font=header_font, fill='#000000')
+            draw.text((600, 800), f"No schedule data available for {week.replace('_', ' ').title()}", 
+                     font=header_font, fill='#ffffff', anchor="mm")
             return
         
-        # Create white semi-transparent overlay box
-        overlay = Image.new('RGBA', (width - 100, height - 500), (255, 255, 255, 100))
-        image.paste(overlay, (50, 450), overlay)
+        # Create a better background overlay with more contrast
+        overlay = Image.new('RGBA', (width - 80, height - 400), (255, 255, 255, 180))
+        image.paste(overlay, (40, 350), overlay)
         
-        # Add week title
+        # Add week title with better positioning
         week_title = week.replace('_', ' ').title()
-        draw.text((100, 500), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#000000')
+        draw.text((600, 380), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
         
-        # Add games
-        y_position = 550
+        # Add games with better spacing and formatting
+        y_position = 450
+        current_day = None
+        
         for day, date, matchup, time, channel in games:
             # Check if this is a bye week entry
             if day == "BYE WEEK":
                 # Draw bye week in different style
-                draw.text((100, y_position), f"BYE WEEK: {matchup}", font=text_font, fill='#666666')
-                y_position += 60
+                draw.text((80, y_position), f"BYE WEEK: {matchup}", font=title_font, fill='#666666')
+                y_position += 80
             else:
-                # Draw regular game
-                draw.text((100, y_position), f"{day}, {date}", font=small_font, fill='#000000')
-                draw.text((100, y_position + 25), matchup, font=text_font, fill='#000000')
-                draw.text((100, y_position + 50), f"{time} - {channel}", font=small_font, fill='#000000')
-                y_position += 100
-            
-            # Add separator line (but not after bye weeks)
-            if day != "BYE WEEK" and y_position < height - 200:
-                draw.line([(100, y_position - 10), (width - 100, y_position - 10)], 
-                         fill='#cccccc', width=1)
+                # Group games by day with day headers
+                if current_day != day:
+                    current_day = day
+                    # Add day separator with background
+                    day_bg = Image.new('RGBA', (width - 160, 40), (70, 130, 180, 200))
+                    image.paste(day_bg, (80, y_position - 10), day_bg)
+                    draw.text((600, y_position + 10), f"{day}, {date}", font=title_font, fill='#ffffff', anchor="mm")
+                    y_position += 60
+                
+                # Draw game details with better spacing
+                # Team matchup
+                draw.text((100, y_position), matchup, font=text_font, fill='#1a1a1a')
+                
+                # Time and channel on the right side
+                time_text = f"{time} - {channel}"
+                time_width = draw.textlength(time_text, font=time_font)
+                draw.text((width - 100 - time_width, y_position), time_text, font=time_font, fill='#444444')
+                
+                y_position += 50
+                
+                # Add subtle separator line between games
+                if y_position < height - 200:
+                    draw.line([(100, y_position - 5), (width - 100, y_position - 5)], 
+                             fill='#e0e0e0', width=1)
+                    y_position += 20
 
 class NCAAWeekSelect(View):
     def __init__(self):
@@ -555,8 +576,8 @@ class NCAAWeekSelect(View):
         
         # Load fonts
         try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 52)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
             text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
         except:
             title_font = ImageFont.load_default()
@@ -564,11 +585,10 @@ class NCAAWeekSelect(View):
             text_font = ImageFont.load_default()
         
         # Add PlayTracker Pro branding
-        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 60), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add guild name
-        guild_name = guild.name if guild else "Unknown Guild"
-        draw.text((600, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        # Add subtitle
+        draw.text((600, 130), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
