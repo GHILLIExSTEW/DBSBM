@@ -469,9 +469,14 @@ class PlayerPropImageGenerator:
                 anchor="lt",
             )
 
-        # Footer (bet id and timestamp)
-        footer_padding = 12
+        # Footer (bet id and timestamp) - moved down to avoid overlap
+        footer_padding = 25  # Increased from 12 to 25
         footer_y = image_height - footer_padding - font_footer.size
+        
+        # Add extra spacing from the content above
+        content_bottom = payout_y + payout_h + 20  # Add 20px spacing after payout text
+        if footer_y < content_bottom + 30:  # Ensure at least 30px gap
+            footer_y = content_bottom + 30
         
         # Ensure bet_id is properly formatted
         if bet_id and str(bet_id).strip():

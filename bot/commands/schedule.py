@@ -423,12 +423,19 @@ class WeekSelect(View):
                      font=header_font, fill='#ffffff', anchor="mm")
             return
         
-        # Create a much more transparent background overlay
-        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 60))
+        # Create enhanced background overlay with rounded corners effect
+        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 80))
         image.paste(overlay, (40, 200), overlay)
         
-        # Add games with better spacing and formatting - moved up
-        y_position = 280
+        # Add a subtle border around the main content area
+        border_color = (100, 150, 200, 150)  # Blue border
+        border_overlay = Image.new('RGBA', (width - 60, height - 230), (0, 0, 0, 0))
+        border_draw = ImageDraw.Draw(border_overlay)
+        border_draw.rectangle([0, 0, width - 60, height - 230], outline=border_color, width=3)
+        image.paste(border_overlay, (50, 210), border_overlay)
+        
+        # Add games with enhanced spacing and formatting
+        y_position = 300  # Start a bit lower to account for header
         current_day = None
         
         for day, date, matchup, time, channel in games:
@@ -438,31 +445,47 @@ class WeekSelect(View):
                 draw.text((80, y_position), f"BYE WEEK: {matchup}", font=title_font, fill='#666666')
                 y_position += 60
             else:
-                # Group games by day with day headers
+                # Group games by day with enhanced day headers
                 if current_day != day:
                     current_day = day
-                    # Add day separator with background
-                    day_bg = Image.new('RGBA', (width - 160, 35), (70, 130, 180, 200))
-                    image.paste(day_bg, (80, y_position - 8), day_bg)
-                    draw.text((600, y_position + 8), f"{day}, {date}", font=title_font, fill='#ffffff', anchor="mm")
-                    y_position += 50
+                    # Add enhanced day separator with gradient background
+                    day_bg = Image.new('RGBA', (width - 160, 45), (80, 140, 200, 220))
+                    image.paste(day_bg, (80, y_position - 10), day_bg)
+                    
+                    # Add day text with shadow effect
+                    day_text = f"{day}, {date}"
+                    # Shadow
+                    draw.text((602, y_position + 10), day_text, font=title_font, fill='#2a4a6a', anchor="mm")
+                    # Main text
+                    draw.text((600, y_position + 8), day_text, font=title_font, fill='#ffffff', anchor="mm")
+                    y_position += 60
                 
-                # Draw game details with tighter spacing
-                # Team matchup
-                draw.text((100, y_position), matchup, font=text_font, fill='#1a1a1a')
+                # Draw game details with enhanced styling
+                # Add subtle background for each game
+                game_bg = Image.new('RGBA', (width - 180, 35), (240, 248, 255, 100))
+                image.paste(game_bg, (90, y_position - 5), game_bg)
                 
-                # Time and channel on the right side
+                # Team matchup with enhanced styling
+                draw.text((110, y_position), matchup, font=text_font, fill='#1a1a1a')
+                
+                # Time and channel on the right side with better contrast
                 time_text = f"{time} - {channel}"
                 time_width = draw.textlength(time_text, font=time_font)
-                draw.text((width - 100 - time_width, y_position), time_text, font=time_font, fill='#444444')
+                draw.text((width - 110 - time_width, y_position), time_text, font=time_font, fill='#2a4a6a')
                 
-                y_position += 40
+                y_position += 50
                 
-                # Add subtle separator line between games - but not if we're near the bottom
+                # Add enhanced separator line between games - but not if we're near the bottom
                 if y_position < height - 80:
-                    draw.line([(100, y_position - 3), (width - 100, y_position - 3)], 
-                             fill='#e0e0e0', width=1)
-                    y_position += 15
+                    # Gradient separator line
+                    for i in range(3):
+                        alpha = 100 - (i * 30)
+                        line_color = (100, 150, 200, alpha)
+                        line_overlay = Image.new('RGBA', (width - 200, 1), (0, 0, 0, 0))
+                        line_draw = ImageDraw.Draw(line_overlay)
+                        line_draw.line([(0, 0), (width - 200, 0)], fill=line_color, width=1)
+                        image.paste(line_overlay, (100, y_position - 5 + i), line_overlay)
+                    y_position += 20
 
 class NCAAWeekSelect(View):
     def __init__(self, cog=None):
@@ -553,81 +576,80 @@ class ScheduleCog(commands.Cog):
 
     def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
         """Create the base image with branding and layout"""
-        # Create base image with gradient background
-        image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
+        # Create base image with enhanced gradient background
+        image = Image.new('RGB', (1200, 1600), color='#0a0a0a')
         draw = ImageDraw.Draw(image)
         
-        # Create gradient background
+        # Create enhanced gradient background with more vibrant colors
         for y in range(1600):
-            # Create a gradient from dark blue to dark purple
-            r = int(26 + (y / 1600) * 20)  # 26 to 46
-            g = int(26 + (y / 1600) * 10)  # 26 to 36
-            b = int(26 + (y / 1600) * 40)  # 26 to 66
+            # Create a more vibrant gradient from deep blue to purple to dark red
+            progress = y / 1600
+            if progress < 0.5:
+                # First half: deep blue to purple
+                r = int(10 + (progress * 2) * 60)  # 10 to 70
+                g = int(10 + (progress * 2) * 30)  # 10 to 40
+                b = int(30 + (progress * 2) * 80)  # 30 to 110
+            else:
+                # Second half: purple to dark red
+                r = int(70 + ((progress - 0.5) * 2) * 50)  # 70 to 120
+                g = int(40 + ((progress - 0.5) * 2) * 20)  # 40 to 60
+                b = int(110 + ((progress - 0.5) * 2) * 40)  # 110 to 150
             color = (r, g, b)
             draw.line([(0, y), (1200, y)], fill=color)
         
-        # Load fonts
+        # Load enhanced fonts with better sizing
         try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 52)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
             text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
         
-        # Add large faded league logo as background
+        # Add large faded league logo as background with enhanced styling
         try:
             league_logo_path = f"bot/static/logos/leagues/{league.upper()}/{league.lower()}.png"
             if os.path.exists(league_logo_path):
                 league_logo = Image.open(league_logo_path)
                 # Resize to be large and centered
-                league_logo = league_logo.resize((800, 800))
-                # Create a faded version
+                league_logo = league_logo.resize((900, 900))
+                # Create a more faded version for better text readability
                 faded_logo = league_logo.copy()
-                faded_logo.putalpha(30)  # Very transparent (30/255)
+                faded_logo.putalpha(20)  # Very transparent (20/255)
                 # Center the logo
-                x_offset = (1200 - 800) // 2
-                y_offset = (1600 - 800) // 2
+                x_offset = (1200 - 900) // 2
+                y_offset = (1600 - 900) // 2
                 image.paste(faded_logo, (x_offset, y_offset), faded_logo)
                 logger.info(f"Added faded {league} logo background")
         except Exception as e:
             logger.warning(f"Could not load league logo background: {e}")
         
-        # Add Bet Tracking AI branding at 1/3 position (left side) - moved down to avoid overlap
-        draw.text((400, 80), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
+        # Add header section with proper spacing
+        header_y_start = 50
         
-        # Add guild name at 2/3 position (right side) - moved down to avoid overlap
-        if guild:
-            guild_name_text = f"{guild.name.upper()}"
-        else:
-            guild_name_text = "BET TRACKING AI GUILD"
-        draw.text((840, 80), guild_name_text, font=title_font, fill='#ffffff', anchor="mm")
-        
-        # Add league and schedule type info centered
-        schedule_type = week.replace('_', ' ').title()
-        draw.text((600, 120), f"{league.upper()} {schedule_type} SCHEDULE", font=subtitle_font, fill='#ffffff', anchor="mm")
-
-        # Add logos - positioned above the text to avoid overlap
+        # Add logos first (top row)
         try:
             # --- Bot Logo ---
             ptp_logo_path = "bot/static/logos/default_image.png"
             if os.path.exists(ptp_logo_path):
                 ptp_logo = Image.open(ptp_logo_path)
-                ptp_logo = ptp_logo.resize((60, 60))  # Made smaller to avoid overlap
+                ptp_logo = ptp_logo.resize((70, 70))  # Slightly larger
                 if ptp_logo.mode != 'RGBA':
                     ptp_logo = ptp_logo.convert('RGBA')
-                # Position logo above the text
-                logo_x = 400 - 30
-                logo_y = 10
-                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ffffff', outline='#000000', width=2)
+                # Position logo at top left
+                logo_x = 400 - 35
+                logo_y = header_y_start
+                # Add subtle glow effect
+                draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#ffffff', outline='#4a90e2', width=3)
                 image.paste(ptp_logo, (logo_x, logo_y), ptp_logo)
                 logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
             else:
                 logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
-                logo_x = 400 - 30
-                logo_y = 10
-                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ff0000', outline='#ffffff', width=2)
+                logo_x = 400 - 35
+                logo_y = header_y_start
+                draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#ff0000', outline='#ffffff', width=3)
+            
             # --- Guild Logo ---
             if guild:
                 guild_logo_paths = [
@@ -641,13 +663,14 @@ class ScheduleCog(commands.Cog):
                     if os.path.exists(guild_logo_path):
                         try:
                             guild_logo = Image.open(guild_logo_path)
-                            guild_logo = guild_logo.resize((60, 60))  # Made smaller to avoid overlap
+                            guild_logo = guild_logo.resize((70, 70))  # Slightly larger
                             if guild_logo.mode != 'RGBA':
                                 guild_logo = guild_logo.convert('RGBA')
-                            # Position logo above the text
-                            logo_x = 840 - 30
-                            logo_y = 10
-                            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ffffff', outline='#000000', width=2)
+                            # Position logo at top right
+                            logo_x = 840 - 35
+                            logo_y = header_y_start
+                            # Add subtle glow effect
+                            draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#ffffff', outline='#4a90e2', width=3)
                             image.paste(guild_logo, (logo_x, logo_y), guild_logo)
                             logger.info(f"Added guild logo from {guild_logo_path}")
                             guild_logo_loaded = True
@@ -656,22 +679,39 @@ class ScheduleCog(commands.Cog):
                             logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
                             continue
                 if not guild_logo_loaded:
-                    logo_x = 840 - 30
-                    logo_y = 10
-                    draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#4a90e2', outline='#ffffff', width=2)
+                    logo_x = 840 - 35
+                    logo_y = header_y_start
+                    draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#4a90e2', outline='#ffffff', width=3)
             else:
-                logo_x = 840 - 30
-                logo_y = 10
-                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#666666', outline='#ffffff', width=2)
+                logo_x = 840 - 35
+                logo_y = header_y_start
+                draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#666666', outline='#ffffff', width=3)
         except Exception as e:
             logger.error(f"Could not load logos: {e}")
-            # Add fallback rectangles for debugging
-            logo_x = 400 - 30
-            logo_y = 10
-            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ff0000', outline='#ffffff', width=2)
-            logo_x = 840 - 30
-            logo_y = 10
-            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#00ff00', outline='#ffffff', width=2)
+            # Add fallback circles for debugging
+            logo_x = 400 - 35
+            logo_y = header_y_start
+            draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#ff0000', outline='#ffffff', width=3)
+            logo_x = 840 - 35
+            logo_y = header_y_start
+            draw.ellipse([logo_x-5, logo_y-5, logo_x+75, logo_y+75], fill='#00ff00', outline='#ffffff', width=3)
+        
+        # Add text below logos with proper spacing
+        text_y_start = header_y_start + 100  # 100px below logos
+        
+        # Add Bet Tracking AI branding at 1/3 position (left side)
+        draw.text((400, text_y_start), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
+        
+        # Add guild name at 2/3 position (right side)
+        if guild:
+            guild_name_text = f"{guild.name.upper()}"
+        else:
+            guild_name_text = "BET TRACKING AI GUILD"
+        draw.text((840, text_y_start), guild_name_text, font=title_font, fill='#ffffff', anchor="mm")
+        
+        # Add league and schedule type info centered below
+        schedule_type = week.replace('_', ' ').title()
+        draw.text((600, text_y_start + 50), f"{league.upper()} {schedule_type} SCHEDULE", font=subtitle_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
