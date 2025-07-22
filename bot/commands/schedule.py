@@ -277,6 +277,9 @@ class ScheduleCog(commands.Cog):
         text_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 16)
         small_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 14)
         
+        # Get image dimensions
+        width, height = image.size
+        
         # NFL 2025-2026 Schedule Data (Weeks 1-18)
         schedule_data = {
             "WEEK 1": [
