@@ -405,8 +405,8 @@ class WeekSelect(View):
                      font=header_font, fill='#ffffff', anchor="mm")
             return
         
-        # Create a better background overlay with more contrast - moved up
-        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 180))
+        # Create a more transparent background overlay
+        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 100))
         image.paste(overlay, (40, 200), overlay)
         
         # Add games with better spacing and formatting - moved up
@@ -567,92 +567,85 @@ class ScheduleCog(commands.Cog):
         except Exception as e:
             logger.warning(f"Could not load league logo background: {e}")
         
-        # Add Bet Tracking AI branding at 1/3 position
+        # Add Bet Tracking AI branding at 1/3 position (left side)
         draw.text((400, 40), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add subtitle
+        # Add guild name at 2/3 position (right side)
         if guild:
-            subtitle_text = f"{guild.name.upper()}"
+            guild_name_text = f"{guild.name.upper()}"
         else:
-            subtitle_text = "BET TRACKING AI GUILD"
-        draw.text((400, 100), subtitle_text, font=subtitle_font, fill='#ffffff', anchor="mm")
+            guild_name_text = "BET TRACKING AI GUILD"
+        draw.text((840, 40), guild_name_text, font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add league and schedule type info on new line
+        # Add league and schedule type info centered
         schedule_type = week.replace('_', ' ').title()
-        draw.text((400, 140), f"{league.upper()} {schedule_type} SCHEDULE", font=text_font, fill='#ffffff', anchor="mm")
-        
+        draw.text((600, 100), f"{league.upper()} {schedule_type} SCHEDULE", font=subtitle_font, fill='#ffffff', anchor="mm")
+
         # Add logos
         try:
-            # Add Bet Tracking AI logo at 1/3 position (left side)
+            # --- Bot Logo ---
             ptp_logo_path = "bot/static/logos/default_image.png"
             if os.path.exists(ptp_logo_path):
                 ptp_logo = Image.open(ptp_logo_path)
-                ptp_logo = ptp_logo.resize((80, 80))  # Made larger
-                # Convert to RGBA if needed
+                ptp_logo = ptp_logo.resize((80, 80))
                 if ptp_logo.mode != 'RGBA':
                     ptp_logo = ptp_logo.convert('RGBA')
-                # Add a white background rectangle first
-                draw.rectangle([320, 10, 400, 90], fill='#ffffff', outline='#000000', width=2)
-                image.paste(ptp_logo, (320, 10), ptp_logo)
-                # Add text label
-                draw.text((360, 95), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+                # Center logo at (400, 40)
+                logo_x = 400 - 40
+                logo_y = 40 - 40
+                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ffffff', outline='#000000', width=2)
+                image.paste(ptp_logo, (logo_x, logo_y), ptp_logo)
+                # Remove label under logo
                 logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
             else:
                 logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
-                # Add fallback rectangle
-                draw.rectangle([320, 10, 400, 90], fill='#ff0000', outline='#ffffff', width=2)
-                draw.text((360, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
-            
-            # Add guild logo at 2/3 position (right side)
+                logo_x = 400 - 40
+                logo_y = 40 - 40
+                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ff0000', outline='#ffffff', width=2)
+            # --- Guild Logo ---
             if guild:
-                # Try multiple possible guild logo paths
                 guild_logo_paths = [
                     f"bot/static/guilds/{guild.id}/default_image.png",
                     f"bot/static/guilds/{guild.id}/background_image.png",
                     f"bot/static/guilds/{guild.id}/logo.png",
                     f"bot/static/guilds/{guild.id}/guild_logo.png"
                 ]
-                
                 guild_logo_loaded = False
                 for guild_logo_path in guild_logo_paths:
                     if os.path.exists(guild_logo_path):
                         try:
                             guild_logo = Image.open(guild_logo_path)
-                            guild_logo = guild_logo.resize((80, 80))  # Made larger
-                            # Convert to RGBA if needed
+                            guild_logo = guild_logo.resize((80, 80))
                             if guild_logo.mode != 'RGBA':
                                 guild_logo = guild_logo.convert('RGBA')
-                            # Add a white background rectangle first
-                            draw.rectangle([800, 10, 880, 90], fill='#ffffff', outline='#000000', width=2)
-                            image.paste(guild_logo, (800, 10), guild_logo)
-                            # Add guild name label
-                            guild_name_short = guild.name[:8] if len(guild.name) > 8 else guild.name
-                            draw.text((840, 95), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                            # Center logo at (840, 40)
+                            logo_x = 840 - 40
+                            logo_y = 40 - 40
+                            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ffffff', outline='#000000', width=2)
+                            image.paste(guild_logo, (logo_x, logo_y), guild_logo)
                             logger.info(f"Added guild logo from {guild_logo_path}")
                             guild_logo_loaded = True
                             break
                         except Exception as e:
                             logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
                             continue
-                
                 if not guild_logo_loaded:
-                    # No guild logo found, create a custom guild indicator
-                    draw.rectangle([800, 10, 880, 90], fill='#4a90e2', outline='#ffffff', width=2)
-                    guild_name_short = guild.name[:6] if len(guild.name) > 6 else guild.name
-                    draw.text((840, 50), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
-                    logger.info(f"No guild logo found for {guild.name}, using custom indicator")
+                    logo_x = 840 - 40
+                    logo_y = 40 - 40
+                    draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#4a90e2', outline='#ffffff', width=2)
             else:
-                # No guild context, show generic indicator
-                draw.rectangle([800, 10, 880, 90], fill='#666666', outline='#ffffff', width=2)
-                draw.text((840, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
-                logger.warning("No guild context available")
+                logo_x = 840 - 40
+                logo_y = 40 - 40
+                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#666666', outline='#ffffff', width=2)
         except Exception as e:
             logger.error(f"Could not load logos: {e}")
-            # Add fallback colored rectangles for debugging
-            draw.rectangle([320, 10, 400, 90], fill='#ff0000', outline='#ffffff', width=2)
-            draw.text((360, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
-            draw.rectangle([800, 10, 880, 90], fill='#00ff00', outline='#ffffff', width=2)
-            draw.text((840, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
+            # Add fallback rectangles for debugging
+            logo_x = 400 - 40
+            logo_y = 40 - 40
+            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ff0000', outline='#ffffff', width=2)
+            logo_x = 840 - 40
+            logo_y = 40 - 40
+            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#00ff00', outline='#ffffff', width=2)
         
         # Add copyright watermark
         current_year = datetime.now().year
