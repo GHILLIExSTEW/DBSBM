@@ -366,8 +366,13 @@ class BettingBot(commands.Bot):
                     logger.error("Setup command not found")
                     raise Exception("Setup command not found")
 
-                # Store all commands that should go to guilds
-                guild_commands = [cmd for cmd in all_commands if cmd.name not in ("setup", "load_logos", "down", "up")]
+                # Store command names that should go to guilds
+                guild_command_names = []
+                for cmd in all_commands:
+                    if cmd.name not in ("setup", "load_logos", "down", "up"):
+                        guild_command_names.append(cmd.name)
+
+                logger.info(f"Stored {len(guild_command_names)} command names for guild syncing: {guild_command_names}")
 
                 # Clear all commands globally first
                 self.tree.clear_commands(guild=None)
@@ -427,10 +432,21 @@ class BettingBot(commands.Bot):
                         )
                     else:
                         # Add all commands except setup, load_logos, and maintenance commands to the guild
-                        for cmd in guild_commands:
-                            self.tree.add_command(cmd, guild=guild_obj)
+                        commands_added = 0
+                        for cmd_name in guild_command_names:
+                            try:
+                                # Get the command from the original all_commands list
+                                cmd = next((c for c in all_commands if c.name == cmd_name), None)
+                                if cmd:
+                                    self.tree.add_command(cmd, guild=guild_obj)
+                                    commands_added += 1
+                                else:
+                                    logger.warning(f"Command {cmd_name} not found in all_commands")
+                            except Exception as e:
+                                logger.error(f"Failed to add command {cmd_name} to guild {guild_id}: {e}")
+                        
                         logger.info(
-                            f"Synced commands to guild {guild_id} (subscription: {subscription_level})"
+                            f"Synced {commands_added} commands to guild {guild_id} (subscription: {subscription_level})"
                         )
 
                     # Sync commands to this guild
