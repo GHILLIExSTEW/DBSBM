@@ -96,13 +96,13 @@ class ScheduleTypeSelect(View):
     async def league_schedule(self, interaction: discord.Interaction, button: Button):
         # Create league selection view
         view = LeagueSelect()
-        await interaction.response.edit_message(content="Select a league:", view=view)
+        await interaction.response.edit_message(content="Select a league:", view=view, ephemeral=True)
         
     @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
     async def team_schedule(self, interaction: discord.Interaction, button: Button):
         # Create team selection view
         view = TeamSelect()
-        await interaction.response.edit_message(content="Select a team:", view=view)
+        await interaction.response.edit_message(content="Select a team:", view=view, ephemeral=True)
 
 class TeamSelect(View):
     def __init__(self):
@@ -151,7 +151,7 @@ class TeamSelect(View):
         
         # Create week selection view for team schedule
         view = TeamWeekSelect(team_name, team_schedule)
-        await interaction.response.edit_message(content=f"Select a week for {team_name}:", view=view)
+        await interaction.response.edit_message(content=f"Select a week for {team_name}:", view=view, ephemeral=True)
 
 class TeamWeekSelect(View):
     def __init__(self, team_name: str, team_schedule: dict):
@@ -280,9 +280,9 @@ class SportSelect(Select):
         
         if sport == "football":
             view = LeagueSelect()
-            await interaction.response.edit_message(content="Select a league:", view=view)
+            await interaction.response.edit_message(content="Select a league:", view=view, ephemeral=True)
         else:
-            await interaction.response.edit_message(content=f"Schedule data for {sport} is not available yet.", view=None)
+            await interaction.response.edit_message(content=f"Schedule data for {sport} is not available yet.", view=None, ephemeral=True)
 
 class LeagueSelect(View):
     def __init__(self):
@@ -300,12 +300,12 @@ class LeagueSelect(View):
         
         if league == "nfl":
             view = WeekSelect("nfl")
-            await interaction.response.edit_message(content="Select a week:", view=view)
+            await interaction.response.edit_message(content="Select a week:", view=view, ephemeral=True)
         elif league == "ncaa_football":
             view = NCAAWeekSelect()
-            await interaction.response.edit_message(content="Select a week:", view=view)
+            await interaction.response.edit_message(content="Select a week:", view=view, ephemeral=True)
         else:
-            await interaction.response.edit_message(content=f"Schedule data for {league} is not available yet.", view=None)
+            await interaction.response.edit_message(content=f"Schedule data for {league} is not available yet.", view=None, ephemeral=True)
 
 class WeekSelect(View):
     def __init__(self, league: str):
@@ -607,7 +607,7 @@ class ScheduleCog(commands.Cog):
         
         # Create the initial view with League Schedule vs Team Schedule buttons
         view = ScheduleTypeSelect()
-        await interaction.response.send_message("Choose schedule type:", view=view)
+        await interaction.response.send_message("Choose schedule type:", view=view, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(ScheduleCog(bot))
