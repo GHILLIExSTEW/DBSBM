@@ -187,7 +187,16 @@ class TeamWeekSelect(View):
         # Generate team schedule image
         try:
             image_path = await self.generate_team_schedule_image(interaction.guild, self.team_name, week, game_info, "NFL")
-            await interaction.response.send_message(file=discord.File(image_path))
+            
+            # Find member role and mention it
+            member_role = None
+            for role in interaction.guild.roles:
+                if "member" in role.name.lower() or "members" in role.name.lower():
+                    member_role = role
+                    break
+            
+            mention_text = f"{member_role.mention} " if member_role else ""
+            await interaction.response.send_message(f"{mention_text}Here's your schedule!", file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
         except Exception as e:
             logger.error(f"Error generating team schedule image: {e}")
@@ -316,7 +325,16 @@ class WeekSelect(View):
             # Determine league based on the view type
             league = "NFL" if hasattr(self, 'league') and self.league == "nfl" else "NCAA"
             image_path = await self.generate_schedule_image(interaction.guild, week, league)
-            await interaction.response.send_message(file=discord.File(image_path))
+            
+            # Find member role and mention it
+            member_role = None
+            for role in interaction.guild.roles:
+                if "member" in role.name.lower() or "members" in role.name.lower():
+                    member_role = role
+                    break
+            
+            mention_text = f"{member_role.mention} " if member_role else ""
+            await interaction.response.send_message(f"{mention_text}Here's your schedule!", file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
         except Exception as e:
             logger.error(f"Error generating schedule image: {e}")
@@ -405,8 +423,8 @@ class WeekSelect(View):
                      font=header_font, fill='#ffffff', anchor="mm")
             return
         
-        # Create a more transparent background overlay
-        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 100))
+        # Create a much more transparent background overlay
+        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 60))
         image.paste(overlay, (40, 200), overlay)
         
         # Add games with better spacing and formatting - moved up
@@ -477,7 +495,16 @@ class NCAAWeekSelect(View):
         
         try:
             image_path = await self.generate_schedule_image(interaction.guild, week, "NCAA")
-            await interaction.response.send_message(file=discord.File(image_path))
+            
+            # Find member role and mention it
+            member_role = None
+            for role in interaction.guild.roles:
+                if "member" in role.name.lower() or "members" in role.name.lower():
+                    member_role = role
+                    break
+            
+            mention_text = f"{member_role.mention} " if member_role else ""
+            await interaction.response.send_message(f"{mention_text}Here's your schedule!", file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
             
         except Exception as e:
@@ -567,41 +594,40 @@ class ScheduleCog(commands.Cog):
         except Exception as e:
             logger.warning(f"Could not load league logo background: {e}")
         
-        # Add Bet Tracking AI branding at 1/3 position (left side)
-        draw.text((400, 40), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
+        # Add Bet Tracking AI branding at 1/3 position (left side) - moved down to avoid overlap
+        draw.text((400, 80), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add guild name at 2/3 position (right side)
+        # Add guild name at 2/3 position (right side) - moved down to avoid overlap
         if guild:
             guild_name_text = f"{guild.name.upper()}"
         else:
             guild_name_text = "BET TRACKING AI GUILD"
-        draw.text((840, 40), guild_name_text, font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((840, 80), guild_name_text, font=title_font, fill='#ffffff', anchor="mm")
         
         # Add league and schedule type info centered
         schedule_type = week.replace('_', ' ').title()
-        draw.text((600, 100), f"{league.upper()} {schedule_type} SCHEDULE", font=subtitle_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 120), f"{league.upper()} {schedule_type} SCHEDULE", font=subtitle_font, fill='#ffffff', anchor="mm")
 
-        # Add logos
+        # Add logos - positioned above the text to avoid overlap
         try:
             # --- Bot Logo ---
             ptp_logo_path = "bot/static/logos/default_image.png"
             if os.path.exists(ptp_logo_path):
                 ptp_logo = Image.open(ptp_logo_path)
-                ptp_logo = ptp_logo.resize((80, 80))
+                ptp_logo = ptp_logo.resize((60, 60))  # Made smaller to avoid overlap
                 if ptp_logo.mode != 'RGBA':
                     ptp_logo = ptp_logo.convert('RGBA')
-                # Center logo at (400, 40)
-                logo_x = 400 - 40
-                logo_y = 40 - 40
-                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ffffff', outline='#000000', width=2)
+                # Position logo above the text
+                logo_x = 400 - 30
+                logo_y = 10
+                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ffffff', outline='#000000', width=2)
                 image.paste(ptp_logo, (logo_x, logo_y), ptp_logo)
-                # Remove label under logo
                 logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
             else:
                 logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
-                logo_x = 400 - 40
-                logo_y = 40 - 40
-                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ff0000', outline='#ffffff', width=2)
+                logo_x = 400 - 30
+                logo_y = 10
+                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ff0000', outline='#ffffff', width=2)
             # --- Guild Logo ---
             if guild:
                 guild_logo_paths = [
@@ -615,13 +641,13 @@ class ScheduleCog(commands.Cog):
                     if os.path.exists(guild_logo_path):
                         try:
                             guild_logo = Image.open(guild_logo_path)
-                            guild_logo = guild_logo.resize((80, 80))
+                            guild_logo = guild_logo.resize((60, 60))  # Made smaller to avoid overlap
                             if guild_logo.mode != 'RGBA':
                                 guild_logo = guild_logo.convert('RGBA')
-                            # Center logo at (840, 40)
-                            logo_x = 840 - 40
-                            logo_y = 40 - 40
-                            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ffffff', outline='#000000', width=2)
+                            # Position logo above the text
+                            logo_x = 840 - 30
+                            logo_y = 10
+                            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ffffff', outline='#000000', width=2)
                             image.paste(guild_logo, (logo_x, logo_y), guild_logo)
                             logger.info(f"Added guild logo from {guild_logo_path}")
                             guild_logo_loaded = True
@@ -630,22 +656,22 @@ class ScheduleCog(commands.Cog):
                             logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
                             continue
                 if not guild_logo_loaded:
-                    logo_x = 840 - 40
-                    logo_y = 40 - 40
-                    draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#4a90e2', outline='#ffffff', width=2)
+                    logo_x = 840 - 30
+                    logo_y = 10
+                    draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#4a90e2', outline='#ffffff', width=2)
             else:
-                logo_x = 840 - 40
-                logo_y = 40 - 40
-                draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#666666', outline='#ffffff', width=2)
+                logo_x = 840 - 30
+                logo_y = 10
+                draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#666666', outline='#ffffff', width=2)
         except Exception as e:
             logger.error(f"Could not load logos: {e}")
             # Add fallback rectangles for debugging
-            logo_x = 400 - 40
-            logo_y = 40 - 40
-            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#ff0000', outline='#ffffff', width=2)
-            logo_x = 840 - 40
-            logo_y = 40 - 40
-            draw.rectangle([logo_x, logo_y, logo_x+80, logo_y+80], fill='#00ff00', outline='#ffffff', width=2)
+            logo_x = 400 - 30
+            logo_y = 10
+            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#ff0000', outline='#ffffff', width=2)
+            logo_x = 840 - 30
+            logo_y = 10
+            draw.rectangle([logo_x, logo_y, logo_x+60, logo_y+60], fill='#00ff00', outline='#ffffff', width=2)
         
         # Add copyright watermark
         current_year = datetime.now().year
