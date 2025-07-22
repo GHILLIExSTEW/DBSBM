@@ -473,34 +473,7 @@ class WeekSelect(View):
             logger.error(f"Error generating placeholder schedule image: {e}")
             raise
 
-    def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
-        """Create the base image with branding and layout"""
-        # Create base image
-        image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
-        draw = ImageDraw.Draw(image)
-        
-        # Load fonts
-        try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
-        except:
-            title_font = ImageFont.load_default()
-            subtitle_font = ImageFont.load_default()
-            text_font = ImageFont.load_default()
-        
-        # Add PlayTracker Pro branding
-        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
-        
-        # Add guild name
-        guild_name = guild.name if guild else "Unknown Guild"
-        draw.text((600, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
-        
-        # Add copyright watermark
-        current_year = datetime.now().year
-        draw.text((600, 1550), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
-        
-        return image
+
 
     def _add_schedule_data(self, image, week: str):
         """Add schedule data to the image"""
@@ -652,11 +625,19 @@ class NCAAWeekSelect(View):
             subtitle_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
         
-        # Add PlayTracker Pro branding
-        draw.text((600, 40), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        # Add Bet Tracking AI branding
+        draw.text((600, 40), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
         
         # Add subtitle
-        draw.text((600, 100), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        if guild:
+            subtitle_text = f"{guild.name.upper()}"
+        else:
+            subtitle_text = "BET TRACKING AI GUILD"
+        draw.text((600, 100), subtitle_text, font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add league and schedule type info on new line
+        schedule_type = week.replace('_', ' ').title()
+        draw.text((600, 140), f"{league.upper()} {schedule_type} SCHEDULE", font=text_font, fill='#ffffff', anchor="mm")
         
         # Add logos
         try:
@@ -733,7 +714,7 @@ class NCAAWeekSelect(View):
         
         # Add copyright watermark
         current_year = datetime.now().year
-        draw.text((600, 1580), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
+        draw.text((600, 1580), f"© Bet Tracking AI {current_year}", font=text_font, fill='#666666', anchor="mm")
         
         return image
 
