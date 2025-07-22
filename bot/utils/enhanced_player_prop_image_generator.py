@@ -198,10 +198,11 @@ class EnhancedPlayerPropImageGenerator:
 
             if team_logo:
                 # Resize and position team logo
-                team_logo = team_logo.resize((80, 80), Image.Resampling.LANCZOS)
-                img.paste(
-                    team_logo, (40, 40), team_logo if team_logo.mode == "RGBA" else None
-                )
+                team_logo = team_logo.resize((100, 100), Image.Resampling.LANCZOS)  # Changed from 80x80 to 100x100 to match game line
+                # Apply circular mask
+                team_logo = self._apply_circular_mask(team_logo)
+                # Position team logo (left side)
+                img.paste(team_logo, (30, 30), team_logo)
 
             # Add player image (right side)
             if player_image_url:
@@ -209,11 +210,11 @@ class EnhancedPlayerPropImageGenerator:
                 if player_image:
                     # Resize and position player image
                     player_image = player_image.resize(
-                        (120, 120), Image.Resampling.LANCZOS
+                        (100, 100), Image.Resampling.LANCZOS  # Changed from 120x120 to 100x100 to match game line
                     )
                     # Apply circular mask
                     player_image = self._apply_circular_mask(player_image)
-                    img.paste(player_image, (self.base_width - 160, 30), player_image)
+                    img.paste(player_image, (self.base_width - 140, 30), player_image)  # Adjusted position for new size
 
         except Exception as e:
             logger.error(f"Error adding images: {e}")
@@ -280,7 +281,7 @@ class EnhancedPlayerPropImageGenerator:
         prop_icon = self.prop_icons.get(prop_type, "📊")
         prop_text = f"{prop_icon} {prop_type.replace('_', ' ').title()}"
         draw.text(
-            (140, 130),
+            (140, 150),  # Increased from 130 to 150 for more separation
             prop_text,
             font=self.fonts["bold"],
             fill=self.colors["text_primary"],
@@ -294,14 +295,14 @@ class EnhancedPlayerPropImageGenerator:
         )
         direction_text = f"{bet_direction.upper()} {line_value}"
         draw.text(
-            (140, 160), direction_text, font=self.fonts["large"], fill=direction_color
+            (140, 180), direction_text, font=self.fonts["large"], fill=direction_color  # Increased from 160 to 180
         )
 
         # Odds (if available)
         if odds:
             odds_text = f"Odds: {odds}"
             draw.text(
-                (140, 200),
+                (140, 220),  # Increased from 200 to 220
                 odds_text,
                 font=self.fonts["medium"],
                 fill=self.colors["text_secondary"],
