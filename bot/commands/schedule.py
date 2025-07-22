@@ -11,8 +11,7 @@ import tempfile
 from datetime import datetime
 
 # Import the league schedule data
-from bot.data.nfl_schedule_2025_2026_part1 import NFL_SCHEDULE_2025_2026_PART1
-from bot.data.nfl_schedule_2025_2026_part2 import NFL_SCHEDULE_2025_2026_PART2
+from bot.data.nfl_schedule_2025_2026 import NFL_SCHEDULE_2025_2026_PART1
 
 # Import team schedules
 from bot.data.league_schedules.nfl.teams.buffalo_bills_schedule import BUFFALO_BILLS_SCHEDULE
@@ -50,8 +49,8 @@ from bot.data.league_schedules.nfl.teams.seattle_seahawks_schedule import SEATTL
 
 logger = logging.getLogger(__name__)
 
-# Combine the two parts of the NFL schedule
-NFL_SCHEDULE_2025_2026 = {**NFL_SCHEDULE_2025_2026_PART1, **NFL_SCHEDULE_2025_2026_PART2}
+# Use the NFL schedule data
+NFL_SCHEDULE_2025_2026 = NFL_SCHEDULE_2025_2026_PART1
 
 # Team schedule mapping
 TEAM_SCHEDULES = {
@@ -244,9 +243,9 @@ class TeamWeekSelect(View):
         
         # Load fonts
         try:
-            title_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 32)
-            text_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 24)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
@@ -402,8 +401,8 @@ class WeekSelect(Select):
             
             # Load fonts
             try:
-                header_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 36)
-                text_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 24)
+                header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+                text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
             except:
                 header_font = ImageFont.load_default()
                 text_font = ImageFont.load_default()
@@ -428,9 +427,9 @@ class WeekSelect(Select):
         
         # Load fonts
         try:
-            title_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 32)
-            text_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 24)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
+            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
@@ -455,9 +454,9 @@ class WeekSelect(Select):
         
         # Load fonts
         try:
-            header_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 36)
-            text_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 24)
-            small_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 18)
+            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
         except:
             header_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
