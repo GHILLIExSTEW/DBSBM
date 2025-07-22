@@ -126,8 +126,8 @@ class PlatinumCog(commands.Cog):
                 
                 embed.add_field(
                     name="Pricing",
-                    value="💎 **Platinum**: $99.99/month\n"
-                          "⭐ **Premium**: $49.99/month",
+                    value="⭐ **Premium**: $49.99/month\n"
+                          "💎 **Platinum**: $99.99/month",
                     inline=True
                 )
                 
@@ -162,15 +162,9 @@ class PlatinumCog(commands.Cog):
     async def create_webhook(
         self,
         interaction: Interaction,
-        webhook_name: str = app_commands.describe(
-            "A descriptive name for your webhook (e.g., 'Bet Notifications', 'Analytics Feed')"
-        ),
-        webhook_url: str = app_commands.describe(
-            "The webhook URL from your external service (Discord, Slack, etc.)"
-        ),
-        webhook_type: str = app_commands.describe(
-            "Type of notifications to send to this webhook"
-        )
+        webhook_name: str,
+        webhook_url: str,
+        webhook_type: str
     ):
         """
         🔗 Create webhook integrations for external notifications
@@ -601,9 +595,7 @@ class PlatinumCog(commands.Cog):
     async def remove_webhook(
         self,
         interaction: Interaction,
-        webhook_name: str = app_commands.describe(
-            "The exact name of the webhook to remove (use /webhook_list to see names)"
-        )
+        webhook_name: str
     ):
         """Remove a webhook integration."""
         try:
