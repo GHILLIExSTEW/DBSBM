@@ -234,87 +234,152 @@ class ScheduleCog(commands.Cog):
             return None
 
     def _create_schedule_base_image(self, guild) -> Image.Image:
-        """Create the base schedule image with branding."""
-        # Create a large image for the schedule
-        width, height = 1200, 1600
-        image = Image.new('RGB', (width, height), '#0f1419')
+        """Create the base schedule image with BETUS-style poster layout."""
+        # Create a large poster-style image
+        width, height = 1200, 2000
+        image = Image.new('RGB', (width, height), '#0a0a0a')  # Very dark background
         draw = ImageDraw.Draw(image)
         
         # Load fonts
-        title_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 48)
-        subtitle_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 36)
-        header_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 24)
-        text_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 18)
+        title_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 72)
+        subtitle_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 48)
+        header_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 36)
+        week_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 24)
+        text_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 16)
+        small_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 14)
         
-        # Load default image (main background)
-        default_image_path = os.path.join(self.logos_dir, "default_image.png")
-        if os.path.exists(default_image_path):
-            default_img = Image.open(default_image_path).convert('RGBA')
-            # Resize and position as background
-            default_img = default_img.resize((400, 400))
-            image.paste(default_img, (50, 100), default_img)
+        # Create gradient background effect (stadium-like)
+        for y in range(height):
+            # Create a subtle gradient from top to bottom
+            intensity = int(10 + (y / height) * 5)
+            color = (intensity, intensity, intensity)
+            draw.line([(0, y), (width, y)], fill=color)
         
-        # Add PlayTracker Pro branding
-        draw.text((50, 50), "PlayTracker Pro", font=title_font, fill='#ffffff')
+        # Add PlayTracker Pro branding at top center
+        draw.text((width//2 - 200, 50), "PlayTracker Pro", font=title_font, fill='#ffffff')
         
-        # Add guild name where "Schedule" would be
+        # Add tagline
+        draw.text((width//2 - 150, 130), "WHERE THE GAME BEGINS", font=small_font, fill='#ffffff')
+        
+        # Add season title
+        draw.text((width//2 - 200, 160), "2025-2026 PRO FOOTBALL", font=subtitle_font, fill='#ffffff')
+        
+        # Add guild name as "SCHEDULE" replacement
         guild_name = guild.name if guild else "Unknown Guild"
-        draw.text((50, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff')
-        
-        # Add NFL logo
-        nfl_logo_path = os.path.join(self.logos_dir, "leagues", "FOOTBALL", "NFL", "nfl.png")
-        if os.path.exists(nfl_logo_path):
-            nfl_logo = Image.open(nfl_logo_path).convert('RGBA')
-            nfl_logo = nfl_logo.resize((100, 100))
-            image.paste(nfl_logo, (1050, 50), nfl_logo)
-        
-        # Add guild logo if available
-        guild_logo_path = os.path.join(self.logos_dir, "guilds", str(guild.id), "guild_logo.png")
-        if os.path.exists(guild_logo_path):
-            guild_logo = Image.open(guild_logo_path).convert('RGBA')
-            guild_logo = guild_logo.resize((100, 100))
-            image.paste(guild_logo, (1050, 170), guild_logo)
+        draw.text((width//2 - 100, 220), f"{guild_name.upper()} SCHEDULE", font=title_font, fill='#ffffff')
         
         return image
 
     def _add_nfl_schedule_data(self, image: Image.Image, guild):
-        """Add NFL 2025-2026 schedule data to the image."""
+        """Add NFL 2025-2026 schedule data in BETUS poster grid format."""
         draw = ImageDraw.Draw(image)
-        header_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 24)
-        text_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 18)
+        week_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 24)
+        text_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 16)
+        small_font = ImageFont.truetype(os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 14)
         
-        # Add schedule title
-        draw.text((500, 150), "2025-2026 NFL Schedule", font=header_font, fill='#ffffff')
+        # NFL 2025-2026 Schedule Data (Weeks 1-18)
+        schedule_data = {
+            "WEEK 1": [
+                ("THURSDAY", "SEPTEMBER 4, 2025", "DALLAS @ PHILADELPHIA", "8:20 PM", "NBC"),
+                ("FRIDAY", "SEPTEMBER 5, 2025", "KANSAS CITY @ LOS ANGELES (C)", "8:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "TAMPA BAY @ ATLANTA", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "CINCINNATI @ CLEVELAND", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "MIAMI @ INDIANAPOLIS", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "LAS VEGAS @ NEW ENGLAND", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "ARIZONA @ NEW ORLEANS", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "PITTSBURGH @ NEW YORK (J)", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "NEW YORK (G) @ WASHINGTON", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "CAROLINA @ JACKSONVILLE", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "TENNESSEE @ DENVER", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "SAN FRANCISCO @ SEATTLE", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "DETROIT @ GREEN BAY", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "LOS ANGELES (R) @ CHICAGO", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 7, 2025", "BALTIMORE @ BUFFALO", "8:20 PM", "NBC"),
+                ("MONDAY", "SEPTEMBER 8, 2025", "MINNESOTA @ CINCINNATI", "8:15 PM", "ESPN")
+            ],
+            "WEEK 2": [
+                ("THURSDAY", "SEPTEMBER 11, 2025", "PHILADELPHIA @ ATLANTA", "8:20 PM", "NBC"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "CLEVELAND @ CINCINNATI", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "INDIANAPOLIS @ MIAMI", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "NEW ENGLAND @ LAS VEGAS", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "NEW ORLEANS @ ARIZONA", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "NEW YORK (J) @ PITTSBURGH", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "WASHINGTON @ NEW YORK (G)", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "JACKSONVILLE @ CAROLINA", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "DENVER @ TENNESSEE", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "SEATTLE @ SAN FRANCISCO", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "GREEN BAY @ DETROIT", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "CHICAGO @ LOS ANGELES (R)", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 14, 2025", "BUFFALO @ BALTIMORE", "8:20 PM", "NBC"),
+                ("MONDAY", "SEPTEMBER 15, 2025", "CINCINNATI @ MINNESOTA", "8:15 PM", "ESPN")
+            ],
+            "WEEK 3": [
+                ("THURSDAY", "SEPTEMBER 18, 2025", "ATLANTA @ CLEVELAND", "8:20 PM", "NBC"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "CINCINNATI @ INDIANAPOLIS", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "MIAMI @ NEW ENGLAND", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "LAS VEGAS @ NEW ORLEANS", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "ARIZONA @ NEW YORK (J)", "1:00 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "PITTSBURGH @ WASHINGTON", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "NEW YORK (G) @ JACKSONVILLE", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "CAROLINA @ DENVER", "1:00 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "TENNESSEE @ SEATTLE", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "SAN FRANCISCO @ GREEN BAY", "4:05 PM", "FOX"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "DETROIT @ CHICAGO", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "LOS ANGELES (R) @ BUFFALO", "4:25 PM", "CBS"),
+                ("SUNDAY", "SEPTEMBER 21, 2025", "BALTIMORE @ CINCINNATI", "8:20 PM", "NBC"),
+                ("MONDAY", "SEPTEMBER 22, 2025", "MINNESOTA @ PHILADELPHIA", "8:15 PM", "ESPN")
+            ]
+        }
         
-        # Add Week 1 games (sample data)
-        week1_games = [
-            ("THURSDAY, SEPTEMBER 4, 2025", "DALLAS @ PHILADELPHIA", "8:20 PM", "NBC"),
-            ("FRIDAY, SEPTEMBER 5, 2025", "KANSAS CITY @ LOS ANGELES (C)", "8:00 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "TAMPA BAY @ ATLANTA", "1:00 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "CINCINNATI @ CLEVELAND", "1:00 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "MIAMI @ INDIANAPOLIS", "1:00 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "LAS VEGAS @ NEW ENGLAND", "1:00 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "ARIZONA @ NEW ORLEANS", "1:00 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "PITTSBURGH @ NEW YORK (J)", "1:00 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "NEW YORK (G) @ WASHINGTON", "1:00 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "CAROLINA @ JACKSONVILLE", "1:00 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "TENNESSEE @ DENVER", "4:05 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "SAN FRANCISCO @ SEATTLE", "4:05 PM", "FOX"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "DETROIT @ GREEN BAY", "4:25 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "LOS ANGELES (R) @ CHICAGO", "4:25 PM", "CBS"),
-            ("SUNDAY, SEPTEMBER 7, 2025", "BALTIMORE @ BUFFALO", "8:20 PM", "NBC"),
-            ("MONDAY, SEPTEMBER 8, 2025", "MINNESOTA @ CINCINNATI", "8:15 PM", "ESPN")
-        ]
+        # Grid layout: 3 columns, 6 rows for weeks
+        grid_start_y = 320
+        grid_width = 380
+        grid_height = 280
+        margin = 20
         
-        y_position = 250
-        for date, matchup, time, channel in week1_games:
-            # Draw date
-            draw.text((500, y_position), date, font=text_font, fill='#ffffff')
-            # Draw matchup
-            draw.text((500, y_position + 25), matchup, font=text_font, fill='#ffffff')
-            # Draw time and channel
-            draw.text((500, y_position + 50), f"{time} - {channel}", font=text_font, fill='#ffffff')
-            y_position += 100
+        # Draw grid for weeks 1-18
+        week_num = 1
+        for row in range(6):
+            for col in range(3):
+                if week_num > 18:
+                    break
+                    
+                x = col * (grid_width + margin) + 20
+                y = row * (grid_height + margin) + grid_start_y
+                
+                # Draw week header
+                week_text = f"WEEK {week_num}"
+                draw.text((x + 10, y + 10), week_text, font=week_font, fill='#ffffff')
+                
+                # Draw week border
+                draw.rectangle([x, y, x + grid_width, y + grid_height], outline='#333333', width=2)
+                
+                # Add games for this week (if we have data)
+                if week_num <= 3:
+                    games = schedule_data.get(f"WEEK {week_num}", [])
+                    game_y = y + 50
+                    for day, date, matchup, time, channel in games[:8]:  # Limit to 8 games per week
+                        # Draw day and date
+                        draw.text((x + 10, game_y), f"{day}, {date}", font=small_font, fill='#ffffff')
+                        # Draw matchup
+                        draw.text((x + 10, game_y + 20), matchup, font=text_font, fill='#ffffff')
+                        # Draw time and channel
+                        draw.text((x + 10, game_y + 40), f"{time} - {channel}", font=small_font, fill='#ffffff')
+                        game_y += 70
+                        
+                        if game_y > y + grid_height - 60:  # Don't overflow the box
+                            break
+                else:
+                    # Placeholder for other weeks
+                    draw.text((x + 10, y + 100), "Schedule TBD", font=text_font, fill='#666666')
+                
+                week_num += 1
+        
+        # Add contact information at bottom (like BETUS poster)
+        contact_y = 1900
+        draw.text((50, contact_y), "1-888-PLAYTRACKER", font=text_font, fill='#ffffff')
+        draw.text((width//2 - 50, contact_y), "QR CODE", font=text_font, fill='#ffffff')
+        draw.text((width - 200, contact_y), "PLAYTRACKER.COM", font=text_font, fill='#ffffff')
 
     async def generate_placeholder_schedule_image(self, guild, sport: str, league: str) -> Optional[str]:
         """Generate placeholder schedule image for other leagues."""
