@@ -11,7 +11,7 @@ import tempfile
 from datetime import datetime
 
 # Import the league schedule data
-from bot.data.nfl_schedule_2025_2026 import NFL_SCHEDULE_2025_2026_PART1
+from bot.data.nfl_schedule_2025_2026 import NFL_SCHEDULE_2025_2026
 
 # Import team schedules
 from bot.data.league_schedules.nfl.teams.buffalo_bills_schedule import BUFFALO_BILLS_SCHEDULE
@@ -48,9 +48,6 @@ from bot.data.league_schedules.nfl.teams.san_francisco_49ers_schedule import SAN
 from bot.data.league_schedules.nfl.teams.seattle_seahawks_schedule import SEATTLE_SEAHAWKS_SCHEDULE
 
 logger = logging.getLogger(__name__)
-
-# Use the NFL schedule data
-NFL_SCHEDULE_2025_2026 = NFL_SCHEDULE_2025_2026_PART1
 
 # Team schedule mapping
 TEAM_SCHEDULES = {
@@ -253,10 +250,11 @@ class TeamWeekSelect(View):
             text_font = ImageFont.load_default()
         
         # Add PlayTracker Pro branding
-        draw.text((600, 60), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add subtitle
-        draw.text((600, 130), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        # Add guild name
+        guild_name = guild.name if guild else "Unknown Guild"
+        draw.text((600, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
@@ -459,16 +457,16 @@ class WeekSelect(View):
                      font=header_font, fill='#ffffff', anchor="mm")
             return
         
-        # Create a better background overlay with more contrast
-        overlay = Image.new('RGBA', (width - 80, height - 400), (255, 255, 255, 180))
-        image.paste(overlay, (40, 350), overlay)
+        # Create a better background overlay with more contrast - moved up
+        overlay = Image.new('RGBA', (width - 80, height - 300), (255, 255, 255, 180))
+        image.paste(overlay, (40, 250), overlay)
         
-        # Add week title with better positioning
+        # Add week title with better positioning - moved up
         week_title = week.replace('_', ' ').title()
-        draw.text((600, 380), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
+        draw.text((600, 280), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
         
-        # Add games with better spacing and formatting
-        y_position = 450
+        # Add games with better spacing and formatting - moved up
+        y_position = 350
         current_day = None
         
         for day, date, matchup, time, channel in games:
@@ -498,8 +496,8 @@ class WeekSelect(View):
                 
                 y_position += 50
                 
-                # Add subtle separator line between games
-                if y_position < height - 200:
+                # Add subtle separator line between games - but not if we're near the bottom
+                if y_position < height - 100:
                     draw.line([(100, y_position - 5), (width - 100, y_position - 5)], 
                              fill='#e0e0e0', width=1)
                     y_position += 20
@@ -585,14 +583,30 @@ class NCAAWeekSelect(View):
             text_font = ImageFont.load_default()
         
         # Add PlayTracker Pro branding
-        draw.text((600, 60), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 40), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
         
         # Add subtitle
-        draw.text((600, 130), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 100), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add logos
+        try:
+            # Add PlayTracker Pro logo on the left
+            ptp_logo = Image.open("bot/static/logos/default_image.png")
+            ptp_logo = ptp_logo.resize((60, 60))
+            image.paste(ptp_logo, (50, 20), ptp_logo if ptp_logo.mode == 'RGBA' else None)
+            
+            # Add guild logo on the right
+            guild_logo_path = f"bot/static/guilds/{guild.id}/default_image.png" if guild else None
+            if guild_logo_path and os.path.exists(guild_logo_path):
+                guild_logo = Image.open(guild_logo_path)
+                guild_logo = guild_logo.resize((60, 60))
+                image.paste(guild_logo, (1090, 20), guild_logo if guild_logo.mode == 'RGBA' else None)
+        except Exception as e:
+            logger.warning(f"Could not load logos: {e}")
         
         # Add copyright watermark
         current_year = datetime.now().year
-        draw.text((600, 1550), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
+        draw.text((600, 1580), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
         
         return image
 
