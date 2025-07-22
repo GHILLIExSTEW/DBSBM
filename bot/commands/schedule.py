@@ -185,16 +185,16 @@ class TeamWeekSelect(View):
         
         # Generate team schedule image
         try:
-            image_path = await self.generate_team_schedule_image(interaction.guild, self.team_name, week, game_info)
+            image_path = await self.generate_team_schedule_image(interaction.guild, self.team_name, week, game_info, "NFL")
             await interaction.response.send_message(file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
         except Exception as e:
             logger.error(f"Error generating team schedule image: {e}")
             await interaction.response.send_message("Error generating team schedule image.", ephemeral=True)
     
-    async def generate_team_schedule_image(self, guild, team_name: str, week: str, game_info: tuple):
+    async def generate_team_schedule_image(self, guild, team_name: str, week: str, game_info: tuple, league="NFL"):
         # Create base image similar to league schedule
-        image = self._create_schedule_base_image(guild)
+        image = self._create_schedule_base_image(guild, league, week)
         draw = ImageDraw.Draw(image)
         
         # Load fonts
@@ -233,7 +233,7 @@ class TeamWeekSelect(View):
         image.save(temp_file.name)
         return temp_file.name
     
-    def _create_schedule_base_image(self, guild):
+    def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
         """Create the base image with branding and layout"""
         # Create base image
         image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
@@ -249,31 +249,96 @@ class TeamWeekSelect(View):
             subtitle_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
         
-        # Add PlayTracker Pro branding
-        draw.text((600, 40), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        # Add Bet Tracking AI branding
+        draw.text((600, 40), "Bet Tracking AI", font=title_font, fill='#ffffff', anchor="mm")
         
         # Add subtitle
-        draw.text((600, 100), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        if guild:
+            subtitle_text = f"{guild.name.upper()}"
+        else:
+            subtitle_text = "BET TRACKING AI GUILD"
+        draw.text((600, 100), subtitle_text, font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add league and schedule type info on new line
+        schedule_type = week.replace('_', ' ').title()
+        draw.text((600, 140), f"{league.upper()} {schedule_type} SCHEDULE", font=text_font, fill='#ffffff', anchor="mm")
         
         # Add logos
         try:
             # Add PlayTracker Pro logo on the left
-            ptp_logo = Image.open("bot/static/logos/default_image.png")
-            ptp_logo = ptp_logo.resize((60, 60))
-            image.paste(ptp_logo, (50, 20), ptp_logo if ptp_logo.mode == 'RGBA' else None)
+            ptp_logo_path = "bot/static/logos/default_image.png"
+            if os.path.exists(ptp_logo_path):
+                ptp_logo = Image.open(ptp_logo_path)
+                ptp_logo = ptp_logo.resize((80, 80))  # Made larger
+                # Convert to RGBA if needed
+                if ptp_logo.mode != 'RGBA':
+                    ptp_logo = ptp_logo.convert('RGBA')
+                # Add a white background rectangle first
+                draw.rectangle([40, 10, 120, 90], fill='#ffffff', outline='#000000', width=2)
+                image.paste(ptp_logo, (40, 10), ptp_logo)
+                # Add text label
+                draw.text((80, 95), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+                logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
+            else:
+                logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
+                # Add fallback rectangle
+                draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+                draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
             
-            # Add guild logo on the right
-            guild_logo_path = f"bot/static/guilds/{guild.id}/default_image.png" if guild else None
-            if guild_logo_path and os.path.exists(guild_logo_path):
-                guild_logo = Image.open(guild_logo_path)
-                guild_logo = guild_logo.resize((60, 60))
-                image.paste(guild_logo, (1090, 20), guild_logo if guild_logo.mode == 'RGBA' else None)
+            # Add guild logo on the right - works for ALL guilds
+            if guild:
+                # Try multiple possible guild logo paths
+                guild_logo_paths = [
+                    f"bot/static/guilds/{guild.id}/default_image.png",
+                    f"bot/static/guilds/{guild.id}/background_image.png",
+                    f"bot/static/guilds/{guild.id}/logo.png",
+                    f"bot/static/guilds/{guild.id}/guild_logo.png"
+                ]
+                
+                guild_logo_loaded = False
+                for guild_logo_path in guild_logo_paths:
+                    if os.path.exists(guild_logo_path):
+                        try:
+                            guild_logo = Image.open(guild_logo_path)
+                            guild_logo = guild_logo.resize((80, 80))  # Made larger
+                            # Convert to RGBA if needed
+                            if guild_logo.mode != 'RGBA':
+                                guild_logo = guild_logo.convert('RGBA')
+                            # Add a white background rectangle first
+                            draw.rectangle([1080, 10, 1160, 90], fill='#ffffff', outline='#000000', width=2)
+                            image.paste(guild_logo, (1080, 10), guild_logo)
+                            # Add guild name label
+                            guild_name_short = guild.name[:8] if len(guild.name) > 8 else guild.name
+                            draw.text((1120, 95), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                            logger.info(f"Added guild logo from {guild_logo_path}")
+                            guild_logo_loaded = True
+                            break
+                        except Exception as e:
+                            logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
+                            continue
+                
+                if not guild_logo_loaded:
+                    # No guild logo found, create a custom guild indicator
+                    draw.rectangle([1080, 10, 1160, 90], fill='#4a90e2', outline='#ffffff', width=2)
+                    guild_name_short = guild.name[:6] if len(guild.name) > 6 else guild.name
+                    draw.text((1120, 50), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                    logger.info(f"No guild logo found for {guild.name}, using custom indicator")
+            else:
+                # No guild context, show generic indicator
+                draw.rectangle([1080, 10, 1160, 90], fill='#666666', outline='#ffffff', width=2)
+                draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
+                logger.warning("No guild context available")
         except Exception as e:
-            logger.warning(f"Could not load logos: {e}")
+            logger.error(f"Could not load logos: {e}")
+            # Add fallback colored rectangles for debugging
+            draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+            draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+            draw.rectangle([1080, 10, 1160, 90], fill='#00ff00', outline='#ffffff', width=2)
+            draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
-        draw.text((600, 1580), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
+        draw.text((600, 1580), f"© Bet Tracking AI {current_year}", font=text_font, fill='#666666', anchor="mm")
         
         return image
 
@@ -352,46 +417,40 @@ class WeekSelect(View):
     )
     async def week_callback(self, interaction: discord.Interaction, select: Select):
         week = select.values[0]
-        
         try:
-            if self.league == "nfl":
-                image_path = await self.generate_nfl_schedule_image(interaction.guild, week)
-            elif self.league == "ncaa_football":
-                image_path = await self.generate_placeholder_schedule_image(interaction.guild, week)
-            else:
-                await interaction.response.send_message("League not supported yet.", ephemeral=True)
-                return
-                
+            # Determine league based on the view type
+            league = "NFL" if hasattr(self, 'league') and self.league == "nfl" else "NCAA"
+            image_path = await self.generate_schedule_image(interaction.guild, week, league)
             await interaction.response.send_message(file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
-            
         except Exception as e:
             logger.error(f"Error generating schedule image: {e}")
             await interaction.response.send_message("Error generating schedule image.", ephemeral=True)
 
-    async def generate_nfl_schedule_image(self, guild, week: str):
-        """Generate NFL schedule image for the specified week"""
+    async def generate_schedule_image(self, guild, week: str, league="NFL"):
+        """Generate schedule image for a specific week and league"""
         try:
             # Create base image
-            image = self._create_schedule_base_image(guild)
+            image = self._create_schedule_base_image(guild, league, week)
             
             # Add schedule data
-            self._add_nfl_schedule_data(image, week)
+            self._add_schedule_data(image, week)
             
-            # Save to temp file
+            # Save to temporary file
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            image.save(temp_file.name)
-            return temp_file.name
+            image.save(temp_file.name, 'PNG')
+            temp_file.close()
             
+            return temp_file.name
         except Exception as e:
-            logger.error(f"Error generating NFL schedule image: {e}")
+            logger.error(f"Error generating schedule image: {e}")
             raise
 
     async def generate_placeholder_schedule_image(self, guild, week: str):
         """Generate placeholder schedule image for other leagues"""
         try:
             # Create base image
-            image = self._create_schedule_base_image(guild)
+            image = self._create_schedule_base_image(guild, "NCAA", week)
             draw = ImageDraw.Draw(image)
             
             # Load fonts
@@ -414,7 +473,7 @@ class WeekSelect(View):
             logger.error(f"Error generating placeholder schedule image: {e}")
             raise
 
-    def _create_schedule_base_image(self, guild):
+    def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
         """Create the base image with branding and layout"""
         # Create base image
         image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
@@ -443,8 +502,8 @@ class WeekSelect(View):
         
         return image
 
-    def _add_nfl_schedule_data(self, image, week: str):
-        """Add NFL schedule data to the image"""
+    def _add_schedule_data(self, image, week: str):
+        """Add schedule data to the image"""
         draw = ImageDraw.Draw(image)
         
         # Load fonts with smaller sizing to fit all games
@@ -476,11 +535,7 @@ class WeekSelect(View):
         overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 180))
         image.paste(overlay, (40, 200), overlay)
         
-        # Add week title with better positioning - moved up
-        week_title = week.replace('_', ' ').title()
-        draw.text((600, 230), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
-        
-        # Add games with better spacing and formatting - moved up and tighter spacing
+        # Add games with better spacing and formatting - moved up
         y_position = 280
         current_day = None
         
@@ -546,7 +601,7 @@ class NCAAWeekSelect(View):
         week = select.values[0]
         
         try:
-            image_path = await self.generate_placeholder_schedule_image(interaction.guild, week)
+            image_path = await self.generate_schedule_image(interaction.guild, week, "NCAA")
             await interaction.response.send_message(file=discord.File(image_path))
             os.remove(image_path)  # Clean up temp file
             
@@ -558,7 +613,7 @@ class NCAAWeekSelect(View):
         """Generate placeholder schedule image for other leagues"""
         try:
             # Create base image
-            image = self._create_schedule_base_image(guild)
+            image = self._create_schedule_base_image(guild, "NCAA", week)
             draw = ImageDraw.Draw(image)
             
             # Load fonts
@@ -581,7 +636,7 @@ class NCAAWeekSelect(View):
             logger.error(f"Error generating placeholder schedule image: {e}")
             raise
 
-    def _create_schedule_base_image(self, guild):
+    def _create_schedule_base_image(self, guild, league="NFL", week="WEEK 1"):
         """Create the base image with branding and layout"""
         # Create base image
         image = Image.new('RGB', (1200, 1600), color='#1a1a1a')
@@ -606,18 +661,75 @@ class NCAAWeekSelect(View):
         # Add logos
         try:
             # Add PlayTracker Pro logo on the left
-            ptp_logo = Image.open("bot/static/logos/default_image.png")
-            ptp_logo = ptp_logo.resize((60, 60))
-            image.paste(ptp_logo, (50, 20), ptp_logo if ptp_logo.mode == 'RGBA' else None)
+            ptp_logo_path = "bot/static/logos/default_image.png"
+            if os.path.exists(ptp_logo_path):
+                ptp_logo = Image.open(ptp_logo_path)
+                ptp_logo = ptp_logo.resize((80, 80))  # Made larger
+                # Convert to RGBA if needed
+                if ptp_logo.mode != 'RGBA':
+                    ptp_logo = ptp_logo.convert('RGBA')
+                # Add a white background rectangle first
+                draw.rectangle([40, 10, 120, 90], fill='#ffffff', outline='#000000', width=2)
+                image.paste(ptp_logo, (40, 10), ptp_logo)
+                # Add text label
+                draw.text((80, 95), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+                logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
+            else:
+                logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
+                # Add fallback rectangle
+                draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+                draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
             
-            # Add guild logo on the right
-            guild_logo_path = f"bot/static/guilds/{guild.id}/default_image.png" if guild else None
-            if guild_logo_path and os.path.exists(guild_logo_path):
-                guild_logo = Image.open(guild_logo_path)
-                guild_logo = guild_logo.resize((60, 60))
-                image.paste(guild_logo, (1090, 20), guild_logo if guild_logo.mode == 'RGBA' else None)
+            # Add guild logo on the right - works for ALL guilds
+            if guild:
+                # Try multiple possible guild logo paths
+                guild_logo_paths = [
+                    f"bot/static/guilds/{guild.id}/default_image.png",
+                    f"bot/static/guilds/{guild.id}/background_image.png",
+                    f"bot/static/guilds/{guild.id}/logo.png",
+                    f"bot/static/guilds/{guild.id}/guild_logo.png"
+                ]
+                
+                guild_logo_loaded = False
+                for guild_logo_path in guild_logo_paths:
+                    if os.path.exists(guild_logo_path):
+                        try:
+                            guild_logo = Image.open(guild_logo_path)
+                            guild_logo = guild_logo.resize((80, 80))  # Made larger
+                            # Convert to RGBA if needed
+                            if guild_logo.mode != 'RGBA':
+                                guild_logo = guild_logo.convert('RGBA')
+                            # Add a white background rectangle first
+                            draw.rectangle([1080, 10, 1160, 90], fill='#ffffff', outline='#000000', width=2)
+                            image.paste(guild_logo, (1080, 10), guild_logo)
+                            # Add guild name label
+                            guild_name_short = guild.name[:8] if len(guild.name) > 8 else guild.name
+                            draw.text((1120, 95), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                            logger.info(f"Added guild logo from {guild_logo_path}")
+                            guild_logo_loaded = True
+                            break
+                        except Exception as e:
+                            logger.warning(f"Failed to load guild logo from {guild_logo_path}: {e}")
+                            continue
+                
+                if not guild_logo_loaded:
+                    # No guild logo found, create a custom guild indicator
+                    draw.rectangle([1080, 10, 1160, 90], fill='#4a90e2', outline='#ffffff', width=2)
+                    guild_name_short = guild.name[:6] if len(guild.name) > 6 else guild.name
+                    draw.text((1120, 50), guild_name_short.upper(), font=text_font, fill='#ffffff', anchor="mm")
+                    logger.info(f"No guild logo found for {guild.name}, using custom indicator")
+            else:
+                # No guild context, show generic indicator
+                draw.rectangle([1080, 10, 1160, 90], fill='#666666', outline='#ffffff', width=2)
+                draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
+                logger.warning("No guild context available")
         except Exception as e:
-            logger.warning(f"Could not load logos: {e}")
+            logger.error(f"Could not load logos: {e}")
+            # Add fallback colored rectangles for debugging
+            draw.rectangle([40, 10, 120, 90], fill='#ff0000', outline='#ffffff', width=2)
+            draw.text((80, 50), "BTAI", font=text_font, fill='#ffffff', anchor="mm")
+            draw.rectangle([1080, 10, 1160, 90], fill='#00ff00', outline='#ffffff', width=2)
+            draw.text((1120, 50), "GUILD", font=text_font, fill='#ffffff', anchor="mm")
         
         # Add copyright watermark
         current_year = datetime.now().year
