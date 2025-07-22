@@ -250,15 +250,30 @@ class TeamWeekSelect(View):
             text_font = ImageFont.load_default()
         
         # Add PlayTracker Pro branding
-        draw.text((600, 50), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
+        draw.text((600, 40), "PlayTracker Pro", font=title_font, fill='#ffffff', anchor="mm")
         
-        # Add guild name
-        guild_name = guild.name if guild else "Unknown Guild"
-        draw.text((600, 120), f"{guild_name} Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        # Add subtitle
+        draw.text((600, 100), "PLAYMAKER PICKS Schedule", font=subtitle_font, fill='#ffffff', anchor="mm")
+        
+        # Add logos
+        try:
+            # Add PlayTracker Pro logo on the left
+            ptp_logo = Image.open("bot/static/logos/default_image.png")
+            ptp_logo = ptp_logo.resize((60, 60))
+            image.paste(ptp_logo, (50, 20), ptp_logo if ptp_logo.mode == 'RGBA' else None)
+            
+            # Add guild logo on the right
+            guild_logo_path = f"bot/static/guilds/{guild.id}/default_image.png" if guild else None
+            if guild_logo_path and os.path.exists(guild_logo_path):
+                guild_logo = Image.open(guild_logo_path)
+                guild_logo = guild_logo.resize((60, 60))
+                image.paste(guild_logo, (1090, 20), guild_logo if guild_logo.mode == 'RGBA' else None)
+        except Exception as e:
+            logger.warning(f"Could not load logos: {e}")
         
         # Add copyright watermark
         current_year = datetime.now().year
-        draw.text((600, 1550), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
+        draw.text((600, 1580), f"© PlayTracker Pro {current_year}", font=text_font, fill='#666666', anchor="mm")
         
         return image
 
@@ -432,13 +447,13 @@ class WeekSelect(View):
         """Add NFL schedule data to the image"""
         draw = ImageDraw.Draw(image)
         
-        # Load fonts with better sizing
+        # Load fonts with smaller sizing to fit all games
         try:
-            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 42)
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 28)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 22)
-            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
-            time_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 20)
+            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 24)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
+            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 16)
+            time_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 16)
         except:
             header_font = ImageFont.load_default()
             title_font = ImageFont.load_default()
@@ -458,15 +473,15 @@ class WeekSelect(View):
             return
         
         # Create a better background overlay with more contrast - moved up
-        overlay = Image.new('RGBA', (width - 80, height - 300), (255, 255, 255, 180))
-        image.paste(overlay, (40, 250), overlay)
+        overlay = Image.new('RGBA', (width - 80, height - 250), (255, 255, 255, 180))
+        image.paste(overlay, (40, 200), overlay)
         
         # Add week title with better positioning - moved up
         week_title = week.replace('_', ' ').title()
-        draw.text((600, 280), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
+        draw.text((600, 230), f"NFL 2025-2026 - {week_title}", font=header_font, fill='#1a1a1a', anchor="mm")
         
-        # Add games with better spacing and formatting - moved up
-        y_position = 350
+        # Add games with better spacing and formatting - moved up and tighter spacing
+        y_position = 280
         current_day = None
         
         for day, date, matchup, time, channel in games:
@@ -474,18 +489,18 @@ class WeekSelect(View):
             if day == "BYE WEEK":
                 # Draw bye week in different style
                 draw.text((80, y_position), f"BYE WEEK: {matchup}", font=title_font, fill='#666666')
-                y_position += 80
+                y_position += 60
             else:
                 # Group games by day with day headers
                 if current_day != day:
                     current_day = day
                     # Add day separator with background
-                    day_bg = Image.new('RGBA', (width - 160, 40), (70, 130, 180, 200))
-                    image.paste(day_bg, (80, y_position - 10), day_bg)
-                    draw.text((600, y_position + 10), f"{day}, {date}", font=title_font, fill='#ffffff', anchor="mm")
-                    y_position += 60
+                    day_bg = Image.new('RGBA', (width - 160, 35), (70, 130, 180, 200))
+                    image.paste(day_bg, (80, y_position - 8), day_bg)
+                    draw.text((600, y_position + 8), f"{day}, {date}", font=title_font, fill='#ffffff', anchor="mm")
+                    y_position += 50
                 
-                # Draw game details with better spacing
+                # Draw game details with tighter spacing
                 # Team matchup
                 draw.text((100, y_position), matchup, font=text_font, fill='#1a1a1a')
                 
@@ -494,13 +509,13 @@ class WeekSelect(View):
                 time_width = draw.textlength(time_text, font=time_font)
                 draw.text((width - 100 - time_width, y_position), time_text, font=time_font, fill='#444444')
                 
-                y_position += 50
+                y_position += 40
                 
                 # Add subtle separator line between games - but not if we're near the bottom
-                if y_position < height - 100:
-                    draw.line([(100, y_position - 5), (width - 100, y_position - 5)], 
+                if y_position < height - 80:
+                    draw.line([(100, y_position - 3), (width - 100, y_position - 3)], 
                              fill='#e0e0e0', width=1)
-                    y_position += 20
+                    y_position += 15
 
 class NCAAWeekSelect(View):
     def __init__(self):
