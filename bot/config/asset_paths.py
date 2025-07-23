@@ -88,6 +88,7 @@ SPORT_CATEGORIES = {
         "UEFACL",
         "UEFA CHAMPIONS LEAGUE",
         "ChampionsLeague",
+        "UEFA EUROPA LEAGUE",
         "EuropaLeague",
         "WORLDCUP",
         "Allsvenskan",

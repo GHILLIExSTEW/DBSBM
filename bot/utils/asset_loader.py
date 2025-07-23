@@ -212,6 +212,8 @@ class AssetLoader:
                 league_variants.extend(["Serie_A", "SERIE_A"])
         elif league.lower() == "brazil serie a":
             league_variants.extend(["Brazil_Serie_A", "BRAZIL_SERIE_A"])
+        elif league.lower() == "uefa europa league" or league == "EuropaLeague":
+            league_variants.extend(["UEFA_Europa_League", "UEFA EUROPA LEAGUE"])
 
         logo_dir = None
         for variant in league_variants:

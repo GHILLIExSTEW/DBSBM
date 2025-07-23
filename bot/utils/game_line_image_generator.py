@@ -209,6 +209,19 @@ class GameLineImageGenerator:
                 league_cap + ".png",
                 league_lower + ".png",
             ]
+        elif league_upper == "UEFA EUROPA LEAGUE" or league == "EuropaLeague":
+            league_dir_variants = [
+                "uefa_europa_league",
+                league_upper,
+                league_cap,
+                league_lower,
+            ]
+            logo_file_variants = [
+                "uefa_europa_league.png",
+                league_upper + ".png",
+                league_cap + ".png",
+                league_lower + ".png",
+            ]
         else:
             league_dir_variants = [league_upper, league_cap, league_lower]
             logo_file_variants = [
@@ -254,6 +267,8 @@ class GameLineImageGenerator:
             "UEFA Champions League": "UEFA CL",
             "ChampionsLeague": "UEFA CL",
             "UEFA CL": "UEFA CL",
+            "UEFA Europa League": "UEFA Europa",
+            "EuropaLeague": "UEFA Europa",
             "English Premier League": "EPL",
             "Major League Baseball": "MLB",
             "National Basketball Association": "NBA",
