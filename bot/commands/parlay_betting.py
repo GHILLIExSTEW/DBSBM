@@ -383,15 +383,7 @@ class ParlayGameSelect(Select):
                     label=label[:100], value=value[:100], description=desc[:100]
                 )
             )
-        # Always add manual entry as the last option
-        manual_value = "manual_entry"
-        game_options.append(
-            SelectOption(
-                label="Manual Entry",
-                value=manual_value[:100],
-                description="Enter game details manually",
-            )
-        )
+        # Manual entry is already added by get_normalized_games_for_dropdown
         super().__init__(
             placeholder="Select a game or choose Manual Entry",
             options=game_options,
@@ -407,7 +399,7 @@ class ParlayGameSelect(Select):
     async def callback(self, interaction: Interaction):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
-        if selected_value == "manual_entry":
+        if selected_value == "manual":
             self.parent_view.current_leg_construction_details.update(
                 {
                     "api_game_id": None,
