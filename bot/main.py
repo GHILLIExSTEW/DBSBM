@@ -291,7 +291,6 @@ class BettingBot(commands.Bot):
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
-        self.push_notification_service = None  # Will be initialized in setup_hook
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
@@ -331,8 +330,6 @@ class BettingBot(commands.Bot):
             "odds.py",  # New odds command
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
             "platinum_api.py",  # Platinum API commands
-            "push_notifications.py",  # Push notification commands
-            "sms_commands.py",  # SMS commands
             "sync_cog.py",  # Sync commands
         ]
         loaded_commands = []
@@ -661,40 +658,7 @@ class BettingBot(commands.Bot):
 
         logger.info("Starting services...")
         
-        # Initialize push notification service
-        try:
-            from bot.services.push_notification_service import PushNotificationService, create_push_notifications_table
-            self.push_notification_service = PushNotificationService(self, self.db_manager)
-            await create_push_notifications_table(self.db_manager)
-            logger.info("Push notification service initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize push notification service: {e}")
-            self.push_notification_service = None
-        
-        # Initialize SMS service
-        try:
-            from bot.services.sms_service import SMSService, create_sms_tables
-            # Get Twilio credentials from environment variables
-            twilio_account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-            twilio_auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-            twilio_phone_number = os.getenv("TWILIO_PHONE_NUMBER")
-            
-            if twilio_account_sid and twilio_auth_token and twilio_phone_number:
-                self.sms_service = SMSService(
-                    self, 
-                    self.db_manager, 
-                    twilio_account_sid, 
-                    twilio_auth_token, 
-                    twilio_phone_number
-                )
-                await create_sms_tables(self.db_manager)
-                logger.info("SMS service initialized with Twilio")
-            else:
-                logger.warning("SMS service disabled - Twilio credentials not provided")
-                self.sms_service = None
-        except Exception as e:
-            logger.error(f"Failed to initialize SMS service: {e}")
-            self.sms_service = None
+
         
         service_starts = [
             self.admin_service.start(),
@@ -707,14 +671,6 @@ class BettingBot(commands.Bot):
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
         ]
-        
-        # Add push notification service to startup if available
-        if self.push_notification_service:
-            service_starts.append(self.push_notification_service.start())
-        
-        # Add SMS service to startup if available
-        if self.sms_service:
-            service_starts.append(self.sms_service.start())
 
         # Initialize rate limiter
         try:

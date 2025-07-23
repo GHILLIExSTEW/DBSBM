@@ -63,7 +63,7 @@ class SyncCog(commands.Cog):
             )
             
             # Check for specific commands
-            important_commands = ["test_notification", "notify", "notify_capper_bet", "notify_event", "notification_stats"]
+            important_commands = []
             missing_commands = [cmd for cmd in important_commands if cmd not in synced_names]
             
             if missing_commands:
@@ -201,16 +201,7 @@ class SyncCog(commands.Cog):
                 inline=False
             )
             
-            # Check for push notification commands specifically
-            push_commands = ["test_notification", "notify", "notify_capper_bet", "notify_event", "notification_stats"]
-            available_push = [cmd for cmd in push_commands if cmd in command_names]
-            synced_push = [cmd for cmd in push_commands if cmd in guild_command_names]
-            
-            embed.add_field(
-                name="📱 Push Notification Commands",
-                value=f"**Available:** {', '.join(available_push) if available_push else 'None'}\n**Synced:** {', '.join(synced_push) if synced_push else 'None'}",
-                inline=False
-            )
+
             
             embed.set_footer(text=f"Guild ID: {interaction.guild_id}")
             

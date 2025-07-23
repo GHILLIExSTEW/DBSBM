@@ -866,7 +866,6 @@ class AdminCog(commands.Cog):
                 "bot.commands.odds",
                 "bot.commands.platinum_fixed",
                 "bot.commands.platinum_api",
-                "bot.commands.push_notifications",
                 "bot.commands.sync_cog"
             ]
             
@@ -929,7 +928,7 @@ class AdminCog(commands.Cog):
             )
             
             # Check for critical commands
-            critical_commands = ["test_notification", "notify", "notify_capper_bet", "notify_event", "notification_stats", "debug_push", "fix_commands"]
+            critical_commands = ["fix_commands"]
             missing_critical = [cmd for cmd in critical_commands if cmd not in synced_names]
             
             if missing_critical:
