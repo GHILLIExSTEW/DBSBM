@@ -493,6 +493,20 @@ class ParlayGameSelect(Select):
         await self.parent_view.go_next(interaction)
 
 
+class ManualEntryModalButton(Button):
+    def __init__(self, modal):
+        super().__init__(
+            style=ButtonStyle.primary,
+            label="Enter Manual Bet Details",
+            custom_id=f"manual_entry_modal_{uuid.uuid4()}",
+        )
+        self.modal = modal
+
+    async def callback(self, interaction: Interaction):
+        logger.debug(f"[ManualEntryModalButton] Opening modal for manual entry")
+        await interaction.response.send_modal(self.modal)
+
+
 class CancelButton(Button):
     def __init__(self, parent_view: "ParlayBetWorkflowView"):
         super().__init__(
@@ -1778,25 +1792,19 @@ class ParlayBetWorkflowView(View):
                         view_custom_id_suffix=self.original_interaction.id,
                         bet_details_from_view=self.current_leg_construction_details,
                     )
-                    modal.view_ref = self
-
-                    if not interaction.response.is_done():
-                        await interaction.response.send_modal(modal)
-                        await self.edit_message_for_current_leg(
-                            interaction,
-                            content="Please fill in the bet details in the popup form.",
-                            view=self,
-                        )
-                    else:
-                        logger.error(
-                            "Tried to send modal, but interaction already responded to."
-                        )
-                        await self.edit_message_for_current_leg(
-                            interaction,
-                            content="❌ Error: Could not open modal. Please try again or cancel.",
-                            view=None,
-                        )
-                        self.stop()
+                    # Since interaction is already deferred, we need to use a different approach
+                    # Create a button that opens the modal
+                    from bot.commands.parlay_betting import ManualEntryModalButton
+                    
+                    modal_button = ManualEntryModalButton(modal)
+                    self.add_item(modal_button)
+                    self.add_item(CancelButton(self))
+                    
+                    await self.edit_message_for_current_leg(
+                        interaction,
+                        content="Click the button below to enter manual bet details:",
+                        view=self,
+                    )
                     return
             else:
                 # For regular games, show team selection
