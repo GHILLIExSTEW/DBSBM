@@ -220,14 +220,19 @@ class TeamDropdown(discord.ui.Select):
                 for team in teams[:24]:  # 24 + "All Teams" = 25 total
                     # Handle different response structures
                     if isinstance(team, dict):
-                        # Direct team object (like in the API response)
-                        name = team.get('name', 'Unknown')
-                        team_id = team.get('id', 0)
+                        # Check if it's a nested team structure (football API)
+                        if 'team' in team:
+                            team_info = team['team']
+                            name = team_info.get('name', 'Unknown')
+                            team_id = team_info.get('id', 0)
+                        else:
+                            # Direct team object (baseball API)
+                            name = team.get('name', 'Unknown')
+                            team_id = team.get('id', 0)
                     else:
-                        # Nested team object (fallback)
-                        team_info = team.get('team', {})
-                        name = team_info.get('name', 'Unknown')
-                        team_id = team_info.get('id', 0)
+                        # Fallback
+                        name = 'Unknown'
+                        team_id = 0
                     
                     if team_id and name != 'Unknown':
                         # Filter out league names (like "American League", "National League")
@@ -379,11 +384,16 @@ class APIFlowView(discord.ui.View):
 
             logger.info("Platinum status check passed, proceeding with API query")
             
-            await interaction.response.edit_message(
-                content="⏳ Querying API...",
-                embed=None,
-                view=None
-            )
+            # Check if interaction has already been responded to
+            if interaction.response.is_done():
+                logger.warning("Interaction already responded to, using followup")
+                await interaction.followup.send("⏳ Querying API...", ephemeral=True)
+            else:
+                await interaction.response.edit_message(
+                    content="⏳ Querying API...",
+                    embed=None,
+                    view=None
+                )
 
             # Build parameters for players query
             params = {"league": league_id}
@@ -422,18 +432,26 @@ class APIFlowView(discord.ui.View):
         except Exception as e:
             logger.error(f"Error in API flow with team: {e}", exc_info=True)
             try:
-                await interaction.followup.send(
-                    f"❌ An error occurred while processing your request: {str(e)}",
-                    ephemeral=True
-                )
-            except Exception as followup_error:
-                logger.error(f"Failed to send error message: {followup_error}")
-                # Try to respond to the original interaction
-                try:
+                # Check if interaction has already been responded to
+                if interaction.response.is_done():
+                    await interaction.followup.send(
+                        f"❌ An error occurred while processing your request: {str(e)}",
+                        ephemeral=True
+                    )
+                else:
                     await interaction.response.send_message(
                         f"❌ An error occurred while processing your request: {str(e)}",
                         ephemeral=True
                     )
+            except Exception as followup_error:
+                logger.error(f"Failed to send error message: {followup_error}")
+                # Try to respond to the original interaction
+                try:
+                    if not interaction.response.is_done():
+                        await interaction.response.send_message(
+                            f"❌ An error occurred while processing your request: {str(e)}",
+                            ephemeral=True
+                        )
                 except:
                     logger.error("Failed to send any error message to user")
 
@@ -747,6 +765,16 @@ class PlatinumAPICog(commands.Cog):
             logger.error(f"Error making API request: {e}")
             return {'error': f'Request failed: {str(e)}'}
 
+    async def _send_interaction_response(self, interaction: discord.Interaction, content=None, embed=None, view=None, ephemeral=False):
+        """Helper function to send interaction response safely."""
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(content=content, embed=embed, view=view, ephemeral=ephemeral)
+            else:
+                await interaction.response.send_message(content=content, embed=embed, view=view, ephemeral=ephemeral)
+        except Exception as e:
+            logger.error(f"Error sending interaction response: {e}")
+
     async def display_query_results(self, interaction: discord.Interaction, sport: str, query_type: str, result: dict):
         """Display the results of an API query."""
         if 'error' in result:
@@ -755,7 +783,7 @@ class PlatinumAPICog(commands.Cog):
                 description=result['error'],
                 color=0xff0000
             )
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
             return
 
         if query_type == 'leagues':
@@ -766,7 +794,7 @@ class PlatinumAPICog(commands.Cog):
                     description="No leagues found for the specified criteria.",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Use pagination if more than 10 results
@@ -790,7 +818,7 @@ class PlatinumAPICog(commands.Cog):
                         value=f"Country: {country}\nType: {type_name}",
                         inline=True
                     )
-                await interaction.followup.send(embed=embed)
+                await self._send_interaction_response(interaction, embed=embed)
 
         elif query_type == 'players':
             players = result.get('response', [])
@@ -811,7 +839,7 @@ class PlatinumAPICog(commands.Cog):
                                "• Try a different season (the system automatically tries current and previous year)",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Use pagination if more than 10 results
@@ -835,7 +863,7 @@ class PlatinumAPICog(commands.Cog):
                         value=f"Age: {age}\nNationality: {nationality}",
                         inline=True
                     )
-                await interaction.followup.send(embed=embed)
+                await self._send_interaction_response(interaction, embed=embed)
 
         elif query_type == 'teams':
             teams = result.get('response', [])
@@ -845,7 +873,7 @@ class PlatinumAPICog(commands.Cog):
                     description="No teams found for the specified criteria.",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Use pagination if more than 10 results
@@ -869,7 +897,7 @@ class PlatinumAPICog(commands.Cog):
                         value=f"Country: {country}\nFounded: {founded}",
                         inline=True
                     )
-                await interaction.followup.send(embed=embed)
+                await self._send_interaction_response(interaction, embed=embed)
 
         elif query_type == 'fixtures':
             fixtures = result.get('response', [])
@@ -879,7 +907,7 @@ class PlatinumAPICog(commands.Cog):
                     description="No fixtures found for the specified criteria.",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Use pagination if more than 10 results
@@ -905,7 +933,7 @@ class PlatinumAPICog(commands.Cog):
                         value=f"Date: {date}\nStatus: {status}",
                         inline=True
                     )
-                await interaction.followup.send(embed=embed)
+                await self._send_interaction_response(interaction, embed=embed)
 
         elif query_type == 'odds':
             odds_data = result.get('response', [])
@@ -923,7 +951,7 @@ class PlatinumAPICog(commands.Cog):
                                "• Check if the season is current",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Debug: Log the first odds entry structure
@@ -1002,7 +1030,7 @@ class PlatinumAPICog(commands.Cog):
             view.previous_page.disabled = True
             view.next_page.disabled = view.total_pages <= 1
 
-            await interaction.followup.send(embed=embed, view=view)
+            await self._send_interaction_response(interaction, embed=embed, view=view)
 
         elif query_type == 'live':
             live_matches = result.get('response', [])
@@ -1012,7 +1040,7 @@ class PlatinumAPICog(commands.Cog):
                     description="No live matches currently playing.",
                     color=0x9b59b6
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await self._send_interaction_response(interaction, embed=embed, ephemeral=True)
                 return
             
             # Use pagination if more than 10 results
@@ -1043,7 +1071,7 @@ class PlatinumAPICog(commands.Cog):
                         value=f"Status: {status}\nElapsed: {elapsed}'",
                         inline=True
                     )
-                await interaction.followup.send(embed=embed)
+                await self._send_interaction_response(interaction, embed=embed)
 
 
 
