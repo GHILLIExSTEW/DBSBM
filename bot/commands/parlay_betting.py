@@ -439,6 +439,7 @@ class ParlayGameSelect(Select):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
         if selected_value == "manual":
+            logger.debug(f"[ParlayGameSelect] Manual entry selected, updating leg construction details")
             self.parent_view.current_leg_construction_details.update(
                 {
                     "api_game_id": None,
@@ -447,6 +448,7 @@ class ParlayGameSelect(Select):
                     "away_team_name": "Manual Entry",
                 }
             )
+            logger.debug(f"[ParlayGameSelect] Updated leg construction details: {self.parent_view.current_leg_construction_details}")
         else:
             selected_game = None
             if selected_value.startswith("api_"):
@@ -483,7 +485,9 @@ class ParlayGameSelect(Select):
                 )
                 self.parent_view.stop()
                 return
+        logger.debug(f"[ParlayGameSelect] About to defer interaction and call go_next")
         await interaction.response.defer()
+        logger.debug(f"[ParlayGameSelect] Interaction deferred, calling go_next")
         await self.parent_view.go_next(interaction)
 
 
@@ -1641,6 +1645,7 @@ class ParlayBetWorkflowView(View):
         self.current_step += 1
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
         logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
+        logger.debug(f"[PARLAY WORKFLOW] Current leg construction details: {self.current_leg_construction_details}")
         
         # Ensure view is properly cleared before adding new items
         self.clear_items()
@@ -1690,6 +1695,9 @@ class ParlayBetWorkflowView(View):
                     self.bot.db_manager, league
                 )
 
+                logger.debug(f"[PARLAY WORKFLOW] Fetched {len(games)} games for {league}")
+                logger.debug(f"[PARLAY WORKFLOW] Games list: {games}")
+
                 if not games:
                     await self.edit_message_for_current_leg(
                         interaction,
@@ -1699,6 +1707,7 @@ class ParlayBetWorkflowView(View):
                     self.stop()
                     return
 
+                logger.debug(f"[PARLAY WORKFLOW] Creating ParlayGameSelect with {len(games)} games")
                 self.add_item(ParlayGameSelect(self, games))
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(
@@ -1723,80 +1732,58 @@ class ParlayBetWorkflowView(View):
             is_manual = self.current_leg_construction_details.get("is_manual", False)
 
             if is_manual:
-                # For manual entry, check if this is an individual sport
-                from bot.config.leagues import LEAGUE_CONFIG
-
-                league_conf = LEAGUE_CONFIG.get(league, {})
-                sport_type = league_conf.get("sport_type", "Team Sport")
-                is_individual_sport = sport_type == "Individual Player"
-
-                if is_individual_sport:
-                    # For individual sports, skip team selection and go directly to modal
-                    if line_type == "player_prop":
-                        # Use interactive player search view for player props
-                        from bot.commands.parlay_enhanced_player_prop_modal import (
-                            ParlayPlayerSearchView,
-                        )
-
-                        # Create the interactive player search view
-                        search_view = ParlayPlayerSearchView(
-                            self.bot,
-                            self.bot.db_manager,
-                            league,
-                            leg_number=len(self.bet_details.get("legs", [])) + 1,
-                        )
-                        search_view.parent_view = self
-                        
-                        await self.edit_message_for_current_leg(
-                            interaction,
-                            content=f"Search for a player in {league} to create your player prop bet:",
-                            view=search_view,
-                        )
-                        return
-                    else:
-                        # Use regular bet details modal for game lines only
-                        modal = BetDetailsModal(
-                            line_type=line_type,
-                            is_manual=True,
-                            leg_number=len(self.bet_details.get("legs", [])) + 1,
-                            view_custom_id_suffix=self.original_interaction.id,
-                            bet_details_from_view=self.current_leg_construction_details,
-                        )
-                        modal.view_ref = self
-
-                        if not interaction.response.is_done():
-                            await interaction.response.send_modal(modal)
-                            await self.edit_message_for_current_leg(
-                                interaction,
-                                content="Please fill in the bet details in the popup form.",
-                                view=self,
-                            )
-                        else:
-                            logger.error(
-                                "Tried to send modal, but interaction already responded to."
-                            )
-                            await self.edit_message_for_current_leg(
-                                interaction,
-                                content="❌ Error: Could not open modal. Please try again or cancel.",
-                                view=None,
-                            )
-                            self.stop()
-                        return
-                else:
-                    # For team sports, show team selection (existing logic)
-                    home_team = self.current_leg_construction_details.get(
-                        "home_team_name", ""
+                # For manual entry, always open a modal regardless of sport type
+                logger.debug(f"[PARLAY WORKFLOW] Manual entry detected, opening modal for {line_type}")
+                
+                if line_type == "player_prop":
+                    # Use interactive player search view for player props
+                    from bot.commands.parlay_enhanced_player_prop_modal import (
+                        ParlayPlayerSearchView,
                     )
-                    away_team = self.current_leg_construction_details.get(
-                        "away_team_name", ""
+
+                    # Create the interactive player search view
+                    search_view = ParlayPlayerSearchView(
+                        self.bot,
+                        self.bot.db_manager,
+                        league,
+                        leg_number=len(self.bet_details.get("legs", [])) + 1,
                     )
-                    self.add_item(TeamSelect(self, home_team, away_team))
-                    self.add_item(CancelButton(self))
+                    search_view.parent_view = self
+                    
                     await self.edit_message_for_current_leg(
                         interaction,
-                        content="Select which team you are betting on:",
-                        view=self,
+                        content=f"Search for a player in {league} to create your player prop bet:",
+                        view=search_view,
                     )
+                    return
+                else:
+                    # Use regular bet details modal for game lines
+                    modal = BetDetailsModal(
+                        line_type=line_type,
+                        is_manual=True,
+                        leg_number=len(self.bet_details.get("legs", [])) + 1,
+                        view_custom_id_suffix=self.original_interaction.id,
+                        bet_details_from_view=self.current_leg_construction_details,
+                    )
+                    modal.view_ref = self
+
+                    if not interaction.response.is_done():
+                        await interaction.response.send_modal(modal)
+                        await self.edit_message_for_current_leg(
+                            interaction,
+                            content="Please fill in the bet details in the popup form.",
+                            view=self,
+                        )
+                    else:
+                        logger.error(
+                            "Tried to send modal, but interaction already responded to."
+                        )
+                        await self.edit_message_for_current_leg(
+                            interaction,
+                            content="❌ Error: Could not open modal. Please try again or cancel.",
+                            view=None,
+                        )
+                        self.stop()
                     return
             else:
                 # For regular games, show team selection
