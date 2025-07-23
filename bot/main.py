@@ -332,6 +332,7 @@ class BettingBot(commands.Bot):
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
             "platinum_api.py",  # Platinum API commands
             "push_notifications.py",  # Push notification commands
+            "sync_cog.py",  # Sync commands
         ]
         loaded_commands = []
         for filename in cog_files:

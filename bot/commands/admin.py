@@ -827,6 +827,142 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message(
                 "❌ An error occurred while processing your request.", ephemeral=True
             )
+            
+    @app_commands.command(
+        name="fix_commands",
+        description="🔧 Fix and sync all bot commands (admin only)"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def fix_commands(self, interaction: Interaction):
+        """Fix and sync all bot commands."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            embed = discord.Embed(
+                title="🔧 EMERGENCY COMMAND FIX",
+                description="Force syncing ALL commands to this guild...",
+                color=0xff0000
+            )
+            
+            # Force reload ALL extensions first
+            embed.add_field(
+                name="🔄 Step 1: Reloading Extensions",
+                value="Reloading all command extensions...",
+                inline=False
+            )
+            
+            extensions_to_reload = [
+                "bot.commands.admin",
+                "bot.commands.betting", 
+                "bot.commands.enhanced_player_props",
+                "bot.commands.parlay_betting",
+                "bot.commands.remove_user",
+                "bot.commands.setid",
+                "bot.commands.add_user",
+                "bot.commands.stats",
+                "bot.commands.load_logos",
+                "bot.commands.schedule",
+                "bot.commands.maintenance",
+                "bot.commands.odds",
+                "bot.commands.platinum_fixed",
+                "bot.commands.platinum_api",
+                "bot.commands.push_notifications",
+                "bot.commands.sync_cog"
+            ]
+            
+            reloaded_count = 0
+            for ext in extensions_to_reload:
+                try:
+                    await self.bot.reload_extension(ext)
+                    reloaded_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to reload {ext}: {e}")
+            
+            embed.add_field(
+                name="✅ Extensions Reloaded",
+                value=f"Successfully reloaded {reloaded_count}/{len(extensions_to_reload)} extensions",
+                inline=False
+            )
+            
+            # Clear all commands and re-add them
+            embed.add_field(
+                name="🧹 Step 2: Clearing Commands",
+                value="Clearing existing command tree...",
+                inline=False
+            )
+            
+            self.bot.tree.clear_commands(guild=discord.Object(id=interaction.guild_id))
+            
+            # Get all available commands after reload
+            all_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
+            logger.info(f"All available commands after reload: {all_commands}")
+            
+            embed.add_field(
+                name="📋 Available Commands",
+                value="\n".join([f"• `/{cmd}`" for cmd in all_commands[:20]]) + 
+                      (f"\n... and {len(all_commands) - 20} more" if len(all_commands) > 20 else ""),
+                inline=False
+            )
+            
+            # Force sync to guild
+            embed.add_field(
+                name="🔄 Step 3: Force Syncing",
+                value="Syncing all commands to this guild...",
+                inline=False
+            )
+            
+            guild_obj = discord.Object(id=interaction.guild_id)
+            synced = await self.bot.tree.sync(guild=guild_obj)
+            synced_names = [cmd.name for cmd in synced]
+            
+            embed.add_field(
+                name="✅ SYNC COMPLETE",
+                value=f"Successfully synced {len(synced)} commands to guild!",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="📋 Synced Commands",
+                value="\n".join([f"• `/{cmd}`" for cmd in synced_names[:25]]) + 
+                      (f"\n... and {len(synced_names) - 25} more" if len(synced_names) > 25 else ""),
+                inline=False
+            )
+            
+            # Check for critical commands
+            critical_commands = ["test_notification", "notify", "notify_capper_bet", "notify_event", "notification_stats", "debug_push", "fix_commands"]
+            missing_critical = [cmd for cmd in critical_commands if cmd not in synced_names]
+            
+            if missing_critical:
+                embed.add_field(
+                    name="⚠️ MISSING CRITICAL COMMANDS",
+                    value="\n".join([f"• `/{cmd}`" for cmd in missing_critical]),
+                    inline=False
+                )
+                embed.color = 0xffa500
+            else:
+                embed.add_field(
+                    name="🎉 SUCCESS!",
+                    value="All critical commands are now available!",
+                    inline=False
+                )
+                embed.color = 0x00ff00
+            
+            embed.set_footer(text=f"Guild ID: {interaction.guild_id} • Emergency fix at {discord.utils.utcnow().strftime('%H:%M:%S')}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Emergency fix commands failed: {e}", exc_info=True)
+            error_embed = discord.Embed(
+                title="❌ EMERGENCY FIX FAILED",
+                description=f"Critical error: {str(e)}",
+                color=0xff0000
+            )
+            
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
 
     # Cog specific error handler
     async def cog_app_command_error(
