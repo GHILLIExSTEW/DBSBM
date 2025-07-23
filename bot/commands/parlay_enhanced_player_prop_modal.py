@@ -618,15 +618,116 @@ class ParlayPlayerSearchView(View):
             async def prop_callback(interaction: Interaction):
                 selected_prop_type = prop_select.values[0]
 
-                # Show the enhanced modal with pre-filled data
-                modal = ParlayEnhancedPlayerPropModal(
-                    self.bot, self.db_manager, self.league, self.leg_number
-                )
+                # Create the bet data directly from the selected player and prop
+                bet_data = {
+                    "player_name": self.selected_player.player_name,
+                    "player_id": None,  # PlayerSearchResult doesn't have player_id
+                    "team_name": self.selected_player.team_name,
+                    "prop_type": selected_prop_type,
+                    "line_value": 0.0,  # Will be set by user
+                    "bet_direction": "over",  # Default
+                    "odds": 0.0,  # Will be set by user
+                    "league": self.league,
+                    "line": "Over 0.0",  # Will be updated
+                    "odds_str": "0",
+                }
 
-                # Pre-fill player name
-                modal.player_search.default = self.selected_player.player_name
-
-                await interaction.response.send_modal(modal)
+                # Show a modal to get the line value, bet direction, and odds
+                from discord.ui import Modal, TextInput
+                
+                class QuickPlayerPropModal(Modal, title=f"Leg {self.leg_number} - {selected_prop_type.title()}"):
+                    def __init__(self, parent_view, bet_data):
+                        super().__init__()
+                        self.parent_view = parent_view
+                        self.bet_data = bet_data
+                        
+                        self.line_value_input = TextInput(
+                            label="Line Value",
+                            placeholder="e.g., 25.5",
+                            required=True,
+                            max_length=10
+                        )
+                        self.bet_direction_input = TextInput(
+                            label="Over/Under",
+                            placeholder="Type 'over' or 'under'",
+                            required=True,
+                            max_length=10
+                        )
+                        self.odds_input = TextInput(
+                            label="Odds",
+                            placeholder="e.g., -110",
+                            required=True,
+                            max_length=10
+                        )
+                        
+                        self.add_item(self.line_value_input)
+                        self.add_item(self.bet_direction_input)
+                        self.add_item(self.odds_input)
+                    
+                    async def on_submit(self, interaction: Interaction):
+                        try:
+                            # Validate inputs
+                            line_value = float(self.line_value_input.value.strip())
+                            bet_direction = self.bet_direction_input.value.strip().lower()
+                            odds = float(self.odds_input.value.strip())
+                            
+                            if bet_direction not in ["over", "under"]:
+                                await interaction.response.send_message(
+                                    "❌ Bet direction must be 'over' or 'under'", 
+                                    ephemeral=True
+                                )
+                                return
+                            
+                            # Update bet data
+                            self.bet_data.update({
+                                "line_value": line_value,
+                                "bet_direction": bet_direction,
+                                "odds": odds,
+                                "line": f"{bet_direction.title()} {line_value}",
+                                "odds_str": str(odds),
+                            })
+                            
+                            # Store in parent view (parlay workflow)
+                            if hasattr(self.parent_view, 'parent_view') and self.parent_view.parent_view:
+                                self.parent_view.parent_view.current_leg_construction_details.update({
+                                    "line_type": "player_prop",
+                                    "bet_type": "player_prop",
+                                    "player_name": self.bet_data["player_name"],
+                                    "player_id": self.bet_data["player_id"],
+                                    "team": self.bet_data["team_name"],
+                                    "home_team_name": self.bet_data["team_name"],
+                                    "away_team_name": self.bet_data["player_name"],
+                                    "selected_team": self.bet_data["team_name"],
+                                    "prop_type": self.bet_data["prop_type"],
+                                    "line_value": self.bet_data["line_value"],
+                                    "bet_direction": self.bet_data["bet_direction"],
+                                    "line": self.bet_data["line"],
+                                    "odds": self.bet_data["odds"],
+                                    "odds_str": self.bet_data["odds_str"],
+                                    "league": self.bet_data["league"],
+                                })
+                            
+                            # Add the leg to the parlay
+                            if hasattr(self.parent_view, 'parent_view') and self.parent_view.parent_view:
+                                await self.parent_view.parent_view.add_leg(interaction, self.bet_data)
+                            
+                            await interaction.response.defer()
+                            
+                        except ValueError:
+                            await interaction.response.send_message(
+                                "❌ Invalid input. Please enter valid numbers.", 
+                                ephemeral=True
+                            )
+                        except Exception as e:
+                            logger.error(f"Error in QuickPlayerPropModal: {e}")
+                            await interaction.response.send_message(
+                                "❌ An error occurred. Please try again.", 
+                                ephemeral=True
+                            )
+                
+                # Show the quick modal
+                quick_modal = QuickPlayerPropModal(self, bet_data)
+                await interaction.response.send_modal(quick_modal)
 
             prop_select.callback = prop_callback
 

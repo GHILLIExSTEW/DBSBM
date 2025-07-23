@@ -1294,21 +1294,27 @@ class TeamSelect(Select):
             "line_type", "game_line"
         )
 
-        # Use enhanced player prop modal for player props
+        # Use interactive player search view for player props
         if line_type == "player_prop":
             from bot.commands.parlay_enhanced_player_prop_modal import (
-                ParlayEnhancedPlayerPropModal,
+                ParlayPlayerSearchView,
             )
 
-            modal = ParlayEnhancedPlayerPropModal(
+            # Create the interactive player search view
+            search_view = ParlayPlayerSearchView(
                 self.parent_view.bot,
                 self.parent_view.bot.db_manager,
                 self.parent_view.current_leg_construction_details.get("league", ""),
                 leg_number=len(self.parent_view.bet_details.get("legs", [])) + 1,
-                view_custom_id_suffix=self.parent_view.original_interaction.id,
-                bet_details_from_view=self.parent_view.current_leg_construction_details,
             )
-            modal.view_ref = self.parent_view
+            search_view.parent_view = self.parent_view
+            
+            await self.parent_view.edit_message_for_current_leg(
+                interaction,
+                content=f"Search for a player in {self.parent_view.current_leg_construction_details.get('league', '')} to create your player prop bet:",
+                view=search_view,
+            )
+            return
         else:
             # Use regular bet details modal for game lines only
             if line_type == "player_prop":
@@ -1696,20 +1702,26 @@ class ParlayBetWorkflowView(View):
                 if is_individual_sport:
                     # For individual sports, skip team selection and go directly to modal
                     if line_type == "player_prop":
-                        # Always use enhanced player prop modal for player props
+                        # Use interactive player search view for player props
                         from bot.commands.parlay_enhanced_player_prop_modal import (
-                            ParlayEnhancedPlayerPropModal,
+                            ParlayPlayerSearchView,
                         )
 
-                        modal = ParlayEnhancedPlayerPropModal(
+                        # Create the interactive player search view
+                        search_view = ParlayPlayerSearchView(
                             self.bot,
                             self.bot.db_manager,
                             league,
                             leg_number=len(self.bet_details.get("legs", [])) + 1,
-                            view_custom_id_suffix=self.original_interaction.id,
-                            bet_details_from_view=self.current_leg_construction_details,
                         )
-                        modal.view_ref = self
+                        search_view.parent_view = self
+                        
+                        await self.edit_message_for_current_leg(
+                            interaction,
+                            content=f"Search for a player in {league} to create your player prop bet:",
+                            view=search_view,
+                        )
+                        return
                     else:
                         # Use regular bet details modal for game lines only
                         modal = BetDetailsModal(
@@ -1721,24 +1733,24 @@ class ParlayBetWorkflowView(View):
                         )
                         modal.view_ref = self
 
-                    if not interaction.response.is_done():
-                        await interaction.response.send_modal(modal)
-                        await self.edit_message_for_current_leg(
-                            interaction,
-                            content="Please fill in the bet details in the popup form.",
-                            view=self,
-                        )
-                    else:
-                        logger.error(
-                            "Tried to send modal, but interaction already responded to."
-                        )
-                        await self.edit_message_for_current_leg(
-                            interaction,
-                            content="❌ Error: Could not open modal. Please try again or cancel.",
-                            view=None,
-                        )
-                        self.stop()
-                    return
+                        if not interaction.response.is_done():
+                            await interaction.response.send_modal(modal)
+                            await self.edit_message_for_current_leg(
+                                interaction,
+                                content="Please fill in the bet details in the popup form.",
+                                view=self,
+                            )
+                        else:
+                            logger.error(
+                                "Tried to send modal, but interaction already responded to."
+                            )
+                            await self.edit_message_for_current_leg(
+                                interaction,
+                                content="❌ Error: Could not open modal. Please try again or cancel.",
+                                view=None,
+                            )
+                            self.stop()
+                        return
                 else:
                     # For team sports, show team selection (existing logic)
                     home_team = self.current_leg_construction_details.get(
