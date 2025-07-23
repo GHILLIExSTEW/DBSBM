@@ -239,9 +239,6 @@ class ParlayEnhancedPlayerPropModal(Modal):
             # Generate preview image
             await self._generate_preview_image(bet_data)
 
-            # Send a quick response to close the modal
-            await interaction.response.send_message("✅ Processing your player prop...", ephemeral=True)
-            
             # Add the leg to the parlay using the view's add_leg method
             if hasattr(self.view_ref, "add_leg"):
                 await self.view_ref.add_leg(interaction, bet_data)

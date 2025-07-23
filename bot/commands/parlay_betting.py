@@ -857,9 +857,6 @@ class BetDetailsModal(Modal):
             # Advance workflow - add the leg to the parlay
             leg_details = self.view_ref.current_leg_construction_details.copy()
             
-            # Send a quick response to close the modal
-            await interaction.response.send_message("✅ Processing your bet details...", ephemeral=True)
-            
             # Add the leg to the parlay
             await self.view_ref.add_leg(interaction, leg_details)
 
@@ -1462,21 +1459,13 @@ class ParlayBetWorkflowView(View):
             # Edit the existing message using the original interaction
             await self.edit_message_for_current_leg(
                 self.original_interaction,
-                content=f"✅ Line added for Leg {leg_count}\n\n{summary_text}\n\nAdd another leg or finalize?",
+                content=f"{summary_text}\n\nAdd another leg or finalize?",
                 view=decision_view,
                 embed=embed,
                 file=preview_file,
             )
             
-            # Send a follow-up message to confirm the leg was added
-            try:
-                await modal_interaction.followup.send(
-                    f"✅ Leg {leg_count} added successfully!",
-                    ephemeral=True
-                )
-            except:
-                # If followup fails, that's okay - the main message was updated
-                pass
+
         except Exception as e:
             logger.error(f"Error in add_leg: {e}")
             await modal_interaction.response.send_message(
@@ -1821,33 +1810,44 @@ class ParlayBetWorkflowView(View):
         elif self.current_step == 10:
             # Show channel selection
             try:
-                # Get available channels for the user
-                guild = self.original_interaction.guild
-                if not guild:
+                # Fetch allowed embed channels from guild settings (like straight betting)
+                allowed_channels = []
+                guild_settings = await self.bot.db_manager.fetch_one(
+                    "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                    (str(self.original_interaction.guild_id),),
+                )
+                if guild_settings:
+                    for channel_id in (
+                        guild_settings.get("embed_channel_1"),
+                        guild_settings.get("embed_channel_2"),
+                    ):
+                        if channel_id:
+                            try:
+                                cid = int(channel_id)
+                                channel = self.bot.get_channel(
+                                    cid
+                                ) or await self.bot.fetch_channel(cid)
+                                if (
+                                    isinstance(channel, TextChannel)
+                                    and channel.permissions_for(
+                                        interaction.guild.me
+                                    ).send_messages
+                                ):
+                                    if channel not in allowed_channels:
+                                        allowed_channels.append(channel)
+                            except Exception as e:
+                                logger.error(f"Error processing channel {channel_id}: {e}")
+
+                if not allowed_channels:
                     await self.edit_message_for_current_leg(
                         interaction,
-                        content="❌ Error: Could not access guild information.",
+                        content="❌ No valid embed channels configured. Please contact an admin.",
                         view=None,
                     )
                     self.stop()
                     return
 
-                # Get channels where the bot can send messages
-                available_channels = []
-                for channel in guild.text_channels:
-                    if channel.permissions_for(guild.me).send_messages:
-                        available_channels.append(channel)
-
-                if not available_channels:
-                    await self.edit_message_for_current_leg(
-                        interaction,
-                        content="❌ No channels available for posting bets.",
-                        view=None,
-                    )
-                    self.stop()
-                    return
-
-                self.add_item(ChannelSelect(self, available_channels))
+                self.add_item(ChannelSelect(self, allowed_channels))
                 self.add_item(FinalConfirmButton(self))
                 self.add_item(CancelButton(self))
 
@@ -2044,51 +2044,12 @@ class ParlayBetWorkflowView(View):
             logger.exception(f"Error generating parlay preview image: {e}")
             self.preview_image_bytes = None
             file_to_send = None
-        self.clear_items()
-        # Fetch allowed embed channels from guild settings (like straight betting)
-        allowed_channels = []
-        guild_settings = await self.bot.db_manager.fetch_one(
-            "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
-            (str(self.original_interaction.guild_id),),
-        )
-        if guild_settings:
-            for channel_id in (
-                guild_settings.get("embed_channel_1"),
-                guild_settings.get("embed_channel_2"),
-            ):
-                if channel_id:
-                    try:
-                        cid = int(channel_id)
-                        channel = self.bot.get_channel(
-                            cid
-                        ) or await self.bot.fetch_channel(cid)
-                        if (
-                            isinstance(channel, TextChannel)
-                            and channel.permissions_for(
-                                interaction.guild.me
-                            ).send_messages
-                        ):
-                            if channel not in allowed_channels:
-                                allowed_channels.append(channel)
-                    except Exception as e:
-                        logger.error(f"Error processing channel {channel_id}: {e}")
-        if not allowed_channels:
-            await self.edit_message_for_current_leg(
-                interaction,
-                content="❌ No valid embed channels configured. Please contact an admin.",
-                view=None,
-            )
-            self.stop()
-            return
-        self.add_item(ChannelSelect(self, allowed_channels))
-        self.add_item(FinalConfirmButton(self))
-        self.add_item(CancelButton(self))
-        await self.edit_message_for_current_leg(
-            interaction,
-            content="Select the channel to post your parlay:",
-            view=self,
-            file=file_to_send,
-        )
+
+        # Increment step counter to move to channel selection
+        self.current_step += 1
+        
+        # Now proceed to channel selection step
+        await self.go_next(interaction)
 
     async def update_league_page(self, interaction, page):
         leagues = get_all_league_names()
