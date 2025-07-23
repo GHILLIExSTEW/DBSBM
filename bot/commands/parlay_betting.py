@@ -329,8 +329,27 @@ class ParlayGameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         game_options = []
         seen_values = set()  # Track used values
+        manual_added = False  # Track if manual entry has been added
+        
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in games[:24]:
+            # Special handling for manual entry - only add once
+            if (game.get("id") == "manual" or game.get("api_game_id") == "manual") and not manual_added:
+                game_options.append(
+                    SelectOption(
+                        label="Manual Entry",
+                        value="manual",
+                        description="Enter game details manually",
+                    )
+                )
+                manual_added = True
+                seen_values.add("manual")
+                continue
+            
+            # Skip manual entry if already added
+            if game.get("id") == "manual" or game.get("api_game_id") == "manual":
+                continue
+                
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -341,17 +360,6 @@ class ParlayGameSelect(Select):
             if value in seen_values:
                 continue
             seen_values.add(value)
-
-            # Special handling for manual entry
-            if game.get("id") == "manual" or game.get("api_game_id") == "manual":
-                game_options.append(
-                    SelectOption(
-                        label="Manual Entry",
-                        value="manual",
-                        description="Enter game details manually",
-                    )
-                )
-                continue
 
             # Format the label with team names and status
             home_team = game.get("home_team_name", "N/A")
@@ -404,7 +412,7 @@ class ParlayGameSelect(Select):
         self.parent_view = parent_view
         self.games = games
         logger.debug(
-            f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry)"
+            f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry). Manual added: {manual_added}"
         )
 
     async def callback(self, interaction: Interaction):
