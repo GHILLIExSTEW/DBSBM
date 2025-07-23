@@ -470,6 +470,8 @@ class ParlayBetImageGenerator:
         )
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        return asset_loader.load_player_image(
+        result = asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)
         )
+        # load_player_image returns (image, display_name), we just want the image
+        return result[0] if result else None

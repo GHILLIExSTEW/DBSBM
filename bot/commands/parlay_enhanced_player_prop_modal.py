@@ -435,11 +435,14 @@ class ParlayPlayerSearchView(View):
     async def search_players(self, interaction: Interaction, button: discord.ui.Button):
         """Search for players based on input."""
         try:
-            # This would be triggered by a text input or search field
-            # For now, we'll show available players
+            logger.info(f"[PARLAY PLAYER SEARCH] Starting search for league: {self.league}")
+            
+            # Get popular players for this league (like the working player props)
             search_results = await self.player_search_service.get_popular_players(
-                self.league, limit=10
+                self.league, limit=100
             )
+
+            logger.info(f"[PARLAY PLAYER SEARCH] Found {len(search_results) if search_results else 0} players")
 
             if not search_results:
                 await interaction.response.send_message(
@@ -450,7 +453,7 @@ class ParlayPlayerSearchView(View):
 
             # Create player selection options
             options = []
-            for player in search_results:
+            for player in search_results[:25]:  # Limit to 25 for Discord
                 options.append(
                     SelectOption(
                         label=f"{player.player_name} ({player.team_name})",
@@ -468,22 +471,30 @@ class ParlayPlayerSearchView(View):
             )
 
             async def player_callback(interaction: Interaction):
-                selected_player_name = player_select.values[0]
-                selected_player = next(
-                    (
-                        p
-                        for p in search_results
-                        if p.player_name == selected_player_name
-                    ),
-                    None,
-                )
+                try:
+                    selected_player_name = player_select.values[0]
+                    selected_player = next(
+                        (
+                            p
+                            for p in search_results
+                            if p.player_name == selected_player_name
+                        ),
+                        None,
+                    )
 
-                if selected_player:
-                    # Store selected player and show prop type selection
-                    await self._show_prop_type_selection(interaction, selected_player)
-                else:
+                    if selected_player:
+                        # Store selected player and show prop type selection
+                        self.selected_player = selected_player  # Store for later use
+                        await self._show_prop_type_selection(interaction, selected_player)
+                    else:
+                        await interaction.response.send_message(
+                            "Error: Selected player not found.", ephemeral=True
+                        )
+                except Exception as e:
+                    logger.error(f"Error in player callback: {e}")
                     await interaction.response.send_message(
-                        "Error: Selected player not found.", ephemeral=True
+                        "❌ Error selecting player. Please try again.",
+                        ephemeral=True,
                     )
 
             player_select.callback = player_callback
@@ -493,16 +504,27 @@ class ParlayPlayerSearchView(View):
             view.add_item(player_select)
             view.add_item(Button(label="Cancel", style=ButtonStyle.secondary))
 
+            logger.info(f"[PARLAY PLAYER SEARCH] Showing player selection view")
             await interaction.response.edit_message(
                 content=f"**Select a player for Leg {self.leg_number}:**", view=view
             )
 
         except Exception as e:
             logger.error(f"Error in player search: {e}")
-            await interaction.response.send_message(
-                "❌ Error searching for players. Please try again.",
-                ephemeral=True,
-            )
+            try:
+                await interaction.response.send_message(
+                    "❌ Error searching for players. Please try again.",
+                    ephemeral=True,
+                )
+            except:
+                # If response already sent, try to follow up
+                try:
+                    await interaction.followup.send(
+                        "❌ Error searching for players. Please try again.",
+                        ephemeral=True,
+                    )
+                except:
+                    logger.error("Could not send error message to user")
 
     async def _show_prop_type_selection(
         self, interaction: Interaction, player: PlayerSearchResult
