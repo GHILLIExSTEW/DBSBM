@@ -359,6 +359,8 @@ class ParlayGameSelect(Select):
                 logger.debug(f"[ParlayGameSelect] Skipping duplicate manual entry at index {i}")
                 continue
                 
+            logger.debug(f"[ParlayGameSelect] Processing regular game at index {i}: {game.get('home_team_name')} vs {game.get('away_team_name')}")
+                
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -1691,14 +1693,18 @@ class ParlayBetWorkflowView(View):
 
             try:
                 # Fetch games using the correct method
+                logger.debug(f"[PARLAY WORKFLOW] About to call get_normalized_games_for_dropdown for {league}")
                 games = await get_normalized_games_for_dropdown(
                     self.bot.db_manager, league
                 )
 
                 logger.debug(f"[PARLAY WORKFLOW] Fetched {len(games)} games for {league}")
                 logger.debug(f"[PARLAY WORKFLOW] Games list: {games}")
+                logger.debug(f"[PARLAY WORKFLOW] Games type: {type(games)}")
+                logger.debug(f"[PARLAY WORKFLOW] Games truthy check: {bool(games)}")
 
                 if not games:
+                    logger.error(f"[PARLAY WORKFLOW] No games returned from get_normalized_games_for_dropdown for {league}")
                     await self.edit_message_for_current_leg(
                         interaction,
                         content=f"No games found for {league}. Please try a different league or check back later.",
@@ -1708,7 +1714,13 @@ class ParlayBetWorkflowView(View):
                     return
 
                 logger.debug(f"[PARLAY WORKFLOW] Creating ParlayGameSelect with {len(games)} games")
-                self.add_item(ParlayGameSelect(self, games))
+                try:
+                    game_select = ParlayGameSelect(self, games)
+                    logger.debug(f"[PARLAY WORKFLOW] ParlayGameSelect created successfully")
+                    self.add_item(game_select)
+                except Exception as e:
+                    logger.error(f"[PARLAY WORKFLOW] Error creating ParlayGameSelect: {e}")
+                    raise
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(
                     interaction, content="Select a game for this leg:", view=self
