@@ -390,13 +390,20 @@ class APIFlowView(discord.ui.View):
             if team_id > 0:
                 params["team"] = team_id
             
-            # Add season for players query
-            params["season"] = datetime.now().year
+            # Add season for players query - try current year first, then previous year if needed
+            current_year = datetime.now().year
+            params["season"] = current_year
 
             logger.info(f"Executing API query with team: sport={sport}, type={query_type}, league={league_id}, team={team_id}, params={params}")
             
             # Make API request
             result = await self.cog.make_api_request(sport, query_type, params)
+            
+            # If no results and we're querying players, try with previous year
+            if query_type == 'players' and (not result.get('response') or len(result.get('response', [])) == 0):
+                logger.info(f"No players found for season {current_year}, trying {current_year - 1}")
+                params["season"] = current_year - 1
+                result = await self.cog.make_api_request(sport, query_type, params)
             
             logger.info(f"API request completed, result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             
@@ -714,6 +721,9 @@ class PlatinumAPICog(commands.Cog):
                 url = f"https://v1.{sport}.api-sports.io/odds"
             else:
                 url = f"{base_url}/{endpoint}"
+            
+            logger.info(f"Making API request to: {url}")
+            logger.info(f"Parameters: {params}")
                 
             headers = {
                 'x-apisports-key': api_key
@@ -721,8 +731,12 @@ class PlatinumAPICog(commands.Cog):
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, params=params) as response:
+                    logger.info(f"API response status: {response.status}")
+                    
                     if response.status == 200:
                         data = await response.json()
+                        logger.info(f"API response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+                        logger.info(f"API response count: {len(data.get('response', [])) if isinstance(data, dict) else 'N/A'}")
                         return data
                     else:
                         error_text = await response.text()
@@ -781,13 +795,20 @@ class PlatinumAPICog(commands.Cog):
         elif query_type == 'players':
             players = result.get('response', [])
             if not players:
+                # Get the parameters that were used for the query
+                params_info = f"League ID: {result.get('parameters', {}).get('league', 'Unknown')}\n"
+                params_info += f"Team ID: {result.get('parameters', {}).get('team', 'All teams')}\n"
+                params_info += f"Season: {result.get('parameters', {}).get('season', 'Unknown')}"
+                
                 embed = discord.Embed(
                     title="👥 Players Query",
-                    description="No players found for the specified criteria.\n\n"
-                               "**Try:**\n"
-                               "• Use `/api_leagues` to find league IDs\n"
-                               "• Use `/api_teams` to find team IDs\n"
-                               "• Check if the season is valid for the league",
+                    description=f"No players found for the specified criteria.\n\n"
+                               f"**Query Parameters:**\n{params_info}\n\n"
+                               "**Possible Solutions:**\n"
+                               "• Try selecting 'All Teams' instead of a specific team\n"
+                               "• The team may not have active players in the current season\n"
+                               "• Check if the league/team combination is valid\n"
+                               "• Try a different season (the system automatically tries current and previous year)",
                     color=0x9b59b6
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)

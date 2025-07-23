@@ -504,6 +504,7 @@ class ManualEntryModalButton(Button):
 
     async def callback(self, interaction: Interaction):
         logger.debug(f"[ManualEntryModalButton] Opening modal for manual entry")
+        logger.debug(f"[ManualEntryModalButton] Modal view_ref exists: {self.modal.view_ref is not None}")
         await interaction.response.send_modal(self.modal)
 
 
@@ -746,8 +747,12 @@ class BetDetailsModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         try:
+            logger.debug(f"[BetDetailsModal] on_submit called for line_type={self.line_type}, is_manual={self.is_manual}")
+            logger.debug(f"[BetDetailsModal] view_ref exists: {self.view_ref is not None}")
+            
             # Check if view_ref is properly set
             if not self.view_ref:
+                logger.error("[BetDetailsModal] view_ref is None - modal not properly initialized")
                 await interaction.response.send_message(
                     "❌ Error: Modal not properly initialized. Please try again.",
                     ephemeral=True
@@ -1795,6 +1800,9 @@ class ParlayBetWorkflowView(View):
                     # Since interaction is already deferred, we need to use a different approach
                     # Create a button that opens the modal
                     from bot.commands.parlay_betting import ManualEntryModalButton
+                    
+                    # Set the view_ref for the modal
+                    modal.view_ref = self
                     
                     modal_button = ManualEntryModalButton(modal)
                     self.add_item(modal_button)
