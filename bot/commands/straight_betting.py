@@ -245,13 +245,6 @@ class GameSelect(Select):
                 )
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in filtered_games[:24]:
-            home_team = game.get("home_team_name", "").strip() or "N/A"
-            away_team = game.get("away_team_name", "").strip() or "N/A"
-            if (
-                home_team.lower() == "manual entry"
-                and away_team.lower() == "manual entry"
-            ):
-                continue
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -259,9 +252,24 @@ class GameSelect(Select):
                 value = f"dbid_{game['id']}"
             else:
                 continue  # skip if neither id present
-            if value in seen_values or value == manual_value:
+            if value in seen_values:
                 continue
             seen_values.add(value)
+
+            # Special handling for manual entry
+            if game.get("id") == "manual" or game.get("api_game_id") == "manual":
+                game_options.append(
+                    SelectOption(
+                        label="Manual Entry",
+                        value="manual",
+                        description="Enter game details manually",
+                    )
+                )
+                continue
+
+            home_team = game.get("home_team_name", "").strip() or "N/A"
+            away_team = game.get("away_team_name", "").strip() or "N/A"
+            
             # Format the label with team names (no status)
             label = f"{home_team} vs {away_team}"
             label = label[:100] if label else "N/A"
@@ -284,15 +292,7 @@ class GameSelect(Select):
             game_options.append(
                 SelectOption(label=label, value=value, description=desc[:100])
             )
-        # Always add manual entry as the last option, only if not already present
-        if manual_value not in [opt.value for opt in game_options]:
-            game_options.append(
-                SelectOption(
-                    label="Manual Entry",
-                    value=manual_value[:100],
-                    description="Enter game details manually",
-                )
-            )
+        # Manual entry is already added by get_normalized_games_for_dropdown
         super().__init__(
             placeholder="Select a game or choose Manual Entry",
             options=game_options,
@@ -308,7 +308,7 @@ class GameSelect(Select):
     async def callback(self, interaction: Interaction):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
-        if selected_value == "manual_entry":
+        if selected_value == "manual":
             self.parent_view.bet_details.update(
                 {
                     "api_game_id": None,

@@ -342,6 +342,17 @@ class ParlayGameSelect(Select):
                 continue
             seen_values.add(value)
 
+            # Special handling for manual entry
+            if game.get("id") == "manual" or game.get("api_game_id") == "manual":
+                game_options.append(
+                    SelectOption(
+                        label="Manual Entry",
+                        value="manual",
+                        description="Enter game details manually",
+                    )
+                )
+                continue
+
             # Format the label with team names and status
             home_team = game.get("home_team_name", "N/A")
             away_team = game.get("away_team_name", "N/A")
