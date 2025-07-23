@@ -434,7 +434,105 @@ class PushNotificationCog(commands.Cog):
             embed.set_footer(text="🧪 Check user IDs and DM permissions")
             
         await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+    @app_commands.command(
+        name="debug_push",
+        description="🔧 Debug push notification system"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def debug_push(self, interaction: discord.Interaction):
+        """Debug the push notification system."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            embed = discord.Embed(
+                title="🔧 Push Notification System Debug",
+                description="Checking system status...",
+                color=0x00ff00
+            )
+            
+            # Check if service exists
+            service_exists = hasattr(self.bot, 'push_notification_service')
+            embed.add_field(
+                name="📱 Push Service",
+                value="✅ Available" if service_exists else "❌ Not Available",
+                inline=True
+            )
+            
+            # Check if commands are loaded
+            all_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
+            push_commands = ["test_notification", "notify", "notify_capper_bet", "notify_event", "notification_stats"]
+            available_push = [cmd for cmd in push_commands if cmd in all_commands]
+            
+            embed.add_field(
+                name="📋 Push Commands",
+                value=f"Available: {len(available_push)}/{len(push_commands)}",
+                inline=True
+            )
+            
+            if available_push:
+                embed.add_field(
+                    name="✅ Available Commands",
+                    value="\n".join([f"• `/{cmd}`" for cmd in available_push]),
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="❌ Missing Commands",
+                    value="\n".join([f"• `/{cmd}`" for cmd in push_commands]),
+                    inline=False
+                )
+                
+            # Check member role configuration
+            if service_exists:
+                member_role = await self.bot.push_notification_service.get_member_role_id(interaction.guild_id)
+                embed.add_field(
+                    name="👥 Member Role",
+                    value=f"✅ Configured ({member_role})" if member_role else "❌ Not Configured",
+                    inline=True
+                )
+            else:
+                embed.add_field(
+                    name="👥 Member Role",
+                    value="❌ Service not available",
+                    inline=True
+                )
+                
+            # Check database connection
+            try:
+                await self.bot.db_manager.fetch_one("SELECT 1")
+                db_status = "✅ Connected"
+            except Exception as e:
+                db_status = f"❌ Error: {str(e)[:50]}"
+                
+            embed.add_field(
+                name="🗄️ Database",
+                value=db_status,
+                inline=True
+            )
+            
+            embed.set_footer(text=f"Guild ID: {interaction.guild_id} • Debug at {discord.utils.utcnow().strftime('%H:%M:%S')}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Debug command failed: {e}", exc_info=True)
+            error_embed = discord.Embed(
+                title="❌ Debug Failed",
+                description=f"Error: {str(e)}",
+                color=0xff0000
+            )
+            
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 
 async def setup(bot):
-    await bot.add_cog(PushNotificationCog(bot)) 
+    try:
+        await bot.add_cog(PushNotificationCog(bot))
+        logger.info("PushNotificationCog loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load PushNotificationCog: {e}", exc_info=True)
+        raise 
