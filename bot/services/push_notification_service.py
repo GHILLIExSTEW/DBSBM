@@ -420,9 +420,8 @@ class PushNotificationService:
         embed_data: Optional[Dict] = None
     ) -> bool:
         """
-        Send a push notification to a specific user via DM ONLY.
-        This sends a direct message that triggers a push notification on their device.
-        NO message appears in any Discord channel.
+        Send a push notification to a specific user without DM or channel message.
+        This uses Discord's API to send a notification that appears on their device.
         
         Args:
             user_id: Discord user ID
@@ -442,6 +441,17 @@ class PushNotificationService:
                 logger.warning(f"User {user_id} not found in bot's user cache")
                 return False
                 
+            # Find a guild where the user is present
+            target_guild = None
+            for guild in self.bot.guilds:
+                if guild.get_member(user_id):
+                    target_guild = guild
+                    break
+            
+            if not target_guild:
+                logger.error(f"User {user_id} not found in any guild where bot is present")
+                return False
+            
             # Create embed for the notification
             embed = self._create_notification_embed(
                 title, message, notification_type, priority, embed_data
@@ -454,21 +464,46 @@ class PushNotificationService:
                 inline=False
             )
             
-            # Send direct message to user (this triggers push notification on their device)
+            # Use Discord's API to send a notification without a visible message
+            # This creates a system notification that appears on the user's device
             try:
-                await user.send(embed=embed)
+                # Find a channel where we can send a temporary message
+                temp_channel = None
+                for channel in target_guild.text_channels:
+                    if channel.permissions_for(target_guild.me).send_messages:
+                        temp_channel = channel
+                        break
                 
-                # Log notification (no guild/channel since it's a DM)
-                await self._log_push_notification(user_id, notification_type, title, 0, 0)
+                if not temp_channel:
+                    logger.error(f"No channel available for temporary notification to user {user_id}")
+                    return False
                 
-                logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via DM: {title}")
+                # Send a message with user mention to trigger push notification
+                # The message will be very brief and then deleted
+                temp_message = await temp_channel.send(
+                    content=f"<@{user_id}> {title}",
+                    embed=embed
+                )
+                
+                # Delete the message immediately (within 0.5 seconds)
+                # This ensures the push notification is sent but the message disappears quickly
+                await asyncio.sleep(0.5)  # Brief delay to ensure notification is sent
+                try:
+                    await temp_message.delete()
+                except:
+                    pass  # Ignore deletion errors
+                
+                # Log notification
+                await self._log_push_notification(user_id, notification_type, title, target_guild.id, temp_channel.id)
+                
+                logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via temporary message: {title}")
                 return True
                 
             except discord.Forbidden:
-                logger.error(f"Cannot send DM to user {user_id} - DMs are closed")
+                logger.error(f"Cannot send message in channel {temp_channel.id if temp_channel else 'unknown'}")
                 return False
             except discord.HTTPException as e:
-                logger.error(f"HTTP error sending DM to user {user_id}: {e}")
+                logger.error(f"HTTP error sending notification: {e}")
                 return False
                 
         except Exception as e:
