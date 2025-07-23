@@ -409,6 +409,186 @@ class PushNotificationService:
             # Clear all cooldowns
             self.notification_cooldowns.clear()
         logger.info(f"Cleared notification cooldowns for guild {guild_id if guild_id else 'all'}")
+        
+    async def send_push_only_notification(
+        self,
+        user_id: int,
+        title: str,
+        message: str,
+        notification_type: str = "test",
+        priority: str = "normal",
+        embed_data: Optional[Dict] = None
+    ) -> bool:
+        """
+        Send a push notification to a specific user without DM.
+        This creates a notification that appears on their device without sending a message.
+        
+        Args:
+            user_id: Discord user ID
+            title: Notification title
+            message: Notification message
+            notification_type: Type of notification
+            priority: Priority level
+            embed_data: Optional embed data
+            
+        Returns:
+            bool: True if notification sent successfully
+        """
+        try:
+            # Get user object
+            user = self.bot.get_user(user_id)
+            if not user:
+                logger.warning(f"User {user_id} not found")
+                return False
+                
+            # Create a temporary channel or use a system channel to trigger push notification
+            # We'll use a special approach that triggers Discord's notification system
+            
+            # Create embed for the notification
+            embed = self._create_notification_embed(
+                title, message, notification_type, priority, embed_data
+            )
+            
+            # Add user-specific field
+            embed.add_field(
+                name="👤 Sent To",
+                value=f"{user.display_name} ({user_id})",
+                inline=False
+            )
+            
+            # Try to find a guild where both the bot and user are present
+            target_guild = None
+            target_channel = None
+            
+            for guild in self.bot.guilds:
+                if guild.get_member(user_id):
+                    # Check if guild has a system channel
+                    if guild.system_channel:
+                        target_guild = guild
+                        target_channel = guild.system_channel
+                        break
+                    # Or use the first text channel
+                    elif guild.text_channels:
+                        target_guild = guild
+                        target_channel = guild.text_channels[0]
+                        break
+            
+            if not target_channel:
+                logger.warning(f"No suitable channel found to send push notification to user {user_id}")
+                return False
+            
+            # Send the notification to the channel with user mention to trigger push notification
+            notification_content = f"<@&{await self.get_member_role_id(target_guild.id)}> {title}"
+            
+            await target_channel.send(content=notification_content, embed=embed)
+            
+            # Log notification
+            await self._log_push_notification(user_id, notification_type, title, target_guild.id, target_channel.id)
+            
+            logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via guild {target_guild.name}: {title}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending push notification to user {user_id}: {e}")
+            return False
+            
+    async def send_direct_notification(
+        self,
+        user_id: int,
+        title: str,
+        message: str,
+        notification_type: str = "test",
+        priority: str = "normal",
+        embed_data: Optional[Dict] = None
+    ) -> bool:
+        """
+        Send a direct notification to a specific user via DM.
+        
+        Args:
+            user_id: Discord user ID
+            title: Notification title
+            message: Notification message
+            notification_type: Type of notification
+            priority: Priority level
+            embed_data: Optional embed data
+            
+        Returns:
+            bool: True if notification sent successfully
+        """
+        try:
+            # Get user object
+            user = self.bot.get_user(user_id)
+            if not user:
+                logger.warning(f"User {user_id} not found")
+                return False
+                
+            # Create embed
+            embed = self._create_notification_embed(
+                title, message, notification_type, priority, embed_data
+            )
+            
+            # Add user-specific field
+            embed.add_field(
+                name="👤 Sent To",
+                value=f"{user.display_name} ({user_id})",
+                inline=False
+            )
+            
+            # Send DM
+            await user.send(embed=embed)
+            
+            # Log notification
+            await self._log_direct_notification(user_id, notification_type, title)
+            
+            logger.info(f"Direct notification sent to user {user_id} ({user.display_name}): {title}")
+            return True
+            
+        except discord.Forbidden:
+            logger.warning(f"User {user_id} has DMs disabled")
+            return False
+        except Exception as e:
+            logger.error(f"Error sending direct notification to user {user_id}: {e}")
+            return False
+            
+    async def _log_push_notification(
+        self,
+        user_id: int,
+        notification_type: str,
+        title: str,
+        guild_id: int,
+        channel_id: int
+    ):
+        """Log push notification to database."""
+        try:
+            await self.db_manager.execute(
+                """
+                INSERT INTO push_notifications (
+                    guild_id, channel_id, notification_type, title, message, priority, sent_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (guild_id, channel_id, notification_type, title, f"Push notification to user {user_id}", "normal", datetime.utcnow())
+            )
+        except Exception as e:
+            logger.error(f"Error logging push notification: {e}")
+            
+    async def _log_direct_notification(
+        self,
+        user_id: int,
+        notification_type: str,
+        title: str
+    ):
+        """Log direct notification to database."""
+        try:
+            await self.db_manager.execute(
+                """
+                INSERT INTO push_notifications (
+                    guild_id, channel_id, notification_type, title, message, priority, sent_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (0, 0, notification_type, title, f"Direct notification to user {user_id}", "normal", datetime.utcnow())
+            )
+        except Exception as e:
+            logger.error(f"Error logging direct notification: {e}")
 
 
 # Database table creation for push notifications

@@ -291,6 +291,7 @@ class BettingBot(commands.Bot):
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
+        self.push_notification_service = None  # Will be initialized in setup_hook
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
@@ -330,6 +331,7 @@ class BettingBot(commands.Bot):
             "odds.py",  # New odds command
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
             "platinum_api.py",  # Platinum API commands
+            "push_notifications.py",  # Push notification commands
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -656,6 +658,17 @@ class BettingBot(commands.Bot):
             logger.info("Registered commands: %s", commands_list)
 
         logger.info("Starting services...")
+        
+        # Initialize push notification service
+        try:
+            from bot.services.push_notification_service import PushNotificationService, create_push_notifications_table
+            self.push_notification_service = PushNotificationService(self, self.db_manager)
+            await create_push_notifications_table(self.db_manager)
+            logger.info("Push notification service initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize push notification service: {e}")
+            self.push_notification_service = None
+        
         service_starts = [
             self.admin_service.start(),
             self.analytics_service.start(),
@@ -667,6 +680,10 @@ class BettingBot(commands.Bot):
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
         ]
+        
+        # Add push notification service to startup if available
+        if self.push_notification_service:
+            service_starts.append(self.push_notification_service.start())
 
         # Initialize rate limiter
         try:
