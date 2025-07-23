@@ -762,20 +762,30 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     webhook = await channel.create_webhook(name="Bet Tracking AI")
 
                 # Post to channel using webhook
-                await webhook.send(
+                webhook_message = await webhook.send(
                     content=content,
                     file=image_file,
                     username=webhook_username,
                     avatar_url=webhook_avatar_url
                 )
 
-                # Update bet with channel_id using BetService
+                # Update bet with channel_id and message_id using BetService
                 bet_service = getattr(interaction.client, "bet_service", None)
                 if bet_service and bet_id:
-                    await bet_service.update_bet(
-                        bet_serial=int(bet_id),
-                        channel_id=channel_id
-                    )
+                    try:
+                        await bet_service.update_straight_bet_channel(
+                            bet_serial=int(bet_id),
+                            channel_id=channel_id,
+                            message_id=webhook_message.id
+                        )
+                        logger.info(f"Updated player prop bet {bet_id} with message_id {webhook_message.id} and channel_id {channel_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to update player prop bet with message_id: {e}")
+                        # Fallback to just updating channel_id
+                        await bet_service.update_bet(
+                            bet_serial=int(bet_id),
+                            channel_id=channel_id
+                        )
 
                 # Show success message
                 await interaction.response.edit_message(

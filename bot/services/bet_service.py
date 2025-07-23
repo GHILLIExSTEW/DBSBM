@@ -686,6 +686,8 @@ class BetService:
                 exc_info=True,
             )
 
+
+
     async def delete_bet(self, bet_serial: int):
         """Delete a bet and its associated data from the database."""
         logger.info(f"Attempting to delete bet {bet_serial} and associated data.")
