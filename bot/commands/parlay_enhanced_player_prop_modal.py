@@ -352,6 +352,7 @@ class ParlayEnhancedPlayerPropModal(Modal):
         self.view_ref.current_leg_construction_details.update(
             {
                 "line_type": "player_prop",  # Use line_type for consistency
+                "bet_type": "player_prop",  # Add bet_type for image generation
                 "player_name": bet_data["player_name"],
                 "player_id": bet_data["player_id"],
                 "team": bet_data["team_name"],  # Use 'team' for consistency
@@ -365,6 +366,9 @@ class ParlayEnhancedPlayerPropModal(Modal):
                 "odds": bet_data["odds"],
                 "odds_str": bet_data["odds_str"],
                 "league": bet_data["league"],
+                # Add additional fields for complete data
+                "sport": self.view_ref.current_leg_construction_details.get("sport", ""),
+                "is_manual": self.view_ref.current_leg_construction_details.get("is_manual", False),
             }
         )
 

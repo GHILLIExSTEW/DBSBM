@@ -2008,6 +2008,7 @@ class ParlayBetWorkflowView(View):
                 }
                 if leg.get("line_type") == "player_prop":
                     leg_data["player_name"] = leg.get("player_name", "")
+                    leg_data["prop_type"] = leg.get("prop_type", "")  # Add prop_type
                     # For player props, keep the home team as the selected team
                     leg_data["home_team"] = leg.get("team", "")
                     leg_data["away_team"] = leg.get(
@@ -2140,7 +2141,8 @@ class ParlayBetWorkflowView(View):
                     "odds": leg.get("odds", leg.get("odds_str", "")),
                 }
                 if leg.get("line_type") == "player_prop":
-                    leg_data["player_name"] = leg.get("team", "")
+                    leg_data["player_name"] = leg.get("player_name", "")  # Use player_name, not team
+                    leg_data["prop_type"] = leg.get("prop_type", "")  # Add prop_type
                 legs.append(leg_data)
             # Defensive: ensure legs is a list
             if legs is None:

@@ -251,21 +251,67 @@ class ParlayBetImageGenerator:
             line_y_centered = card_center_y - line_font.size // 2
             draw.text((int(line_x), int(line_y_centered)), line, font=line_font, fill="#ffffff")
         elif bet_type == "player_prop":
-            margin_left = card_x0 + 24
-            name_y = card_y + 32
-            # Team logo
+            # Horizontal layout: Team | VS | Player | Line | Odds (similar to game lines)
+            # Center everything vertically in the card
+            card_center_y = card_y + card_height // 2
+            logo_y = card_center_y - logo_size[1] // 2
+            name_y = logo_y + logo_size[1] + 6
+            line_y = name_y + 38
+            
+            # Calculate positions for horizontal layout
+            left_margin = card_x0 + 20
+            right_margin = card_x1 - 20
+            available_width = right_margin - left_margin
+            
+            # Import team display name function
+            from bot.utils.team_display_names import get_team_display_name
+            
+            # Team (left-aligned) - like home team in game lines
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
-                image.paste(team_logo, (margin_left, name_y - 8), team_logo)
-            # Player name
-            player_name_x = margin_left + logo_size[0] + 25  # Increased spacing from 12 to 25
-            draw.text(
-                (player_name_x, name_y), player_name, font=team_font, fill="#ffffff"
-            )
-            # Line (below player name)
-            line_y = name_y + 50  # Increased spacing from 38 to 50
-            draw.text((player_name_x, line_y), line, font=line_font, fill="#ffffff")
+                image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
+            
+            team_display = get_team_display_name(home_team)
+            draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill="#ffffff")
+            
+            # VS (to right of team)
+            vs_text = "VS"
+            vs_font = self.font_vs_small
+            vs_width = draw.textlength(vs_text, font=vs_font)
+            team_name_width = draw.textlength(team_display, font=team_font)
+            vs_x = left_margin + team_name_width + 35  # Increased spacing from 20 to 35
+            vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
+            draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
+            
+            # Player (to right of VS) - like away team in game lines
+            player_image = self._load_player_image(player_name, home_team, league)
+            if player_image:
+                player_image = player_image.convert("RGBA").resize(logo_size)
+                player_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
+                image.paste(player_image, (int(player_logo_x), int(logo_y)), player_image)
+            else:
+                # Fallback to team logo if no player image
+                player_logo_x = vs_x + vs_width + 35
+                if team_logo:
+                    image.paste(team_logo, (int(player_logo_x), int(logo_y)), team_logo)
+            
+            # Player name (below player image)
+            draw.text((int(player_logo_x), int(name_y)), player_name, font=team_font, fill="#ffffff")
+            
+            # Line (to right of player) - include prop type if available
+            line_w = draw.textlength(line, font=line_font)
+            player_name_width = draw.textlength(player_name, font=team_font)
+            line_x = player_logo_x + player_name_width + 40  # Increased spacing from 20 to 40
+            # Center line vertically with team names and VS
+            line_y_centered = card_center_y - line_font.size // 2
+            prop_type = str(leg.get("prop_type", "") or "")
+            if prop_type and prop_type not in line:
+                # Add prop type to line if not already included
+                full_line = f"{line} {prop_type.title()}"
+            else:
+                full_line = line
+            draw.text((int(line_x), int(line_y_centered)), full_line, font=line_font, fill="#ffffff")
         # Odds badge (right side, vertically centered)
         badge_w = 90
         badge_h = 48
@@ -285,7 +331,7 @@ class ParlayBetImageGenerator:
             pass
         odds_text_w = draw.textlength(odds_text, font=odds_font)
         odds_text_x = badge_x + badge_w // 2 - odds_text_w // 2
-        odds_text_y = badge_y + badge_h // 2 - self.font_bold.size // 2 + 4
+        odds_text_y = badge_y + badge_h // 2 - self.font_bold.size // 2
         draw.text(
             (odds_text_x, odds_text_y), odds_text, font=odds_font, fill=badge_text_color
         )
