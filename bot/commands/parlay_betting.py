@@ -774,35 +774,45 @@ class BetDetailsModal(Modal):
             if self.is_manual and self.line_type == "game_line":
                 if is_individual_sport:
                     # For individual sports, use player and opponent
-                    self.view_ref.current_leg_construction_details["player_name"] = (
-                        self.player_input.value.strip()[:100] or "Player"
-                    )
-                    self.view_ref.current_leg_construction_details["team"] = (
-                        self.player_input.value.strip()[:100] or "Player"
-                    )
-                    self.view_ref.current_leg_construction_details["home_team_name"] = (
-                        self.player_input.value.strip()[:100] or "Player"
-                    )
-                    self.view_ref.current_leg_construction_details["opponent"] = (
-                        self.opponent_input.value.strip()[:100] or "Opponent"
-                    )
-                    self.view_ref.current_leg_construction_details["away_team_name"] = (
-                        self.opponent_input.value.strip()[:100] or "Opponent"
-                    )
+                    # Check if the input fields exist before accessing them
+                    if hasattr(self, 'player_input') and hasattr(self, 'opponent_input'):
+                        self.view_ref.current_leg_construction_details["player_name"] = (
+                            self.player_input.value.strip()[:100] or "Player"
+                        )
+                        self.view_ref.current_leg_construction_details["team"] = (
+                            self.player_input.value.strip()[:100] or "Player"
+                        )
+                        self.view_ref.current_leg_construction_details["home_team_name"] = (
+                            self.player_input.value.strip()[:100] or "Player"
+                        )
+                        self.view_ref.current_leg_construction_details["opponent"] = (
+                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        )
+                        self.view_ref.current_leg_construction_details["away_team_name"] = (
+                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        )
+                    else:
+                        logger.error("Player input fields not found for individual sport")
+                        raise ValidationError("Modal configuration error for individual sport")
                 else:
                     # For team sports, use team and opponent (existing logic)
-                    self.view_ref.current_leg_construction_details["team"] = (
-                        self.team_input.value.strip()[:100] or "Team"
-                    )
-                    self.view_ref.current_leg_construction_details["home_team_name"] = (
-                        self.team_input.value.strip()[:100] or "Team"
-                    )
-                    self.view_ref.current_leg_construction_details["opponent"] = (
-                        self.opponent_input.value.strip()[:100] or "Opponent"
-                    )
-                    self.view_ref.current_leg_construction_details["away_team_name"] = (
-                        self.opponent_input.value.strip()[:100] or "Opponent"
-                    )
+                    # Check if the input fields exist before accessing them
+                    if hasattr(self, 'team_input') and hasattr(self, 'opponent_input'):
+                        self.view_ref.current_leg_construction_details["team"] = (
+                            self.team_input.value.strip()[:100] or "Team"
+                        )
+                        self.view_ref.current_leg_construction_details["home_team_name"] = (
+                            self.team_input.value.strip()[:100] or "Team"
+                        )
+                        self.view_ref.current_leg_construction_details["opponent"] = (
+                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        )
+                        self.view_ref.current_leg_construction_details["away_team_name"] = (
+                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        )
+                    else:
+                        logger.error("Team input fields not found for team sport")
+                        raise ValidationError("Modal configuration error for team sport")
             elif self.line_type == "player_prop":
                 # For player props, we should never reach this point in BetDetailsModal
                 # Player props should always use ParlayEnhancedPlayerPropModal

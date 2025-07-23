@@ -257,7 +257,14 @@ class GameLineImageGenerator:
         # Get proper league display name
         from bot.config.leagues import LEAGUE_CONFIG
 
-        league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
+        # Try to get display name from LEAGUE_CONFIG, but also check if the league itself is already a display name
+        league_display_name = league  # Default to the league parameter
+        if league in LEAGUE_CONFIG:
+            league_display_name = LEAGUE_CONFIG[league].get("name", league)
+        else:
+            # If not found in LEAGUE_CONFIG, the league might already be a display name
+            league_display_name = league
+            
         logger.info(
             f"[IMAGE GENERATOR] League: {league}, Display name: {league_display_name}"
         )
