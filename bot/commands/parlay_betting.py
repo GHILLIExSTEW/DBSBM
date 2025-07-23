@@ -508,9 +508,8 @@ class BetDetailsModal(Modal):
         is_individual_sport = sport_type == "Individual Player"
 
         if line_type == "player_prop":
-            title = league_conf.get(
-                "player_prop_modal_title", f"Parlay Leg {leg_number} Details"
-            )
+            # This should never happen - player props should use ParlayEnhancedPlayerPropModal
+            raise ValueError("BetDetailsModal should not be used for player props")
         else:
             title = league_conf.get(
                 "game_line_modal_title", f"Parlay Leg {leg_number} Details"
@@ -748,24 +747,15 @@ class BetDetailsModal(Modal):
                     self.view_ref.current_leg_construction_details["away_team_name"] = (
                         self.opponent_input.value.strip()[:100] or "Opponent"
                     )
-            elif self.is_manual and self.line_type == "player_prop":
-                # For enhanced player props, we'll handle this in a separate modal
-                # Just store the basic info for now
-                self.view_ref.current_leg_construction_details["line_type"] = (
-                    "player_prop"
-                )
-                self.view_ref.current_leg_construction_details["league"] = (
-                    self.view_ref.current_leg_construction_details.get("league", "")
-                )
             elif self.line_type == "player_prop":
-                # For enhanced player props, we'll handle this in a separate modal
-                # Just store the basic info for now
-                self.view_ref.current_leg_construction_details["line_type"] = (
-                    "player_prop"
+                # For player props, we should never reach this point in BetDetailsModal
+                # Player props should always use ParlayEnhancedPlayerPropModal
+                logger.error("BetDetailsModal was used for player props - this should not happen")
+                await interaction.response.send_message(
+                    "❌ Error: Player props should use the enhanced modal. Please try again.",
+                    ephemeral=True
                 )
-                self.view_ref.current_leg_construction_details["league"] = (
-                    self.view_ref.current_leg_construction_details.get("league", "")
-                )
+                return
 
             line = self.line_input.value.strip()
             if not line:
@@ -859,6 +849,9 @@ class BetDetailsModal(Modal):
             
             # Add the leg to the parlay
             await self.view_ref.add_leg(interaction, leg_details)
+            
+            # Properly close the modal
+            await interaction.response.defer()
 
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
@@ -905,6 +898,9 @@ class TotalOddsModal(Modal):
             await interaction.response.edit_message(
                 content="Select units for your parlay:", view=self.view_ref
             )
+            
+            # Properly close the modal
+            await interaction.response.defer()
         except ValidationError as e:
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
@@ -1099,7 +1095,7 @@ class ChannelSelect(Select):
         )
         self.disabled = True
         await interaction.response.defer()
-        await self.parent_view.go_next(interaction)
+        # Don't call go_next() - this is the final step for channel selection
 
 
 class FinalConfirmButton(Button):
@@ -1314,7 +1310,16 @@ class TeamSelect(Select):
             )
             modal.view_ref = self.parent_view
         else:
-            # Use regular bet details modal for game lines
+            # Use regular bet details modal for game lines only
+            if line_type == "player_prop":
+                # This should never happen - player props should use enhanced modal
+                logger.error("Attempted to create BetDetailsModal for player props")
+                await interaction.response.send_message(
+                    "❌ Error: Player props should use enhanced modal. Please try again.",
+                    ephemeral=True
+                )
+                return
+            
             modal = BetDetailsModal(
                 line_type=line_type,
                 is_manual=self.parent_view.current_leg_construction_details.get(
@@ -1691,7 +1696,7 @@ class ParlayBetWorkflowView(View):
                 if is_individual_sport:
                     # For individual sports, skip team selection and go directly to modal
                     if line_type == "player_prop":
-                        # Use enhanced player prop modal
+                        # Always use enhanced player prop modal for player props
                         from bot.commands.parlay_enhanced_player_prop_modal import (
                             ParlayEnhancedPlayerPropModal,
                         )
@@ -1706,7 +1711,7 @@ class ParlayBetWorkflowView(View):
                         )
                         modal.view_ref = self
                     else:
-                        # Use regular bet details modal for game lines
+                        # Use regular bet details modal for game lines only
                         modal = BetDetailsModal(
                             line_type=line_type,
                             is_manual=True,

@@ -247,6 +247,9 @@ class ParlayEnhancedPlayerPropModal(Modal):
                 await interaction.followup.send(
                     "❌ Error: Could not add leg to parlay", ephemeral=True
                 )
+            
+            # Properly close the modal
+            await interaction.response.defer()
 
         except Exception as e:
             logger.exception(f"Error in ParlayEnhancedPlayerPropModal on_submit: {e}")
