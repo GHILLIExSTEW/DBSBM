@@ -1648,6 +1648,7 @@ class ParlayBetWorkflowView(View):
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
         logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
         logger.debug(f"[PARLAY WORKFLOW] Current leg construction details: {self.current_leg_construction_details}")
+        logger.debug(f"[PARLAY WORKFLOW] Step {self.current_step} - is_manual: {self.current_leg_construction_details.get('is_manual', False)}")
         
         # Ensure view is properly cleared before adding new items
         self.clear_items()

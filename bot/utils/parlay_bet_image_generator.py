@@ -285,7 +285,9 @@ class ParlayBetImageGenerator:
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
             
             # Player (to right of VS) - like away team in game lines
-            player_image = self._load_player_image(player_name, home_team, league)
+            # Use the team that the player belongs to (usually home_team for player props)
+            player_team = home_team  # Default to home team
+            player_image = self._load_player_image(player_name, player_team, league)
             if player_image:
                 player_image = player_image.convert("RGBA").resize(logo_size)
                 player_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
@@ -293,8 +295,10 @@ class ParlayBetImageGenerator:
             else:
                 # Fallback to team logo if no player image
                 player_logo_x = vs_x + vs_width + 35
-                if team_logo:
-                    image.paste(team_logo, (int(player_logo_x), int(logo_y)), team_logo)
+                fallback_logo = self._load_team_logo(player_team, league)
+                if fallback_logo:
+                    fallback_logo = fallback_logo.convert("RGBA").resize(logo_size)
+                    image.paste(fallback_logo, (int(player_logo_x), int(logo_y)), fallback_logo)
             
             # Player name (below player image)
             draw.text((int(player_logo_x), int(name_y)), player_name, font=team_font, fill="#ffffff")
@@ -470,8 +474,11 @@ class ParlayBetImageGenerator:
         )
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
+        logger.debug(f"[ParlayBetImageGenerator] Loading player image for '{player_name}' from team '{team_name}' in league '{league}'")
         result = asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)
         )
         # load_player_image returns (image, display_name), we just want the image
-        return result[0] if result else None
+        image = result[0] if result else None
+        logger.debug(f"[ParlayBetImageGenerator] Player image loaded: {'Success' if image else 'Failed'}")
+        return image
