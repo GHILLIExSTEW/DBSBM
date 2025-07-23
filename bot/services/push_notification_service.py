@@ -420,8 +420,9 @@ class PushNotificationService:
         embed_data: Optional[Dict] = None
     ) -> bool:
         """
-        Send a push notification to a specific user without DM.
-        This creates a notification that appears on their device without sending a message.
+        Send a push notification to a specific user via DM ONLY.
+        This sends a direct message that triggers a push notification on their device.
+        NO message appears in any Discord channel.
         
         Args:
             user_id: Discord user ID
@@ -438,12 +439,9 @@ class PushNotificationService:
             # Get user object
             user = self.bot.get_user(user_id)
             if not user:
-                logger.warning(f"User {user_id} not found")
+                logger.warning(f"User {user_id} not found in bot's user cache")
                 return False
                 
-            # Create a temporary channel or use a system channel to trigger push notification
-            # We'll use a special approach that triggers Discord's notification system
-            
             # Create embed for the notification
             embed = self._create_notification_embed(
                 title, message, notification_type, priority, embed_data
@@ -456,38 +454,23 @@ class PushNotificationService:
                 inline=False
             )
             
-            # Try to find a guild where both the bot and user are present
-            target_guild = None
-            target_channel = None
-            
-            for guild in self.bot.guilds:
-                if guild.get_member(user_id):
-                    # Check if guild has a system channel
-                    if guild.system_channel:
-                        target_guild = guild
-                        target_channel = guild.system_channel
-                        break
-                    # Or use the first text channel
-                    elif guild.text_channels:
-                        target_guild = guild
-                        target_channel = guild.text_channels[0]
-                        break
-            
-            if not target_channel:
-                logger.warning(f"No suitable channel found to send push notification to user {user_id}")
+            # Send direct message to user (this triggers push notification on their device)
+            try:
+                await user.send(embed=embed)
+                
+                # Log notification (no guild/channel since it's a DM)
+                await self._log_push_notification(user_id, notification_type, title, 0, 0)
+                
+                logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via DM: {title}")
+                return True
+                
+            except discord.Forbidden:
+                logger.error(f"Cannot send DM to user {user_id} - DMs are closed")
                 return False
-            
-            # Send the notification to the channel with user mention to trigger push notification
-            notification_content = f"<@&{await self.get_member_role_id(target_guild.id)}> {title}"
-            
-            await target_channel.send(content=notification_content, embed=embed)
-            
-            # Log notification
-            await self._log_push_notification(user_id, notification_type, title, target_guild.id, target_channel.id)
-            
-            logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via guild {target_guild.name}: {title}")
-            return True
-            
+            except discord.HTTPException as e:
+                logger.error(f"HTTP error sending DM to user {user_id}: {e}")
+                return False
+                
         except Exception as e:
             logger.error(f"Error sending push notification to user {user_id}: {e}")
             return False
