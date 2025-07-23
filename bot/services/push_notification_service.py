@@ -420,8 +420,8 @@ class PushNotificationService:
         embed_data: Optional[Dict] = None
     ) -> bool:
         """
-        Send a push notification to a specific user without DM or channel message.
-        This uses Discord's API to send a notification that appears on their device.
+        Send a push notification to a specific user using Discord's webhook system.
+        This ensures the user receives a notification on their device.
         
         Args:
             user_id: Discord user ID
@@ -464,51 +464,173 @@ class PushNotificationService:
                 inline=False
             )
             
-            # Use Discord's API to send a notification without a visible message
-            # This creates a system notification that appears on the user's device
+            # Find a suitable channel for the notification
+            notification_channel = None
+            
+            # First try to get the stored notification channel from database
             try:
-                # Find a channel where we can send a temporary message
-                temp_channel = None
-                for channel in target_guild.text_channels:
-                    if channel.permissions_for(target_guild.me).send_messages:
-                        temp_channel = channel
-                        break
-                
-                if not temp_channel:
-                    logger.error(f"No channel available for temporary notification to user {user_id}")
-                    return False
-                
-                # Send a message with user mention to trigger push notification
-                # The message will be very brief and then deleted
-                temp_message = await temp_channel.send(
-                    content=f"<@{user_id}> {title}",
-                    embed=embed
+                stored_channel_setting = await self.db_manager.fetch_one(
+                    "SELECT notification_channel_id FROM guild_settings WHERE guild_id = %s",
+                    (target_guild.id,)
                 )
                 
-                # Delete the message immediately (within 0.5 seconds)
-                # This ensures the push notification is sent but the message disappears quickly
-                await asyncio.sleep(0.5)  # Brief delay to ensure notification is sent
+                if stored_channel_setting and stored_channel_setting.get('notification_channel_id'):
+                    stored_channel = target_guild.get_channel(stored_channel_setting['notification_channel_id'])
+                    if stored_channel and stored_channel.permissions_for(target_guild.me).send_messages:
+                        notification_channel = stored_channel
+                        logger.info(f"Using stored notification channel: {stored_channel.name}")
+            except Exception as e:
+                logger.warning(f"Could not access stored notification channel: {e}")
+            
+            # Fallback to the designated private notification channel
+            if not notification_channel:
                 try:
-                    await temp_message.delete()
-                except:
-                    pass  # Ignore deletion errors
+                    designated_channel = target_guild.get_channel(1397388724979109899)
+                    if designated_channel and designated_channel.permissions_for(target_guild.me).send_messages:
+                        notification_channel = designated_channel
+                        logger.info(f"Using designated private notification channel: {designated_channel.name}")
+                except Exception as e:
+                    logger.warning(f"Could not access designated channel: {e}")
+            
+            # Final fallback to other channels if no private channels available
+            if not notification_channel:
+                # Try to find a general or announcements channel
+                for channel in target_guild.text_channels:
+                    if channel.permissions_for(target_guild.me).send_messages:
+                        if any(keyword in channel.name.lower() for keyword in ['general', 'announcements', 'notifications', 'bot']):
+                            notification_channel = channel
+                            break
+                
+                # If no specific channel found, use the first available channel
+                if not notification_channel:
+                    for channel in target_guild.text_channels:
+                        if channel.permissions_for(target_guild.me).send_messages:
+                            notification_channel = channel
+                            break
+            
+            if not notification_channel:
+                logger.error(f"No suitable channel found for notification to user {user_id}")
+                return False
+            
+            # Create a webhook for reliable notification delivery
+            try:
+                # Create webhook
+                webhook = await notification_channel.create_webhook(name="Notification System")
+                
+                # Send notification with user mention to ensure push notification
+                await webhook.send(
+                    content=f"<@{user_id}> {title}",
+                    embed=embed,
+                    username="Notification Bot",
+                    avatar_url=self.bot.user.display_avatar.url if self.bot.user else None
+                )
+                
+                # Clean up webhook
+                await webhook.delete()
                 
                 # Log notification
-                await self._log_push_notification(user_id, notification_type, title, target_guild.id, temp_channel.id)
+                await self._log_push_notification(user_id, notification_type, title, target_guild.id, notification_channel.id)
                 
-                logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via temporary message: {title}")
+                logger.info(f"Push notification sent to user {user_id} ({user.display_name}) via webhook: {title}")
                 return True
                 
             except discord.Forbidden:
-                logger.error(f"Cannot send message in channel {temp_channel.id if temp_channel else 'unknown'}")
-                return False
+                logger.error(f"Cannot create webhook in channel {notification_channel.id}")
+                # Fallback to regular message
+                try:
+                    await notification_channel.send(
+                        content=f"<@{user_id}> {title}",
+                        embed=embed
+                    )
+                    await self._log_push_notification(user_id, notification_type, title, target_guild.id, notification_channel.id)
+                    logger.info(f"Push notification sent to user {user_id} via fallback method: {title}")
+                    return True
+                except Exception as fallback_error:
+                    logger.error(f"Fallback notification failed: {fallback_error}")
+                    return False
+                    
             except discord.HTTPException as e:
-                logger.error(f"HTTP error sending notification: {e}")
+                logger.error(f"HTTP error creating webhook: {e}")
                 return False
                 
         except Exception as e:
             logger.error(f"Error sending push notification to user {user_id}: {e}")
             return False
+            
+    async def debug_user_notification_status(self, user_id: int) -> Dict[str, Any]:
+        """
+        Debug the notification status for a specific user.
+        
+        Args:
+            user_id: Discord user ID
+            
+        Returns:
+            Dict with debug information
+        """
+        debug_info = {
+            "user_id": user_id,
+            "user_found": False,
+            "guilds_found": [],
+            "channels_available": [],
+            "notification_settings": {},
+            "errors": []
+        }
+        
+        try:
+            # Check if user exists in bot's cache
+            user = self.bot.get_user(user_id)
+            if user:
+                debug_info["user_found"] = True
+                debug_info["user_name"] = user.display_name
+                debug_info["user_discriminator"] = user.discriminator
+            else:
+                debug_info["errors"].append("User not found in bot's user cache")
+            
+            # Check which guilds the user is in
+            for guild in self.bot.guilds:
+                member = guild.get_member(user_id)
+                if member:
+                    guild_info = {
+                        "guild_id": guild.id,
+                        "guild_name": guild.name,
+                        "member_roles": [role.name for role in member.roles],
+                        "bot_permissions": []
+                    }
+                    
+                    # Check bot permissions in this guild
+                    bot_member = guild.get_member(self.bot.user.id)
+                    if bot_member:
+                        guild_info["bot_permissions"] = [perm[0] for perm, value in bot_member.guild_permissions if value]
+                    
+                    debug_info["guilds_found"].append(guild_info)
+                    
+                    # Check available channels
+                    for channel in guild.text_channels:
+                        if channel.permissions_for(guild.me).send_messages:
+                            channel_info = {
+                                "channel_id": channel.id,
+                                "channel_name": channel.name,
+                                "channel_type": str(channel.type),
+                                "can_create_webhook": channel.permissions_for(guild.me).manage_webhooks
+                            }
+                            debug_info["channels_available"].append(channel_info)
+            
+            if not debug_info["guilds_found"]:
+                debug_info["errors"].append("User not found in any guild where bot is present")
+            
+            # Check notification settings (if we can)
+            if user:
+                debug_info["notification_settings"] = {
+                    "user_id": user.id,
+                    "bot_user": user.bot,
+                    "system_user": user.system
+                }
+            
+        except Exception as e:
+            debug_info["errors"].append(f"Debug error: {str(e)}")
+            logger.error(f"Error in debug_user_notification_status: {e}")
+        
+        return debug_info
             
     async def send_direct_notification(
         self,

@@ -527,6 +527,189 @@ class PushNotificationCog(commands.Cog):
                 await interaction.response.send_message(embed=error_embed, ephemeral=True)
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
+            
+    @app_commands.command(
+        name="debug_user",
+        description="🔍 Debug notification status for a specific user"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def debug_user(self, interaction: discord.Interaction, user_id: str):
+        """Debug notification status for a specific user."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            # Parse user ID
+            try:
+                target_user_id = int(user_id)
+            except ValueError:
+                await interaction.followup.send("❌ Invalid user ID format. Please provide a valid Discord user ID.", ephemeral=True)
+                return
+            
+            # Get debug information
+            debug_info = await self.bot.push_notification_service.debug_user_notification_status(target_user_id)
+            
+            # Create debug embed
+            embed = discord.Embed(
+                title="🔍 User Notification Debug",
+                description=f"Debug information for user ID: `{target_user_id}`",
+                color=0x00ff00 if debug_info["user_found"] else 0xff0000
+            )
+            
+            # User status
+            if debug_info["user_found"]:
+                embed.add_field(
+                    name="👤 User Status",
+                    value=f"✅ Found: {debug_info['user_name']}#{debug_info['user_discriminator']}",
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="👤 User Status",
+                    value="❌ User not found in bot's cache",
+                    inline=False
+                )
+            
+            # Guilds found
+            if debug_info["guilds_found"]:
+                guild_text = "\n".join([
+                    f"• **{guild['guild_name']}** (ID: {guild['guild_id']})"
+                    for guild in debug_info["guilds_found"]
+                ])
+                embed.add_field(
+                    name="🏠 Guilds Found",
+                    value=guild_text,
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="🏠 Guilds Found",
+                    value="❌ User not in any guild with bot",
+                    inline=False
+                )
+            
+            # Available channels
+            if debug_info["channels_available"]:
+                channel_text = "\n".join([
+                    f"• **#{channel['channel_name']}** (Webhook: {'✅' if channel['can_create_webhook'] else '❌'})"
+                    for channel in debug_info["channels_available"][:5]  # Show first 5
+                ])
+                if len(debug_info["channels_available"]) > 5:
+                    channel_text += f"\n... and {len(debug_info['channels_available']) - 5} more"
+                embed.add_field(
+                    name="📺 Available Channels",
+                    value=channel_text,
+                    inline=False
+                )
+            else:
+                embed.add_field(
+                    name="📺 Available Channels",
+                    value="❌ No channels available for notifications",
+                    inline=False
+                )
+            
+            # Errors
+            if debug_info["errors"]:
+                error_text = "\n".join([f"• {error}" for error in debug_info["errors"]])
+                embed.add_field(
+                    name="⚠️ Issues Found",
+                    value=error_text,
+                    inline=False
+                )
+                embed.color = 0xffa500  # Orange for warnings
+            
+            embed.set_footer(text=f"Debug at {discord.utils.utcnow().strftime('%H:%M:%S')}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            logger.error(f"Debug user command failed: {e}", exc_info=True)
+            error_embed = discord.Embed(
+                title="❌ Debug Failed",
+                description=f"Error: {str(e)}",
+                color=0xff0000
+            )
+            
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
+            
+    @app_commands.command(
+        name="set_notification_channel",
+        description="📺 Set the channel for push notifications (admin only)"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def set_notification_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        """Set the channel for push notifications."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            # Check if bot has permissions in the channel
+            if not channel.permissions_for(interaction.guild.me).send_messages:
+                await interaction.followup.send(
+                    "❌ I don't have permission to send messages in that channel.",
+                    ephemeral=True
+                )
+                return
+            
+            # Store the notification channel in database
+            try:
+                await self.bot.db_manager.execute(
+                    """
+                    INSERT INTO guild_settings (guild_id, notification_channel_id) 
+                    VALUES (%s, %s) 
+                    ON DUPLICATE KEY UPDATE notification_channel_id = VALUES(notification_channel_id)
+                    """,
+                    (interaction.guild_id, channel.id)
+                )
+                
+                embed = discord.Embed(
+                    title="✅ Notification Channel Set",
+                    description=f"Push notifications will now be sent to {channel.mention}",
+                    color=0x00ff00
+                )
+                
+                embed.add_field(
+                    name="📺 Channel",
+                    value=f"**Name:** {channel.name}\n**ID:** {channel.id}\n**Type:** {channel.type}",
+                    inline=False
+                )
+                
+                embed.add_field(
+                    name="🔒 Privacy",
+                    value="✅ Private channel - only admins and bot can see",
+                    inline=True
+                )
+                
+                embed.add_field(
+                    name="📱 Notifications",
+                    value="✅ Will trigger push notifications for users",
+                    inline=True
+                )
+                
+                embed.set_footer(text=f"Set by {interaction.user.display_name}")
+                
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                
+            except Exception as e:
+                logger.error(f"Error setting notification channel: {e}")
+                await interaction.followup.send(
+                    f"❌ Error saving notification channel: {str(e)}",
+                    ephemeral=True
+                )
+                
+        except Exception as e:
+            logger.error(f"Set notification channel command failed: {e}", exc_info=True)
+            error_embed = discord.Embed(
+                title="❌ Command Failed",
+                description=f"Error: {str(e)}",
+                color=0xff0000
+            )
+            
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 
 async def setup(bot):
