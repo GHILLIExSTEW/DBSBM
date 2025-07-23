@@ -840,11 +840,19 @@ class BetDetailsModal(Modal):
                 )
 
                 # Prepare leg data for preview
+                # Convert league key to full league name for asset loading
+                league_key = self.view_ref.current_leg_construction_details.get("league", "")
+                league_name = league_key
+                try:
+                    from bot.config.leagues import LEAGUE_CONFIG
+                    if league_key in LEAGUE_CONFIG:
+                        league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
+                except Exception as e:
+                    logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
+                
                 leg_data = {
                     "bet_type": self.line_type,
-                    "league": self.view_ref.current_leg_construction_details.get(
-                        "league", ""
-                    ),
+                    "league": league_name,  # Use full league name
                     "home_team": self.view_ref.current_leg_construction_details.get(
                         "home_team_name", ""
                     ),
@@ -1486,9 +1494,19 @@ class ParlayBetWorkflowView(View):
                 image_generator = ParlayBetImageGenerator()
                 legs = []
                 for leg in self.bet_details.get("legs", []):
+                    # Convert league key to full league name for asset loading
+                    league_key = leg.get("league", "")
+                    league_name = league_key
+                    try:
+                        from bot.config.leagues import LEAGUE_CONFIG
+                        if league_key in LEAGUE_CONFIG:
+                            league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
+                    except Exception as e:
+                        logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
+                    
                     leg_data = {
                         "bet_type": leg.get("line_type", "game_line"),
-                        "league": leg.get("league", ""),
+                        "league": league_name,  # Use full league name
                         "home_team": leg.get("home_team_name", ""),
                         "away_team": leg.get("away_team_name", ""),
                         "selected_team": leg.get("team", ""),
@@ -2056,9 +2074,19 @@ class ParlayBetWorkflowView(View):
             )
             legs = []
             for leg in self.bet_details.get("legs", []) or []:
+                # Convert league key to full league name for asset loading
+                league_key = leg.get("league", "")
+                league_name = league_key
+                try:
+                    from bot.config.leagues import LEAGUE_CONFIG
+                    if league_key in LEAGUE_CONFIG:
+                        league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
+                except Exception as e:
+                    logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
+                
                 leg_data = {
                     "bet_type": leg.get("line_type", "game_line"),
-                    "league": leg.get("league", ""),
+                    "league": league_name,  # Use full league name
                     "home_team": leg.get("home_team_name", ""),
                     "away_team": leg.get("away_team_name", ""),
                     "selected_team": leg.get("team", ""),

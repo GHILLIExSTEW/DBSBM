@@ -469,16 +469,19 @@ class ParlayBetImageGenerator:
         )
 
     def _load_team_logo(self, team_name: str, league: str):
-        return asset_loader.load_team_logo(
+        logger.info(f"[ParlayBetImageGenerator] Loading team logo for '{team_name}' in league '{league}'")
+        result = asset_loader.load_team_logo(
             team_name, league, getattr(self, "guild_id", None)
         )
+        logger.info(f"[ParlayBetImageGenerator] Team logo loaded: {'Success' if result else 'Failed'}")
+        return result
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        logger.debug(f"[ParlayBetImageGenerator] Loading player image for '{player_name}' from team '{team_name}' in league '{league}'")
+        logger.info(f"[ParlayBetImageGenerator] Loading player image for '{player_name}' from team '{team_name}' in league '{league}'")
         result = asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)
         )
         # load_player_image returns (image, display_name), we just want the image
         image = result[0] if result else None
-        logger.debug(f"[ParlayBetImageGenerator] Player image loaded: {'Success' if image else 'Failed'}")
+        logger.info(f"[ParlayBetImageGenerator] Player image loaded: {'Success' if image else 'Failed'}")
         return image
