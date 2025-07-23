@@ -331,10 +331,18 @@ class ParlayGameSelect(Select):
         seen_values = set()  # Track used values
         manual_added = False  # Track if manual entry has been added
         
+        logger.debug(f"[ParlayGameSelect] Processing {len(games)} games")
+        logger.debug(f"[ParlayGameSelect] All games: {games}")
+        
+        # Check for duplicate manual entries in the games list itself
+        manual_count = sum(1 for game in games if game.get("id") == "manual" or game.get("api_game_id") == "manual")
+        logger.debug(f"[ParlayGameSelect] Found {manual_count} manual entries in games list")
+        
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
-        for game in games[:24]:
+        for i, game in enumerate(games[:24]):
             # Special handling for manual entry - only add once
             if (game.get("id") == "manual" or game.get("api_game_id") == "manual") and not manual_added:
+                logger.debug(f"[ParlayGameSelect] Adding manual entry at index {i}")
                 game_options.append(
                     SelectOption(
                         label="Manual Entry",
@@ -348,6 +356,7 @@ class ParlayGameSelect(Select):
             
             # Skip manual entry if already added
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
+                logger.debug(f"[ParlayGameSelect] Skipping duplicate manual entry at index {i}")
                 continue
                 
             # Prefer api_game_id if present, else use internal id
@@ -397,6 +406,7 @@ class ParlayGameSelect(Select):
             else:
                 desc = ""
 
+            logger.debug(f"[ParlayGameSelect] Adding game option: {label} with value: {value}")
             game_options.append(
                 SelectOption(
                     label=label[:100], value=value[:100], description=desc[:100]
@@ -414,6 +424,16 @@ class ParlayGameSelect(Select):
         logger.debug(
             f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry). Manual added: {manual_added}"
         )
+        logger.debug(f"[ParlayGameSelect] Final options: {[(opt.label, opt.value) for opt in game_options]}")
+        
+        # Final check for duplicate values
+        values = [opt.value for opt in game_options]
+        duplicates = [v for v in set(values) if values.count(v) > 1]
+        if duplicates:
+            logger.error(f"[ParlayGameSelect] DUPLICATE VALUES FOUND: {duplicates}")
+            logger.error(f"[ParlayGameSelect] All values: {values}")
+        else:
+            logger.debug(f"[ParlayGameSelect] No duplicate values found")
 
     async def callback(self, interaction: Interaction):
         selected_value = self.values[0]
