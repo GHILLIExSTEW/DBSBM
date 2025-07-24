@@ -1,0 +1,420 @@
+import logging
+import discord
+from datetime import datetime
+from typing import Dict
+
+logger = logging.getLogger(__name__)
+
+
+class CommunityAnalyticsService:
+    def __init__(self, bot, db_manager):
+        self.bot = bot
+        self.db_manager = db_manager
+
+        # Achievement definitions
+        self.achievements = {
+            "reaction_master": {
+                "name": "Reaction Master",
+                "requirement": 100,
+                "icon": "🎯",
+                "description": "Reacted to 100+ bets",
+            },
+            "popular_predictor": {
+                "name": "Popular Predictor",
+                "requirement": 10,
+                "icon": "👑",
+                "description": "Had 10+ bets with high reaction counts",
+            },
+            "streak_supporter": {
+                "name": "Streak Supporter",
+                "requirement": 50,
+                "icon": "🔥",
+                "description": "Consistently supported community bets",
+            },
+            "community_cheerleader": {
+                "name": "Community Cheerleader",
+                "requirement": 200,
+                "icon": "📣",
+                "description": "Very active community supporter",
+            },
+            "helpful_member": {
+                "name": "Helpful Member",
+                "requirement": 25,
+                "icon": "🤝",
+                "description": "Helped other community members",
+            },
+            "event_participant": {
+                "name": "Event Participant",
+                "requirement": 5,
+                "icon": "🎉",
+                "description": "Participated in community events",
+            },
+            "discussion_starter": {
+                "name": "Discussion Starter",
+                "requirement": 20,
+                "icon": "💬",
+                "description": "Started engaging discussions",
+            },
+        }
+
+    async def track_metric(self, guild_id: int, metric_type: str, value: float):
+        """Track a community metric."""
+        try:
+            query = """
+                INSERT INTO community_metrics (guild_id, metric_type, metric_value, recorded_at)
+                VALUES (%s, %s, %s, %s)
+            """
+            await self.db_manager.execute(
+                query, (guild_id, metric_type, value, datetime.utcnow())
+            )
+            logger.debug(f"Tracked metric {metric_type}: {value} for guild {guild_id}")
+        except Exception as e:
+            logger.error(f"Failed to track metric: {e}")
+
+    async def get_community_health(self, guild_id: int, days: int = 7):
+        """Get community health metrics."""
+        try:
+            query = """
+                SELECT 
+                    metric_type,
+                    AVG(metric_value) as avg_value,
+                    MAX(metric_value) as max_value,
+                    MIN(metric_value) as min_value,
+                    COUNT(*) as data_points,
+                    SUM(metric_value) as total_value
+                FROM community_metrics
+                WHERE guild_id = %s 
+                AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                GROUP BY metric_type
+                ORDER BY avg_value DESC
+            """
+            return await self.db_manager.fetch_all(query, (guild_id, days))
+        except Exception as e:
+            logger.error(f"Failed to get community health: {e}")
+            return []
+
+    async def track_reaction_activity(
+        self, guild_id: int, user_id: int, bet_serial: int, emoji: str
+    ):
+        """Track user reaction activity."""
+        try:
+            # Track individual reaction
+            await self.track_metric(guild_id, "daily_reactions", 1)
+            await self.track_metric(guild_id, f"reactions_{emoji}", 1)
+
+            # Track user-specific metrics
+            await self.track_user_metric(guild_id, user_id, "total_reactions", 1)
+            await self.track_user_metric(guild_id, user_id, f"reactions_{emoji}", 1)
+
+            # Check for achievements
+            await self.check_reaction_achievements(guild_id, user_id)
+
+        except Exception as e:
+            logger.error(f"Failed to track reaction activity: {e}")
+
+    async def track_user_metric(
+        self, guild_id: int, user_id: int, metric_type: str, value: float
+    ):
+        """Track user-specific metrics."""
+        try:
+            query = """
+                INSERT INTO user_metrics (guild_id, user_id, metric_type, metric_value, recorded_at)
+                VALUES (%s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE 
+                metric_value = metric_value + VALUES(metric_value),
+                recorded_at = VALUES(recorded_at)
+            """
+            await self.db_manager.execute(
+                query, (guild_id, user_id, metric_type, value, datetime.utcnow())
+            )
+        except Exception as e:
+            logger.error(f"Failed to track user metric: {e}")
+
+    async def check_reaction_achievements(self, guild_id: int, user_id: int):
+        """Check if user has earned reaction achievements."""
+        try:
+            # Count user's total reactions
+            query = """
+                SELECT COUNT(*) as reaction_count
+                FROM bet_reactions br
+                JOIN bets b ON br.bet_serial = b.bet_serial
+                WHERE b.guild_id = %s AND br.user_id = %s
+            """
+            result = await self.db_manager.fetch_one(query, (guild_id, user_id))
+            reaction_count = result["reaction_count"] if result else 0
+
+            # Check achievements
+            achievements_to_check = {
+                100: "reaction_master",
+                50: "streak_supporter",
+                200: "community_cheerleader",
+            }
+
+            for threshold, achievement in achievements_to_check.items():
+                if reaction_count >= threshold:
+                    await self.grant_achievement(guild_id, user_id, achievement)
+
+        except Exception as e:
+            logger.error(f"Failed to check reaction achievements: {e}")
+
+    async def grant_achievement(
+        self, guild_id: int, user_id: int, achievement_type: str
+    ):
+        """Grant an achievement to a user."""
+        try:
+            # Check if already earned
+            query = """
+                SELECT COUNT(*) as count
+                FROM community_achievements
+                WHERE guild_id = %s AND user_id = %s AND achievement_type = %s
+            """
+            result = await self.db_manager.fetch_one(
+                query, (guild_id, user_id, achievement_type)
+            )
+
+            if result["count"] == 0:
+                # Grant achievement
+                achievement_info = self.achievements.get(achievement_type, {})
+                achievement_name = achievement_info.get("name", achievement_type)
+
+                insert_query = """
+                    INSERT INTO community_achievements (guild_id, user_id, achievement_type, achievement_name, earned_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                """
+                await self.db_manager.execute(
+                    insert_query,
+                    (
+                        guild_id,
+                        user_id,
+                        achievement_type,
+                        achievement_name,
+                        datetime.utcnow(),
+                    ),
+                )
+
+                # Track achievement metric
+                await self.track_metric(guild_id, "achievements_granted", 1)
+                await self.track_user_metric(
+                    guild_id, user_id, "achievements_earned", 1
+                )
+
+                logger.info(
+                    f"Granted achievement {achievement_type} to user {user_id} in guild {guild_id}"
+                )
+
+                # Notify user about achievement (if possible)
+                await self.notify_achievement(guild_id, user_id, achievement_info)
+
+        except Exception as e:
+            logger.error(f"Failed to grant achievement: {e}")
+
+    async def notify_achievement(
+        self, guild_id: int, user_id: int, achievement_info: Dict
+    ):
+        """Notify user about earning an achievement."""
+        try:
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                return
+
+            user = guild.get_member(user_id)
+            if not user:
+                return
+
+            # Find a channel to send the notification
+            channel = discord.utils.get(guild.channels, name="general-chat")
+            if not channel:
+                channel = discord.utils.get(
+                    guild.channels, type=discord.ChannelType.text
+                )
+
+            if channel:
+                embed = discord.Embed(
+                    title=f"{achievement_info.get('icon', '🏆')} Achievement Unlocked!",
+                    description=f"Congratulations {user.mention}! You've earned the **{achievement_info.get('name', 'Unknown')}** achievement!",
+                    color=0xFFD700,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.add_field(
+                    name="Description",
+                    value=achievement_info.get("description", "Great job!"),
+                    inline=False,
+                )
+                embed.set_footer(text="Keep up the great work!")
+                embed.set_thumbnail(url=user.display_avatar.url)
+
+                await channel.send(embed=embed)
+
+        except Exception as e:
+            logger.error(f"Failed to notify achievement: {e}")
+
+    async def get_user_achievements(self, guild_id: int, user_id: int):
+        """Get achievements for a specific user."""
+        try:
+            query = """
+                SELECT achievement_type, achievement_name, earned_at
+                FROM community_achievements
+                WHERE guild_id = %s AND user_id = %s
+                ORDER BY earned_at DESC
+            """
+            return await self.db_manager.fetch_all(query, (guild_id, user_id))
+        except Exception as e:
+            logger.error(f"Failed to get user achievements: {e}")
+            return []
+
+    async def get_leaderboard(
+        self, guild_id: int, category: str = "reactions", limit: int = 10
+    ):
+        """Get community leaderboard."""
+        try:
+            if category == "reactions":
+                query = """
+                    SELECT 
+                        br.user_id,
+                        COUNT(*) as reaction_count,
+                        COUNT(DISTINCT br.bet_serial) as bets_reacted_to
+                    FROM bet_reactions br
+                    JOIN bets b ON br.bet_serial = b.bet_serial
+                    WHERE b.guild_id = %s
+                    GROUP BY br.user_id
+                    ORDER BY reaction_count DESC
+                    LIMIT %s
+                """
+                results = await self.db_manager.fetch_all(query, (guild_id, limit))
+                return [
+                    {"user_id": row["user_id"], "value": row["reaction_count"]}
+                    for row in results
+                ]
+
+            elif category == "achievements":
+                query = """
+                    SELECT 
+                        user_id,
+                        COUNT(*) as achievement_count
+                    FROM community_achievements
+                    WHERE guild_id = %s
+                    GROUP BY user_id
+                    ORDER BY achievement_count DESC
+                    LIMIT %s
+                """
+                results = await self.db_manager.fetch_all(query, (guild_id, limit))
+                return [
+                    {"user_id": row["user_id"], "value": row["achievement_count"]}
+                    for row in results
+                ]
+
+            elif category == "helpful":
+                query = """
+                    SELECT 
+                        user_id,
+                        SUM(metric_value) as helpful_score
+                    FROM user_metrics
+                    WHERE guild_id = %s 
+                    AND metric_type IN ('help_requests_answered', 'encouragements_given', 'thanks_received')
+                    GROUP BY user_id
+                    ORDER BY helpful_score DESC
+                    LIMIT %s
+                """
+                results = await self.db_manager.fetch_all(query, (guild_id, limit))
+                return [
+                    {"user_id": row["user_id"], "value": row["helpful_score"]}
+                    for row in results
+                ]
+
+            else:
+                return []
+
+        except Exception as e:
+            logger.error(f"Failed to get leaderboard: {e}")
+            return []
+
+    async def get_engagement_summary(self, guild_id: int, days: int = 7):
+        """Get engagement summary for a guild."""
+        try:
+            # Get basic metrics
+            health_metrics = await self.get_community_health(guild_id, days)
+
+            # Get top users
+            top_reactors = await self.get_leaderboard(guild_id, "reactions", 5)
+            top_achievers = await self.get_leaderboard(guild_id, "achievements", 5)
+
+            # Get recent achievements
+            query = """
+                SELECT user_id, achievement_name, earned_at
+                FROM community_achievements
+                WHERE guild_id = %s 
+                AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                ORDER BY earned_at DESC
+                LIMIT 10
+            """
+            recent_achievements = await self.db_manager.fetch_all(
+                query, (guild_id, days)
+            )
+
+            return {
+                "health_metrics": health_metrics,
+                "top_reactors": top_reactors,
+                "top_achievers": top_achievers,
+                "recent_achievements": recent_achievements,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get engagement summary: {e}")
+            return {}
+
+    async def track_community_command(
+        self, guild_id: int, user_id: int, command_name: str
+    ):
+        """Track usage of community commands."""
+        try:
+            await self.track_metric(guild_id, f"command_{command_name}", 1)
+            await self.track_user_metric(
+                guild_id, user_id, f"commands_{command_name}", 1
+            )
+            await self.track_user_metric(
+                guild_id, user_id, "total_community_commands", 1
+            )
+
+            # Check for command-based achievements
+            await self.check_command_achievements(guild_id, user_id, command_name)
+
+        except Exception as e:
+            logger.error(f"Failed to track community command: {e}")
+
+    async def check_command_achievements(
+        self, guild_id: int, user_id: int, command_name: str
+    ):
+        """Check for command-based achievements."""
+        try:
+            # Get user's command usage
+            query = """
+                SELECT SUM(metric_value) as total_commands
+                FROM user_metrics
+                WHERE guild_id = %s AND user_id = %s AND metric_type = 'total_community_commands'
+            """
+            result = await self.db_manager.fetch_one(query, (guild_id, user_id))
+            total_commands = (
+                result["total_commands"] if result and result["total_commands"] else 0
+            )
+
+            # Check for discussion starter achievement
+            if command_name == "discuss" and total_commands >= 20:
+                await self.grant_achievement(guild_id, user_id, "discussion_starter")
+
+            # Check for helpful member achievement
+            if (
+                command_name in ["help_community", "encourage", "thanks"]
+                and total_commands >= 25
+            ):
+                await self.grant_achievement(guild_id, user_id, "helpful_member")
+
+        except Exception as e:
+            logger.error(f"Failed to check command achievements: {e}")
+
+    async def start(self):
+        """Start the community analytics service."""
+        logger.info("Starting Community Analytics Service")
+
+    async def stop(self):
+        """Stop the community analytics service."""
+        logger.info("Stopping Community Analytics Service")

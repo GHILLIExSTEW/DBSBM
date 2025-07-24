@@ -954,7 +954,7 @@ class StraightBetWorkflowView(View):
                     self.preview_image_bytes.seek(0)
                     file_to_send = File(
                         self.preview_image_bytes,
-                        filename=f"bet_preview_s{self.current_step}.png",
+                        filename=f"bet_preview_s{self.current_step}.webp",
                     )
                 await self.edit_message(
                     content=self.get_content(), view=self, file=file_to_send
@@ -1026,7 +1026,7 @@ class StraightBetWorkflowView(View):
                     self.preview_image_bytes.seek(0)
                     file_to_send = File(
                         self.preview_image_bytes,
-                        filename=f"bet_preview_s{self.current_step}.png",
+                        filename=f"bet_preview_s{self.current_step}.webp",
                     )
                 await self.edit_message(content=content, view=self, file=file_to_send)
                 self.is_processing = False
@@ -1135,7 +1135,7 @@ class StraightBetWorkflowView(View):
             if self.preview_image_bytes:
                 self.preview_image_bytes.seek(0)
                 discord_file_to_send = File(
-                    self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.png"
+                    self.preview_image_bytes, filename=f"bet_slip_{bet_serial}.webp"
                 )
             else:
                 logger.warning(
@@ -1163,7 +1163,7 @@ class StraightBetWorkflowView(View):
                     bet_slip_image.save(temp_bytes, format="PNG")
                     temp_bytes.seek(0)
                     discord_file_to_send = File(
-                        temp_bytes, filename=f"bet_slip_{bet_serial}.png"
+                        temp_bytes, filename=f"bet_slip_{bet_serial}.webp"
                     )
                     temp_bytes.close()
 
@@ -1373,7 +1373,7 @@ class StraightBetWorkflowView(View):
             self.preview_image_bytes.seek(0)
             file_to_send = File(
                 self.preview_image_bytes,
-                filename=f"bet_preview_s{self.current_step}.png",
+                filename=f"bet_preview_s{self.current_step}.webp",
             )
         await self.edit_message(
             content=self.get_content(), view=self, file=file_to_send

@@ -294,6 +294,9 @@ class BettingBot(commands.Bot):
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
+        # Community engagement services will be initialized in setup_hook
+        self.community_events_service = None
+        self.community_analytics_service = None
 
     async def get_bet_slip_generator(
         self, guild_id: int, bet_type: str = "game_line"
@@ -331,6 +334,8 @@ class BettingBot(commands.Bot):
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
             "platinum_api.py",  # Platinum API commands
             "sync_cog.py",  # Sync commands
+            "community.py",  # Community engagement commands
+            "community_leaderboard.py",  # Community leaderboard commands
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -658,7 +663,18 @@ class BettingBot(commands.Bot):
 
         logger.info("Starting services...")
         
-
+        # Initialize community engagement services
+        try:
+            from bot.services.community_events import CommunityEventsService
+            from bot.services.community_analytics import CommunityAnalyticsService
+            
+            self.community_events_service = CommunityEventsService(self, self.db_manager)
+            self.community_analytics_service = CommunityAnalyticsService(self, self.db_manager)
+            logger.info("Community engagement services initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize community engagement services: {e}")
+            self.community_events_service = None
+            self.community_analytics_service = None
         
         service_starts = [
             self.admin_service.start(),
@@ -671,6 +687,12 @@ class BettingBot(commands.Bot):
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
         ]
+        
+        # Add community services if initialized
+        if self.community_events_service:
+            service_starts.append(self.community_events_service.start())
+        if self.community_analytics_service:
+            service_starts.append(self.community_analytics_service.start())
 
         # Initialize rate limiter
         try:

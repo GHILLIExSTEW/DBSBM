@@ -7,7 +7,7 @@
       "country": "England",
       "founded": 1878,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/33.png"
+      "logo": "https://media.api-sports.io/football/teams/33.webp"
     },
     "venue": {
       "id": 556,
@@ -16,7 +16,7 @@
       "city": "Manchester",
       "capacity": 76212,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/556.png"
+      "image": "https://media.api-sports.io/football/venues/556.webp"
     }
   },
   {
@@ -27,7 +27,7 @@
       "country": "England",
       "founded": 1892,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/34.png"
+      "logo": "https://media.api-sports.io/football/teams/34.webp"
     },
     "venue": {
       "id": 562,
@@ -36,7 +36,7 @@
       "city": "Newcastle upon Tyne",
       "capacity": 52758,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/562.png"
+      "image": "https://media.api-sports.io/football/venues/562.webp"
     }
   },
   {
@@ -47,7 +47,7 @@
       "country": "England",
       "founded": 1899,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/35.png"
+      "logo": "https://media.api-sports.io/football/teams/35.webp"
     },
     "venue": {
       "id": 504,
@@ -56,7 +56,7 @@
       "city": "Bournemouth, Dorset",
       "capacity": 12000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/504.png"
+      "image": "https://media.api-sports.io/football/venues/504.webp"
     }
   },
   {
@@ -67,7 +67,7 @@
       "country": "England",
       "founded": 1879,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/36.png"
+      "logo": "https://media.api-sports.io/football/teams/36.webp"
     },
     "venue": {
       "id": 535,
@@ -76,7 +76,7 @@
       "city": "London",
       "capacity": 25700,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/535.png"
+      "image": "https://media.api-sports.io/football/venues/535.webp"
     }
   },
   {
@@ -87,7 +87,7 @@
       "country": "England",
       "founded": 1877,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/39.png"
+      "logo": "https://media.api-sports.io/football/teams/39.webp"
     },
     "venue": {
       "id": 600,
@@ -96,7 +96,7 @@
       "city": "Wolverhampton, West Midlands",
       "capacity": 34624,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/600.png"
+      "image": "https://media.api-sports.io/football/venues/600.webp"
     }
   },
   {
@@ -107,7 +107,7 @@
       "country": "England",
       "founded": 1892,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/40.png"
+      "logo": "https://media.api-sports.io/football/teams/40.webp"
     },
     "venue": {
       "id": 550,
@@ -116,7 +116,7 @@
       "city": "Liverpool",
       "capacity": 55212,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/550.png"
+      "image": "https://media.api-sports.io/football/venues/550.webp"
     }
   },
   {
@@ -127,7 +127,7 @@
       "country": "England",
       "founded": 1885,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/41.png"
+      "logo": "https://media.api-sports.io/football/teams/41.webp"
     },
     "venue": {
       "id": 585,
@@ -136,7 +136,7 @@
       "city": "Southampton, Hampshire",
       "capacity": 32689,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/585.png"
+      "image": "https://media.api-sports.io/football/venues/585.webp"
     }
   },
   {
@@ -147,7 +147,7 @@
       "country": "England",
       "founded": 1886,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/42.png"
+      "logo": "https://media.api-sports.io/football/teams/42.webp"
     },
     "venue": {
       "id": 494,
@@ -156,7 +156,7 @@
       "city": "London",
       "capacity": 60383,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/494.png"
+      "image": "https://media.api-sports.io/football/venues/494.webp"
     }
   },
   {
@@ -167,7 +167,7 @@
       "country": "England",
       "founded": 1878,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/45.png"
+      "logo": "https://media.api-sports.io/football/teams/45.webp"
     },
     "venue": {
       "id": 8560,
@@ -176,7 +176,7 @@
       "city": "Liverpool",
       "capacity": 40569,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/8560.png"
+      "image": "https://media.api-sports.io/football/venues/8560.webp"
     }
   },
   {
@@ -187,7 +187,7 @@
       "country": "England",
       "founded": 1884,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/46.png"
+      "logo": "https://media.api-sports.io/football/teams/46.webp"
     },
     "venue": {
       "id": 547,
@@ -196,7 +196,7 @@
       "city": "Leicester, Leicestershire",
       "capacity": 34310,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/547.png"
+      "image": "https://media.api-sports.io/football/venues/547.webp"
     }
   },
   {
@@ -207,7 +207,7 @@
       "country": "England",
       "founded": 1882,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/47.png"
+      "logo": "https://media.api-sports.io/football/teams/47.webp"
     },
     "venue": {
       "id": 593,
@@ -216,7 +216,7 @@
       "city": "London",
       "capacity": 62850,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/593.png"
+      "image": "https://media.api-sports.io/football/venues/593.webp"
     }
   },
   {
@@ -227,7 +227,7 @@
       "country": "England",
       "founded": 1895,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/48.png"
+      "logo": "https://media.api-sports.io/football/teams/48.webp"
     },
     "venue": {
       "id": 598,
@@ -236,7 +236,7 @@
       "city": "London",
       "capacity": 62500,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/598.png"
+      "image": "https://media.api-sports.io/football/venues/598.webp"
     }
   },
   {
@@ -247,7 +247,7 @@
       "country": "England",
       "founded": 1905,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/49.png"
+      "logo": "https://media.api-sports.io/football/teams/49.webp"
     },
     "venue": {
       "id": 519,
@@ -256,7 +256,7 @@
       "city": "London",
       "capacity": 41841,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/519.png"
+      "image": "https://media.api-sports.io/football/venues/519.webp"
     }
   },
   {
@@ -267,7 +267,7 @@
       "country": "England",
       "founded": 1880,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/50.png"
+      "logo": "https://media.api-sports.io/football/teams/50.webp"
     },
     "venue": {
       "id": 555,
@@ -276,7 +276,7 @@
       "city": "Manchester",
       "capacity": 55097,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/555.png"
+      "image": "https://media.api-sports.io/football/venues/555.webp"
     }
   },
   {
@@ -287,7 +287,7 @@
       "country": "England",
       "founded": 1901,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/51.png"
+      "logo": "https://media.api-sports.io/football/teams/51.webp"
     },
     "venue": {
       "id": 508,
@@ -296,7 +296,7 @@
       "city": "Falmer, East Sussex",
       "capacity": 31872,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/508.png"
+      "image": "https://media.api-sports.io/football/venues/508.webp"
     }
   },
   {
@@ -307,7 +307,7 @@
       "country": "England",
       "founded": 1905,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/52.png"
+      "logo": "https://media.api-sports.io/football/teams/52.webp"
     },
     "venue": {
       "id": 525,
@@ -316,7 +316,7 @@
       "city": "London",
       "capacity": 26309,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/525.png"
+      "image": "https://media.api-sports.io/football/venues/525.webp"
     }
   },
   {
@@ -327,7 +327,7 @@
       "country": "England",
       "founded": 1889,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/55.png"
+      "logo": "https://media.api-sports.io/football/teams/55.webp"
     },
     "venue": {
       "id": 10503,
@@ -336,7 +336,7 @@
       "city": "Brentford, Middlesex",
       "capacity": 17250,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/10503.png"
+      "image": "https://media.api-sports.io/football/venues/10503.webp"
     }
   },
   {
@@ -347,7 +347,7 @@
       "country": "England",
       "founded": 1878,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/57.png"
+      "logo": "https://media.api-sports.io/football/teams/57.webp"
     },
     "venue": {
       "id": 545,
@@ -356,7 +356,7 @@
       "city": "Ipswich, Suffolk",
       "capacity": 30311,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/545.png"
+      "image": "https://media.api-sports.io/football/venues/545.webp"
     }
   },
   {
@@ -367,7 +367,7 @@
       "country": "England",
       "founded": 1865,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/65.png"
+      "logo": "https://media.api-sports.io/football/teams/65.webp"
     },
     "venue": {
       "id": 566,
@@ -376,7 +376,7 @@
       "city": "Nottingham, Nottinghamshire",
       "capacity": 30576,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/566.png"
+      "image": "https://media.api-sports.io/football/venues/566.webp"
     }
   },
   {
@@ -387,7 +387,7 @@
       "country": "England",
       "founded": 1874,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/66.png"
+      "logo": "https://media.api-sports.io/football/teams/66.webp"
     },
     "venue": {
       "id": 495,
@@ -396,7 +396,7 @@
       "city": "Birmingham",
       "capacity": 42788,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/495.png"
+      "image": "https://media.api-sports.io/football/venues/495.webp"
     }
   }
 ]

@@ -77,12 +77,7 @@ class GameService:
             self.logger.error(f"Error getting live fixtures for {league}: {str(e)}")
             return []
 
-    async def fetch_and_save_daily_games(self):
-        """Fetch and save daily games for all leagues (deprecated; use fetcher.py)."""
-        self.logger.warning(
-            "fetch_and_save_daily_games called; this method is deprecated. Use fetcher.py for game syncing."
-        )
-        return {"total_games_saved": 0, "errors": ["Method deprecated; use fetcher.py"]}
+    # Removed deprecated fetch_and_save_daily_games method - use fetcher.py instead
 
     async def get_game_details(self, league: str, game_id: str) -> Optional[Dict]:
         """Get details for a specific game."""

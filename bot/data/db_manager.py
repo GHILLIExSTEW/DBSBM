@@ -860,6 +860,81 @@ class DatabaseManager:
                         )
                         logger.info("Table 'bet_reactions' created.")
 
+                    # --- Community Metrics Table ---
+                    if not await self.table_exists(conn, "community_metrics"):
+                        await cursor.execute(
+                            """
+                            CREATE TABLE community_metrics (
+                                metric_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                guild_id BIGINT NOT NULL,
+                                metric_type VARCHAR(50) NOT NULL,
+                                metric_value FLOAT NOT NULL,
+                                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                INDEX idx_community_metrics_guild (guild_id),
+                                INDEX idx_community_metrics_type (metric_type),
+                                INDEX idx_community_metrics_time (recorded_at)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        """
+                        )
+                        logger.info("Table 'community_metrics' created.")
+
+                    # --- Community Achievements Table ---
+                    if not await self.table_exists(conn, "community_achievements"):
+                        await cursor.execute(
+                            """
+                            CREATE TABLE community_achievements (
+                                achievement_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                guild_id BIGINT NOT NULL,
+                                user_id BIGINT NOT NULL,
+                                achievement_type VARCHAR(50) NOT NULL,
+                                achievement_name VARCHAR(100) NOT NULL,
+                                earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                INDEX idx_community_achievements_user (user_id),
+                                INDEX idx_community_achievements_type (achievement_type),
+                                INDEX idx_community_achievements_guild (guild_id)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        """
+                        )
+                        logger.info("Table 'community_achievements' created.")
+
+                    # --- User Metrics Table ---
+                    if not await self.table_exists(conn, "user_metrics"):
+                        await cursor.execute(
+                            """
+                            CREATE TABLE user_metrics (
+                                metric_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                guild_id BIGINT NOT NULL,
+                                user_id BIGINT NOT NULL,
+                                metric_type VARCHAR(50) NOT NULL,
+                                metric_value FLOAT NOT NULL,
+                                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                INDEX idx_user_metrics_user (user_id),
+                                INDEX idx_user_metrics_type (metric_type),
+                                INDEX idx_user_metrics_guild (guild_id),
+                                UNIQUE KEY unique_user_metric (guild_id, user_id, metric_type)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        """
+                        )
+                        logger.info("Table 'user_metrics' created.")
+
+                    # --- Community Events Table ---
+                    if not await self.table_exists(conn, "community_events"):
+                        await cursor.execute(
+                            """
+                            CREATE TABLE community_events (
+                                event_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                guild_id BIGINT NOT NULL,
+                                event_type VARCHAR(50) NOT NULL,
+                                event_name VARCHAR(100) NOT NULL,
+                                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                INDEX idx_community_events_guild (guild_id),
+                                INDEX idx_community_events_type (event_type),
+                                INDEX idx_community_events_time (started_at)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                        """
+                        )
+                        logger.info("Table 'community_events' created.")
+
                     # --- API Games Table ---
                     if not await self.table_exists(conn, "api_games"):
                         await cursor.execute(

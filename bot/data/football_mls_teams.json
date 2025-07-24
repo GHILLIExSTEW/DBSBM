@@ -7,7 +7,7 @@
       "country": "USA",
       "founded": 2007,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1595.png"
+      "logo": "https://media.api-sports.io/football/teams/1595.webp"
     },
     "venue": {
       "id": 11534,
@@ -16,7 +16,7 @@
       "city": "Seattle, Washington",
       "capacity": 72000,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/11534.png"
+      "image": "https://media.api-sports.io/football/venues/11534.webp"
     }
   },
   {
@@ -27,7 +27,7 @@
       "country": "USA",
       "founded": 1995,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1596.png"
+      "logo": "https://media.api-sports.io/football/teams/1596.webp"
     },
     "venue": {
       "id": 11918,
@@ -36,7 +36,7 @@
       "city": "San Jose, California",
       "capacity": 18000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/11918.png"
+      "image": "https://media.api-sports.io/football/venues/11918.webp"
     }
   },
   {
@@ -47,7 +47,7 @@
       "country": "USA",
       "founded": 1996,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1597.png"
+      "logo": "https://media.api-sports.io/football/teams/1597.webp"
     },
     "venue": {
       "id": 1612,
@@ -56,7 +56,7 @@
       "city": "Frisco, Texas",
       "capacity": 22565,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1612.png"
+      "image": "https://media.api-sports.io/football/venues/1612.webp"
     }
   },
   {
@@ -67,7 +67,7 @@
       "country": "USA",
       "founded": 2008,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1598.png"
+      "logo": "https://media.api-sports.io/football/teams/1598.webp"
     },
     "venue": {
       "id": 20500,
@@ -76,7 +76,7 @@
       "city": "Orlando, Florida",
       "capacity": 25527,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20500.png"
+      "image": "https://media.api-sports.io/football/venues/20500.webp"
     }
   },
   {
@@ -87,7 +87,7 @@
       "country": "USA",
       "founded": 2008,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1599.png"
+      "logo": "https://media.api-sports.io/football/teams/1599.webp"
     },
     "venue": {
       "id": 1620,
@@ -96,7 +96,7 @@
       "city": "Chester, Pennsylvania",
       "capacity": 19778,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1620.png"
+      "image": "https://media.api-sports.io/football/venues/1620.webp"
     }
   },
   {
@@ -107,7 +107,7 @@
       "country": "USA",
       "founded": 2005,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1600.png"
+      "logo": "https://media.api-sports.io/football/teams/1600.webp"
     },
     "venue": {
       "id": 19418,
@@ -116,7 +116,7 @@
       "city": "Houston, Texas",
       "capacity": 22661,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19418.png"
+      "image": "https://media.api-sports.io/football/venues/19418.webp"
     }
   },
   {
@@ -127,7 +127,7 @@
       "country": "Canada",
       "founded": 2006,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1601.png"
+      "logo": "https://media.api-sports.io/football/teams/1601.webp"
     },
     "venue": {
       "id": 312,
@@ -136,7 +136,7 @@
       "city": "Toronto, Ontario",
       "capacity": 36045,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/312.png"
+      "image": "https://media.api-sports.io/football/venues/312.webp"
     }
   },
   {
@@ -147,7 +147,7 @@
       "country": "USA",
       "founded": 1995,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1602.png"
+      "logo": "https://media.api-sports.io/football/teams/1602.webp"
     },
     "venue": {
       "id": 21544,
@@ -156,7 +156,7 @@
       "city": "Harrison, New Jersey",
       "capacity": 26765,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/21544.png"
+      "image": "https://media.api-sports.io/football/venues/21544.webp"
     }
   },
   {
@@ -167,7 +167,7 @@
       "country": "Canada",
       "founded": 1986,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1603.png"
+      "logo": "https://media.api-sports.io/football/teams/1603.webp"
     },
     "venue": {
       "id": 19445,
@@ -176,7 +176,7 @@
       "city": "Vancouver, British Columbia",
       "capacity": 54405,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/19445.png"
+      "image": "https://media.api-sports.io/football/venues/19445.webp"
     }
   },
   {
@@ -187,7 +187,7 @@
       "country": "USA",
       "founded": 2013,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1604.png"
+      "logo": "https://media.api-sports.io/football/teams/1604.webp"
     },
     "venue": {
       "id": 1833,
@@ -196,7 +196,7 @@
       "city": "New York City",
       "capacity": 54251,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1833.png"
+      "image": "https://media.api-sports.io/football/venues/1833.webp"
     }
   },
   {
@@ -207,7 +207,7 @@
       "country": "USA",
       "founded": 1995,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1605.png"
+      "logo": "https://media.api-sports.io/football/teams/1605.webp"
     },
     "venue": {
       "id": 1616,
@@ -216,7 +216,7 @@
       "city": "Carson, California",
       "capacity": 30510,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1616.png"
+      "image": "https://media.api-sports.io/football/venues/1616.webp"
     }
   },
   {
@@ -227,7 +227,7 @@
       "country": "USA",
       "founded": 2004,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1606.png"
+      "logo": "https://media.api-sports.io/football/teams/1606.webp"
     },
     "venue": {
       "id": 19223,
@@ -236,7 +236,7 @@
       "city": "Sandy, Utah",
       "capacity": 21810,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19223.png"
+      "image": "https://media.api-sports.io/football/venues/19223.webp"
     }
   },
   {
@@ -247,7 +247,7 @@
       "country": "USA",
       "founded": 1997,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1607.png"
+      "logo": "https://media.api-sports.io/football/teams/1607.webp"
     },
     "venue": {
       "id": 1609,
@@ -256,7 +256,7 @@
       "city": "Chicago, Illinois",
       "capacity": 62493,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1609.png"
+      "image": "https://media.api-sports.io/football/venues/1609.webp"
     }
   },
   {
@@ -267,7 +267,7 @@
       "country": "USA",
       "founded": 2014,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1608.png"
+      "logo": "https://media.api-sports.io/football/teams/1608.webp"
     },
     "venue": {
       "id": 1898,
@@ -276,7 +276,7 @@
       "city": "Atlanta, Georgia",
       "capacity": 73019,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/1898.png"
+      "image": "https://media.api-sports.io/football/venues/1898.webp"
     }
   },
   {
@@ -287,7 +287,7 @@
       "country": "USA",
       "founded": 1995,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1609.png"
+      "logo": "https://media.api-sports.io/football/teams/1609.webp"
     },
     "venue": {
       "id": 1618,
@@ -296,7 +296,7 @@
       "city": "Foxborough, Massachusetts",
       "capacity": 68756,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/1618.png"
+      "image": "https://media.api-sports.io/football/venues/1618.webp"
     }
   },
   {
@@ -307,7 +307,7 @@
       "country": "USA",
       "founded": 1996,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1610.png"
+      "logo": "https://media.api-sports.io/football/teams/1610.webp"
     },
     "venue": {
       "id": 1610,
@@ -316,7 +316,7 @@
       "city": "Commerce City, Colorado",
       "capacity": 19734,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1610.png"
+      "image": "https://media.api-sports.io/football/venues/1610.webp"
     }
   },
   {
@@ -327,7 +327,7 @@
       "country": "USA",
       "founded": 1995,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1611.png"
+      "logo": "https://media.api-sports.io/football/teams/1611.webp"
     },
     "venue": {
       "id": 1615,
@@ -336,7 +336,7 @@
       "city": "Kansas City, Kansas",
       "capacity": 21650,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1615.png"
+      "image": "https://media.api-sports.io/football/venues/1615.webp"
     }
   },
   {
@@ -347,7 +347,7 @@
       "country": "USA",
       "founded": 2010,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1612.png"
+      "logo": "https://media.api-sports.io/football/teams/1612.webp"
     },
     "venue": {
       "id": 1617,
@@ -356,7 +356,7 @@
       "city": "Saint Paul, Minnesota",
       "capacity": 19954,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1617.png"
+      "image": "https://media.api-sports.io/football/venues/1617.webp"
     }
   },
   {
@@ -367,7 +367,7 @@
       "country": "USA",
       "founded": 1996,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1613.png"
+      "logo": "https://media.api-sports.io/football/teams/1613.webp"
     },
     "venue": {
       "id": 12667,
@@ -376,7 +376,7 @@
       "city": "Columbus, Ohio",
       "capacity": 20931,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/12667.png"
+      "image": "https://media.api-sports.io/football/venues/12667.webp"
     }
   },
   {
@@ -387,7 +387,7 @@
       "country": "Canada",
       "founded": 2010,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1614.png"
+      "logo": "https://media.api-sports.io/football/teams/1614.webp"
     },
     "venue": {
       "id": 310,
@@ -396,7 +396,7 @@
       "city": "Montreal, Quebec",
       "capacity": 20801,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/310.png"
+      "image": "https://media.api-sports.io/football/venues/310.webp"
     }
   },
   {
@@ -407,7 +407,7 @@
       "country": "USA",
       "founded": 1996,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1615.png"
+      "logo": "https://media.api-sports.io/football/teams/1615.webp"
     },
     "venue": {
       "id": 1613,
@@ -416,7 +416,7 @@
       "city": "Washington, District of Columbia",
       "capacity": 20621,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1613.png"
+      "image": "https://media.api-sports.io/football/venues/1613.webp"
     }
   },
   {
@@ -427,7 +427,7 @@
       "country": "USA",
       "founded": 2014,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1616.png"
+      "logo": "https://media.api-sports.io/football/teams/1616.webp"
     },
     "venue": {
       "id": 19419,
@@ -436,7 +436,7 @@
       "city": "Los Angeles, California",
       "capacity": 22921,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19419.png"
+      "image": "https://media.api-sports.io/football/venues/19419.webp"
     }
   },
   {
@@ -447,7 +447,7 @@
       "country": "USA",
       "founded": 2009,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1617.png"
+      "logo": "https://media.api-sports.io/football/teams/1617.webp"
     },
     "venue": {
       "id": 1748,
@@ -456,7 +456,7 @@
       "city": "Portland, Oregon",
       "capacity": 25518,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/1748.png"
+      "image": "https://media.api-sports.io/football/venues/1748.webp"
     }
   },
   {
@@ -467,7 +467,7 @@
       "country": "USA",
       "founded": null,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/2242.png"
+      "logo": "https://media.api-sports.io/football/teams/2242.webp"
     },
     "venue": {
       "id": 19229,
@@ -476,7 +476,7 @@
       "city": "Cincinnati, Ohio",
       "capacity": 26000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19229.png"
+      "image": "https://media.api-sports.io/football/venues/19229.webp"
     }
   },
   {
@@ -487,7 +487,7 @@
       "country": "USA",
       "founded": 2018,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/9568.png"
+      "logo": "https://media.api-sports.io/football/teams/9568.webp"
     },
     "venue": {
       "id": 20764,
@@ -496,7 +496,7 @@
       "city": "Fort Lauderdale, Florida",
       "capacity": 21550,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20764.png"
+      "image": "https://media.api-sports.io/football/venues/20764.webp"
     }
   },
   {
@@ -507,7 +507,7 @@
       "country": "USA",
       "founded": 2020,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/9569.png"
+      "logo": "https://media.api-sports.io/football/teams/9569.webp"
     },
     "venue": {
       "id": 19357,
@@ -516,7 +516,7 @@
       "city": "Nashville, Tennessee",
       "capacity": 30109,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19357.png"
+      "image": "https://media.api-sports.io/football/venues/19357.webp"
     }
   },
   {
@@ -527,7 +527,7 @@
       "country": "USA",
       "founded": 2021,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/16489.png"
+      "logo": "https://media.api-sports.io/football/teams/16489.webp"
     },
     "venue": {
       "id": 11535,
@@ -536,7 +536,7 @@
       "city": "Austin, Texas",
       "capacity": 20738,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/11535.png"
+      "image": "https://media.api-sports.io/football/venues/11535.webp"
     }
   },
   {
@@ -547,7 +547,7 @@
       "country": "USA",
       "founded": 2019,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/18310.png"
+      "logo": "https://media.api-sports.io/football/teams/18310.webp"
     },
     "venue": {
       "id": 18659,
@@ -556,7 +556,7 @@
       "city": "Charlotte, North Carolina",
       "capacity": 75412,
       "surface": "artificial turf",
-      "image": "https://media.api-sports.io/football/venues/18659.png"
+      "image": "https://media.api-sports.io/football/venues/18659.webp"
     }
   },
   {
@@ -567,7 +567,7 @@
       "country": "USA",
       "founded": 2023,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/20787.png"
+      "logo": "https://media.api-sports.io/football/teams/20787.webp"
     },
     "venue": {
       "id": 19408,
@@ -576,7 +576,7 @@
       "city": "St. Louis, Missouri",
       "capacity": 22500,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19408.png"
+      "image": "https://media.api-sports.io/football/venues/19408.webp"
     }
   }
 ]

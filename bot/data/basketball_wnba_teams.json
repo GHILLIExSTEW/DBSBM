@@ -2,7 +2,7 @@
   {
     "id": 162,
     "name": "Atlanta Dream W",
-    "logo": "https://media.api-sports.io/basketball/teams/162.png",
+    "logo": "https://media.api-sports.io/basketball/teams/162.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -14,7 +14,7 @@
   {
     "id": 163,
     "name": "Chicago Sky W",
-    "logo": "https://media.api-sports.io/basketball/teams/163.png",
+    "logo": "https://media.api-sports.io/basketball/teams/163.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -26,7 +26,7 @@
   {
     "id": 164,
     "name": "Connecticut Sun W",
-    "logo": "https://media.api-sports.io/basketball/teams/164.png",
+    "logo": "https://media.api-sports.io/basketball/teams/164.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -38,7 +38,7 @@
   {
     "id": 165,
     "name": "Dallas Wings W",
-    "logo": "https://media.api-sports.io/basketball/teams/165.png",
+    "logo": "https://media.api-sports.io/basketball/teams/165.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -50,7 +50,7 @@
   {
     "id": 166,
     "name": "Indiana Fever W",
-    "logo": "https://media.api-sports.io/basketball/teams/166.png",
+    "logo": "https://media.api-sports.io/basketball/teams/166.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -62,7 +62,7 @@
   {
     "id": 167,
     "name": "Las Vegas Aces W",
-    "logo": "https://media.api-sports.io/basketball/teams/167.png",
+    "logo": "https://media.api-sports.io/basketball/teams/167.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -74,7 +74,7 @@
   {
     "id": 168,
     "name": "Los Angeles Sparks W",
-    "logo": "https://media.api-sports.io/basketball/teams/168.png",
+    "logo": "https://media.api-sports.io/basketball/teams/168.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -86,7 +86,7 @@
   {
     "id": 169,
     "name": "Minnesota Lynx W",
-    "logo": "https://media.api-sports.io/basketball/teams/169.png",
+    "logo": "https://media.api-sports.io/basketball/teams/169.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -98,7 +98,7 @@
   {
     "id": 170,
     "name": "New York Liberty W",
-    "logo": "https://media.api-sports.io/basketball/teams/170.png",
+    "logo": "https://media.api-sports.io/basketball/teams/170.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -110,7 +110,7 @@
   {
     "id": 171,
     "name": "Phoenix Mercury W",
-    "logo": "https://media.api-sports.io/basketball/teams/171.png",
+    "logo": "https://media.api-sports.io/basketball/teams/171.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -122,7 +122,7 @@
   {
     "id": 172,
     "name": "Seattle Storm W",
-    "logo": "https://media.api-sports.io/basketball/teams/172.png",
+    "logo": "https://media.api-sports.io/basketball/teams/172.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -134,7 +134,7 @@
   {
     "id": 3072,
     "name": "Team USA W",
-    "logo": "https://media.api-sports.io/basketball/teams/3072.png",
+    "logo": "https://media.api-sports.io/basketball/teams/3072.webp",
     "nationnal": true,
     "country": {
       "id": 5,
@@ -146,7 +146,7 @@
   {
     "id": 3073,
     "name": "Team WNBA W",
-    "logo": "https://media.api-sports.io/basketball/teams/3073.png",
+    "logo": "https://media.api-sports.io/basketball/teams/3073.webp",
     "nationnal": false,
     "country": {
       "id": 5,
@@ -158,7 +158,7 @@
   {
     "id": 175,
     "name": "Washington Mystics W",
-    "logo": "https://media.api-sports.io/basketball/teams/175.png",
+    "logo": "https://media.api-sports.io/basketball/teams/175.webp",
     "nationnal": false,
     "country": {
       "id": 5,

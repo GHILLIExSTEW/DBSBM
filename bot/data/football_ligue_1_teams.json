@@ -7,7 +7,7 @@
       "country": "France",
       "founded": 1919,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/77.png"
+      "logo": "https://media.api-sports.io/football/teams/77.webp"
     },
     "venue": {
       "id": 634,
@@ -16,7 +16,7 @@
       "city": "Angers",
       "capacity": 19000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/634.png"
+      "image": "https://media.api-sports.io/football/venues/634.webp"
     }
   },
   {
@@ -27,7 +27,7 @@
       "country": "France",
       "founded": 1944,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/79.png"
+      "logo": "https://media.api-sports.io/football/teams/79.webp"
     },
     "venue": {
       "id": 19207,
@@ -36,7 +36,7 @@
       "city": "Villeneuve d&apos;Ascq",
       "capacity": 50083,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19207.png"
+      "image": "https://media.api-sports.io/football/venues/19207.webp"
     }
   },
   {
@@ -47,7 +47,7 @@
       "country": "France",
       "founded": 1950,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/80.png"
+      "logo": "https://media.api-sports.io/football/teams/80.webp"
     },
     "venue": {
       "id": 666,
@@ -56,7 +56,7 @@
       "city": "Décines-Charpieu",
       "capacity": 61556,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/666.png"
+      "image": "https://media.api-sports.io/football/venues/666.webp"
     }
   },
   {
@@ -67,7 +67,7 @@
       "country": "France",
       "founded": 1899,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/81.png"
+      "logo": "https://media.api-sports.io/football/teams/81.webp"
     },
     "venue": {
       "id": 12678,
@@ -76,7 +76,7 @@
       "city": "Marseille",
       "capacity": 67394,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/12678.png"
+      "image": "https://media.api-sports.io/football/venues/12678.webp"
     }
   },
   {
@@ -87,7 +87,7 @@
       "country": "France",
       "founded": 1974,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/82.png"
+      "logo": "https://media.api-sports.io/football/teams/82.webp"
     },
     "venue": {
       "id": 20107,
@@ -96,7 +96,7 @@
       "city": "Montpellier",
       "capacity": 32939,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20107.png"
+      "image": "https://media.api-sports.io/football/venues/20107.webp"
     }
   },
   {
@@ -107,7 +107,7 @@
       "country": "France",
       "founded": 1943,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/83.png"
+      "logo": "https://media.api-sports.io/football/teams/83.webp"
     },
     "venue": {
       "id": 662,
@@ -116,7 +116,7 @@
       "city": "Nantes",
       "capacity": 38285,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/662.png"
+      "image": "https://media.api-sports.io/football/venues/662.webp"
     }
   },
   {
@@ -127,7 +127,7 @@
       "country": "France",
       "founded": 1904,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/84.png"
+      "logo": "https://media.api-sports.io/football/teams/84.webp"
     },
     "venue": {
       "id": 663,
@@ -136,7 +136,7 @@
       "city": "Nice",
       "capacity": 35624,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/663.png"
+      "image": "https://media.api-sports.io/football/venues/663.webp"
     }
   },
   {
@@ -147,7 +147,7 @@
       "country": "France",
       "founded": 1970,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/85.png"
+      "logo": "https://media.api-sports.io/football/teams/85.webp"
     },
     "venue": {
       "id": 671,
@@ -156,7 +156,7 @@
       "city": "Paris",
       "capacity": 47929,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/671.png"
+      "image": "https://media.api-sports.io/football/venues/671.webp"
     }
   },
   {
@@ -167,7 +167,7 @@
       "country": "France",
       "founded": 1919,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/91.png"
+      "logo": "https://media.api-sports.io/football/teams/91.webp"
     },
     "venue": {
       "id": 20470,
@@ -176,7 +176,7 @@
       "city": "Monaco",
       "capacity": 18523,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20470.png"
+      "image": "https://media.api-sports.io/football/venues/20470.webp"
     }
   },
   {
@@ -187,7 +187,7 @@
       "country": "France",
       "founded": 1909,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/93.png"
+      "logo": "https://media.api-sports.io/football/teams/93.webp"
     },
     "venue": {
       "id": 674,
@@ -196,7 +196,7 @@
       "city": "Reims",
       "capacity": 21684,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/674.png"
+      "image": "https://media.api-sports.io/football/venues/674.webp"
     }
   },
   {
@@ -207,7 +207,7 @@
       "country": "France",
       "founded": 1901,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/94.png"
+      "logo": "https://media.api-sports.io/football/teams/94.webp"
     },
     "venue": {
       "id": 680,
@@ -216,7 +216,7 @@
       "city": "Rennes",
       "capacity": 31127,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/680.png"
+      "image": "https://media.api-sports.io/football/venues/680.webp"
     }
   },
   {
@@ -227,7 +227,7 @@
       "country": "France",
       "founded": 1906,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/95.png"
+      "logo": "https://media.api-sports.io/football/teams/95.webp"
     },
     "venue": {
       "id": 681,
@@ -236,7 +236,7 @@
       "city": "Strasbourg",
       "capacity": 26109,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/681.png"
+      "image": "https://media.api-sports.io/football/venues/681.webp"
     }
   },
   {
@@ -247,7 +247,7 @@
       "country": "France",
       "founded": 1937,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/96.png"
+      "logo": "https://media.api-sports.io/football/teams/96.webp"
     },
     "venue": {
       "id": 682,
@@ -256,7 +256,7 @@
       "city": "Toulouse",
       "capacity": 33150,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/682.png"
+      "image": "https://media.api-sports.io/football/venues/682.webp"
     }
   },
   {
@@ -267,7 +267,7 @@
       "country": "France",
       "founded": 1950,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/106.png"
+      "logo": "https://media.api-sports.io/football/teams/106.webp"
     },
     "venue": {
       "id": 641,
@@ -276,7 +276,7 @@
       "city": "Brest",
       "capacity": 15931,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/641.png"
+      "image": "https://media.api-sports.io/football/venues/641.webp"
     }
   },
   {
@@ -287,7 +287,7 @@
       "country": "France",
       "founded": 1905,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/108.png"
+      "logo": "https://media.api-sports.io/football/teams/108.webp"
     },
     "venue": {
       "id": 636,
@@ -296,7 +296,7 @@
       "city": "Auxerre",
       "capacity": 23467,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/636.png"
+      "image": "https://media.api-sports.io/football/venues/636.webp"
     }
   },
   {
@@ -307,7 +307,7 @@
       "country": "France",
       "founded": 1872,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/111.png"
+      "logo": "https://media.api-sports.io/football/teams/111.webp"
     },
     "venue": {
       "id": 652,
@@ -316,7 +316,7 @@
       "city": "Le Havre",
       "capacity": 25178,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/652.png"
+      "image": "https://media.api-sports.io/football/venues/652.webp"
     }
   },
   {
@@ -327,7 +327,7 @@
       "country": "France",
       "founded": 1932,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/112.png"
+      "logo": "https://media.api-sports.io/football/teams/112.webp"
     },
     "venue": {
       "id": 658,
@@ -336,7 +336,7 @@
       "city": "Longeville-lès-Metz",
       "capacity": 30000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/658.png"
+      "image": "https://media.api-sports.io/football/venues/658.webp"
     }
   },
   {
@@ -347,7 +347,7 @@
       "country": "France",
       "founded": 1906,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/116.png"
+      "logo": "https://media.api-sports.io/football/teams/116.webp"
     },
     "venue": {
       "id": 654,
@@ -356,7 +356,7 @@
       "city": "Lens",
       "capacity": 41233,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/654.png"
+      "image": "https://media.api-sports.io/football/venues/654.webp"
     }
   },
   {
@@ -367,7 +367,7 @@
       "country": "France",
       "founded": 1920,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1063.png"
+      "logo": "https://media.api-sports.io/football/teams/1063.webp"
     },
     "venue": {
       "id": 676,
@@ -376,7 +376,7 @@
       "city": "Saint-Ètienne",
       "capacity": 41965,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/676.png"
+      "image": "https://media.api-sports.io/football/venues/676.webp"
     }
   }
 ]

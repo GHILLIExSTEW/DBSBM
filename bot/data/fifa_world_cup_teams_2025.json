@@ -8,7 +8,7 @@
         "country": "England",
         "founded": 1905,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/49.png"
+        "logo": "https://media.api-sports.io/football/teams/49.webp"
       },
       "venue": {
         "id": 519,
@@ -17,7 +17,7 @@
         "city": "London",
         "capacity": 41841,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/519.png"
+        "image": "https://media.api-sports.io/football/venues/519.webp"
       }
     },
     {
@@ -28,7 +28,7 @@
         "country": "England",
         "founded": 1880,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/50.png"
+        "logo": "https://media.api-sports.io/football/teams/50.webp"
       },
       "venue": {
         "id": 555,
@@ -37,7 +37,7 @@
         "city": "Manchester",
         "capacity": 55097,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/555.png"
+        "image": "https://media.api-sports.io/football/venues/555.webp"
       }
     },
     {
@@ -48,7 +48,7 @@
         "country": "France",
         "founded": 1970,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/85.png"
+        "logo": "https://media.api-sports.io/football/teams/85.webp"
       },
       "venue": {
         "id": 671,
@@ -57,7 +57,7 @@
         "city": "Paris",
         "capacity": 47929,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/671.png"
+        "image": "https://media.api-sports.io/football/venues/671.webp"
       }
     },
     {
@@ -68,7 +68,7 @@
         "country": "Brazil",
         "founded": 1904,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/120.png"
+        "logo": "https://media.api-sports.io/football/teams/120.webp"
       },
       "venue": {
         "id": 218,
@@ -77,7 +77,7 @@
         "city": "Rio de Janeiro",
         "capacity": 46931,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/218.png"
+        "image": "https://media.api-sports.io/football/venues/218.webp"
       }
     },
     {
@@ -88,7 +88,7 @@
         "country": "Brazil",
         "founded": 1914,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/121.png"
+        "logo": "https://media.api-sports.io/football/teams/121.webp"
       },
       "venue": {
         "id": 258,
@@ -97,7 +97,7 @@
         "city": "São Paulo, São Paulo",
         "capacity": 43713,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/258.png"
+        "image": "https://media.api-sports.io/football/venues/258.webp"
       }
     },
     {
@@ -108,7 +108,7 @@
         "country": "Brazil",
         "founded": 1902,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/124.png"
+        "logo": "https://media.api-sports.io/football/teams/124.webp"
       },
       "venue": {
         "id": 204,
@@ -117,7 +117,7 @@
         "city": "Rio de Janeiro, Rio de Janeiro",
         "capacity": 78838,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/204.png"
+        "image": "https://media.api-sports.io/football/venues/204.webp"
       }
     },
     {
@@ -128,7 +128,7 @@
         "country": "Brazil",
         "founded": 1895,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/127.png"
+        "logo": "https://media.api-sports.io/football/teams/127.webp"
       },
       "venue": {
         "id": 204,
@@ -137,7 +137,7 @@
         "city": "Rio de Janeiro, Rio de Janeiro",
         "capacity": 78838,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/204.png"
+        "image": "https://media.api-sports.io/football/venues/204.webp"
       }
     },
     {
@@ -148,7 +148,7 @@
         "country": "Germany",
         "founded": 1900,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/157.png"
+        "logo": "https://media.api-sports.io/football/teams/157.webp"
       },
       "venue": {
         "id": 20732,
@@ -157,7 +157,7 @@
         "city": "München",
         "capacity": 75024,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/20732.png"
+        "image": "https://media.api-sports.io/football/venues/20732.webp"
       }
     },
     {
@@ -168,7 +168,7 @@
         "country": "Germany",
         "founded": 1909,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/165.png"
+        "logo": "https://media.api-sports.io/football/teams/165.webp"
       },
       "venue": {
         "id": 20733,
@@ -177,7 +177,7 @@
         "city": "Dortmund",
         "capacity": 81365,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/20733.png"
+        "image": "https://media.api-sports.io/football/venues/20733.webp"
       }
     },
     {
@@ -188,7 +188,7 @@
         "country": "Portugal",
         "founded": 1904,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/211.png"
+        "logo": "https://media.api-sports.io/football/teams/211.webp"
       },
       "venue": {
         "id": 1265,
@@ -197,7 +197,7 @@
         "city": "Lisboa",
         "capacity": 65647,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1265.png"
+        "image": "https://media.api-sports.io/football/venues/1265.webp"
       }
     },
     {
@@ -208,7 +208,7 @@
         "country": "Portugal",
         "founded": 1893,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/212.png"
+        "logo": "https://media.api-sports.io/football/teams/212.webp"
       },
       "venue": {
         "id": 1286,
@@ -217,7 +217,7 @@
         "city": "Porto",
         "capacity": 50399,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1286.png"
+        "image": "https://media.api-sports.io/football/venues/1286.webp"
       }
     },
     {
@@ -228,7 +228,7 @@
         "country": "Japan",
         "founded": 1950,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/287.png"
+        "logo": "https://media.api-sports.io/football/teams/287.webp"
       },
       "venue": {
         "id": 980,
@@ -237,7 +237,7 @@
         "city": "Saitama",
         "capacity": 65000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/980.png"
+        "image": "https://media.api-sports.io/football/venues/980.webp"
       }
     },
     {
@@ -248,7 +248,7 @@
         "country": "Argentina",
         "founded": 1901,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/435.png"
+        "logo": "https://media.api-sports.io/football/teams/435.webp"
       },
       "venue": {
         "id": 19570,
@@ -257,7 +257,7 @@
         "city": "Capital Federal, Ciudad de Buenos Aires",
         "capacity": 83214,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/19570.png"
+        "image": "https://media.api-sports.io/football/venues/19570.webp"
       }
     },
     {
@@ -268,7 +268,7 @@
         "country": "Argentina",
         "founded": 1905,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/451.png"
+        "logo": "https://media.api-sports.io/football/teams/451.webp"
       },
       "venue": {
         "id": 46,
@@ -277,7 +277,7 @@
         "city": "Ciudad de Buenos Aires",
         "capacity": 49000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/46.png"
+        "image": "https://media.api-sports.io/football/venues/46.webp"
       }
     },
     {
@@ -288,7 +288,7 @@
         "country": "Italy",
         "founded": 1897,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/496.png"
+        "logo": "https://media.api-sports.io/football/teams/496.webp"
       },
       "venue": {
         "id": 909,
@@ -297,7 +297,7 @@
         "city": "Torino",
         "capacity": 45666,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/909.png"
+        "image": "https://media.api-sports.io/football/venues/909.webp"
       }
     },
     {
@@ -308,7 +308,7 @@
         "country": "Italy",
         "founded": 1908,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/505.png"
+        "logo": "https://media.api-sports.io/football/teams/505.webp"
       },
       "venue": {
         "id": 907,
@@ -317,7 +317,7 @@
         "city": "Milano",
         "capacity": 80018,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/907.png"
+        "image": "https://media.api-sports.io/football/venues/907.webp"
       }
     },
     {
@@ -328,7 +328,7 @@
         "country": "Spain",
         "founded": 1903,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/530.png"
+        "logo": "https://media.api-sports.io/football/teams/530.webp"
       },
       "venue": {
         "id": 19217,
@@ -337,7 +337,7 @@
         "city": "Madrid",
         "capacity": 70460,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/19217.png"
+        "image": "https://media.api-sports.io/football/venues/19217.webp"
       }
     },
     {
@@ -348,7 +348,7 @@
         "country": "Spain",
         "founded": 1902,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/541.png"
+        "logo": "https://media.api-sports.io/football/teams/541.webp"
       },
       "venue": {
         "id": 1456,
@@ -357,7 +357,7 @@
         "city": "Madrid",
         "capacity": 85454,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1456.png"
+        "image": "https://media.api-sports.io/football/venues/1456.webp"
       }
     },
     {
@@ -368,7 +368,7 @@
         "country": "Austria",
         "founded": 1933,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/571.png"
+        "logo": "https://media.api-sports.io/football/teams/571.webp"
       },
       "venue": {
         "id": 148,
@@ -377,7 +377,7 @@
         "city": "Wals-Siezenheim",
         "capacity": 31895,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/148.png"
+        "image": "https://media.api-sports.io/football/venues/148.webp"
       }
     },
     {
@@ -388,7 +388,7 @@
         "country": "Morocco",
         "founded": 1937,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/968.png"
+        "logo": "https://media.api-sports.io/football/teams/968.webp"
       },
       "venue": {
         "id": 1099,
@@ -397,7 +397,7 @@
         "city": "Casablanca",
         "capacity": 45891,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1099.png"
+        "image": "https://media.api-sports.io/football/venues/1099.webp"
       }
     },
     {
@@ -408,7 +408,7 @@
         "country": "Tunisia",
         "founded": 1919,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/980.png"
+        "logo": "https://media.api-sports.io/football/teams/980.webp"
       },
       "venue": {
         "id": 1564,
@@ -417,7 +417,7 @@
         "city": "Radès",
         "capacity": 65000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1564.png"
+        "image": "https://media.api-sports.io/football/venues/1564.webp"
       }
     },
     {
@@ -428,7 +428,7 @@
         "country": "Egypt",
         "founded": 1907,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/1577.png"
+        "logo": "https://media.api-sports.io/football/teams/1577.webp"
       },
       "venue": {
         "id": 10635,
@@ -437,7 +437,7 @@
         "city": "Cairo",
         "capacity": 30000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/10635.png"
+        "image": "https://media.api-sports.io/football/venues/10635.webp"
       }
     },
     {
@@ -448,7 +448,7 @@
         "country": "USA",
         "founded": 2007,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/1595.png"
+        "logo": "https://media.api-sports.io/football/teams/1595.webp"
       },
       "venue": {
         "id": 11534,
@@ -457,7 +457,7 @@
         "city": "Seattle, Washington",
         "capacity": 72000,
         "surface": "artificial turf",
-        "image": "https://media.api-sports.io/football/venues/11534.png"
+        "image": "https://media.api-sports.io/football/venues/11534.webp"
       }
     },
     {
@@ -468,7 +468,7 @@
         "country": "USA",
         "founded": 2014,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/1616.png"
+        "logo": "https://media.api-sports.io/football/teams/1616.webp"
       },
       "venue": {
         "id": 19419,
@@ -477,7 +477,7 @@
         "city": "Los Angeles, California",
         "capacity": 22921,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/19419.png"
+        "image": "https://media.api-sports.io/football/venues/19419.webp"
       }
     },
     {
@@ -488,7 +488,7 @@
         "country": "Mexico",
         "founded": 1945,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2282.png"
+        "logo": "https://media.api-sports.io/football/teams/2282.webp"
       },
       "venue": {
         "id": 11905,
@@ -497,7 +497,7 @@
         "city": "Guadalupe",
         "capacity": 53500,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/11905.png"
+        "image": "https://media.api-sports.io/football/venues/11905.webp"
       }
     },
     {
@@ -508,7 +508,7 @@
         "country": "Mexico",
         "founded": 1901,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2292.png"
+        "logo": "https://media.api-sports.io/football/teams/2292.webp"
       },
       "venue": {
         "id": 1081,
@@ -517,7 +517,7 @@
         "city": "Pachuca de Soto",
         "capacity": 30000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1081.png"
+        "image": "https://media.api-sports.io/football/venues/1081.webp"
       }
     },
     {
@@ -528,7 +528,7 @@
         "country": "New-Zealand",
         "founded": 2004,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2537.png"
+        "logo": "https://media.api-sports.io/football/teams/2537.webp"
       },
       "venue": {
         "id": 1161,
@@ -537,7 +537,7 @@
         "city": "Auckland",
         "capacity": 5000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1161.png"
+        "image": "https://media.api-sports.io/football/venues/1161.webp"
       }
     },
     {
@@ -548,7 +548,7 @@
         "country": "South-Africa",
         "founded": 1970,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2699.png"
+        "logo": "https://media.api-sports.io/football/teams/2699.webp"
       },
       "venue": {
         "id": 12712,
@@ -557,7 +557,7 @@
         "city": "Tshwane",
         "capacity": 51762,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/12712.png"
+        "image": "https://media.api-sports.io/football/venues/12712.webp"
       }
     },
     {
@@ -568,7 +568,7 @@
         "country": "South-Korea",
         "founded": 1983,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2767.png"
+        "logo": "https://media.api-sports.io/football/teams/2767.webp"
       },
       "venue": {
         "id": 1020,
@@ -577,7 +577,7 @@
         "city": "Ulsan",
         "capacity": 44102,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1020.png"
+        "image": "https://media.api-sports.io/football/venues/1020.webp"
       }
     },
     {
@@ -588,7 +588,7 @@
         "country": "United-Arab-Emirates",
         "founded": 1968,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2865.png"
+        "logo": "https://media.api-sports.io/football/teams/2865.webp"
       },
       "venue": {
         "id": 1600,
@@ -597,7 +597,7 @@
         "city": "Al Ain",
         "capacity": 25174,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1600.png"
+        "image": "https://media.api-sports.io/football/venues/1600.webp"
       }
     },
     {
@@ -608,7 +608,7 @@
         "country": "Saudi-Arabia",
         "founded": 1957,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2932.png"
+        "logo": "https://media.api-sports.io/football/teams/2932.webp"
       },
       "venue": {
         "id": 20744,
@@ -617,7 +617,7 @@
         "city": "Riyadh",
         "capacity": 26000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/20744.png"
+        "image": "https://media.api-sports.io/football/venues/20744.webp"
       }
     },
     {
@@ -628,7 +628,7 @@
         "country": "USA",
         "founded": 2018,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/9568.png"
+        "logo": "https://media.api-sports.io/football/teams/9568.webp"
       },
       "venue": {
         "id": 20764,
@@ -637,7 +637,7 @@
         "city": "Fort Lauderdale, Florida",
         "capacity": 21550,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/20764.png"
+        "image": "https://media.api-sports.io/football/venues/20764.webp"
       }
     }
   ]

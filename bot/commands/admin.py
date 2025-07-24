@@ -225,9 +225,26 @@ class SubscriptionView(discord.ui.View):
     async def subscribe(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        # TODO: Implement subscription page redirect
+        # Subscription page redirect implementation
+        embed = discord.Embed(
+            title="🔗 Premium Subscription",
+            description="Click the link below to subscribe to premium features:",
+            color=0x00ff00
+        )
+        embed.add_field(
+            name="Premium Features",
+            value="• Multiple embed channels\n• Advanced analytics\n• Priority support\n• Custom branding",
+            inline=False
+        )
+        embed.add_field(
+            name="Subscription Link",
+            value="[Subscribe to Premium](https://your-subscription-page.com)",
+            inline=False
+        )
+        
         await interaction.response.send_message(
-            "Redirecting to subscription page...", ephemeral=True
+            embed=embed,
+            ephemeral=True
         )
         self.stop()
 

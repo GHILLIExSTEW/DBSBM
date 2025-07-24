@@ -766,6 +766,15 @@ class BetService:
             )
             await self.db_manager.execute(reaction_query, reaction_params)
 
+            # Track reaction for community analytics
+            try:
+                if hasattr(self.bot, 'community_analytics_service') and self.bot.community_analytics_service:
+                    await self.bot.community_analytics_service.track_reaction_activity(
+                        guild_id, payload.user_id, bet_serial, emoji_str
+                    )
+            except Exception as e:
+                logger.error(f"Failed to track reaction for analytics: {e}")
+
             resolve_emoji_map = {"✅": "won", "❌": "lost", "➖": "push"}
 
             if emoji_str in resolve_emoji_map:

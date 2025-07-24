@@ -7,7 +7,7 @@
       "country": "Italy",
       "founded": 1900,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/487.png"
+      "logo": "https://media.api-sports.io/football/teams/487.webp"
     },
     "venue": {
       "id": 910,
@@ -16,7 +16,7 @@
       "city": "Roma",
       "capacity": 68530,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/910.png"
+      "image": "https://media.api-sports.io/football/venues/910.webp"
     }
   },
   {
@@ -27,7 +27,7 @@
       "country": "Italy",
       "founded": 1899,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/489.png"
+      "logo": "https://media.api-sports.io/football/teams/489.webp"
     },
     "venue": {
       "id": 907,
@@ -36,7 +36,7 @@
       "city": "Milano",
       "capacity": 80018,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/907.png"
+      "image": "https://media.api-sports.io/football/venues/907.webp"
     }
   },
   {
@@ -47,7 +47,7 @@
       "country": "Italy",
       "founded": 1920,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/490.png"
+      "logo": "https://media.api-sports.io/football/teams/490.webp"
     },
     "venue": {
       "id": 12275,
@@ -56,7 +56,7 @@
       "city": "Cagliari",
       "capacity": 16416,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/12275.png"
+      "image": "https://media.api-sports.io/football/venues/12275.webp"
     }
   },
   {
@@ -67,7 +67,7 @@
       "country": "Italy",
       "founded": 1904,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/492.png"
+      "logo": "https://media.api-sports.io/football/teams/492.webp"
     },
     "venue": {
       "id": 11904,
@@ -76,7 +76,7 @@
       "city": "Napoli",
       "capacity": 60240,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/11904.png"
+      "image": "https://media.api-sports.io/football/venues/11904.webp"
     }
   },
   {
@@ -87,7 +87,7 @@
       "country": "Italy",
       "founded": 1896,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/494.png"
+      "logo": "https://media.api-sports.io/football/teams/494.webp"
     },
     "venue": {
       "id": 20416,
@@ -96,7 +96,7 @@
       "city": "Udine",
       "capacity": 25952,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20416.png"
+      "image": "https://media.api-sports.io/football/venues/20416.webp"
     }
   },
   {
@@ -107,7 +107,7 @@
       "country": "Italy",
       "founded": 1893,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/495.png"
+      "logo": "https://media.api-sports.io/football/teams/495.webp"
     },
     "venue": {
       "id": 905,
@@ -116,7 +116,7 @@
       "city": "Genova",
       "capacity": 36703,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/905.png"
+      "image": "https://media.api-sports.io/football/venues/905.webp"
     }
   },
   {
@@ -127,7 +127,7 @@
       "country": "Italy",
       "founded": 1897,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/496.png"
+      "logo": "https://media.api-sports.io/football/teams/496.webp"
     },
     "venue": {
       "id": 909,
@@ -136,7 +136,7 @@
       "city": "Torino",
       "capacity": 45666,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/909.png"
+      "image": "https://media.api-sports.io/football/venues/909.webp"
     }
   },
   {
@@ -147,7 +147,7 @@
       "country": "Italy",
       "founded": 1927,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/497.png"
+      "logo": "https://media.api-sports.io/football/teams/497.webp"
     },
     "venue": {
       "id": 910,
@@ -156,7 +156,7 @@
       "city": "Roma",
       "capacity": 68530,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/910.png"
+      "image": "https://media.api-sports.io/football/venues/910.webp"
     }
   },
   {
@@ -167,7 +167,7 @@
       "country": "Italy",
       "founded": 1907,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/499.png"
+      "logo": "https://media.api-sports.io/football/teams/499.webp"
     },
     "venue": {
       "id": 879,
@@ -176,7 +176,7 @@
       "city": "Bergamo",
       "capacity": 21300,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/879.png"
+      "image": "https://media.api-sports.io/football/venues/879.webp"
     }
   },
   {
@@ -187,7 +187,7 @@
       "country": "Italy",
       "founded": 1909,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/500.png"
+      "logo": "https://media.api-sports.io/football/teams/500.webp"
     },
     "venue": {
       "id": 881,
@@ -196,7 +196,7 @@
       "city": "Bologna",
       "capacity": 39279,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/881.png"
+      "image": "https://media.api-sports.io/football/venues/881.webp"
     }
   },
   {
@@ -207,7 +207,7 @@
       "country": "Italy",
       "founded": 1926,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/502.png"
+      "logo": "https://media.api-sports.io/football/teams/502.webp"
     },
     "venue": {
       "id": 902,
@@ -216,7 +216,7 @@
       "city": "Firenze",
       "capacity": 43147,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/902.png"
+      "image": "https://media.api-sports.io/football/venues/902.webp"
     }
   },
   {
@@ -227,7 +227,7 @@
       "country": "Italy",
       "founded": 1906,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/503.png"
+      "logo": "https://media.api-sports.io/football/teams/503.webp"
     },
     "venue": {
       "id": 943,
@@ -236,7 +236,7 @@
       "city": "Torino",
       "capacity": 27958,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/943.png"
+      "image": "https://media.api-sports.io/football/venues/943.webp"
     }
   },
   {
@@ -247,7 +247,7 @@
       "country": "Italy",
       "founded": 1903,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/504.png"
+      "logo": "https://media.api-sports.io/football/teams/504.webp"
     },
     "venue": {
       "id": 890,
@@ -256,7 +256,7 @@
       "city": "Verona",
       "capacity": 39211,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/890.png"
+      "image": "https://media.api-sports.io/football/venues/890.webp"
     }
   },
   {
@@ -267,7 +267,7 @@
       "country": "Italy",
       "founded": 1908,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/505.png"
+      "logo": "https://media.api-sports.io/football/teams/505.webp"
     },
     "venue": {
       "id": 907,
@@ -276,7 +276,7 @@
       "city": "Milano",
       "capacity": 80018,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/907.png"
+      "image": "https://media.api-sports.io/football/venues/907.webp"
     }
   },
   {
@@ -287,7 +287,7 @@
       "country": "Italy",
       "founded": 1920,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/511.png"
+      "logo": "https://media.api-sports.io/football/teams/511.webp"
     },
     "venue": {
       "id": 20109,
@@ -296,7 +296,7 @@
       "city": "Empoli",
       "capacity": 16284,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20109.png"
+      "image": "https://media.api-sports.io/football/venues/20109.webp"
     }
   },
   {
@@ -307,7 +307,7 @@
       "country": "Italy",
       "founded": 1907,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/517.png"
+      "logo": "https://media.api-sports.io/football/teams/517.webp"
     },
     "venue": {
       "id": 948,
@@ -316,7 +316,7 @@
       "city": "Venezia",
       "capacity": 11150,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/948.png"
+      "image": "https://media.api-sports.io/football/venues/948.webp"
     }
   },
   {
@@ -327,7 +327,7 @@
       "country": "Italy",
       "founded": 1913,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/523.png"
+      "logo": "https://media.api-sports.io/football/teams/523.webp"
     },
     "venue": {
       "id": 921,
@@ -336,7 +336,7 @@
       "city": "Parma",
       "capacity": 21473,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/921.png"
+      "image": "https://media.api-sports.io/football/venues/921.webp"
     }
   },
   {
@@ -347,7 +347,7 @@
       "country": "Italy",
       "founded": 1908,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/867.png"
+      "logo": "https://media.api-sports.io/football/teams/867.webp"
     },
     "venue": {
       "id": 911,
@@ -356,7 +356,7 @@
       "city": "Lecce",
       "capacity": 33876,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/911.png"
+      "image": "https://media.api-sports.io/football/venues/911.webp"
     }
   },
   {
@@ -367,7 +367,7 @@
       "country": "Italy",
       "founded": 1907,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/895.png"
+      "logo": "https://media.api-sports.io/football/teams/895.webp"
     },
     "venue": {
       "id": 892,
@@ -376,7 +376,7 @@
       "city": "Como",
       "capacity": 13602,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/892.png"
+      "image": "https://media.api-sports.io/football/venues/892.webp"
     }
   },
   {
@@ -387,7 +387,7 @@
       "country": "Italy",
       "founded": 1912,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/1579.png"
+      "logo": "https://media.api-sports.io/football/teams/1579.webp"
     },
     "venue": {
       "id": 12086,
@@ -396,7 +396,7 @@
       "city": "Monza",
       "capacity": 18568,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/12086.png"
+      "image": "https://media.api-sports.io/football/venues/12086.webp"
     }
   }
 ]

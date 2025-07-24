@@ -8,7 +8,7 @@
         "country": "Brazil",
         "founded": 1895,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/127.png"
+        "logo": "https://media.api-sports.io/football/teams/127.webp"
       },
       "venue": {
         "id": 204,
@@ -17,7 +17,7 @@
         "city": "Rio de Janeiro, Rio de Janeiro",
         "capacity": 78838,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/204.png"
+        "image": "https://media.api-sports.io/football/venues/204.webp"
       }
     },
     {
@@ -28,7 +28,7 @@
         "country": "Spain",
         "founded": 1902,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/541.png"
+        "logo": "https://media.api-sports.io/football/teams/541.webp"
       },
       "venue": {
         "id": 1456,
@@ -37,7 +37,7 @@
         "city": "Madrid",
         "capacity": 85454,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1456.png"
+        "image": "https://media.api-sports.io/football/venues/1456.webp"
       }
     },
     {
@@ -48,7 +48,7 @@
         "country": "Morocco",
         "founded": 1937,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/968.png"
+        "logo": "https://media.api-sports.io/football/teams/968.webp"
       },
       "venue": {
         "id": 1099,
@@ -57,7 +57,7 @@
         "city": "Casablanca",
         "capacity": 45891,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1099.png"
+        "image": "https://media.api-sports.io/football/venues/1099.webp"
       }
     },
     {
@@ -68,7 +68,7 @@
         "country": "Egypt",
         "founded": 1907,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/1577.png"
+        "logo": "https://media.api-sports.io/football/teams/1577.webp"
       },
       "venue": {
         "id": 10635,
@@ -77,7 +77,7 @@
         "city": "Cairo",
         "capacity": 30000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/10635.png"
+        "image": "https://media.api-sports.io/football/venues/10635.webp"
       }
     },
     {
@@ -88,7 +88,7 @@
         "country": "USA",
         "founded": 2007,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/1595.png"
+        "logo": "https://media.api-sports.io/football/teams/1595.webp"
       },
       "venue": {
         "id": 11534,
@@ -97,7 +97,7 @@
         "city": "Seattle, Washington",
         "capacity": 72000,
         "surface": "artificial turf",
-        "image": "https://media.api-sports.io/football/venues/11534.png"
+        "image": "https://media.api-sports.io/football/venues/11534.webp"
       }
     },
     {
@@ -108,7 +108,7 @@
         "country": "New-Zealand",
         "founded": 2004,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2537.png"
+        "logo": "https://media.api-sports.io/football/teams/2537.webp"
       },
       "venue": {
         "id": 1161,
@@ -117,7 +117,7 @@
         "city": "Auckland",
         "capacity": 5000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/1161.png"
+        "image": "https://media.api-sports.io/football/venues/1161.webp"
       }
     },
     {
@@ -128,7 +128,7 @@
         "country": "Saudi-Arabia",
         "founded": 1957,
         "national": false,
-        "logo": "https://media.api-sports.io/football/teams/2932.png"
+        "logo": "https://media.api-sports.io/football/teams/2932.webp"
       },
       "venue": {
         "id": 20744,
@@ -137,7 +137,7 @@
         "city": "Riyadh",
         "capacity": 26000,
         "surface": "grass",
-        "image": "https://media.api-sports.io/football/venues/20744.png"
+        "image": "https://media.api-sports.io/football/venues/20744.webp"
       }
     }
   ]

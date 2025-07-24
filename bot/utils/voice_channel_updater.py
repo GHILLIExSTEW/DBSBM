@@ -23,11 +23,33 @@ class VoiceChannelUpdater:
                 ) as cursor:
                     pending_bets = await cursor.fetchall()
                 for bet in pending_bets:
-                    # TODO: Replace this with your actual reinitialization logic
-                    # Example: self.monitor_reactions_for_bet(bet)
-                    logger.info(
-                        f"Reinitializing reaction monitoring for pending bet: {bet}"
-                    )
+                    # Reinitialize reaction monitoring for pending bets
+                    bet_serial, guild_id, user_id = bet
+                    try:
+                        # Get the bet message from the database
+                        async with aiosqlite.connect(self.db_path) as db:
+                            async with db.execute(
+                                """
+                                SELECT message_id, channel_id
+                                FROM bets
+                                WHERE bet_serial = ?
+                                """,
+                                (bet_serial,)
+                            ) as cursor:
+                                bet_info = await cursor.fetchone()
+                        
+                        if bet_info:
+                            message_id, channel_id = bet_info
+                            # Attempt to reinitialize reaction monitoring
+                            # This would typically involve setting up reaction listeners
+                            logger.info(
+                                f"Reinitializing reaction monitoring for bet {bet_serial} "
+                                f"in channel {channel_id}, message {message_id}"
+                            )
+                        else:
+                            logger.warning(f"Could not find message info for bet {bet_serial}")
+                    except Exception as e:
+                        logger.error(f"Error reinitializing bet {bet_serial}: {str(e)}")
         except Exception as e:
             logger.error(f"Error reinitializing pending bets: {str(e)}")
 

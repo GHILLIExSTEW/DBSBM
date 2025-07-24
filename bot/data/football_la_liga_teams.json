@@ -7,7 +7,7 @@
       "country": "Spain",
       "founded": 1899,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/529.png"
+      "logo": "https://media.api-sports.io/football/teams/529.webp"
     },
     "venue": {
       "id": 19939,
@@ -16,7 +16,7 @@
       "city": "Barcelona",
       "capacity": 55926,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19939.png"
+      "image": "https://media.api-sports.io/football/venues/19939.webp"
     }
   },
   {
@@ -27,7 +27,7 @@
       "country": "Spain",
       "founded": 1903,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/530.png"
+      "logo": "https://media.api-sports.io/football/teams/530.webp"
     },
     "venue": {
       "id": 19217,
@@ -36,7 +36,7 @@
       "city": "Madrid",
       "capacity": 70460,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19217.png"
+      "image": "https://media.api-sports.io/football/venues/19217.webp"
     }
   },
   {
@@ -47,7 +47,7 @@
       "country": "Spain",
       "founded": 1898,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/531.png"
+      "logo": "https://media.api-sports.io/football/teams/531.webp"
     },
     "venue": {
       "id": 1460,
@@ -56,7 +56,7 @@
       "city": "Bilbao",
       "capacity": 53289,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1460.png"
+      "image": "https://media.api-sports.io/football/venues/1460.webp"
     }
   },
   {
@@ -67,7 +67,7 @@
       "country": "Spain",
       "founded": 1919,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/532.png"
+      "logo": "https://media.api-sports.io/football/teams/532.webp"
     },
     "venue": {
       "id": 1497,
@@ -76,7 +76,7 @@
       "city": "Valencia",
       "capacity": 55000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1497.png"
+      "image": "https://media.api-sports.io/football/venues/1497.webp"
     }
   },
   {
@@ -87,7 +87,7 @@
       "country": "Spain",
       "founded": 1923,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/533.png"
+      "logo": "https://media.api-sports.io/football/teams/533.webp"
     },
     "venue": {
       "id": 1498,
@@ -96,7 +96,7 @@
       "city": "Villarreal",
       "capacity": 24500,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1498.png"
+      "image": "https://media.api-sports.io/football/venues/1498.webp"
     }
   },
   {
@@ -107,7 +107,7 @@
       "country": "Spain",
       "founded": 1949,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/534.png"
+      "logo": "https://media.api-sports.io/football/teams/534.webp"
     },
     "venue": {
       "id": 1481,
@@ -116,7 +116,7 @@
       "city": "Las Palmas de Gran Canaria",
       "capacity": 32392,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1481.png"
+      "image": "https://media.api-sports.io/football/venues/1481.webp"
     }
   },
   {
@@ -127,7 +127,7 @@
       "country": "Spain",
       "founded": 1890,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/536.png"
+      "logo": "https://media.api-sports.io/football/teams/536.webp"
     },
     "venue": {
       "id": 1494,
@@ -136,7 +136,7 @@
       "city": "Sevilla",
       "capacity": 48649,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1494.png"
+      "image": "https://media.api-sports.io/football/venues/1494.webp"
     }
   },
   {
@@ -147,7 +147,7 @@
       "country": "Spain",
       "founded": 1928,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/537.png"
+      "logo": "https://media.api-sports.io/football/teams/537.webp"
     },
     "venue": {
       "id": 1464,
@@ -156,7 +156,7 @@
       "city": "Leganés",
       "capacity": 12450,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1464.png"
+      "image": "https://media.api-sports.io/football/venues/1464.webp"
     }
   },
   {
@@ -167,7 +167,7 @@
       "country": "Spain",
       "founded": 1923,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/538.png"
+      "logo": "https://media.api-sports.io/football/teams/538.webp"
     },
     "venue": {
       "id": 1467,
@@ -176,7 +176,7 @@
       "city": "Vigo",
       "capacity": 31800,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1467.png"
+      "image": "https://media.api-sports.io/football/venues/1467.webp"
     }
   },
   {
@@ -187,7 +187,7 @@
       "country": "Spain",
       "founded": 1900,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/540.png"
+      "logo": "https://media.api-sports.io/football/teams/540.webp"
     },
     "venue": {
       "id": 20421,
@@ -196,7 +196,7 @@
       "city": "Cornella de Llobregat",
       "capacity": 40423,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20421.png"
+      "image": "https://media.api-sports.io/football/venues/20421.webp"
     }
   },
   {
@@ -207,7 +207,7 @@
       "country": "Spain",
       "founded": 1902,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/541.png"
+      "logo": "https://media.api-sports.io/football/teams/541.webp"
     },
     "venue": {
       "id": 1456,
@@ -216,7 +216,7 @@
       "city": "Madrid",
       "capacity": 85454,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1456.png"
+      "image": "https://media.api-sports.io/football/venues/1456.webp"
     }
   },
   {
@@ -227,7 +227,7 @@
       "country": "Spain",
       "founded": 1921,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/542.png"
+      "logo": "https://media.api-sports.io/football/teams/542.webp"
     },
     "venue": {
       "id": 1470,
@@ -236,7 +236,7 @@
       "city": "Vitoria-Gasteiz",
       "capacity": 19840,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1470.png"
+      "image": "https://media.api-sports.io/football/venues/1470.webp"
     }
   },
   {
@@ -247,7 +247,7 @@
       "country": "Spain",
       "founded": 1907,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/543.png"
+      "logo": "https://media.api-sports.io/football/teams/543.webp"
     },
     "venue": {
       "id": 1489,
@@ -256,7 +256,7 @@
       "city": "Sevilla",
       "capacity": 60721,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1489.png"
+      "image": "https://media.api-sports.io/football/venues/1489.webp"
     }
   },
   {
@@ -267,7 +267,7 @@
       "country": "Spain",
       "founded": 1983,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/546.png"
+      "logo": "https://media.api-sports.io/football/teams/546.webp"
     },
     "venue": {
       "id": 20422,
@@ -276,7 +276,7 @@
       "city": "Getafe",
       "capacity": 17393,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/20422.png"
+      "image": "https://media.api-sports.io/football/venues/20422.webp"
     }
   },
   {
@@ -287,7 +287,7 @@
       "country": "Spain",
       "founded": 1930,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/547.png"
+      "logo": "https://media.api-sports.io/football/teams/547.webp"
     },
     "venue": {
       "id": 1478,
@@ -296,7 +296,7 @@
       "city": "Girona",
       "capacity": 14500,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1478.png"
+      "image": "https://media.api-sports.io/football/venues/1478.webp"
     }
   },
   {
@@ -307,7 +307,7 @@
       "country": "Spain",
       "founded": 1909,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/548.png"
+      "logo": "https://media.api-sports.io/football/teams/548.webp"
     },
     "venue": {
       "id": 1491,
@@ -316,7 +316,7 @@
       "city": "Donostia-San Sebastián",
       "capacity": 40000,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1491.png"
+      "image": "https://media.api-sports.io/football/venues/1491.webp"
     }
   },
   {
@@ -327,7 +327,7 @@
       "country": "Spain",
       "founded": 1928,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/720.png"
+      "logo": "https://media.api-sports.io/football/teams/720.webp"
     },
     "venue": {
       "id": 1492,
@@ -336,7 +336,7 @@
       "city": "Valladolid",
       "capacity": 26512,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1492.png"
+      "image": "https://media.api-sports.io/football/venues/1492.webp"
     }
   },
   {
@@ -347,7 +347,7 @@
       "country": "Spain",
       "founded": 1920,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/727.png"
+      "logo": "https://media.api-sports.io/football/teams/727.webp"
     },
     "venue": {
       "id": 1486,
@@ -356,7 +356,7 @@
       "city": "Iruñea",
       "capacity": 23576,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1486.png"
+      "image": "https://media.api-sports.io/football/venues/1486.webp"
     }
   },
   {
@@ -367,7 +367,7 @@
       "country": "Spain",
       "founded": 1924,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/728.png"
+      "logo": "https://media.api-sports.io/football/teams/728.webp"
     },
     "venue": {
       "id": 1488,
@@ -376,7 +376,7 @@
       "city": "Madrid",
       "capacity": 15500,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/1488.png"
+      "image": "https://media.api-sports.io/football/venues/1488.webp"
     }
   },
   {
@@ -387,7 +387,7 @@
       "country": "Spain",
       "founded": 1916,
       "national": false,
-      "logo": "https://media.api-sports.io/football/teams/798.png"
+      "logo": "https://media.api-sports.io/football/teams/798.webp"
     },
     "venue": {
       "id": 19940,
@@ -396,7 +396,7 @@
       "city": "Palma de Mallorca",
       "capacity": 23142,
       "surface": "grass",
-      "image": "https://media.api-sports.io/football/venues/19940.png"
+      "image": "https://media.api-sports.io/football/venues/19940.webp"
     }
   }
 ]
