@@ -1,0 +1,68 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: debug-statements
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+        exclude: |
+          (?x)^(
+              bot/config/team_mappings\.py|
+              bot/data/db_manager\.py|
+              bot/main\.py|
+              bot/services/.*\.py|
+              bot/utils/.*\.py|
+              bot/scripts/.*\.py|
+              bot/tests/.*\.py|
+              scripts/.*\.py|
+              test_.*\.py|
+              verify_.*\.py|
+              check_.*\.py|
+              run_.*\.py|
+              fix_.*\.py|
+              webapp\.py
+          )$
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=88]
+        exclude: |
+          (?x)^(
+              bot/config/team_mappings\.py|
+              bot/data/db_manager\.py|
+              bot/main\.py|
+              bot/services/.*\.py|
+              bot/utils/.*\.py|
+              bot/scripts/.*\.py|
+              bot/tests/.*\.py|
+              scripts/.*\.py|
+              test_.*\.py|
+              verify_.*\.py|
+              check_.*\.py|
+              run_.*\.py|
+              fix_.*\.py|
+              webapp\.py
+          )$
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [manual]
