@@ -337,7 +337,14 @@ class GameLineImageGenerator:
         if league_logo:
             logo_y = block_y + (block_h - logo_display_size[1]) // 2
             text_y = block_y + (block_h - header_h) // 2
-            image.paste(league_logo, (block_x, logo_y), league_logo)
+            # Use the alpha channel as the mask for proper transparency
+            if league_logo.mode == 'RGBA':
+                # Extract alpha channel for mask
+                alpha = league_logo.split()[-1]
+                image.paste(league_logo, (block_x, logo_y), alpha)
+            else:
+                # Fallback if not RGBA
+                image.paste(league_logo, (block_x, logo_y))
             text_x = block_x + logo_display_size[0] + 15
         else:
             text_x = block_x
@@ -367,12 +374,14 @@ class GameLineImageGenerator:
                 # Use default logo for both teams
                 home_logo_x = int(home_section_center_x - logo_size[0] // 2)
                 away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                image.paste(
-                    default_logo_resized, (home_logo_x, y_base), default_logo_resized
-                )
-                image.paste(
-                    default_logo_resized, (away_logo_x, y_base), default_logo_resized
-                )
+                # Use alpha channel as mask for proper transparency
+                if default_logo_resized.mode == 'RGBA':
+                    alpha = default_logo_resized.split()[-1]
+                    image.paste(default_logo_resized, (home_logo_x, y_base), alpha)
+                    image.paste(default_logo_resized, (away_logo_x, y_base), alpha)
+                else:
+                    image.paste(default_logo_resized, (home_logo_x, y_base))
+                    image.paste(default_logo_resized, (away_logo_x, y_base))
         elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
             from PIL import Image
             import os
@@ -406,56 +415,84 @@ class GameLineImageGenerator:
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        image.paste(
-                            home_logo_resized, (home_logo_x, y_base), home_logo_resized
-                        )
+                        # Use alpha channel as mask for proper transparency
+                        if home_logo_resized.mode == 'RGBA':
+                            alpha = home_logo_resized.split()[-1]
+                            image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                        else:
+                            image.paste(home_logo_resized, (home_logo_x, y_base))
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        image.paste(
-                            away_logo_resized, (away_logo_x, y_base), away_logo_resized
-                        )
+                        # Use alpha channel as mask for proper transparency
+                        if away_logo_resized.mode == 'RGBA':
+                            alpha = away_logo_resized.split()[-1]
+                            image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                        else:
+                            image.paste(away_logo_resized, (away_logo_x, y_base))
                 else:
                     # Away team is selected - use [sport]_all.webp for away, default_[sport].webp for home
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        image.paste(
-                            away_logo_resized, (away_logo_x, y_base), away_logo_resized
-                        )
+                        # Use alpha channel as mask for proper transparency
+                        if away_logo_resized.mode == 'RGBA':
+                            alpha = away_logo_resized.split()[-1]
+                            image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                        else:
+                            image.paste(away_logo_resized, (away_logo_x, y_base))
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        image.paste(
-                            home_logo_resized, (home_logo_x, y_base), home_logo_resized
-                        )
+                        # Use alpha channel as mask for proper transparency
+                        if home_logo_resized.mode == 'RGBA':
+                            alpha = home_logo_resized.split()[-1]
+                            image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                        else:
+                            image.paste(home_logo_resized, (home_logo_x, y_base))
             else:
                 # No team selected yet - use default_[sport].webp for both
                 if home_logo:
                     home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                     home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                    image.paste(
-                        home_logo_resized, (home_logo_x, y_base), home_logo_resized
-                    )
+                    # Use alpha channel as mask for proper transparency
+                    if home_logo_resized.mode == 'RGBA':
+                        alpha = home_logo_resized.split()[-1]
+                        image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                    else:
+                        image.paste(home_logo_resized, (home_logo_x, y_base))
                 if away_logo:
                     away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                     away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                    image.paste(
-                        away_logo_resized, (away_logo_x, y_base), away_logo_resized
-                    )
+                    # Use alpha channel as mask for proper transparency
+                    if away_logo_resized.mode == 'RGBA':
+                        alpha = away_logo_resized.split()[-1]
+                        image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                    else:
+                        image.paste(away_logo_resized, (away_logo_x, y_base))
         else:
             # Normal logo loading for other sports
             home_logo = self._load_team_logo(home_team, league)
             if home_logo:
                 home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                 home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
+                # Use alpha channel as mask for proper transparency
+                if home_logo_resized.mode == 'RGBA':
+                    alpha = home_logo_resized.split()[-1]
+                    image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                else:
+                    image.paste(home_logo_resized, (home_logo_x, y_base))
             # Away logo
             away_logo = self._load_team_logo(away_team, league)
             if away_logo:
                 away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                 away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
+                # Use alpha channel as mask for proper transparency
+                if away_logo_resized.mode == 'RGBA':
+                    alpha = away_logo_resized.split()[-1]
+                    image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                else:
+                    image.paste(away_logo_resized, (away_logo_x, y_base))
 
         # VS
         vs_text = "VS"
@@ -569,6 +606,9 @@ class GameLineImageGenerator:
         lock_icon = None
         try:
             lock_icon = Image.open(lock_icon_path).resize((24, 24))
+            # Convert to RGBA to ensure proper transparency handling
+            if lock_icon.mode != 'RGBA':
+                lock_icon = lock_icon.convert('RGBA')
         except Exception:
             lock_icon = None
         if lock_icon:

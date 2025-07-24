@@ -301,7 +301,12 @@ class PlayerPropImageGenerator:
         if league_logo:
             logo_y = block_y + (block_h - logo_h) // 2
             text_y = block_y + (block_h - header_h) // 2
-            image.paste(league_logo, (block_x, logo_y), league_logo)
+            # Use alpha channel as mask for proper transparency
+            if league_logo.mode == 'RGBA':
+                alpha = league_logo.split()[-1]
+                image.paste(league_logo, (block_x, logo_y), alpha)
+            else:
+                image.paste(league_logo, (block_x, logo_y))
             text_x = block_x + logo_w + gap
         else:
             text_x = block_x
@@ -325,7 +330,12 @@ class PlayerPropImageGenerator:
             team_logo_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
             team_logo_x = int(team_section_center_x - team_logo_copy.size[0] // 2)
             team_logo_y = int(y_base + (logo_size[1] - team_logo_copy.size[1]) // 2)
-            image.paste(team_logo_copy, (team_logo_x, team_logo_y), team_logo_copy)
+            # Use alpha channel as mask for proper transparency
+            if team_logo_copy.mode == 'RGBA':
+                alpha = team_logo_copy.split()[-1]
+                image.paste(team_logo_copy, (team_logo_x, team_logo_y), alpha)
+            else:
+                image.paste(team_logo_copy, (team_logo_x, team_logo_y))
 
         # Player image (right)
         player_image, display_name = PlayerPropImageGenerator._load_player_image(
@@ -336,9 +346,12 @@ class PlayerPropImageGenerator:
             player_image_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
             player_image_x = int(player_section_center_x - player_image_copy.size[0] // 2)
             player_image_y = int(y_base + (logo_size[1] - player_image_copy.size[1]) // 2)
-            image.paste(
-                player_image_copy, (player_image_x, player_image_y), player_image_copy
-            )
+            # Use alpha channel as mask for proper transparency
+            if player_image_copy.mode == 'RGBA':
+                alpha = player_image_copy.split()[-1]
+                image.paste(player_image_copy, (player_image_x, player_image_y), alpha)
+            else:
+                image.paste(player_image_copy, (player_image_x, player_image_y), player_image_copy)
 
         # Team name (left, white)
         team_name_w, _ = font_bold_team.getbbox(team_name)[2:]
@@ -442,12 +455,18 @@ class PlayerPropImageGenerator:
         lock_icon = None
         try:
             lock_icon = Image.open(lock_icon_path).resize((24, 24))
+            # Convert to RGBA to ensure proper transparency handling
+            if lock_icon.mode != 'RGBA':
+                lock_icon = lock_icon.convert('RGBA')
         except Exception:
             lock_icon = None
         if lock_icon:
-            image.paste(
-                lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon
-            )
+            # Use alpha channel as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                alpha = lock_icon.split()[-1]
+                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), alpha)
+            else:
+                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y))
             draw.text(
                 ((image_width - payout_w) // 2, payout_y),
                 payout_text,
@@ -455,11 +474,12 @@ class PlayerPropImageGenerator:
                 fill="#FFD700",
                 anchor="lt",
             )
-            image.paste(
-                lock_icon,
-                ((image_width - payout_w) // 2 + payout_w + 8, payout_y),
-                lock_icon,
-            )
+            # Use alpha channel as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                alpha = lock_icon.split()[-1]
+                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), alpha)
+            else:
+                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y))
         else:
             draw.text(
                 ((image_width - payout_w) // 2, payout_y),

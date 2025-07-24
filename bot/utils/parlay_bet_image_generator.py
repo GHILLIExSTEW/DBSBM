@@ -216,7 +216,12 @@ class ParlayBetImageGenerator:
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
-                image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
+                # Use alpha channel as mask for proper transparency
+                if team_logo.mode == 'RGBA':
+                    alpha = team_logo.split()[-1]
+                    image.paste(team_logo, (int(left_margin), int(logo_y)), alpha)
+                else:
+                    image.paste(team_logo, (int(left_margin), int(logo_y)))
             
             team_display = get_team_display_name(home_team)
             team_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
@@ -236,7 +241,12 @@ class ParlayBetImageGenerator:
             if opponent_logo:
                 opponent_logo = opponent_logo.convert("RGBA").resize(logo_size)
                 opponent_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
-                image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo)
+                # Use alpha channel as mask for proper transparency
+                if opponent_logo.mode == 'RGBA':
+                    alpha = opponent_logo.split()[-1]
+                    image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), alpha)
+                else:
+                    image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)))
             
             opponent_display = get_team_display_name(away_team)
             opponent_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
@@ -270,7 +280,12 @@ class ParlayBetImageGenerator:
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
-                image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
+                # Use alpha channel as mask for proper transparency
+                if team_logo.mode == 'RGBA':
+                    alpha = team_logo.split()[-1]
+                    image.paste(team_logo, (int(left_margin), int(logo_y)), alpha)
+                else:
+                    image.paste(team_logo, (int(left_margin), int(logo_y)))
             
             team_display = get_team_display_name(home_team)
             draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill="#ffffff")
@@ -291,14 +306,24 @@ class ParlayBetImageGenerator:
             if player_image:
                 player_image = player_image.convert("RGBA").resize(logo_size)
                 player_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
-                image.paste(player_image, (int(player_logo_x), int(logo_y)), player_image)
+                # Use alpha channel as mask for proper transparency
+                if player_image.mode == 'RGBA':
+                    alpha = player_image.split()[-1]
+                    image.paste(player_image, (int(player_logo_x), int(logo_y)), alpha)
+                else:
+                    image.paste(player_image, (int(player_logo_x), int(logo_y)))
             else:
                 # Fallback to team logo if no player image
                 player_logo_x = vs_x + vs_width + 35
                 fallback_logo = self._load_team_logo(player_team, league)
                 if fallback_logo:
                     fallback_logo = fallback_logo.convert("RGBA").resize(logo_size)
-                    image.paste(fallback_logo, (int(player_logo_x), int(logo_y)), fallback_logo)
+                    # Use alpha channel as mask for proper transparency
+                    if fallback_logo.mode == 'RGBA':
+                        alpha = fallback_logo.split()[-1]
+                        image.paste(fallback_logo, (int(player_logo_x), int(logo_y)), alpha)
+                    else:
+                        image.paste(fallback_logo, (int(player_logo_x), int(logo_y)))
             
             # Player name (below player image)
             draw.text((int(player_logo_x), int(name_y)), player_name, font=team_font, fill="#ffffff")
@@ -437,18 +462,24 @@ class ParlayBetImageGenerator:
         )
 
         if lock_icon:
-            image.paste(lock_icon, (start_x, icon_y), lock_icon)
+            # Use alpha channel as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                alpha = lock_icon.split()[-1]
+                image.paste(lock_icon, (start_x, icon_y), alpha)
+            else:
+                image.paste(lock_icon, (start_x, icon_y))
             draw.text(
                 (start_x + lock_icon.width + 8, text_y),
                 payout_text,
                 font=self.font_bold,
                 fill="#ffcc00",
             )
-            image.paste(
-                lock_icon,
-                (start_x + lock_icon.width + 8 + int(risk_width) + 8, icon_y),
-                lock_icon,
-            )
+            # Use alpha channel as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                alpha = lock_icon.split()[-1]
+                image.paste(lock_icon, (start_x + lock_icon.width + 8 + int(risk_width) + 8, icon_y), alpha)
+            else:
+                image.paste(lock_icon, (start_x + lock_icon.width + 8 + int(risk_width) + 8, icon_y))
         else:
             draw.text(
                 (start_x, text_y), payout_text, font=self.font_bold, fill="#ffcc00"
