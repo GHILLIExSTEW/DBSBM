@@ -747,8 +747,9 @@ class BetDetailsModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         try:
-            logger.debug(f"[BetDetailsModal] on_submit called for line_type={self.line_type}, is_manual={self.is_manual}")
-            logger.debug(f"[BetDetailsModal] view_ref exists: {self.view_ref is not None}")
+            logger.info(f"[BetDetailsModal] on_submit called for line_type={self.line_type}, is_manual={self.is_manual}")
+            logger.info(f"[BetDetailsModal] view_ref exists: {self.view_ref is not None}")
+            logger.info(f"[BetDetailsModal] Available attributes: {[attr for attr in dir(self) if not attr.startswith('_')]}")
             
             # Check if view_ref is properly set
             if not self.view_ref:
@@ -766,16 +767,25 @@ class BetDetailsModal(Modal):
             league_key = self.view_ref.current_leg_construction_details.get(
                 "league", ""
             )
+            logger.info(f"[BetDetailsModal] League key: {league_key}")
             league_conf = LEAGUE_CONFIG.get(league_key, {})
+            logger.info(f"[BetDetailsModal] League config found: {bool(league_conf)}")
+            logger.info(f"[BetDetailsModal] League config: {league_conf}")
             sport_type = league_conf.get("sport_type", "Team Sport")
             is_individual_sport = sport_type == "Individual Player"
+            logger.info(f"[BetDetailsModal] Sport type: {sport_type}, Is individual sport: {is_individual_sport}")
 
             # For manual game line, get team/opponent or player/opponent based on sport type
             if self.is_manual and self.line_type == "game_line":
+                logger.info(f"[BetDetailsModal] Processing manual game line for individual sport: {is_individual_sport}")
                 if is_individual_sport:
                     # For individual sports, use player and opponent
                     # Check if the input fields exist before accessing them
+                    logger.info(f"[BetDetailsModal] Checking for player_input: {hasattr(self, 'player_input')}")
+                    logger.info(f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}")
                     if hasattr(self, 'player_input') and hasattr(self, 'opponent_input'):
+                        logger.info(f"[BetDetailsModal] Player input value: {self.player_input.value}")
+                        logger.info(f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}")
                         self.view_ref.current_leg_construction_details["player_name"] = (
                             self.player_input.value.strip()[:100] or "Player"
                         )
@@ -791,13 +801,18 @@ class BetDetailsModal(Modal):
                         self.view_ref.current_leg_construction_details["away_team_name"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
+                        logger.info(f"[BetDetailsModal] Successfully processed individual sport inputs")
                     else:
                         logger.error("Player input fields not found for individual sport")
                         raise ValidationError("Modal configuration error for individual sport")
                 else:
                     # For team sports, use team and opponent (existing logic)
                     # Check if the input fields exist before accessing them
+                    logger.info(f"[BetDetailsModal] Checking for team_input: {hasattr(self, 'team_input')}")
+                    logger.info(f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}")
                     if hasattr(self, 'team_input') and hasattr(self, 'opponent_input'):
+                        logger.info(f"[BetDetailsModal] Team input value: {self.team_input.value}")
+                        logger.info(f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}")
                         self.view_ref.current_leg_construction_details["team"] = (
                             self.team_input.value.strip()[:100] or "Team"
                         )
@@ -810,6 +825,7 @@ class BetDetailsModal(Modal):
                         self.view_ref.current_leg_construction_details["away_team_name"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
+                        logger.info(f"[BetDetailsModal] Successfully processed team sport inputs")
                     else:
                         logger.error("Team input fields not found for team sport")
                         raise ValidationError("Modal configuration error for team sport")
@@ -928,9 +944,12 @@ class BetDetailsModal(Modal):
             await interaction.response.defer()
 
         except ValidationError as e:
+            logger.error(f"[BetDetailsModal] ValidationError: {e}")
             await interaction.response.send_message(f"❌ {str(e)}", ephemeral=True)
         except Exception as e:
             logger.exception(f"Error in BetDetailsModal on_submit: {e}")
+            logger.error(f"[BetDetailsModal] Exception type: {type(e).__name__}")
+            logger.error(f"[BetDetailsModal] Exception details: {str(e)}")
             await interaction.response.send_message(
                 "❌ An error occurred while processing bet details. Please try again.",
                 ephemeral=True,

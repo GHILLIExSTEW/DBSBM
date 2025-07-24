@@ -474,6 +474,15 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., To Win Tournament, Over/Under 180s, Checkout Percentage",
         "line_placeholder_player": "e.g., 180s Over 3.5, Average Over 95.5, Checkout % Over 40%",
     },
+    "PROFESSIONAL_DARTS_CORPORATION": {
+        "sport": "Darts",
+        "name": "Professional Darts Corporation",
+        "sport_type": "Individual Player",
+        "participant_label": "Player",
+        "team_placeholder": "e.g., Michael van Gerwen",
+        "line_placeholder_game": "e.g., To Win Match, Over/Under 180s, Checkout Percentage",
+        "line_placeholder_player": "e.g., 180s Over 2.5, Average Over 95.5, Checkout % Over 40%",
+    },
     # Generic fallback
     "OTHER": {
         "sport": "Unknown",
