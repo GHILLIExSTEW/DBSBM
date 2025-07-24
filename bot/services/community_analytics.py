@@ -418,3 +418,79 @@ class CommunityAnalyticsService:
     async def stop(self):
         """Stop the community analytics service."""
         logger.info("Stopping Community Analytics Service")
+
+    async def get_comprehensive_community_stats(self, guild_id: int, days: int = 7):
+        """Get comprehensive community statistics from real data."""
+        try:
+            stats = {}
+            
+            # Get total reactions from bet_reactions table (join with bets to get guild_id)
+            reactions_query = """
+                SELECT COUNT(*) as total_reactions
+                FROM bet_reactions br
+                JOIN bets b ON br.bet_serial = b.bet_serial
+                WHERE b.guild_id = %s 
+                AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            """
+            reactions_result = await self.db_manager.fetch_one(reactions_query, (guild_id, days))
+            stats["total_reactions"] = reactions_result["total_reactions"] if reactions_result else 0
+            
+            # Get total achievements earned
+            achievements_query = """
+                SELECT COUNT(*) as total_achievements
+                FROM community_achievements
+                WHERE guild_id = %s 
+                AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            """
+            achievements_result = await self.db_manager.fetch_one(achievements_query, (guild_id, days))
+            stats["total_achievements"] = achievements_result["total_achievements"] if achievements_result else 0
+            
+            # Get active users (users who have used community commands or reacted to bets)
+            active_users_query = """
+                SELECT COUNT(DISTINCT user_id) as active_users
+                FROM (
+                    SELECT user_id FROM user_metrics 
+                    WHERE guild_id = %s 
+                    AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                    UNION
+                    SELECT br.user_id FROM bet_reactions br
+                    JOIN bets b ON br.bet_serial = b.bet_serial
+                    WHERE b.guild_id = %s 
+                    AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                ) as active_users
+            """
+            active_users_result = await self.db_manager.fetch_one(active_users_query, (guild_id, days, guild_id, days))
+            stats["active_users"] = active_users_result["active_users"] if active_users_result else 0
+            
+            # Get community commands used
+            commands_query = """
+                SELECT SUM(metric_value) as community_commands
+                FROM community_metrics
+                WHERE guild_id = %s 
+                AND metric_type LIKE %s
+                AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            """
+            commands_result = await self.db_manager.fetch_one(commands_query, (guild_id, 'command_%', days))
+            stats["community_commands"] = int(commands_result["community_commands"]) if commands_result and commands_result["community_commands"] else 0
+            
+            # Get events participated
+            events_query = """
+                SELECT COUNT(*) as events_participated
+                FROM community_events
+                WHERE guild_id = %s 
+                AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            """
+            events_result = await self.db_manager.fetch_one(events_query, (guild_id, days))
+            stats["events_participated"] = events_result["events_participated"] if events_result else 0
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get comprehensive community stats: {e}")
+            return {
+                "total_reactions": 0,
+                "total_achievements": 0,
+                "active_users": 0,
+                "community_commands": 0,
+                "events_participated": 0,
+            }
