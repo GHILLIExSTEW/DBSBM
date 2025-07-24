@@ -373,27 +373,36 @@ class GameLineImageGenerator:
                 image.paste(
                     default_logo_resized, (away_logo_x, y_base), default_logo_resized
                 )
-        elif league.lower() == "darts":
+        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
             from PIL import Image
             import os
 
-            # For darts, use darts_all.png for selected team, default_darts.png for opponent
-            darts_all_path = "bot/static/logos/darts_all.png"
-            default_darts_path = "bot/static/logos/default_darts.png"
+            # Determine sport type for logo selection
+            sport = "darts"  # default
+            if "tennis" in league.lower():
+                sport = "tennis"
+            elif "golf" in league.lower():
+                sport = "golf"
+            elif "f1" in league.lower() or "formula" in league.lower():
+                sport = "f1"
 
-            # Load darts logos
+            # For individual sports, use [sport]_all.png for selected team, default_[sport].png for opponent
+            sport_all_path = f"bot/static/logos/{sport}_all.png"
+            default_sport_path = f"bot/static/logos/default_{sport}.png"
+
+            # Load sport-specific logos
             home_logo = None
             away_logo = None
 
-            if os.path.exists(darts_all_path):
-                home_logo = Image.open(darts_all_path)
-            if os.path.exists(default_darts_path):
-                away_logo = Image.open(default_darts_path)
+            if os.path.exists(sport_all_path):
+                home_logo = Image.open(sport_all_path)
+            if os.path.exists(default_sport_path):
+                away_logo = Image.open(default_sport_path)
 
-            # For darts, use darts_all.png for selected team, default_darts.png for opponent
+            # For individual sports, use [sport]_all.png for selected team, default_[sport].png for opponent
             if selected_team:
                 if selected_team.lower() == home_team.lower():
-                    # Home team is selected - use darts_all.png for home, default_darts.png for away
+                    # Home team is selected - use [sport]_all.png for home, default_[sport].png for away
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
@@ -407,7 +416,7 @@ class GameLineImageGenerator:
                             away_logo_resized, (away_logo_x, y_base), away_logo_resized
                         )
                 else:
-                    # Away team is selected - use darts_all.png for away, default_darts.png for home
+                    # Away team is selected - use [sport]_all.png for away, default_[sport].png for home
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
@@ -421,7 +430,7 @@ class GameLineImageGenerator:
                             home_logo_resized, (home_logo_x, y_base), home_logo_resized
                         )
             else:
-                # No team selected yet - use default_darts.png for both
+                # No team selected yet - use default_[sport].png for both
                 if home_logo:
                     home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                     home_logo_x = int(home_section_center_x - logo_size[0] // 2)
@@ -756,17 +765,26 @@ class GameLineImageGenerator:
             else:
                 logger.warning(f"Default logo not found at {default_logo_path}")
                 return None
-        # Special handling for darts - use specific logos
-        elif league.lower() == "darts":
-            # For darts, use darts_all.png for the selected team and default_darts.png for opponent
-            # This will be handled in the calling code based on selected_team
-            darts_all_path = "bot/static/logos/darts_all.png"
-            default_darts_path = "bot/static/logos/default_darts.png"
+        # Special handling for individual sports - use specific logos
+        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
+            # Determine sport type for logo selection
+            sport = "darts"  # default
+            if "tennis" in league.lower():
+                sport = "tennis"
+            elif "golf" in league.lower():
+                sport = "golf"
+            elif "f1" in league.lower() or "formula" in league.lower():
+                sport = "f1"
 
-            if os.path.exists(darts_all_path):
-                return Image.open(darts_all_path)
+            # For individual sports, use [sport]_all.png for the selected team and default_[sport].png for opponent
+            # This will be handled in the calling code based on selected_team
+            sport_all_path = f"bot/static/logos/{sport}_all.png"
+            default_sport_path = f"bot/static/logos/default_{sport}.png"
+
+            if os.path.exists(sport_all_path):
+                return Image.open(sport_all_path)
             else:
-                logger.warning(f"Darts logo not found at {darts_all_path}")
+                logger.warning(f"{sport.capitalize()} logo not found at {sport_all_path}")
                 return asset_loader.load_team_logo(
                     team_name, league, getattr(self, "guild_id", None)
                 )
