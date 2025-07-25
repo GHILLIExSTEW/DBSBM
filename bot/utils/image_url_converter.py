@@ -33,8 +33,13 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
     # If it's a relative path starting with /static/, convert to absolute URL
     if image_path.startswith("/static/"):
         # Get web server URL from environment or use the correct hostname
-        # For now, use localhost for testing, production should use the domain
-        web_server_url = os.getenv("WEB_SERVER_URL", "http://localhost:25594")
+        # For production, use the server's domain, for local testing use localhost
+        web_server_url = os.getenv("WEB_SERVER_URL")
+        
+        if not web_server_url:
+            # Always use localhost for local development
+            # The server IP should only be used when actually deployed on the server
+            web_server_url = "http://localhost:25594"
 
         # Remove leading slash and construct full URL
         relative_path = image_path.lstrip("/")
@@ -44,7 +49,17 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
 
     # If it's a relative path without /static/, assume it's relative to static
     if not image_path.startswith("/"):
-        web_server_url = os.getenv("WEB_SERVER_URL", "http://localhost:25594")
+        web_server_url = os.getenv("WEB_SERVER_URL")
+        
+        if not web_server_url:
+            # Check if we're running in a containerized environment (production)
+            if os.path.exists("/home/container"):
+                # We're in production (PebbleHost or similar), use the server's IP/domain
+                web_server_url = "http://51.79.105.168:25594"
+            else:
+                # Local development
+                web_server_url = "http://localhost:25594"
+                
         full_url = f"{web_server_url}/static/{image_path}"
         logger.debug(f"convert_image_path_to_url: Converted to: {full_url}")
         return full_url
