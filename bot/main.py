@@ -504,24 +504,79 @@ class BettingBot(commands.Bot):
         return False
 
     def start_flask_webapp(self):
+        """Start the Flask webapp as a subprocess with enhanced monitoring for PebbleHost."""
         if self.webapp_process is None or self.webapp_process.poll() is not None:
             webapp_log_path = os.path.join(BASE_DIR, "logs", "webapp.log")
             os.makedirs(os.path.dirname(webapp_log_path), exist_ok=True)
-            with open(webapp_log_path, "a") as log_file:
-                self.webapp_process = subprocess.Popen(
-                    [
-                        sys.executable,
-                        os.path.join(os.path.dirname(BASE_DIR), "webapp.py"),
-                    ],
-                    stdout=log_file,
-                    stderr=log_file,
-                    text=True,
-                    bufsize=1,
+            
+            # Prepare environment variables for the webapp
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            env["FLASK_ENV"] = "production"
+            env["FLASK_DEBUG"] = "0"
+            
+            # Add any webapp-specific environment variables
+            webapp_port = os.getenv("WEBAPP_PORT", "25594")
+            env["WEBAPP_PORT"] = webapp_port
+            
+            try:
+                with open(webapp_log_path, "a") as log_file:
+                    self.webapp_process = subprocess.Popen(
+                        [
+                            sys.executable,
+                            os.path.join(os.path.dirname(BASE_DIR), "webapp.py"),
+                        ],
+                        stdout=log_file,
+                        stderr=log_file,
+                        text=True,
+                        bufsize=1,
+                        env=env,
+                        cwd=os.path.dirname(BASE_DIR),  # Set working directory to project root
+                    )
+                logger.info(
+                    "Started Flask web server (webapp.py) as a subprocess with PID %d, logging to %s",
+                    self.webapp_process.pid,
+                    webapp_log_path,
                 )
-            logger.info(
-                "Started Flask web server (webapp.py) as a subprocess with logging to %s",
-                webapp_log_path,
-            )
+                
+                # Create monitoring task if not already running
+                if not hasattr(self, "_webapp_monitor_task"):
+                    self._webapp_monitor_task = asyncio.create_task(
+                        self._monitor_webapp(webapp_log_path)
+                    )
+                    logger.info("Created webapp monitoring task")
+                    
+            except Exception as e:
+                logger.error("Failed to start Flask webapp: %s", e, exc_info=True)
+                self.webapp_process = None
+
+    async def _monitor_webapp(self, log_path: str):
+        """Monitor the webapp process and restart it if it crashes."""
+        while True:
+            try:
+                if self.webapp_process is None:
+                    logger.warning("Webapp process is None, attempting to restart...")
+                    self.start_flask_webapp()
+                    await asyncio.sleep(10)  # Wait before checking again
+                    continue
+                
+                # Check if process is still running
+                if self.webapp_process.poll() is not None:
+                    logger.warning(
+                        "Webapp process (PID %d) has stopped with return code %d. Restarting...",
+                        self.webapp_process.pid,
+                        self.webapp_process.returncode,
+                    )
+                    self.webapp_process = None
+                    self.start_flask_webapp()
+                    await asyncio.sleep(5)  # Wait before checking again
+                else:
+                    # Process is running, check every 30 seconds
+                    await asyncio.sleep(30)
+                    
+            except Exception as e:
+                logger.error("Error in webapp monitoring: %s", e, exc_info=True)
+                await asyncio.sleep(10)  # Wait before retrying
 
     def start_fetcher(self):
         """Start the fetcher process and monitor its status."""
@@ -914,14 +969,51 @@ class BettingBot(commands.Bot):
                         "Error closing database connection pool: %s", e, exc_info=True
                     )
 
+            # Stop webapp monitoring task
+            if hasattr(self, "_webapp_monitor_task") and not self._webapp_monitor_task.done():
+                self._webapp_monitor_task.cancel()
+                try:
+                    await self._webapp_monitor_task
+                except asyncio.CancelledError:
+                    pass
+                logger.info("Stopped webapp monitoring task.")
+            
+            # Stop webapp process
             if self.webapp_process and self.webapp_process.poll() is None:
-                self.webapp_process.send_signal(signal.SIGINT)
-                self.webapp_process.wait(timeout=5)
-                logger.info("Stopped Flask web server subprocess.")
+                try:
+                    self.webapp_process.send_signal(signal.SIGINT)
+                    self.webapp_process.wait(timeout=5)
+                    logger.info("Stopped Flask web server subprocess.")
+                except Exception as e:
+                    logger.error("Error stopping webapp process: %s", e)
+                    try:
+                        self.webapp_process.terminate()
+                        self.webapp_process.wait(timeout=3)
+                    except Exception as e2:
+                        logger.error("Error terminating webapp process: %s", e2)
+            
+            # Stop fetcher monitoring task
+            if hasattr(self, "_fetcher_monitor_task") and not self._fetcher_monitor_task.done():
+                self._fetcher_monitor_task.cancel()
+                try:
+                    await self._fetcher_monitor_task
+                except asyncio.CancelledError:
+                    pass
+                logger.info("Stopped fetcher monitoring task.")
+            
+            # Stop fetcher process
             if self.fetcher_process and self.fetcher_process.poll() is None:
-                self.fetcher_process.send_signal(signal.SIGINT)
-                self.fetcher_process.wait(timeout=5)
-                logger.info("Stopped fetcher subprocess.")
+                try:
+                    self.fetcher_process.send_signal(signal.SIGINT)
+                    self.fetcher_process.wait(timeout=5)
+                    logger.info("Stopped fetcher subprocess.")
+                except Exception as e:
+                    logger.error("Error stopping fetcher process: %s", e)
+                    try:
+                        self.fetcher_process.terminate()
+                        self.fetcher_process.wait(timeout=3)
+                    except Exception as e2:
+                        logger.error("Error terminating fetcher process: %s", e2)
         except Exception as e:
             logger.exception("Error during shutdown: %s", e)
         finally:

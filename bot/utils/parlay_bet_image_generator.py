@@ -85,7 +85,11 @@ class ParlayBetImageGenerator:
         image_height = header_height + extra_header_padding + n_legs * leg_height
         if finalized:
             image_height += odds_section_height + footer_height
-        image = Image.new("RGB", (int(image_width), int(image_height)), "#232733")
+        # Use team colors for background if there's a selected team in the first leg
+        bg_color = "#232733"  # Default background
+        # Use default background color
+        
+        image = Image.new("RGB", (int(image_width), int(image_height)), bg_color)
         draw = ImageDraw.Draw(image)
 
         # Header

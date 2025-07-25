@@ -156,10 +156,11 @@ ALL_TEAMS = list(TEAM_SCHEDULES.keys())
 TEAMS_PER_PAGE = 25
 
 class PaginatedTeamSelect(View):
-    def __init__(self, cog=None, page=0):
+    def __init__(self, cog=None, page=0, league="NFL"):
         super().__init__(timeout=60)
         self.cog = cog
         self.page = page
+        self.league = league
         self.max_page = (len(ALL_TEAMS) - 1) // TEAMS_PER_PAGE
         self.update_dropdown()
 
@@ -182,7 +183,7 @@ class PaginatedTeamSelect(View):
         try:
             view = TeamSeasonSelect(team_name, team_schedule, self.cog)
             image_path = await view.generate_team_season_image(
-                interaction.guild, team_name, team_schedule, "NFL"
+                interaction.guild, team_name, team_schedule, self.league
             )
 
             # Find member role and mention it
@@ -234,11 +235,49 @@ class ScheduleTypeSelect(View):
 
     @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
     async def team_schedule(self, interaction: discord.Interaction, button: Button):
-        view = PaginatedTeamSelect(self.cog, page=0)
+        # First show league selection for team schedules
+        view = TeamLeagueSelect(self.cog)
         try:
-            await interaction.response.edit_message(content="Select a team:", view=view)
+            await interaction.response.edit_message(content="Select a league for team schedule:", view=view)
         except Exception:
-            await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
+            await interaction.response.send_message(content="Select a league for team schedule:", view=view, ephemeral=True)
+
+
+class TeamLeagueSelect(View):
+    """League selection view specifically for team schedules."""
+    
+    def __init__(self, cog=None):
+        super().__init__(timeout=60)
+        self.cog = cog
+
+    @discord.ui.select(
+        placeholder="Choose a league...",
+        options=[
+            discord.SelectOption(
+                label="NFL", value="nfl", description="National Football League"
+            ),
+            discord.SelectOption(
+                label="NCAA Football",
+                value="ncaa_football", 
+                description="College Football",
+            ),
+        ],
+    )
+    async def league_callback(self, interaction: discord.Interaction, select: Select):
+        selected_league = select.values[0]
+        
+        # For now, only NFL is supported for team schedules
+        if selected_league == "nfl":
+            view = PaginatedTeamSelect(self.cog, page=0, league="NFL")
+            try:
+                await interaction.response.edit_message(content="Select a team:", view=view)
+            except Exception:
+                await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
+        else:
+            await interaction.response.send_message(
+                "NCAA Football team schedules are not yet supported.", 
+                ephemeral=True
+            )
 
 
 class TeamSeasonSelect(View):
@@ -248,28 +287,53 @@ class TeamSeasonSelect(View):
         self.team_schedule = team_schedule
         self.cog = cog
 
+    def _blend_colors(self, color1: str, color2: str, ratio: float) -> tuple:
+        """
+        Blend two hex colors based on a ratio.
+        
+        Args:
+            color1 (str): First hex color (e.g., "#FF0000")
+            color2 (str): Second hex color (e.g., "#0000FF")
+            ratio (float): Blend ratio (0.0 = color1, 1.0 = color2)
+        
+        Returns:
+            tuple: RGB color tuple
+        """
+        # Remove # from hex colors
+        color1 = color1.lstrip('#')
+        color2 = color2.lstrip('#')
+        
+        # Convert hex to RGB
+        r1, g1, b1 = int(color1[0:2], 16), int(color1[2:4], 16), int(color1[4:6], 16)
+        r2, g2, b2 = int(color2[0:2], 16), int(color2[2:4], 16), int(color2[4:6], 16)
+        
+        # Blend colors
+        r = int(r1 + (r2 - r1) * ratio)
+        g = int(g1 + (g2 - g1) * ratio)
+        b = int(b1 + (b2 - b1) * ratio)
+        
+        return (r, g, b)
+
     async def generate_team_season_image(
         self, guild, team_name: str, team_schedule: dict, league="NFL"
     ):
+        # Import team colors
+        from bot.config.team_colors import get_team_colors
+        
+        # Get team colors for background
+        team_colors = get_team_colors(team_name, league)
+        primary_color = team_colors["primary"]
+        secondary_color = team_colors["secondary"]
+        
         # Create a taller image to fit all 18 weeks
-        image = Image.new("RGB", (1200, 2400), color="#0a0a0a")
+        image = Image.new("RGB", (1200, 2400), color=primary_color)
         draw = ImageDraw.Draw(image)
 
-        # Create enhanced gradient background with more vibrant colors (matching league schedule)
+        # Create gradient background using team colors
         for y in range(2400):
-            # Create a more vibrant gradient from deep blue to purple to dark red
             progress = y / 2400
-            if progress < 0.5:
-                # First half: deep blue to purple
-                r = int(10 + (progress * 2) * 60)  # 10 to 70
-                g = int(10 + (progress * 2) * 30)  # 10 to 40
-                b = int(30 + (progress * 2) * 80)  # 30 to 110
-            else:
-                # Second half: purple to dark red
-                r = int(70 + ((progress - 0.5) * 2) * 50)  # 70 to 120
-                g = int(40 + ((progress - 0.5) * 2) * 20)  # 40 to 60
-                b = int(110 + ((progress - 0.5) * 2) * 40)  # 110 to 150
-            color = (r, g, b)
+            # Blend from primary to secondary color
+            color = self._blend_colors(primary_color, secondary_color, progress)
             draw.line([(0, y), (1200, y)], fill=color)
 
         # Add large faded league logo as background with enhanced styling (matching league schedule)

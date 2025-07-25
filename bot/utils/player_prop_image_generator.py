@@ -217,6 +217,9 @@ class PlayerPropImageGenerator:
             f"{font_dir}/Roboto-Regular.ttf", footer_font_size
         )
 
+        # Use default background color
+        bg_color = "#232733"  # Default background
+        
         image = Image.new("RGB", (image_width, image_height), bg_color)
         draw = ImageDraw.Draw(image)
 
