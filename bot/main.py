@@ -1065,7 +1065,6 @@ async def run_bot():
     while retry_count < max_retries:
         try:
             bot = BettingBot()
-            await setup_sync_cog(bot)
             await bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"])
             break
         except discord.LoginFailure:
