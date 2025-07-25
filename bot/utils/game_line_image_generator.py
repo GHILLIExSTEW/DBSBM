@@ -187,7 +187,7 @@ class GameLineImageGenerator:
         )
 
         # Use default background color
-        
+
         image = Image.new("RGB", (image_width, image_height), bg_color)
         draw = ImageDraw.Draw(image)
 

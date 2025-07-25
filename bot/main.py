@@ -508,17 +508,17 @@ class BettingBot(commands.Bot):
         if self.webapp_process is None or self.webapp_process.poll() is not None:
             webapp_log_path = os.path.join(BASE_DIR, "logs", "webapp.log")
             os.makedirs(os.path.dirname(webapp_log_path), exist_ok=True)
-            
+
             # Prepare environment variables for the webapp
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
             env["FLASK_ENV"] = "production"
             env["FLASK_DEBUG"] = "0"
-            
+
             # Add any webapp-specific environment variables
             webapp_port = os.getenv("WEBAPP_PORT", "25594")
             env["WEBAPP_PORT"] = webapp_port
-            
+
             try:
                 with open(webapp_log_path, "a") as log_file:
                     self.webapp_process = subprocess.Popen(
@@ -538,14 +538,14 @@ class BettingBot(commands.Bot):
                     self.webapp_process.pid,
                     webapp_log_path,
                 )
-                
+
                 # Create monitoring task if not already running
                 if not hasattr(self, "_webapp_monitor_task"):
                     self._webapp_monitor_task = asyncio.create_task(
                         self._monitor_webapp(webapp_log_path)
                     )
                     logger.info("Created webapp monitoring task")
-                    
+
             except Exception as e:
                 logger.error("Failed to start Flask webapp: %s", e, exc_info=True)
                 self.webapp_process = None
@@ -559,7 +559,7 @@ class BettingBot(commands.Bot):
                     self.start_flask_webapp()
                     await asyncio.sleep(10)  # Wait before checking again
                     continue
-                
+
                 # Check if process is still running
                 if self.webapp_process.poll() is not None:
                     logger.warning(
@@ -573,7 +573,7 @@ class BettingBot(commands.Bot):
                 else:
                     # Process is running, check every 30 seconds
                     await asyncio.sleep(30)
-                    
+
             except Exception as e:
                 logger.error("Error in webapp monitoring: %s", e, exc_info=True)
                 await asyncio.sleep(10)  # Wait before retrying
@@ -977,7 +977,7 @@ class BettingBot(commands.Bot):
                 except asyncio.CancelledError:
                     pass
                 logger.info("Stopped webapp monitoring task.")
-            
+
             # Stop webapp process
             if self.webapp_process and self.webapp_process.poll() is None:
                 try:
@@ -991,7 +991,7 @@ class BettingBot(commands.Bot):
                         self.webapp_process.wait(timeout=3)
                     except Exception as e2:
                         logger.error("Error terminating webapp process: %s", e2)
-            
+
             # Stop fetcher monitoring task
             if hasattr(self, "_fetcher_monitor_task") and not self._fetcher_monitor_task.done():
                 self._fetcher_monitor_task.cancel()
@@ -1000,7 +1000,7 @@ class BettingBot(commands.Bot):
                 except asyncio.CancelledError:
                     pass
                 logger.info("Stopped fetcher monitoring task.")
-            
+
             # Stop fetcher process
             if self.fetcher_process and self.fetcher_process.poll() is None:
                 try:

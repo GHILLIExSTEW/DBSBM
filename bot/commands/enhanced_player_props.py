@@ -931,13 +931,17 @@ class TeamSelectionView(View):
         self.home_team = home_team
         self.away_team = away_team
 
-    @discord.ui.button(label="Home Team", style=discord.ButtonStyle.primary, custom_id="home_team")
+    @discord.ui.button(
+        label="Home Team", style=discord.ButtonStyle.primary, custom_id="home_team"
+    )
     async def home_team_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await self.handle_team_selection(interaction, self.home_team)
 
-    @discord.ui.button(label="Away Team", style=discord.ButtonStyle.primary, custom_id="away_team")
+    @discord.ui.button(
+        label="Away Team", style=discord.ButtonStyle.primary, custom_id="away_team"
+    )
     async def away_team_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):

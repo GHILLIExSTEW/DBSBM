@@ -88,7 +88,7 @@ class ParlayBetImageGenerator:
         # Use team colors for background if there's a selected team in the first leg
         bg_color = "#232733"  # Default background
         # Use default background color
-        
+
         image = Image.new("RGB", (int(image_width), int(image_height)), bg_color)
         draw = ImageDraw.Draw(image)
 

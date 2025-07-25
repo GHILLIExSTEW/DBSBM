@@ -1411,14 +1411,14 @@ class LegDecisionView(View):
 class TeamSelect(Select):
     def __init__(self, parent_view: View, home_team: str, away_team: str):
         self.parent_view = parent_view
-        
+
         options = [
             SelectOption(
-                label=home_team[:100], 
+                label=home_team[:100],
                 value=home_team[:100],
             ),
             SelectOption(
-                label=away_team[:100], 
+                label=away_team[:100],
                 value=away_team[:100],
             ),
         ]

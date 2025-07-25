@@ -155,6 +155,7 @@ TEAM_SCHEDULES = {
 ALL_TEAMS = list(TEAM_SCHEDULES.keys())
 TEAMS_PER_PAGE = 25
 
+
 class PaginatedTeamSelect(View):
     def __init__(self, cog=None, page=0, league="NFL"):
         super().__init__(timeout=60)
@@ -169,7 +170,7 @@ class PaginatedTeamSelect(View):
         end = start + TEAMS_PER_PAGE
         teams = ALL_TEAMS[start:end]
         options = [discord.SelectOption(label=team, value=team) for team in teams]
-        if hasattr(self, 'team_select'):
+        if hasattr(self, "team_select"):
             self.remove_item(self.team_select)
         self.team_select = Select(placeholder="Choose a team...", options=options)
         self.team_select.callback = self.team_callback
@@ -178,7 +179,7 @@ class PaginatedTeamSelect(View):
     async def team_callback(self, interaction: discord.Interaction):
         team_name = self.team_select.values[0]
         team_schedule = TEAM_SCHEDULES[team_name]
-        
+
         # Generate team season schedule image directly
         try:
             view = TeamSeasonSelect(team_name, team_schedule, self.cog)
@@ -195,7 +196,8 @@ class PaginatedTeamSelect(View):
 
             mention_text = f"{member_role.mention} " if member_role else ""
             await interaction.response.send_message(
-                f"{mention_text}Here's your season schedule!", file=discord.File(image_path)
+                f"{mention_text}Here's your season schedule!",
+                file=discord.File(image_path),
             )
             os.remove(image_path)  # Clean up temp file
         except Exception as e:
@@ -238,14 +240,18 @@ class ScheduleTypeSelect(View):
         # First show league selection for team schedules
         view = TeamLeagueSelect(self.cog)
         try:
-            await interaction.response.edit_message(content="Select a league for team schedule:", view=view)
+            await interaction.response.edit_message(
+                content="Select a league for team schedule:", view=view
+            )
         except Exception:
-            await interaction.response.send_message(content="Select a league for team schedule:", view=view, ephemeral=True)
+            await interaction.response.send_message(
+                content="Select a league for team schedule:", view=view, ephemeral=True
+            )
 
 
 class TeamLeagueSelect(View):
     """League selection view specifically for team schedules."""
-    
+
     def __init__(self, cog=None):
         super().__init__(timeout=60)
         self.cog = cog
@@ -258,25 +264,28 @@ class TeamLeagueSelect(View):
             ),
             discord.SelectOption(
                 label="NCAA Football",
-                value="ncaa_football", 
+                value="ncaa_football",
                 description="College Football",
             ),
         ],
     )
     async def league_callback(self, interaction: discord.Interaction, select: Select):
         selected_league = select.values[0]
-        
+
         # For now, only NFL is supported for team schedules
         if selected_league == "nfl":
             view = PaginatedTeamSelect(self.cog, page=0, league="NFL")
             try:
-                await interaction.response.edit_message(content="Select a team:", view=view)
+                await interaction.response.edit_message(
+                    content="Select a team:", view=view
+                )
             except Exception:
-                await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
+                await interaction.response.send_message(
+                    content="Select a team:", view=view, ephemeral=True
+                )
         else:
             await interaction.response.send_message(
-                "NCAA Football team schedules are not yet supported.", 
-                ephemeral=True
+                "NCAA Football team schedules are not yet supported.", ephemeral=True
             )
 
 
@@ -290,28 +299,28 @@ class TeamSeasonSelect(View):
     def _blend_colors(self, color1: str, color2: str, ratio: float) -> tuple:
         """
         Blend two hex colors based on a ratio.
-        
+
         Args:
             color1 (str): First hex color (e.g., "#FF0000")
             color2 (str): Second hex color (e.g., "#0000FF")
             ratio (float): Blend ratio (0.0 = color1, 1.0 = color2)
-        
+
         Returns:
             tuple: RGB color tuple
         """
         # Remove # from hex colors
-        color1 = color1.lstrip('#')
-        color2 = color2.lstrip('#')
-        
+        color1 = color1.lstrip("#")
+        color2 = color2.lstrip("#")
+
         # Convert hex to RGB
         r1, g1, b1 = int(color1[0:2], 16), int(color1[2:4], 16), int(color1[4:6], 16)
         r2, g2, b2 = int(color2[0:2], 16), int(color2[2:4], 16), int(color2[4:6], 16)
-        
+
         # Blend colors
         r = int(r1 + (r2 - r1) * ratio)
         g = int(g1 + (g2 - g1) * ratio)
         b = int(b1 + (b2 - b1) * ratio)
-        
+
         return (r, g, b)
 
     async def generate_team_season_image(
@@ -319,19 +328,19 @@ class TeamSeasonSelect(View):
     ):
         # Import team colors
         from bot.config.team_colors import get_team_colors
-        
+
         # Get team colors for background
         team_colors = get_team_colors(team_name, league)
         primary_color = team_colors["primary"]
         secondary_color = team_colors["secondary"]
-        
-        # Create a taller image to fit all 18 weeks
-        image = Image.new("RGB", (1200, 2400), color=primary_color)
+
+        # Create a more compact image to fit all 18 weeks
+        image = Image.new("RGB", (1200, 1800), color=primary_color)
         draw = ImageDraw.Draw(image)
 
         # Create gradient background using team colors
-        for y in range(2400):
-            progress = y / 2400
+        for y in range(1800):
+            progress = y / 1800
             # Blend from primary to secondary color
             color = self._blend_colors(primary_color, secondary_color, progress)
             draw.line([(0, y), (1200, y)], fill=color)
@@ -344,13 +353,13 @@ class TeamSeasonSelect(View):
             if os.path.exists(league_logo_path):
                 league_logo = Image.open(league_logo_path)
                 # Resize to be large and centered
-                league_logo = league_logo.resize((900, 900))
+                league_logo = league_logo.resize((800, 800))
                 # Create a more faded version for better text readability
                 faded_logo = league_logo.copy()
                 faded_logo.putalpha(20)  # Very transparent (20/255)
                 # Center the logo
-                x_offset = (1200 - 900) // 2
-                y_offset = (2400 - 900) // 2
+                x_offset = (1200 - 800) // 2
+                y_offset = (1800 - 800) // 2
                 image.paste(faded_logo, (x_offset, y_offset), faded_logo)
         except Exception as e:
             logger.warning(f"Could not load league logo background: {e}")
@@ -486,8 +495,8 @@ class TeamSeasonSelect(View):
             anchor="mm",
         )
 
-        # Add all games for the season with enhanced spacing and formatting (matching league schedule)
-        y_position = 350  # Start a bit lower to account for header
+        # Add all games for the season with compact spacing and formatting
+        y_position = 320  # Start a bit lower to account for header
         current_day = None
 
         for week_num in range(1, 19):  # Weeks 1-18
@@ -508,15 +517,17 @@ class TeamSeasonSelect(View):
                         font=text_font,
                         fill="#666666",
                     )
-                    y_position += 60
+                    y_position += 45
                 else:
-                    # Draw game details with new layout
+                    # Draw game details with compact layout
                     # Add subtle background for each game
-                    game_bg = Image.new("RGBA", (width - 180, 35), (240, 248, 255, 100))
-                    image.paste(game_bg, (90, y_position - 5), game_bg)
+                    game_bg = Image.new("RGBA", (width - 180, 30), (240, 248, 255, 100))
+                    image.paste(game_bg, (90, y_position - 3), game_bg)
 
                     # Team matchup in the middle
-                    draw.text((200, y_position), opponent, font=text_font, fill="#1a1a1a")
+                    draw.text(
+                        (200, y_position), opponent, font=text_font, fill="#1a1a1a"
+                    )
 
                     # Time and channel on the right side
                     time_text = f"{time} - {network}"
@@ -528,11 +539,16 @@ class TeamSeasonSelect(View):
                         fill="#2a4a6a",
                     )
 
-                    y_position += 40
+                    y_position += 30
 
                     # Add date underneath
-                    draw.text((200, y_position), f"{day}, {date}", font=small_font, fill="#666666")
-                    y_position += 30
+                    draw.text(
+                        (200, y_position),
+                        f"{day}, {date}",
+                        font=small_font,
+                        fill="#666666",
+                    )
+                    y_position += 25
 
                     # Add enhanced separator line between games - but not if we're near the bottom
                     if y_position < height - 50:
@@ -540,20 +556,22 @@ class TeamSeasonSelect(View):
                         for i in range(3):
                             alpha = 100 - (i * 30)
                             line_color = (100, 150, 200, alpha)
-                            line_overlay = Image.new("RGBA", (width - 200, 1), (0, 0, 0, 0))
+                            line_overlay = Image.new(
+                                "RGBA", (width - 200, 1), (0, 0, 0, 0)
+                            )
                             line_draw = ImageDraw.Draw(line_overlay)
                             line_draw.line(
                                 [(0, 0), (width - 200, 0)], fill=line_color, width=1
                             )
                             image.paste(
-                                line_overlay, (100, y_position - 5 + i), line_overlay
+                                line_overlay, (100, y_position - 3 + i), line_overlay
                             )
-                        y_position += 15
+                        y_position += 10
 
         # Add copyright watermark (matching league schedule)
         current_year = datetime.now().year
         draw.text(
-            (600, 2380),
+            (600, 1780),
             f"© Bet Tracking AI {current_year}",
             font=text_font,
             fill="#666666",

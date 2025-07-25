@@ -56,19 +56,19 @@ def internal_error(error):
 if __name__ == "__main__":
     # Get port from environment or use default
     port = int(os.getenv('WEBAPP_PORT', 25594))
-    
+
     # Ensure logs directory exists
     os.makedirs('logs', exist_ok=True)
-    
+
     logger.info(f"Starting Flask webapp on port {port}")
     logger.info(f"Environment: {app.config['ENV']}")
     logger.info(f"Debug mode: {app.config['DEBUG']}")
-    
+
     try:
         # Listen on all interfaces, on specified port
         app.run(
-            host="0.0.0.0", 
-            port=port, 
+            host="0.0.0.0",
+            port=port,
             debug=app.config['DEBUG'],
             use_reloader=False  # Disable reloader in production
         )
