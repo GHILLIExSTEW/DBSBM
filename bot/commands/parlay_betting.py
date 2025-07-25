@@ -410,7 +410,16 @@ class ParlayGameSelect(Select):
                     label=label[:100], value=value[:100], description=desc[:100]
                 )
             )
-        # Manual entry is already added by get_normalized_games_for_dropdown
+        
+        # If no actual games were found, add manual entry option to ensure dropdown has at least one option
+        if not game_options:
+            game_options.append(
+                SelectOption(
+                    label="Manual Entry", 
+                    value="manual", 
+                    description="Enter game details manually"
+                )
+            )
         super().__init__(
             placeholder="Select a game or choose Manual Entry",
             options=game_options,
