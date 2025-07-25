@@ -177,8 +177,31 @@ class PaginatedTeamSelect(View):
     async def team_callback(self, interaction: discord.Interaction):
         team_name = self.team_select.values[0]
         team_schedule = TEAM_SCHEDULES[team_name]
-        view = TeamSeasonSelect(team_name, team_schedule, self.cog)
-        await interaction.response.edit_message(content=f"Select schedule type for {team_name}:", view=view)
+        
+        # Generate team season schedule image directly
+        try:
+            view = TeamSeasonSelect(team_name, team_schedule, self.cog)
+            image_path = await view.generate_team_season_image(
+                interaction.guild, team_name, team_schedule, "NFL"
+            )
+
+            # Find member role and mention it
+            member_role = None
+            for role in interaction.guild.roles:
+                if "member" in role.name.lower() or "members" in role.name.lower():
+                    member_role = role
+                    break
+
+            mention_text = f"{member_role.mention} " if member_role else ""
+            await interaction.response.send_message(
+                f"{mention_text}Here's your season schedule!", file=discord.File(image_path)
+            )
+            os.remove(image_path)  # Clean up temp file
+        except Exception as e:
+            logger.error(f"Error generating team season image: {e}")
+            await interaction.response.send_message(
+                "Error generating team season image.", ephemeral=True
+            )
 
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary, row=1)
     async def previous(self, interaction: discord.Interaction, button: Button):
@@ -224,37 +247,6 @@ class TeamSeasonSelect(View):
         self.team_name = team_name
         self.team_schedule = team_schedule
         self.cog = cog
-
-    @discord.ui.select(
-        placeholder="Choose schedule type...",
-        options=[
-            discord.SelectOption(label="Full Season", value="season", description="View all games for the season"),
-        ],
-    )
-    async def season_callback(self, interaction: discord.Interaction, select: Select):
-        # Generate team season schedule image
-        try:
-            image_path = await self.generate_team_season_image(
-                interaction.guild, self.team_name, self.team_schedule, "NFL"
-            )
-
-            # Find member role and mention it
-            member_role = None
-            for role in interaction.guild.roles:
-                if "member" in role.name.lower() or "members" in role.name.lower():
-                    member_role = role
-                    break
-
-            mention_text = f"{member_role.mention} " if member_role else ""
-            await interaction.response.send_message(
-                f"{mention_text}Here's your season schedule!", file=discord.File(image_path)
-            )
-            os.remove(image_path)  # Clean up temp file
-        except Exception as e:
-            logger.error(f"Error generating team season image: {e}")
-            await interaction.response.send_message(
-                "Error generating team season image.", ephemeral=True
-            )
 
     async def generate_team_season_image(
         self, guild, team_name: str, team_schedule: dict, league="NFL"
@@ -440,76 +432,29 @@ class TeamSeasonSelect(View):
                 game_info = team_schedule[week_key]
                 day, date, opponent, time, network = game_info
 
-                # Add enhanced week header with gradient background (matching league schedule)
-                week_bg = Image.new("RGBA", (width - 160, 45), (80, 140, 200, 220))
-                image.paste(week_bg, (80, y_position - 10), week_bg)
-
-                # Add week text with shadow effect (matching league schedule)
+                # Add week designation on the left
                 week_text = f"Week {week_num}"
-                # Shadow
-                draw.text(
-                    (602, y_position + 10),
-                    week_text,
-                    font=text_font,
-                    fill="#2a4a6a",
-                    anchor="mm",
-                )
-                # Main text
-                draw.text(
-                    (600, y_position + 8),
-                    week_text,
-                    font=text_font,
-                    fill="#ffffff",
-                    anchor="mm",
-                )
-                y_position += 50
+                draw.text((80, y_position), week_text, font=text_font, fill="#ffffff")
 
                 if day == "BYE WEEK":
-                    # Draw bye week in different style (matching league schedule)
+                    # Draw bye week in different style
                     draw.text(
-                        (80, y_position),
+                        (200, y_position),
                         f"BYE WEEK: {opponent}",
                         font=text_font,
                         fill="#666666",
                     )
                     y_position += 60
                 else:
-                    # Group games by day with enhanced day headers (matching league schedule)
-                    if current_day != day:
-                        current_day = day
-                        # Add enhanced day separator with gradient background
-                        day_bg = Image.new("RGBA", (width - 160, 35), (100, 150, 200, 180))
-                        image.paste(day_bg, (80, y_position - 5), day_bg)
-
-                        # Add day text with shadow effect
-                        day_text = f"{day}, {date}"
-                        # Shadow
-                        draw.text(
-                            (602, y_position + 10),
-                            day_text,
-                            font=small_font,
-                            fill="#2a4a6a",
-                            anchor="mm",
-                        )
-                        # Main text
-                        draw.text(
-                            (600, y_position + 8),
-                            day_text,
-                            font=small_font,
-                            fill="#ffffff",
-                            anchor="mm",
-                        )
-                        y_position += 40
-
-                    # Draw game details with enhanced styling (matching league schedule)
+                    # Draw game details with new layout
                     # Add subtle background for each game
                     game_bg = Image.new("RGBA", (width - 180, 35), (240, 248, 255, 100))
                     image.paste(game_bg, (90, y_position - 5), game_bg)
 
-                    # Team matchup with enhanced styling
-                    draw.text((110, y_position), opponent, font=text_font, fill="#1a1a1a")
+                    # Team matchup in the middle
+                    draw.text((200, y_position), opponent, font=text_font, fill="#1a1a1a")
 
-                    # Time and channel on the right side with better contrast
+                    # Time and channel on the right side
                     time_text = f"{time} - {network}"
                     time_width = draw.textlength(time_text, font=time_font)
                     draw.text(
@@ -520,6 +465,10 @@ class TeamSeasonSelect(View):
                     )
 
                     y_position += 40
+
+                    # Add date underneath
+                    draw.text((200, y_position), f"{day}, {date}", font=small_font, fill="#666666")
+                    y_position += 30
 
                     # Add enhanced separator line between games - but not if we're near the bottom
                     if y_position < height - 50:

@@ -222,7 +222,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             placeholder="Over/Under X.X Rushing TDs",
             unit="touchdowns",
             min_value=0.0,
-            max_value=6.0,
+            max_value=12.0,
             decimal_places=1,
         ),
         "receiving_touchdowns": PropTemplate(
@@ -230,7 +230,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             placeholder="Over/Under X.X Receiving TDs",
             unit="touchdowns",
             min_value=0.0,
-            max_value=6.0,
+            max_value=12.0,
             decimal_places=1,
         ),
         "interceptions": PropTemplate(
@@ -238,7 +238,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             placeholder="Over/Under X.X INTs",
             unit="interceptions",
             min_value=0.0,
-            max_value=10.0,
+            max_value=20.0,
             decimal_places=1,
         ),
         "pass_attempts": PropTemplate(
