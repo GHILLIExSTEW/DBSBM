@@ -199,6 +199,25 @@ class PaginatedTeamSelect(View):
             await interaction.response.defer()
 
 
+class ScheduleTypeSelect(View):
+    def __init__(self, cog=None):
+        super().__init__(timeout=60)
+        self.cog = cog
+
+    @discord.ui.button(label="League Schedule", style=discord.ButtonStyle.primary)
+    async def league_schedule(self, interaction: discord.Interaction, button: Button):
+        view = LeagueSelect(self.cog)
+        await interaction.response.edit_message(content="Select a league:", view=view)
+
+    @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
+    async def team_schedule(self, interaction: discord.Interaction, button: Button):
+        view = PaginatedTeamSelect(self.cog, page=0)
+        try:
+            await interaction.response.edit_message(content="Select a team:", view=view)
+        except Exception:
+            await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
+
+
 class TeamWeekSelect(View):
     def __init__(self, team_name: str, team_schedule: dict, cog=None):
         super().__init__(timeout=60)
