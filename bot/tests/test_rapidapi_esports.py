@@ -5,10 +5,11 @@ Test script to verify RapidAPI esports integration.
 
 import asyncio
 import logging
-import pytest
-from datetime import datetime
-import sys
 import os
+import sys
+from datetime import datetime
+
+import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bot.utils.multi_provider_api import MultiProviderAPI

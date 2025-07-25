@@ -33,7 +33,7 @@ The parlay system allows users to create multi-leg bets by combining multiple ga
 ### Step 3: League Selection
 - **Component**: `LeagueSelect`
 - **Action**: User selects specific league within chosen sport
-- **Features**: 
+- **Features**:
   - Pagination for large league lists
   - Manual entry option
   - League name normalization
@@ -225,4 +225,4 @@ All 11 workflow steps have been tested and verified:
 The parlay system is **fully functional** and ready for production use. Users can create complex multi-leg parlays across all supported sports with a smooth, intuitive interface that generates professional bet slips and posts them to Discord channels.
 
 **Total Steps Verified**: 11/11 ✅
-**System Status**: **PRODUCTION READY** 🚀 
+**System Status**: **PRODUCTION READY** 🚀

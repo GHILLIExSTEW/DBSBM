@@ -3,10 +3,10 @@ Environment validation utility for DBSBM.
 Validates all required environment variables and provides helpful error messages.
 """
 
+import logging
 import os
 import sys
 from typing import Dict, List, Optional, Tuple
-import logging
 
 logger = logging.getLogger(__name__)
 

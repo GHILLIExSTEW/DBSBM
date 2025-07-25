@@ -4,14 +4,14 @@ League Logo Downloader for Golf, Tennis, and F1
 Downloads league logos from API-Sports API and saves them in the correct directory structure.
 """
 
-import os
-import sys
 import asyncio
 import logging
+import os
+import sys
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
 from io import BytesIO
+from typing import Dict, List, Optional
 
 import aiohttp
 from PIL import Image, UnidentifiedImageError
@@ -19,9 +19,10 @@ from PIL import Image, UnidentifiedImageError
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from bot.config.leagues import LEAGUE_CONFIG
-from bot.config.asset_paths import get_sport_category_for_path
 from dotenv import load_dotenv
+
+from bot.config.asset_paths import get_sport_category_for_path
+from bot.config.leagues import LEAGUE_CONFIG
 
 # Load environment variables
 load_dotenv()

@@ -3,7 +3,7 @@
 -- =========================
 
 -- Ensure guild_settings table has all necessary columns for Platinum tier
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS subscription_level VARCHAR(20) DEFAULT 'free',
 ADD COLUMN IF NOT EXISTS authorized_role_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_features_enabled BOOLEAN DEFAULT FALSE,
@@ -20,7 +20,7 @@ ADD COLUMN IF NOT EXISTS real_time_alerts_enabled BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS data_export_enabled BOOLEAN DEFAULT FALSE;
 
 -- Add Platinum-specific limits
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS max_embed_channels_platinum INTEGER DEFAULT 5,
 ADD COLUMN IF NOT EXISTS max_command_channels_platinum INTEGER DEFAULT 5,
 ADD COLUMN IF NOT EXISTS max_active_bets_platinum INTEGER DEFAULT 100,
@@ -29,7 +29,7 @@ ADD COLUMN IF NOT EXISTS max_webhooks_platinum INTEGER DEFAULT 10,
 ADD COLUMN IF NOT EXISTS max_data_exports_platinum INTEGER DEFAULT 50;
 
 -- Add Platinum channel configuration
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS platinum_webhook_channel_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_analytics_channel_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_export_channel_id BIGINT NULL,
@@ -153,11 +153,11 @@ CREATE INDEX IF NOT EXISTS idx_guild_platinum_enabled ON guild_settings(platinum
 -- Insert default Platinum features for existing premium guilds
 INSERT IGNORE INTO platinum_features (guild_id, advanced_analytics, custom_branding, api_integration, priority_support, custom_commands, advanced_reporting, multi_guild_sync, webhook_integration, custom_embeds, real_time_alerts, data_export)
 SELECT guild_id, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE
-FROM guild_settings 
+FROM guild_settings
 WHERE subscription_level = 'premium' AND is_paid = 1;
 
 -- Update guild_settings to enable Platinum features for premium guilds
-UPDATE guild_settings 
+UPDATE guild_settings
 SET platinum_features_enabled = TRUE,
     custom_branding_enabled = TRUE,
     advanced_analytics_enabled = TRUE,
@@ -170,4 +170,4 @@ SET platinum_features_enabled = TRUE,
     custom_embeds_enabled = TRUE,
     real_time_alerts_enabled = TRUE,
     data_export_enabled = TRUE
-WHERE subscription_level = 'premium' AND is_paid = 1; 
+WHERE subscription_level = 'premium' AND is_paid = 1;

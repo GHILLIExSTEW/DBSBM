@@ -1,7 +1,8 @@
 import logging
-import discord
 from datetime import datetime
 from typing import Dict
+
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class CommunityAnalyticsService:
         """Get community health metrics."""
         try:
             query = """
-                SELECT 
+                SELECT
                     metric_type,
                     AVG(metric_value) as avg_value,
                     MAX(metric_value) as max_value,
@@ -83,7 +84,7 @@ class CommunityAnalyticsService:
                     COUNT(*) as data_points,
                     SUM(metric_value) as total_value
                 FROM community_metrics
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 GROUP BY metric_type
                 ORDER BY avg_value DESC
@@ -120,7 +121,7 @@ class CommunityAnalyticsService:
             query = """
                 INSERT INTO user_metrics (guild_id, user_id, metric_type, metric_value, recorded_at)
                 VALUES (%s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE 
+                ON DUPLICATE KEY UPDATE
                 metric_value = metric_value + VALUES(metric_value),
                 recorded_at = VALUES(recorded_at)
             """
@@ -221,12 +222,37 @@ class CommunityAnalyticsService:
             if not user:
                 return
 
-            # Find a channel to send the notification
-            channel = discord.utils.get(guild.channels, name="general-chat")
+            # Get main chat channel from guild settings
+            guild_settings = await self.db_manager.fetch_one(
+                "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = %s",
+                (guild_id,)
+            )
+
+            channel = None
+            if guild_settings and guild_settings.get("main_chat_channel_id"):
+                # Use the configured main chat channel
+                channel = self.bot.get_channel(guild_settings["main_chat_channel_id"])
+                logger.info(f"Using configured main chat channel {guild_settings['main_chat_channel_id']} for achievement notification")
+
             if not channel:
+                # Fallback: try to find channel by name "main-chat"
+                channel = discord.utils.get(guild.channels, name="main-chat")
+                if channel:
+                    logger.info("Using 'main-chat' channel for achievement notification")
+
+            if not channel:
+                # Fallback: try to find channel by name "general-chat"
+                channel = discord.utils.get(guild.channels, name="general-chat")
+                if channel:
+                    logger.info("Using 'general-chat' channel for achievement notification")
+
+            if not channel:
+                # Final fallback: use first text channel
                 channel = discord.utils.get(
                     guild.channels, type=discord.ChannelType.text
                 )
+                if channel:
+                    logger.info(f"Using fallback text channel {channel.name} for achievement notification")
 
             if channel:
                 embed = discord.Embed(
@@ -244,6 +270,10 @@ class CommunityAnalyticsService:
                 embed.set_thumbnail(url=user.display_avatar.url)
 
                 await channel.send(embed=embed)
+                logger.info(f"Sent achievement notification to channel {channel.name} for user {user_id}")
+
+            else:
+                logger.warning(f"Could not find any suitable channel for achievement notification in guild {guild_id}")
 
         except Exception as e:
             logger.error(f"Failed to notify achievement: {e}")
@@ -269,7 +299,7 @@ class CommunityAnalyticsService:
         try:
             if category == "reactions":
                 query = """
-                    SELECT 
+                    SELECT
                         br.user_id,
                         COUNT(*) as reaction_count,
                         COUNT(DISTINCT br.bet_serial) as bets_reacted_to
@@ -288,7 +318,7 @@ class CommunityAnalyticsService:
 
             elif category == "achievements":
                 query = """
-                    SELECT 
+                    SELECT
                         user_id,
                         COUNT(*) as achievement_count
                     FROM community_achievements
@@ -305,11 +335,11 @@ class CommunityAnalyticsService:
 
             elif category == "helpful":
                 query = """
-                    SELECT 
+                    SELECT
                         user_id,
                         SUM(metric_value) as helpful_score
                     FROM user_metrics
-                    WHERE guild_id = %s 
+                    WHERE guild_id = %s
                     AND metric_type IN ('help_requests_answered', 'encouragements_given', 'thanks_received')
                     GROUP BY user_id
                     ORDER BY helpful_score DESC
@@ -342,7 +372,7 @@ class CommunityAnalyticsService:
             query = """
                 SELECT user_id, achievement_name, earned_at
                 FROM community_achievements
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 ORDER BY earned_at DESC
                 LIMIT 10
@@ -423,68 +453,90 @@ class CommunityAnalyticsService:
         """Get comprehensive community statistics from real data."""
         try:
             stats = {}
-            
+
             # Get total reactions from bet_reactions table (join with bets to get guild_id)
             reactions_query = """
                 SELECT COUNT(*) as total_reactions
                 FROM bet_reactions br
                 JOIN bets b ON br.bet_serial = b.bet_serial
-                WHERE b.guild_id = %s 
+                WHERE b.guild_id = %s
                 AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            reactions_result = await self.db_manager.fetch_one(reactions_query, (guild_id, days))
-            stats["total_reactions"] = reactions_result["total_reactions"] if reactions_result else 0
-            
+            reactions_result = await self.db_manager.fetch_one(
+                reactions_query, (guild_id, days)
+            )
+            stats["total_reactions"] = (
+                reactions_result["total_reactions"] if reactions_result else 0
+            )
+
             # Get total achievements earned
             achievements_query = """
                 SELECT COUNT(*) as total_achievements
                 FROM community_achievements
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            achievements_result = await self.db_manager.fetch_one(achievements_query, (guild_id, days))
-            stats["total_achievements"] = achievements_result["total_achievements"] if achievements_result else 0
-            
+            achievements_result = await self.db_manager.fetch_one(
+                achievements_query, (guild_id, days)
+            )
+            stats["total_achievements"] = (
+                achievements_result["total_achievements"] if achievements_result else 0
+            )
+
             # Get active users (users who have used community commands or reacted to bets)
             active_users_query = """
                 SELECT COUNT(DISTINCT user_id) as active_users
                 FROM (
-                    SELECT user_id FROM user_metrics 
-                    WHERE guild_id = %s 
+                    SELECT user_id FROM user_metrics
+                    WHERE guild_id = %s
                     AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                     UNION
                     SELECT br.user_id FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s 
+                    WHERE b.guild_id = %s
                     AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 ) as active_users
             """
-            active_users_result = await self.db_manager.fetch_one(active_users_query, (guild_id, days, guild_id, days))
-            stats["active_users"] = active_users_result["active_users"] if active_users_result else 0
-            
+            active_users_result = await self.db_manager.fetch_one(
+                active_users_query, (guild_id, days, guild_id, days)
+            )
+            stats["active_users"] = (
+                active_users_result["active_users"] if active_users_result else 0
+            )
+
             # Get community commands used
             commands_query = """
                 SELECT SUM(metric_value) as community_commands
                 FROM community_metrics
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND metric_type LIKE %s
                 AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            commands_result = await self.db_manager.fetch_one(commands_query, (guild_id, 'command_%', days))
-            stats["community_commands"] = int(commands_result["community_commands"]) if commands_result and commands_result["community_commands"] else 0
-            
+            commands_result = await self.db_manager.fetch_one(
+                commands_query, (guild_id, "command_%", days)
+            )
+            stats["community_commands"] = (
+                int(commands_result["community_commands"])
+                if commands_result and commands_result["community_commands"]
+                else 0
+            )
+
             # Get events participated
             events_query = """
                 SELECT COUNT(*) as events_participated
                 FROM community_events
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            events_result = await self.db_manager.fetch_one(events_query, (guild_id, days))
-            stats["events_participated"] = events_result["events_participated"] if events_result else 0
-            
+            events_result = await self.db_manager.fetch_one(
+                events_query, (guild_id, days)
+            )
+            stats["events_participated"] = (
+                events_result["events_participated"] if events_result else 0
+            )
+
             return stats
-            
+
         except Exception as e:
             logger.error(f"Failed to get comprehensive community stats: {e}")
             return {

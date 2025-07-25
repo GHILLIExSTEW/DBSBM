@@ -34,10 +34,10 @@ class VoiceChannelUpdater:
                                 FROM bets
                                 WHERE bet_serial = ?
                                 """,
-                                (bet_serial,)
+                                (bet_serial,),
                             ) as cursor:
                                 bet_info = await cursor.fetchone()
-                        
+
                         if bet_info:
                             message_id, channel_id = bet_info
                             # Attempt to reinitialize reaction monitoring
@@ -47,7 +47,9 @@ class VoiceChannelUpdater:
                                 f"in channel {channel_id}, message {message_id}"
                             )
                         else:
-                            logger.warning(f"Could not find message info for bet {bet_serial}")
+                            logger.warning(
+                                f"Could not find message info for bet {bet_serial}"
+                            )
                     except Exception as e:
                         logger.error(f"Error reinitializing bet {bet_serial}: {str(e)}")
         except Exception as e:

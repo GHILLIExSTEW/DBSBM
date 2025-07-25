@@ -2,9 +2,9 @@
 
 ## Issue Summary
 
-**Date**: December 2024  
-**Error**: `ImportError: cannot import name 'get_league_id' from 'bot.config.leagues'`  
-**Location**: `bot/utils/fetcher.py` line 8  
+**Date**: December 2024
+**Error**: `ImportError: cannot import name 'get_league_id' from 'bot.config.leagues'`
+**Location**: `bot/utils/fetcher.py` line 8
 **Impact**: Fetcher process crashes on startup, preventing game data fetching
 
 ## Root Cause Analysis
@@ -23,7 +23,7 @@ from bot.config.leagues import LEAGUE_CONFIG, get_league_id, is_league_in_season
 ### **Available Functions**
 The `bot.config.leagues` module only contains:
 - `LEAGUE_CONFIG` (dictionary)
-- `get_current_season(league: str)` 
+- `get_current_season(league: str)`
 - `get_auto_season_year(league: str)`
 - `fetch_league_id(league_name, country_id, season, host, api_key)`
 
@@ -102,6 +102,6 @@ The fix successfully resolved the fetcher import error by removing references to
 
 ---
 
-**Status**: ✅ **FIXED - PRODUCTION READY**  
-**Date**: December 2024  
-**Test Status**: 84/84 passing (100% maintained) 
+**Status**: ✅ **FIXED - PRODUCTION READY**
+**Date**: December 2024
+**Test Status**: 84/84 passing (100% maintained)

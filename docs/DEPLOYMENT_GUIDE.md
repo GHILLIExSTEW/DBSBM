@@ -526,10 +526,10 @@ grep "performance" logs/bot.log
 
 ```sql
 -- Check database size
-SELECT 
+SELECT
     table_schema AS 'Database',
     ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'Size (MB)'
-FROM information_schema.tables 
+FROM information_schema.tables
 WHERE table_schema = 'betting_bot'
 GROUP BY table_schema;
 
@@ -596,18 +596,18 @@ from bot.utils.error_handler import get_error_handler
 async def health_check():
     monitor = get_performance_monitor()
     handler = get_error_handler()
-    
+
     # Check system health
     health = await monitor.check_system_health()
-    
+
     # Check error rates
     error_summary = handler.get_error_summary()
-    
+
     # Send alert if issues detected
     if health['status'] == 'critical' or error_summary['total_errors'] > 10:
         # Send notification
         pass
-    
+
     return health['status'] == 'healthy'
 
 if __name__ == "__main__":
@@ -865,4 +865,4 @@ start_http_server(8000)
 
 This deployment guide covers the essential steps to deploy and maintain the DBSBM system. Follow the security best practices and monitor the system regularly to ensure optimal performance and reliability.
 
-For additional support, refer to the documentation or contact the development team. 
+For additional support, refer to the documentation or contact the development team.

@@ -128,11 +128,11 @@ WHERE guild_id = %s AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
 
 ### **Testing Results:**
 
-✅ **All hardcoded values removed**  
-✅ **Real data queries working**  
-✅ **Database joins functioning correctly**  
-✅ **SQL formatting issues resolved**  
-✅ **Community statistics now reflect actual usage**  
+✅ **All hardcoded values removed**
+✅ **Real data queries working**
+✅ **Database joins functioning correctly**
+✅ **SQL formatting issues resolved**
+✅ **Community statistics now reflect actual usage**
 
 ### **Impact:**
 
@@ -151,7 +151,7 @@ WHERE guild_id = %s AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
 
 1. **`bot/commands/community_leaderboard.py`**
    - Updated `get_community_stats()` method
-   - Updated `get_leaderboard_data()` method  
+   - Updated `get_leaderboard_data()` method
    - Updated `get_user_achievements()` method
    - Added `_get_basic_community_stats()` fallback method
 
@@ -171,6 +171,6 @@ The implementation was tested and verified to:
 
 ---
 
-**Status: ✅ COMPLETE**  
-**All community features now use real data from the database!**  
-**Date: July 24, 2025** 
+**Status: ✅ COMPLETE**
+**All community features now use real data from the database!**
+**Date: July 24, 2025**

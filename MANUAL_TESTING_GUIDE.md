@@ -18,7 +18,7 @@
 # Test /discuss command
 /discuss "NFL Season" "Who do you think will win the Super Bowl this year?"
 
-# Expected Result: 
+# Expected Result:
 # - Embed with green color
 # - Title: "💬 Community Discussion: NFL Season"
 # - Description: "Who do you think will win the Super Bowl this year?"
@@ -204,7 +204,7 @@ Bot Version: [Version]
 
 Commands Tested:
 - [ ] /discuss
-- [ ] /funfact  
+- [ ] /funfact
 - [ ] /celebrate
 - [ ] /encourage
 - [ ] /help_community
@@ -235,4 +235,4 @@ python test_community_engagement.py
 
 Then follow this manual testing guide to verify the Discord commands work correctly in your server.
 
-**Happy Testing! 🎉** 
+**Happy Testing! 🎉**

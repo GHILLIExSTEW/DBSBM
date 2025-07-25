@@ -301,10 +301,9 @@ class PlayerPropImageGenerator:
         if league_logo:
             logo_y = block_y + (block_h - logo_h) // 2
             text_y = block_y + (block_h - header_h) // 2
-            # Use alpha channel as mask for proper transparency
+            # Use RGBA image as mask for proper transparency
             if league_logo.mode == 'RGBA':
-                alpha = league_logo.split()[-1]
-                image.paste(league_logo, (block_x, logo_y), alpha)
+                image.paste(league_logo, (block_x, logo_y), league_logo)
             else:
                 image.paste(league_logo, (block_x, logo_y))
             text_x = block_x + logo_w + gap
@@ -330,10 +329,9 @@ class PlayerPropImageGenerator:
             team_logo_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
             team_logo_x = int(team_section_center_x - team_logo_copy.size[0] // 2)
             team_logo_y = int(y_base + (logo_size[1] - team_logo_copy.size[1]) // 2)
-            # Use alpha channel as mask for proper transparency
+            # Use RGBA image as mask for proper transparency
             if team_logo_copy.mode == 'RGBA':
-                alpha = team_logo_copy.split()[-1]
-                image.paste(team_logo_copy, (team_logo_x, team_logo_y), alpha)
+                image.paste(team_logo_copy, (team_logo_x, team_logo_y), team_logo_copy)
             else:
                 image.paste(team_logo_copy, (team_logo_x, team_logo_y))
 
@@ -346,10 +344,9 @@ class PlayerPropImageGenerator:
             player_image_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
             player_image_x = int(player_section_center_x - player_image_copy.size[0] // 2)
             player_image_y = int(y_base + (logo_size[1] - player_image_copy.size[1]) // 2)
-            # Use alpha channel as mask for proper transparency
+            # Use RGBA image as mask for proper transparency
             if player_image_copy.mode == 'RGBA':
-                alpha = player_image_copy.split()[-1]
-                image.paste(player_image_copy, (player_image_x, player_image_y), alpha)
+                image.paste(player_image_copy, (player_image_x, player_image_y), player_image_copy)
             else:
                 image.paste(player_image_copy, (player_image_x, player_image_y), player_image_copy)
 
@@ -378,11 +375,13 @@ class PlayerPropImageGenerator:
         )
 
         # Remove prop_acronyms and use full, capitalized prop type
-        prop_full = prop_type.replace('_', ' ').title()
+        prop_full = prop_type.replace("_", " ").title()
         # Combine line and prop type for display
         line_and_prop = f"{line} {prop_full}"
         line_and_prop_w, line_and_prop_h = font_line.getbbox(line_and_prop)[2:]
-        line_and_prop_y = team_name_y + 40  # Increased from 16 to 40 for more vertical space
+        line_and_prop_y = (
+            team_name_y + 40
+        )  # Increased from 16 to 40 for more vertical space
         draw.text(
             ((image_width - line_and_prop_w) // 2, line_and_prop_y),
             line_and_prop,
@@ -461,10 +460,9 @@ class PlayerPropImageGenerator:
         except Exception:
             lock_icon = None
         if lock_icon:
-            # Use alpha channel as mask for proper transparency
+            # Use RGBA image as mask for proper transparency
             if lock_icon.mode == 'RGBA':
-                alpha = lock_icon.split()[-1]
-                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), alpha)
+                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon)
             else:
                 image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y))
             draw.text(
@@ -474,10 +472,9 @@ class PlayerPropImageGenerator:
                 fill="#FFD700",
                 anchor="lt",
             )
-            # Use alpha channel as mask for proper transparency
+            # Use RGBA image as mask for proper transparency
             if lock_icon.mode == 'RGBA':
-                alpha = lock_icon.split()[-1]
-                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), alpha)
+                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), lock_icon)
             else:
                 image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y))
         else:
@@ -492,18 +489,18 @@ class PlayerPropImageGenerator:
         # Footer (bet id and timestamp) - moved down to avoid overlap
         footer_padding = 25  # Increased from 12 to 25
         footer_y = image_height - footer_padding - font_footer.size
-        
+
         # Add extra spacing from the content above
         content_bottom = payout_y + payout_h + 20  # Add 20px spacing after payout text
         if footer_y < content_bottom + 30:  # Ensure at least 30px gap
             footer_y = content_bottom + 30
-        
+
         # Ensure bet_id is properly formatted
         if bet_id and str(bet_id).strip():
             bet_id_text = f"Bet #{str(bet_id).strip()}"
         else:
             bet_id_text = ""
-            
+
         if timestamp:
             if isinstance(timestamp, str):
                 timestamp_text = timestamp
@@ -511,11 +508,13 @@ class PlayerPropImageGenerator:
                 timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC")
         else:
             timestamp_text = ""
-            
+
         # Draw bet ID bottom left
         if bet_id_text:
-            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
-            
+            draw.text(
+                (padding, footer_y), bet_id_text, font=font_footer, fill="#888888"
+            )
+
         # Draw timestamp bottom right
         if timestamp_text:
             ts_bbox = font_footer.getbbox(timestamp_text)

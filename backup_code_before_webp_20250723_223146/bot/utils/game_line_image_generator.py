@@ -142,6 +142,8 @@ class GameLineImageGenerator:
         """Generates a game line bet slip image."""
         import os
 
+        from PIL import Image, ImageDraw, ImageFont
+
         from bot.config.asset_paths import get_sport_category_for_path
         from bot.config.image_settings import (
             BACKGROUND_COLOR,
@@ -157,7 +159,6 @@ class GameLineImageGenerator:
             TEAM_FONT_SIZE,
             VS_FONT_SIZE,
         )
-        from PIL import Image, ImageDraw, ImageFont
 
         image_width, image_height = IMAGE_WIDTH, IMAGE_HEIGHT
         bg_color = BACKGROUND_COLOR
@@ -264,7 +265,7 @@ class GameLineImageGenerator:
         else:
             # If not found in LEAGUE_CONFIG, the league might already be a display name
             league_display_name = league
-            
+
         logger.info(
             f"[IMAGE GENERATOR] League: {league}, Display name: {league_display_name}"
         )
@@ -356,8 +357,9 @@ class GameLineImageGenerator:
         # Special handling for manual entry and darts logos
         if league.upper() == "MANUAL":
             # For manual entry, use default logos
-            from PIL import Image
             import os
+
+            from PIL import Image
 
             default_logo_path = "bot/static/logos/default_image.webp"
             if os.path.exists(default_logo_path):
@@ -373,9 +375,13 @@ class GameLineImageGenerator:
                 image.paste(
                     default_logo_resized, (away_logo_x, y_base), default_logo_resized
                 )
-        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
-            from PIL import Image
+        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(
+            sport in league.lower()
+            for sport in ["darts", "tennis", "golf", "f1", "formula"]
+        ):
             import os
+
+            from PIL import Image
 
             # Determine sport type for logo selection
             sport = "darts"  # default
@@ -599,19 +605,21 @@ class GameLineImageGenerator:
         # Footer (bet id and timestamp)
         footer_padding = 12
         footer_y = image_height - footer_padding - font_footer.size
-        
+
         # Ensure bet_id is properly formatted
         if bet_id and str(bet_id).strip():
             bet_id_text = f"Bet #{str(bet_id).strip()}"
         else:
             bet_id_text = ""
-            
+
         timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC") if timestamp else ""
-        
+
         # Draw bet ID bottom left
         if bet_id_text:
-            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
-            
+            draw.text(
+                (padding, footer_y), bet_id_text, font=font_footer, fill="#888888"
+            )
+
         # Draw timestamp bottom right
         if timestamp_text:
             ts_bbox = font_footer.getbbox(timestamp_text)
@@ -753,9 +761,11 @@ class GameLineImageGenerator:
         return y_base + text_y_offset + 50  # Return y position for next section
 
     def _load_team_logo(self, team_name: str, league: str):
-        from bot.utils.asset_loader import asset_loader
-        from PIL import Image
         import os
+
+        from PIL import Image
+
+        from bot.utils.asset_loader import asset_loader
 
         # Special handling for manual entry
         if league.upper() == "MANUAL":
@@ -766,7 +776,10 @@ class GameLineImageGenerator:
                 logger.warning(f"Default logo not found at {default_logo_path}")
                 return None
         # Special handling for individual sports - use specific logos
-        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
+        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(
+            sport in league.lower()
+            for sport in ["darts", "tennis", "golf", "f1", "formula"]
+        ):
             # Determine sport type for logo selection
             sport = "darts"  # default
             if "tennis" in league.lower():
@@ -784,7 +797,9 @@ class GameLineImageGenerator:
             if os.path.exists(sport_all_path):
                 return Image.open(sport_all_path)
             else:
-                logger.warning(f"{sport.capitalize()} logo not found at {sport_all_path}")
+                logger.warning(
+                    f"{sport.capitalize()} logo not found at {sport_all_path}"
+                )
                 return asset_loader.load_team_logo(
                     team_name, league, getattr(self, "guild_id", None)
                 )

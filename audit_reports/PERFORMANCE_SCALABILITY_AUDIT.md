@@ -145,9 +145,9 @@ class APISportsRateLimiter:
 # bot/services/bet_service.py
 async def get_user_bets(self, guild_id: int, user_id: int, limit: int = 50):
     query = """
-        SELECT * FROM bets 
-        WHERE guild_id = %s AND user_id = %s 
-        ORDER BY created_at DESC 
+        SELECT * FROM bets
+        WHERE guild_id = %s AND user_id = %s
+        ORDER BY created_at DESC
         LIMIT %s
     """
 ```
@@ -406,4 +406,4 @@ The system is well-positioned for scaling with the recommended optimizations imp
 
 ---
 
-*This performance audit was conducted using code analysis and architectural review. For questions or clarifications, please contact the performance team.* 
+*This performance audit was conducted using code analysis and architectural review. For questions or clarifications, please contact the performance team.*

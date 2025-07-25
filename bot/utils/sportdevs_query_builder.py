@@ -3,7 +3,7 @@ SportDevs Query Builder
 Implements the SportDevs endpoint query syntax for building API requests.
 """
 
-from typing import List, Optional, Union, Callable
+from typing import Callable, List, Optional, Union
 from urllib.parse import urlencode
 
 

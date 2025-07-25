@@ -341,19 +341,25 @@ class StatsImageGenerator:
                             )
                             if os.path.exists(alt_path):
                                 profile_img = Image.open(alt_path).convert("RGBA")
-                                profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                                logger.info(f"Loaded guild default image from: {alt_path}")
+                                profile_img.thumbnail(
+                                    (500, 500), Image.Resampling.LANCZOS
+                                )
+                                logger.info(
+                                    f"Loaded guild default image from: {alt_path}"
+                                )
                                 break
                 except Exception as e:
                     logger.warning(f"Failed to load guild default image: {e}")
-            
+
             # Final fallback: If still no image, try a generic default
             if profile_img is None:
                 try:
                     # Try to find a generic default image in the static directory
                     generic_paths = [
                         os.path.join(base_dir, "static", "images", "default_user.png"),
-                        os.path.join(base_dir, "static", "images", "default_avatar.png"),
+                        os.path.join(
+                            base_dir, "static", "images", "default_avatar.png"
+                        ),
                         os.path.join(base_dir, "static", "default_logo.png"),
                         os.path.join(base_dir, "static", "images", "default_logo.png"),
                     ]
@@ -361,7 +367,9 @@ class StatsImageGenerator:
                         if os.path.exists(generic_path):
                             profile_img = Image.open(generic_path).convert("RGBA")
                             profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                            logger.info(f"Loaded generic default image from: {generic_path}")
+                            logger.info(
+                                f"Loaded generic default image from: {generic_path}"
+                            )
                             break
                 except Exception as e:
                     logger.warning(f"Failed to load generic default image: {e}")
@@ -387,9 +395,13 @@ class StatsImageGenerator:
                     )
                 )
                 profile_img_circle = make_rounded_feathered(profile_img)
-                logger.info(f"Using profile image for {username} (size: {profile_img.size})")
+                logger.info(
+                    f"Using profile image for {username} (size: {profile_img.size})"
+                )
             else:
-                logger.info(f"No profile image available for {username}, will use text-only display")
+                logger.info(
+                    f"No profile image available for {username}, will use text-only display"
+                )
 
             # --- Flashy Background ---
             # Create a gradient background for the figure

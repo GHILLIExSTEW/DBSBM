@@ -2,18 +2,20 @@
 Tests for the performance monitoring utility.
 """
 
-import pytest
 import asyncio
 import time
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from bot.utils.performance_monitor import (
-    PerformanceMonitor,
-    PerformanceMetric,
     HealthCheck,
+    PerformanceMetric,
+    PerformanceMonitor,
+    _global_monitor,
     get_performance_monitor,
     monitor_performance,
-    _global_monitor,
 )
 
 

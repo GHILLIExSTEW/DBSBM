@@ -3,7 +3,10 @@ Utility module for converting relative image paths to absolute URLs for Discord 
 """
 
 import os
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def convert_image_path_to_url(image_path: str) -> Optional[str]:
@@ -17,10 +20,14 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
         Absolute URL or None if conversion fails
     """
     if not image_path:
+        logger.debug("convert_image_path_to_url: Empty image_path provided")
         return None
+
+    logger.debug(f"convert_image_path_to_url: Converting path: {image_path}")
 
     # If it's already an absolute URL, return as is
     if image_path.startswith(("http://", "https://")):
+        logger.debug(f"convert_image_path_to_url: Already absolute URL: {image_path}")
         return image_path
 
     # If it's a relative path starting with /static/, convert to absolute URL
@@ -30,11 +37,16 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
 
         # Remove leading slash and construct full URL
         relative_path = image_path.lstrip("/")
-        return f"{web_server_url}/{relative_path}"
+        full_url = f"{web_server_url}/{relative_path}"
+        logger.debug(f"convert_image_path_to_url: Converted to: {full_url}")
+        return full_url
 
     # If it's a relative path without /static/, assume it's relative to static
     if not image_path.startswith("/"):
         web_server_url = os.getenv("WEB_SERVER_URL", "http://51.79.105.168:25594")
-        return f"{web_server_url}/static/{image_path}"
+        full_url = f"{web_server_url}/static/{image_path}"
+        logger.debug(f"convert_image_path_to_url: Converted to: {full_url}")
+        return full_url
 
+    logger.warning(f"convert_image_path_to_url: Could not convert path: {image_path}")
     return None

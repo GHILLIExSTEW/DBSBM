@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from zoneinfo import ZoneInfo
 
-from bot.config.leagues import LEAGUE_CONFIG
 from dateutil import parser
 from dotenv import load_dotenv
+
+from bot.config.leagues import LEAGUE_CONFIG
 
 # Load environment variables
 load_dotenv()

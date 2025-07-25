@@ -334,8 +334,12 @@ class PlayerPropImageGenerator:
         if player_image:
             player_image_copy = player_image.convert("RGBA").copy()
             player_image_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
-            player_image_x = int(player_section_center_x - player_image_copy.size[0] // 2)
-            player_image_y = int(y_base + (logo_size[1] - player_image_copy.size[1]) // 2)
+            player_image_x = int(
+                player_section_center_x - player_image_copy.size[0] // 2
+            )
+            player_image_y = int(
+                y_base + (logo_size[1] - player_image_copy.size[1]) // 2
+            )
             image.paste(
                 player_image_copy, (player_image_x, player_image_y), player_image_copy
             )
@@ -365,11 +369,13 @@ class PlayerPropImageGenerator:
         )
 
         # Remove prop_acronyms and use full, capitalized prop type
-        prop_full = prop_type.replace('_', ' ').title()
+        prop_full = prop_type.replace("_", " ").title()
         # Combine line and prop type for display
         line_and_prop = f"{line} {prop_full}"
         line_and_prop_w, line_and_prop_h = font_line.getbbox(line_and_prop)[2:]
-        line_and_prop_y = team_name_y + 40  # Increased from 16 to 40 for more vertical space
+        line_and_prop_y = (
+            team_name_y + 40
+        )  # Increased from 16 to 40 for more vertical space
         draw.text(
             ((image_width - line_and_prop_w) // 2, line_and_prop_y),
             line_and_prop,
@@ -472,18 +478,18 @@ class PlayerPropImageGenerator:
         # Footer (bet id and timestamp) - moved down to avoid overlap
         footer_padding = 25  # Increased from 12 to 25
         footer_y = image_height - footer_padding - font_footer.size
-        
+
         # Add extra spacing from the content above
         content_bottom = payout_y + payout_h + 20  # Add 20px spacing after payout text
         if footer_y < content_bottom + 30:  # Ensure at least 30px gap
             footer_y = content_bottom + 30
-        
+
         # Ensure bet_id is properly formatted
         if bet_id and str(bet_id).strip():
             bet_id_text = f"Bet #{str(bet_id).strip()}"
         else:
             bet_id_text = ""
-            
+
         if timestamp:
             if isinstance(timestamp, str):
                 timestamp_text = timestamp
@@ -491,11 +497,13 @@ class PlayerPropImageGenerator:
                 timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC")
         else:
             timestamp_text = ""
-            
+
         # Draw bet ID bottom left
         if bet_id_text:
-            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
-            
+            draw.text(
+                (padding, footer_y), bet_id_text, font=font_footer, fill="#888888"
+            )
+
         # Draw timestamp bottom right
         if timestamp_text:
             ts_bbox = font_footer.getbbox(timestamp_text)

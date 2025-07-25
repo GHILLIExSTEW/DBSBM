@@ -158,12 +158,14 @@ class AssetLoader:
             # UFC fighters are stored in FIGHTING/UFC directory
             ufc_logo_dir = os.path.join(self.logos_dir, "teams", "FIGHTING", "UFC")
             ufc_logo_path = os.path.join(ufc_logo_dir, f"{filename_team}.webp")
-            
+
             if os.path.exists(ufc_logo_path):
                 logger.info(f"Found UFC fighter logo: {ufc_logo_path}")
                 return self.load_image(ufc_logo_path)
             else:
-                logger.warning(f"No UFC fighter logo found for '{team_name}' at {ufc_logo_path}")
+                logger.warning(
+                    f"No UFC fighter logo found for '{team_name}' at {ufc_logo_path}"
+                )
                 return self._load_fallback_logo(guild_id)
 
         sport = get_sport_category_for_path(league.upper())
@@ -410,7 +412,10 @@ class AssetLoader:
             ),
             # Try without sport subdirectory
             os.path.join(
-                self.logos_dir, "leagues", league_code.upper(), f"{normalized_name}.webp"
+                self.logos_dir,
+                "leagues",
+                league_code.upper(),
+                f"{normalized_name}.webp",
             ),
             os.path.join(
                 self.logos_dir,
@@ -430,7 +435,7 @@ class AssetLoader:
             os.path.join(self.logos_dir, "leagues", sport.upper(), league_code.upper()),
             os.path.join(self.logos_dir, "leagues", sport.upper(), league_name.upper()),
         ]
-        
+
         for league_dir in league_dirs:
             if os.path.exists(league_dir):
                 candidates = [f for f in os.listdir(league_dir) if f.endswith(".webp")]
@@ -465,9 +470,13 @@ class AssetLoader:
                     TEAM_NAMES as league_dict,
                 )
             elif league_lower == "nfl":
-                from bot.utils.league_dictionaries.football import TEAM_NAMES as league_dict
+                from bot.utils.league_dictionaries.football import (
+                    TEAM_NAMES as league_dict,
+                )
             elif league_lower == "nhl":
-                from bot.utils.league_dictionaries.hockey import TEAM_NAMES as league_dict
+                from bot.utils.league_dictionaries.hockey import (
+                    TEAM_NAMES as league_dict,
+                )
             elif league_lower == "cfl":
                 from bot.utils.league_dictionaries.cfl import TEAM_NAMES as league_dict
             else:

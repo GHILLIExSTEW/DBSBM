@@ -74,7 +74,6 @@ LEAGUE_CONFIG = {
         "line_placeholder_game": "e.g., Moneyline, Run Line -1.5, Total O/U 7.5",
         "line_placeholder_player": "e.g., Strikeouts Over 6.5, Hits Over 0.5",
     },
-
     # Hockey
     "NHL": {
         "sport": "Ice Hockey",

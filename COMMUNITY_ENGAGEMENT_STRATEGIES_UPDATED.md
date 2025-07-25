@@ -50,14 +50,14 @@ ENHANCED_REACTIONS = {
 async def get_reaction_analytics(self, guild_id: int, timeframe: str = "7d"):
     """Get reaction analytics for the guild."""
     query = """
-        SELECT 
+        SELECT
             emoji,
             COUNT(*) as reaction_count,
             COUNT(DISTINCT user_id) as unique_users,
             COUNT(DISTINCT bet_serial) as bets_reacted_to
         FROM bet_reactions br
         JOIN bets b ON br.bet_serial = b.bet_serial
-        WHERE b.guild_id = %s 
+        WHERE b.guild_id = %s
         AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s)
         GROUP BY emoji
         ORDER BY reaction_count DESC
@@ -93,7 +93,7 @@ logger = logging.getLogger(__name__)
 class CommunityCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     @app_commands.command(name="discuss", description="Start a community discussion")
     async def discuss(self, interaction: discord.Interaction, topic: str, question: str):
         """Start a community discussion topic."""
@@ -104,7 +104,7 @@ class CommunityCog(commands.Cog):
         )
         embed.set_footer(text=f"Started by {interaction.user.display_name}")
         await interaction.response.send_message(embed=embed)
-        
+
     @app_commands.command(name="funfact", description="Share a fun sports fact")
     async def funfact(self, interaction: discord.Interaction, fact: str):
         """Share a fun sports fact with the community."""
@@ -115,7 +115,7 @@ class CommunityCog(commands.Cog):
         )
         embed.set_footer(text=f"Shared by {interaction.user.display_name}")
         await interaction.response.send_message(embed=embed)
-        
+
     @app_commands.command(name="celebrate", description="Celebrate with the community")
     async def celebrate(self, interaction: discord.Interaction, reason: str, message: str = ""):
         """Celebrate wins and milestones with the community."""
@@ -126,7 +126,7 @@ class CommunityCog(commands.Cog):
         )
         embed.set_footer(text=f"Celebrating with {interaction.user.display_name}")
         await interaction.response.send_message(embed=embed)
-        
+
     @app_commands.command(name="encourage", description="Encourage another user")
     async def encourage(self, interaction: discord.Interaction, user: discord.Member, message: str):
         """Encourage another community member."""
@@ -136,7 +136,7 @@ class CommunityCog(commands.Cog):
             color=0x87ceeb
         )
         await interaction.response.send_message(embed=embed)
-        
+
     @app_commands.command(name="help", description="Ask for help from the community")
     async def help_community(self, interaction: discord.Interaction, topic: str, question: str):
         """Ask the community for help."""
@@ -147,7 +147,7 @@ class CommunityCog(commands.Cog):
         )
         embed.set_footer(text=f"Help requested by {interaction.user.display_name}")
         await interaction.response.send_message(embed=embed)
-        
+
     @app_commands.command(name="thanks", description="Thank someone for help")
     async def thanks(self, interaction: discord.Interaction, user: discord.Member, reason: str):
         """Thank someone for their help."""
@@ -215,7 +215,7 @@ class CommunityEventsService:
                 "color": 0xff69b4
             },
             "tuesday": {
-                "name": "Trivia Tuesday", 
+                "name": "Trivia Tuesday",
                 "description": "Sports and betting trivia questions!",
                 "emoji": "🧠",
                 "color": 0x4169e1
@@ -251,13 +251,13 @@ class CommunityEventsService:
                 "color": 0x32cd32
             }
         }
-        
+
     async def start_daily_event(self, guild_id: int, channel_id: int):
         """Start the daily community event."""
         today = datetime.now().strftime("%A").lower()
         if today in self.daily_events:
             event = self.daily_events[today]
-            
+
             embed = discord.Embed(
                 title=f"{event['emoji']} {event['name']}",
                 description=event['description'],
@@ -269,7 +269,7 @@ class CommunityEventsService:
                 inline=False
             )
             embed.set_footer(text="Community Event • Daily")
-            
+
             try:
                 channel = self.bot.get_channel(channel_id)
                 if channel:
@@ -294,24 +294,24 @@ logger = logging.getLogger(__name__)
 class CommunityLeaderboardCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     @app_commands.command(name="community_leaderboard", description="View community leaderboards")
     async def community_leaderboard(self, interaction: discord.Interaction, category: str = "reactions"):
         """View community leaderboards."""
         categories = {
             "reactions": "Most Active Reactors",
-            "helpful": "Most Helpful Members", 
+            "helpful": "Most Helpful Members",
             "positive": "Most Positive Members",
             "predictions": "Best Predictors"
         }
-        
+
         if category not in categories:
             await interaction.response.send_message(
                 f"Available categories: {', '.join(categories.keys())}",
                 ephemeral=True
             )
             return
-            
+
         # TODO: Implement actual leaderboard logic
         embed = discord.Embed(
             title=f"🏆 Community Leaderboard: {categories[category]}",
@@ -319,7 +319,7 @@ class CommunityLeaderboardCog(commands.Cog):
             color=0xffd700
         )
         embed.set_footer(text="Leaderboard data will be updated daily")
-        
+
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
@@ -337,7 +337,7 @@ async def notify_cross_channel(self, guild_id: int, source_channel: str, target_
     """Send notifications across channels."""
     # TODO: Implement cross-channel notification logic
     logger.info(f"Cross-channel notification: {source_channel} -> {target_channel}")
-    
+
 async def highlight_popular_bet(self, guild_id: int, bet_serial: int, reaction_count: int):
     """Highlight popular bets in main chat."""
     if reaction_count >= 10:  # Threshold for "popular" bet
@@ -401,7 +401,7 @@ class CommunityAnalyticsService:
     def __init__(self, bot, db_manager):
         self.bot = bot
         self.db_manager = db_manager
-        
+
     async def track_metric(self, guild_id: int, metric_type: str, value: float):
         """Track a community metric."""
         query = """
@@ -409,30 +409,30 @@ class CommunityAnalyticsService:
             VALUES (%s, %s, %s)
         """
         await self.db_manager.execute(query, (guild_id, metric_type, value))
-        
+
     async def get_community_health(self, guild_id: int, days: int = 7):
         """Get community health metrics."""
         query = """
-            SELECT 
+            SELECT
                 metric_type,
                 AVG(metric_value) as avg_value,
                 MAX(metric_value) as max_value,
                 COUNT(*) as data_points
             FROM community_metrics
-            WHERE guild_id = %s 
+            WHERE guild_id = %s
             AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             GROUP BY metric_type
         """
         return await self.db_manager.fetch_all(query, (guild_id, days))
-        
+
     async def track_reaction_activity(self, guild_id: int, user_id: int, bet_serial: int):
         """Track user reaction activity."""
         # Track individual reaction
         await self.track_metric(guild_id, "daily_reactions", 1)
-        
+
         # Check for achievements
         await self.check_reaction_achievements(guild_id, user_id)
-        
+
     async def check_reaction_achievements(self, guild_id: int, user_id: int):
         """Check if user has earned reaction achievements."""
         # Count user's total reactions
@@ -444,18 +444,18 @@ class CommunityAnalyticsService:
         """
         result = await self.db_manager.fetch_one(query, (guild_id, user_id))
         reaction_count = result['reaction_count'] if result else 0
-        
+
         # Check achievements
         achievements = {
             100: "reaction_master",
-            50: "streak_supporter", 
+            50: "streak_supporter",
             200: "community_cheerleader"
         }
-        
+
         for threshold, achievement in achievements.items():
             if reaction_count >= threshold:
                 await self.grant_achievement(guild_id, user_id, achievement)
-                
+
     async def grant_achievement(self, guild_id: int, user_id: int, achievement_type: str):
         """Grant an achievement to a user."""
         # Check if already earned
@@ -465,7 +465,7 @@ class CommunityAnalyticsService:
             WHERE guild_id = %s AND user_id = %s AND achievement_type = %s
         """
         result = await self.db_manager.fetch_one(query, (guild_id, user_id, achievement_type))
-        
+
         if result['count'] == 0:
             # Grant achievement
             achievement_names = {
@@ -473,7 +473,7 @@ class CommunityAnalyticsService:
                 "streak_supporter": "Streak Supporter",
                 "community_cheerleader": "Community Cheerleader"
             }
-            
+
             insert_query = """
                 INSERT INTO community_achievements (guild_id, user_id, achievement_type, achievement_name)
                 VALUES (%s, %s, %s, %s)
@@ -481,7 +481,7 @@ class CommunityAnalyticsService:
             await self.db_manager.execute(insert_query, (
                 guild_id, user_id, achievement_type, achievement_names.get(achievement_type, achievement_type)
             ))
-            
+
             logger.info(f"Granted achievement {achievement_type} to user {user_id} in guild {guild_id}")
 ```
 
@@ -559,4 +559,4 @@ class CommunityAnalyticsService:
 4. **Iterate and improve**: Based on community response
 5. **Scale up**: Add more advanced features as community grows
 
-This updated plan provides concrete, actionable steps to implement community engagement features while building on the existing bot infrastructure. Each week has specific deliverables and the plan is designed to be implemented incrementally. 
+This updated plan provides concrete, actionable steps to implement community engagement features while building on the existing bot infrastructure. Each week has specific deliverables and the plan is designed to be implemented incrementally.

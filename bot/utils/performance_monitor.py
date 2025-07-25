@@ -4,15 +4,16 @@ Tracks metrics, response times, and system health.
 """
 
 import asyncio
-import time
-import psutil
+import json
 import logging
-from typing import Dict, List, Optional, Any, Callable
+import os
+import time
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import defaultdict, deque
-import json
-import os
+from typing import Any, Callable, Dict, List, Optional
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

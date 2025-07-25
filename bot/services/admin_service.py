@@ -156,6 +156,7 @@ class AdminService:
                         command_channel_1 = %s,
                         command_channel_2 = %s,
                         admin_channel_1 = %s,
+                        main_chat_channel_id = %s,
                         admin_role = %s,
                         authorized_role = %s,
                         member_role = %s,
@@ -179,6 +180,7 @@ class AdminService:
                     settings.get("command_channel_1"),
                     settings.get("command_channel_2"),
                     settings.get("admin_channel_1"),
+                    settings.get("main_chat_channel_id"),
                     settings.get("admin_role"),
                     settings.get("authorized_role"),
                     settings.get("member_role"),
@@ -202,13 +204,13 @@ class AdminService:
                     """
                     INSERT INTO guild_settings (
                         guild_id, embed_channel_1, embed_channel_2, command_channel_1,
-                        command_channel_2, admin_channel_1, admin_role, authorized_role,
+                        command_channel_2, admin_channel_1, main_chat_channel_id, admin_role, authorized_role,
                         member_role, voice_channel_id, yearly_channel_id, daily_report_time,
                         bot_name_mask, bot_image_mask, guild_background, guild_default_image,
                         default_parlay_image, min_units, max_units, is_paid, live_game_updates,
                         units_display_mode
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     guild_id,
@@ -217,6 +219,7 @@ class AdminService:
                     settings.get("command_channel_1"),
                     settings.get("command_channel_2"),
                     settings.get("admin_channel_1"),
+                    settings.get("main_chat_channel_id"),
                     settings.get("admin_role"),
                     settings.get("authorized_role"),
                     settings.get("member_role"),

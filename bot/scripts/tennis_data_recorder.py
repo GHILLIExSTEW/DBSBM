@@ -4,20 +4,20 @@ Tennis Data Recorder
 Comprehensive script to fetch and record tennis data from RapidAPI Tennis Devs API.
 """
 
+import argparse
+import asyncio
+import json
+import logging
 import os
 import sys
-import asyncio
-import logging
-import json
-import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from bot.utils.multi_provider_api import MultiProviderAPI
 from bot.data.db_manager import DatabaseManager
+from bot.utils.multi_provider_api import MultiProviderAPI
 
 # Configure logging
 logging.basicConfig(

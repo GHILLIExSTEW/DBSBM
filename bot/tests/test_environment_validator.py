@@ -3,8 +3,10 @@ Tests for the environment validator utility.
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from bot.utils.environment_validator import EnvironmentValidator, validate_environment
 
 

@@ -2,14 +2,16 @@
 Tests for the rate limiter utility.
 """
 
-import pytest
 import asyncio
 import time
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from bot.utils.rate_limiter import (
-    RateLimiter,
     RateLimitConfig,
     RateLimitEntry,
+    RateLimiter,
     RateLimitExceededError,
     get_rate_limiter,
     rate_limit,

@@ -4,14 +4,14 @@ Europa League Teams Downloader
 Downloads all Europa League teams and their logos from API-Sports API.
 """
 
-import os
-import sys
 import asyncio
 import logging
+import os
+import sys
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
 from io import BytesIO
+from typing import Dict, List, Optional
 
 import aiohttp
 from PIL import Image, UnidentifiedImageError
@@ -28,7 +28,10 @@ load_dotenv()
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("europa_league_teams_download.log"), logging.StreamHandler()],
+    handlers=[
+        logging.FileHandler("europa_league_teams_download.log"),
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -55,7 +58,9 @@ class EuropaLeagueTeamsDownloader:
     def __init__(self):
         self.session = None
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.teams_dir = os.path.join(self.base_dir, "static", "logos", "teams", "SOCCER", "UEFA_Europa_League")
+        self.teams_dir = os.path.join(
+            self.base_dir, "static", "logos", "teams", "SOCCER", "UEFA_Europa_League"
+        )
 
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
@@ -67,38 +72,44 @@ class EuropaLeagueTeamsDownloader:
         if self.session:
             await self.session.close()
 
-    async def make_api_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
+    async def make_api_request(
+        self, endpoint: str, params: Dict = None
+    ) -> Optional[Dict]:
         """Make a request to the API-Sports API."""
         if params is None:
             params = {}
 
         url = f"{API_BASE_URL}/{endpoint}"
-        headers = {
-            'x-apisports-key': API_KEY
-        }
+        headers = {"x-apisports-key": API_KEY}
 
         for attempt in range(MAX_RETRIES):
             try:
                 logger.info(f"Making API request to: {url}")
                 logger.info(f"Parameters: {params}")
-                
-                async with self.session.get(url, headers=headers, params=params) as response:
+
+                async with self.session.get(
+                    url, headers=headers, params=params
+                ) as response:
                     logger.info(f"API response status: {response.status}")
-                    
+
                     if response.status == 200:
                         data = await response.json()
-                        logger.info(f"API response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
+                        logger.info(
+                            f"API response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}"
+                        )
                         return data
                     else:
                         error_text = await response.text()
-                        logger.error(f"API request failed with status {response.status}: {error_text}")
-                        
+                        logger.error(
+                            f"API request failed with status {response.status}: {error_text}"
+                        )
+
                         if response.status == 429:  # Rate limit
                             wait_time = (attempt + 1) * 2
                             logger.info(f"Rate limited, waiting {wait_time} seconds...")
                             await asyncio.sleep(wait_time)
                             continue
-                        
+
                         return None
 
             except Exception as e:
@@ -112,73 +123,70 @@ class EuropaLeagueTeamsDownloader:
 
     async def get_europa_league_teams(self) -> List[Dict]:
         """Get all Europa League teams from the API."""
-        params = {
-            'league': EUROPA_LEAGUE_ID,
-            'season': SEASON
-        }
+        params = {"league": EUROPA_LEAGUE_ID, "season": SEASON}
 
-        result = await self.make_api_request('teams', params)
-        
-        if not result or 'error' in result:
+        result = await self.make_api_request("teams", params)
+
+        if not result or "error" in result:
             logger.error(f"Failed to get Europa League teams: {result}")
             return []
 
-        teams = result.get('response', [])
+        teams = result.get("response", [])
         logger.info(f"Found {len(teams)} Europa League teams")
-        
+
         return teams
 
     def normalize_filename(self, name: str) -> str:
         """Normalize team name for filename."""
         # Remove special characters and replace spaces with underscores
         normalized = name.lower()
-        normalized = normalized.replace(' ', '_')
-        normalized = normalized.replace('-', '_')
-        normalized = normalized.replace('.', '')
-        normalized = normalized.replace(',', '')
-        normalized = normalized.replace('(', '')
-        normalized = normalized.replace(')', '')
-        normalized = normalized.replace('&', 'and')
-        normalized = normalized.replace('fc', 'fc')
-        normalized = normalized.replace('cf', 'cf')
-        normalized = normalized.replace('sc', 'sc')
-        normalized = normalized.replace('ac', 'ac')
-        normalized = normalized.replace('fk', 'fk')
-        normalized = normalized.replace('hk', 'hk')
-        normalized = normalized.replace('if', 'if')
-        normalized = normalized.replace('ff', 'ff')
-        normalized = normalized.replace('af', 'af')
-        normalized = normalized.replace('sf', 'sf')
-        normalized = normalized.replace('sk', 'sk')
-        normalized = normalized.replace('tk', 'tk')
-        normalized = normalized.replace('tc', 'tc')
-        normalized = normalized.replace('fs', 'fs')
-        normalized = normalized.replace('fa', 'fa')
-        normalized = normalized.replace('fc', 'fc')
-        normalized = normalized.replace('cf', 'cf')
-        normalized = normalized.replace('sc', 'sc')
-        normalized = normalized.replace('ac', 'ac')
-        normalized = normalized.replace('fk', 'fk')
-        normalized = normalized.replace('hk', 'hk')
-        normalized = normalized.replace('if', 'if')
-        normalized = normalized.replace('ff', 'ff')
-        normalized = normalized.replace('af', 'af')
-        normalized = normalized.replace('sf', 'sf')
-        normalized = normalized.replace('sk', 'sk')
-        normalized = normalized.replace('tk', 'tk')
-        normalized = normalized.replace('tc', 'tc')
-        normalized = normalized.replace('fs', 'fs')
-        normalized = normalized.replace('fa', 'fa')
-        
+        normalized = normalized.replace(" ", "_")
+        normalized = normalized.replace("-", "_")
+        normalized = normalized.replace(".", "")
+        normalized = normalized.replace(",", "")
+        normalized = normalized.replace("(", "")
+        normalized = normalized.replace(")", "")
+        normalized = normalized.replace("&", "and")
+        normalized = normalized.replace("fc", "fc")
+        normalized = normalized.replace("cf", "cf")
+        normalized = normalized.replace("sc", "sc")
+        normalized = normalized.replace("ac", "ac")
+        normalized = normalized.replace("fk", "fk")
+        normalized = normalized.replace("hk", "hk")
+        normalized = normalized.replace("if", "if")
+        normalized = normalized.replace("ff", "ff")
+        normalized = normalized.replace("af", "af")
+        normalized = normalized.replace("sf", "sf")
+        normalized = normalized.replace("sk", "sk")
+        normalized = normalized.replace("tk", "tk")
+        normalized = normalized.replace("tc", "tc")
+        normalized = normalized.replace("fs", "fs")
+        normalized = normalized.replace("fa", "fa")
+        normalized = normalized.replace("fc", "fc")
+        normalized = normalized.replace("cf", "cf")
+        normalized = normalized.replace("sc", "sc")
+        normalized = normalized.replace("ac", "ac")
+        normalized = normalized.replace("fk", "fk")
+        normalized = normalized.replace("hk", "hk")
+        normalized = normalized.replace("if", "if")
+        normalized = normalized.replace("ff", "ff")
+        normalized = normalized.replace("af", "af")
+        normalized = normalized.replace("sf", "sf")
+        normalized = normalized.replace("sk", "sk")
+        normalized = normalized.replace("tk", "tk")
+        normalized = normalized.replace("tc", "tc")
+        normalized = normalized.replace("fs", "fs")
+        normalized = normalized.replace("fa", "fa")
+
         return normalized
 
     async def download_and_save_logo(self, team: Dict) -> bool:
         """Download and save a team's logo."""
         try:
-            team_info = team.get('team', {})
-            team_name = team_info.get('name', 'Unknown')
-            team_id = team_info.get('id', 0)
-            logo_url = team_info.get('logo', '')
+            team_info = team.get("team", {})
+            team_name = team_info.get("name", "Unknown")
+            team_id = team_info.get("id", 0)
+            logo_url = team_info.get("logo", "")
 
             if not logo_url:
                 logger.warning(f"No logo URL for team: {team_name}")
@@ -193,13 +201,15 @@ class EuropaLeagueTeamsDownloader:
                 logger.info(f"Logo already exists for {team_name}: {filename}.png")
                 return True
 
-            logger.info(f"Downloading logo for {team_name} (ID: {team_id}) from {logo_url}")
+            logger.info(
+                f"Downloading logo for {team_name} (ID: {team_id}) from {logo_url}"
+            )
 
             # Download the logo
             async with self.session.get(logo_url) as response:
                 if response.status == 200:
                     image_data = await response.read()
-                    
+
                     # Verify it's a valid image
                     try:
                         image = Image.open(BytesIO(image_data))
@@ -209,13 +219,17 @@ class EuropaLeagueTeamsDownloader:
                         return False
 
                     # Save the image
-                    with open(filepath, 'wb') as f:
+                    with open(filepath, "wb") as f:
                         f.write(image_data)
 
-                    logger.info(f"Successfully saved logo for {team_name}: {filename}.png")
+                    logger.info(
+                        f"Successfully saved logo for {team_name}: {filename}.png"
+                    )
                     return True
                 else:
-                    logger.error(f"Failed to download logo for {team_name}: HTTP {response.status}")
+                    logger.error(
+                        f"Failed to download logo for {team_name}: HTTP {response.status}"
+                    )
                     return False
 
         except Exception as e:
@@ -230,7 +244,7 @@ class EuropaLeagueTeamsDownloader:
 
         # Get teams from API
         teams = await self.get_europa_league_teams()
-        
+
         if not teams:
             logger.error("No teams found!")
             return
@@ -240,11 +254,11 @@ class EuropaLeagueTeamsDownloader:
         failed_downloads = 0
 
         for i, team in enumerate(teams):
-            team_info = team.get('team', {})
-            team_name = team_info.get('name', 'Unknown')
-            
+            team_info = team.get("team", {})
+            team_name = team_info.get("name", "Unknown")
+
             logger.info(f"Processing team {i+1}/{len(teams)}: {team_name}")
-            
+
             if await self.download_and_save_logo(team):
                 successful_downloads += 1
             else:
@@ -263,12 +277,12 @@ class EuropaLeagueTeamsDownloader:
 async def main():
     """Main function."""
     logger.info("Starting Europa League teams download...")
-    
+
     async with EuropaLeagueTeamsDownloader() as downloader:
         await downloader.download_all_teams()
-    
+
     logger.info("Europa League teams download completed!")
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

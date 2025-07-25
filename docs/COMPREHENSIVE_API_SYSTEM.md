@@ -242,4 +242,4 @@ For issues or questions:
 
 ---
 
-**Note**: This system will fetch data for hundreds of leagues every hour. Ensure your API plan supports the expected request volume. 
+**Note**: This system will fetch data for hundreds of leagues every hour. Ensure your API plan supports the expected request volume.

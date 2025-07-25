@@ -14,7 +14,6 @@ try:
     from bot.utils.errors import ServiceError
 except ImportError:
     from bot.data.cache_manager import CacheManager
-
     from bot.utils.errors import ServiceError
 
 logger = logging.getLogger(__name__)

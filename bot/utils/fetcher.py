@@ -26,7 +26,7 @@ logging.basicConfig(
     handlers=[
         logging.StreamHandler(sys.stdout),
         logging.StreamHandler(sys.stderr),
-    ]
+    ],
 )
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,9 @@ class MainFetcher:
         if self.session:
             await self.session.close()
 
-    async def fetch_all_leagues(self, date: str = None, next_days: int = 1) -> Dict[str, int]:
+    async def fetch_all_leagues(
+        self, date: str = None, next_days: int = 1
+    ) -> Dict[str, int]:
         """Fetch data for all major leagues."""
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
@@ -149,8 +151,7 @@ class MainFetcher:
                 # Fetch for multiple days
                 for day_offset in range(next_days):
                     fetch_date = (
-                        datetime.strptime(date, "%Y-%m-%d")
-                        + timedelta(days=day_offset)
+                        datetime.strptime(date, "%Y-%m-%d") + timedelta(days=day_offset)
                     ).strftime("%Y-%m-%d")
 
                     games_fetched = await self._fetch_league_games(league, fetch_date)
@@ -196,7 +197,7 @@ class MainFetcher:
 
         url = f"{base_url}/{endpoint}"
         headers = {"x-apisports-key": self.api_key}
-        
+
         # UFC API uses different parameters
         if sport == "mma":
             params = {
@@ -211,9 +212,13 @@ class MainFetcher:
             }
 
         try:
-            async with self.session.get(url, headers=headers, params=params) as response:
+            async with self.session.get(
+                url, headers=headers, params=params
+            ) as response:
                 if response.status == 429:  # Rate limit exceeded
-                    logger.warning(f"Rate limit exceeded for {league['name']}, waiting...")
+                    logger.warning(
+                        f"Rate limit exceeded for {league['name']}, waiting..."
+                    )
                     await asyncio.sleep(60)
                     return await self._fetch_league_games(league, date)
 
@@ -226,12 +231,16 @@ class MainFetcher:
 
                 games = data.get("response", [])
                 games_saved = 0
-                
+
                 # Debug logging for AFL
                 if sport == "afl" and games:
-                    logger.info(f"Found {len(games)} AFL games, attempting to process...")
+                    logger.info(
+                        f"Found {len(games)} AFL games, attempting to process..."
+                    )
                     if len(games) > 0:
-                        logger.debug(f"Sample AFL game structure: {json.dumps(games[0], indent=2)[:300]}...")
+                        logger.debug(
+                            f"Sample AFL game structure: {json.dumps(games[0], indent=2)[:300]}..."
+                        )
 
                 for game in games:
                     try:
@@ -242,7 +251,9 @@ class MainFetcher:
                         else:
                             # Log when mapping fails but don't treat as error
                             if sport.lower() == "afl":
-                                logger.debug(f"Skipping AFL game due to mapping issues for {league['name']}")
+                                logger.debug(
+                                    f"Skipping AFL game due to mapping issues for {league['name']}"
+                                )
                     except Exception as e:
                         logger.error(f"Error processing game for {league['name']}: {e}")
                         continue
@@ -265,7 +276,7 @@ class MainFetcher:
                 fighters = safe_get(game, "fighters", default={})
                 first_fighter = safe_get(fighters, "first", default={})
                 second_fighter = safe_get(fighters, "second", default={})
-                
+
                 # Get game ID
                 game_id = str(safe_get(game, "id", default=""))
                 if not game_id:
@@ -284,10 +295,14 @@ class MainFetcher:
                 # Get fighter IDs, ensuring they're valid integers
                 first_fighter_id = safe_get(first_fighter, "id")
                 second_fighter_id = safe_get(second_fighter, "id")
-                
+
                 # Convert to string, defaulting to "0" if None or invalid
-                home_team_id = str(first_fighter_id) if first_fighter_id is not None else "0"
-                away_team_id = str(second_fighter_id) if second_fighter_id is not None else "0"
+                home_team_id = (
+                    str(first_fighter_id) if first_fighter_id is not None else "0"
+                )
+                away_team_id = (
+                    str(second_fighter_id) if second_fighter_id is not None else "0"
+                )
 
                 # Build UFC game data
                 game_data = {
@@ -298,8 +313,12 @@ class MainFetcher:
                     "league_name": league["name"],
                     "home_team_id": home_team_id,
                     "away_team_id": away_team_id,
-                    "home_team_name": safe_get(first_fighter, "name", default="Unknown"),
-                    "away_team_name": safe_get(second_fighter, "name", default="Unknown"),
+                    "home_team_name": safe_get(
+                        first_fighter, "name", default="Unknown"
+                    ),
+                    "away_team_name": safe_get(
+                        second_fighter, "name", default="Unknown"
+                    ),
                     "start_time": start_time,
                     "end_time": None,
                     "status": status,
@@ -307,20 +326,36 @@ class MainFetcher:
                     "venue": safe_get(game, "venue", "name", default=None),
                     "referee": safe_get(game, "referee", default=None),
                     "raw_json": json.dumps(game),
-                    "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                    "fetched_at": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                 }
                 return game_data
 
             # Handle AFL differently - they might have different structure
             elif sport == "afl":
                 # AFL might use different field names
-                game_id = str(safe_get(game, "id", default=safe_get(game, "game_id", default=safe_get(game, "match_id", default=""))))
+                game_id = str(
+                    safe_get(
+                        game,
+                        "id",
+                        default=safe_get(
+                            game,
+                            "game_id",
+                            default=safe_get(game, "match_id", default=""),
+                        ),
+                    )
+                )
                 if not game_id:
                     logger.error(f"Missing game ID for {sport}/{league['name']}")
                     return None
 
                 # Get start time
-                start_time = iso_to_mysql_datetime(safe_get(game, "date", default=safe_get(game, "start_time", default="")))
+                start_time = iso_to_mysql_datetime(
+                    safe_get(
+                        game, "date", default=safe_get(game, "start_time", default="")
+                    )
+                )
                 if not start_time:
                     logger.error(f"Missing start time for AFL game {game_id}")
                     return None
@@ -358,7 +393,9 @@ class MainFetcher:
                     "venue": safe_get(game, "venue", "name", default=None),
                     "referee": safe_get(game, "referee", default=None),
                     "raw_json": json.dumps(game),
-                    "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                    "fetched_at": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                 }
                 return game_data
 
@@ -369,14 +406,24 @@ class MainFetcher:
             fixture = safe_get(game, "fixture", default={})
 
             # Get game ID from either game or fixture
-            game_id = str(safe_get(game, "id", default=safe_get(fixture, "id", default="")))
+            game_id = str(
+                safe_get(game, "id", default=safe_get(fixture, "id", default=""))
+            )
             if not game_id:
                 # For AFL, try alternative field names
                 if sport.lower() == "afl":
-                    game_id = str(safe_get(game, "game_id", default=safe_get(game, "match_id", default="")))
+                    game_id = str(
+                        safe_get(
+                            game,
+                            "game_id",
+                            default=safe_get(game, "match_id", default=""),
+                        )
+                    )
                     if not game_id:
                         # Log the actual structure for debugging
-                        logger.warning(f"AFL game structure: {json.dumps(game, indent=2)[:500]}...")
+                        logger.warning(
+                            f"AFL game structure: {json.dumps(game, indent=2)[:500]}..."
+                        )
                         logger.error(f"Missing game ID for {sport}/{league['name']}")
                         return None
                 else:
@@ -402,10 +449,14 @@ class MainFetcher:
             # Get team IDs, ensuring they're valid integers
             home_team_id_raw = safe_get(home_team, "id")
             away_team_id_raw = safe_get(away_team, "id")
-            
+
             # Convert to string, defaulting to "0" if None or invalid
-            home_team_id = str(home_team_id_raw) if home_team_id_raw is not None else "0"
-            away_team_id = str(away_team_id_raw) if away_team_id_raw is not None else "0"
+            home_team_id = (
+                str(home_team_id_raw) if home_team_id_raw is not None else "0"
+            )
+            away_team_id = (
+                str(away_team_id_raw) if away_team_id_raw is not None else "0"
+            )
 
             # Get score based on sport
             score = {}
@@ -450,7 +501,7 @@ class MainFetcher:
                 league_name = "NFL"
             elif league_name.lower() in ["ultimate fighting championship", "ufc"]:
                 league_name = "UFC"
-            
+
             # Build the game data dictionary
             game_data = {
                 "id": game_id,
@@ -540,20 +591,25 @@ class MainFetcher:
                 async with conn.cursor() as cur:
                     # Get current time in UTC
                     current_time = datetime.now(timezone.utc)
-                    
+
                     # Remove finished games and games that have started
                     # Includes status values for all sports including MMA/UFC
-                    await cur.execute("""
-                        DELETE FROM api_games 
+                    await cur.execute(
+                        """
+                        DELETE FROM api_games
                         WHERE status IN (
                             'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
                             'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted', 'Completed'
                         )
                         OR start_time < %s
-                    """, (current_time,))
-                    
+                    """,
+                        (current_time,),
+                    )
+
                     deleted_count = cur.rowcount
-                    logger.info(f"Cleared {deleted_count} finished/past games from api_games table")
+                    logger.info(
+                        f"Cleared {deleted_count} finished/past games from api_games table"
+                    )
         except Exception as e:
             logger.error(f"Error clearing finished/past games data: {e}")
             # Don't raise - continue with fetch even if cleanup fails
@@ -563,7 +619,7 @@ async def main():
     """Main function to run the fetcher on a schedule."""
     print("FETCHER: Starting fetcher process...")
     logger.info("Starting fetcher process...")
-    
+
     # Database connection
     pool = None
     try:
@@ -578,37 +634,41 @@ async def main():
             maxsize=int(os.getenv("MYSQL_POOL_MAX_SIZE", "10")),
         )
         logger.info("Database connection pool created")
-        
+
         # Run initial fetch on startup
         logger.info("Running initial fetch on startup...")
         async with MainFetcher(pool) as fetcher:
             results = await fetcher.fetch_all_leagues()
             logger.info(f"Initial fetch completed with results: {results}")
-        
+
         # Schedule hourly fetches
         logger.info("Starting scheduled fetcher (runs every hour)...")
         while True:
             try:
                 # Calculate time until next hour
                 now = datetime.now(timezone.utc)
-                next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                next_hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(
+                    hours=1
+                )
                 wait_seconds = (next_hour - now).total_seconds()
-                
-                logger.info(f"Waiting {wait_seconds/60:.1f} minutes until next fetch...")
+
+                logger.info(
+                    f"Waiting {wait_seconds/60:.1f} minutes until next fetch..."
+                )
                 await asyncio.sleep(wait_seconds)
-                
+
                 # Run scheduled fetch
                 logger.info("Running scheduled hourly fetch...")
                 async with MainFetcher(pool) as fetcher:
                     results = await fetcher.fetch_all_leagues()
                     logger.info(f"Scheduled fetch completed with results: {results}")
-                    
+
             except Exception as e:
                 logger.error(f"Error in scheduled fetch: {e}")
                 logger.info("Waiting 5 minutes before retrying...")
                 await asyncio.sleep(300)  # Wait 5 minutes before retrying
                 continue  # Continue the loop instead of potentially exiting
-        
+
     except Exception as e:
         logger.error(f"Fetcher process failed: {e}")
         logger.info("Fetcher will restart in 5 minutes...")
@@ -629,5 +689,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"FETCHER: Error in main function: {e}")
         import traceback
+
         traceback.print_exc()
-        sys.exit(1) 
+        sys.exit(1)

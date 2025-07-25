@@ -4,26 +4,27 @@ DBSBM Community Engagement Setup Script
 Helps set up initial community engagement features and track progress.
 """
 
-import os
-import json
 import datetime
+import json
+import os
 from pathlib import Path
+
 
 class CommunityEngagementSetup:
     def __init__(self):
         self.config_file = "community_engagement_config.json"
         self.progress_file = "community_engagement_progress.json"
         self.load_config()
-        
+
     def load_config(self):
         """Load or create configuration file."""
         if os.path.exists(self.config_file):
-            with open(self.config_file, 'r') as f:
+            with open(self.config_file, "r") as f:
                 self.config = json.load(f)
         else:
             self.config = self.create_default_config()
             self.save_config()
-    
+
     def create_default_config(self):
         """Create default configuration."""
         return {
@@ -36,10 +37,10 @@ class CommunityEngagementSetup:
                     "tasks": [
                         "Brand identity development",
                         "Website and landing page creation",
-                        "Social media presence setup"
+                        "Social media presence setup",
                     ],
                     "completed": False,
-                    "progress": 0
+                    "progress": 0,
                 },
                 "phase_2": {
                     "name": "Content Marketing",
@@ -47,10 +48,10 @@ class CommunityEngagementSetup:
                     "tasks": [
                         "Educational content creation",
                         "Social media content calendar",
-                        "Influencer partnership outreach"
+                        "Influencer partnership outreach",
                     ],
                     "completed": False,
-                    "progress": 0
+                    "progress": 0,
                 },
                 "phase_3": {
                     "name": "Community Building",
@@ -58,10 +59,10 @@ class CommunityEngagementSetup:
                     "tasks": [
                         "Discord community features setup",
                         "User engagement programs",
-                        "Community events planning"
+                        "Community events planning",
                     ],
                     "completed": False,
-                    "progress": 0
+                    "progress": 0,
                 },
                 "phase_4": {
                     "name": "Growth Hacking",
@@ -69,10 +70,10 @@ class CommunityEngagementSetup:
                     "tasks": [
                         "Viral marketing campaigns",
                         "Partnership marketing",
-                        "Cross-promotion strategies"
+                        "Cross-promotion strategies",
                     ],
                     "completed": False,
-                    "progress": 0
+                    "progress": 0,
                 },
                 "phase_5": {
                     "name": "Monetization & Retention",
@@ -80,18 +81,18 @@ class CommunityEngagementSetup:
                     "tasks": [
                         "Premium features development",
                         "Subscription tier setup",
-                        "Retention strategies implementation"
+                        "Retention strategies implementation",
                     ],
                     "completed": False,
-                    "progress": 0
-                }
+                    "progress": 0,
+                },
             },
             "kpis": {
                 "user_growth_target": 25,  # % month-over-month
                 "engagement_rate_target": 70,  # % daily active users
                 "retention_rate_target": 80,  # % 30-day retention
                 "premium_conversion_target": 15,  # % of users
-                "community_health_target": 4.5  # star rating
+                "community_health_target": 4.5,  # star rating
             },
             "social_media": {
                 "platforms": ["Discord", "Twitter", "Reddit", "YouTube", "TikTok"],
@@ -99,7 +100,7 @@ class CommunityEngagementSetup:
                     "Sports highlights and predictions",
                     "Bot feature spotlights",
                     "User testimonials",
-                    "Community challenges"
+                    "Community challenges",
                 ],
                 "weekly_themes": {
                     "monday": "Motivation Monday (success stories)",
@@ -107,8 +108,8 @@ class CommunityEngagementSetup:
                     "wednesday": "Feature Wednesday (bot capabilities)",
                     "thursday": "Throwback Thursday (historical wins)",
                     "friday": "Fun Friday (community highlights)",
-                    "weekend": "Sports coverage and live updates"
-                }
+                    "weekend": "Sports coverage and live updates",
+                },
             },
             "community_features": {
                 "discord_channels": [
@@ -117,32 +118,32 @@ class CommunityEngagementSetup:
                     "#betting-strategies",
                     "#success-stories",
                     "#help-support",
-                    "#announcements"
+                    "#announcements",
                 ],
                 "events": [
                     "Weekly betting challenges",
                     "Sports trivia nights",
                     "Community tournaments",
-                    "Live game watch parties"
+                    "Live game watch parties",
                 ],
                 "engagement_programs": [
                     "Referral system",
                     "Ambassador program",
                     "Beta testing invitations",
-                    "Feedback collection"
-                ]
-            }
+                    "Feedback collection",
+                ],
+            },
         }
-    
+
     def save_config(self):
         """Save configuration to file."""
-        with open(self.config_file, 'w') as f:
+        with open(self.config_file, "w") as f:
             json.dump(self.config, f, indent=2)
-    
+
     def create_content_calendar(self):
         """Create a content calendar template."""
         calendar_file = "content_calendar_template.md"
-        
+
         content = """# 📅 DBSBM Content Calendar Template
 
 ## Weekly Content Schedule
@@ -272,16 +273,16 @@ class CommunityEngagementSetup:
 - Audience feedback
 - Strategy adjustments
 """
-        
-        with open(calendar_file, 'w', encoding='utf-8') as f:
+
+        with open(calendar_file, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         print(f"✅ Content calendar template created: {calendar_file}")
-    
+
     def create_social_media_plan(self):
         """Create a social media marketing plan."""
         plan_file = "social_media_marketing_plan.md"
-        
+
         content = """# 📱 DBSBM Social Media Marketing Plan
 
 ## Platform Strategy
@@ -448,16 +449,16 @@ class CommunityEngagementSetup:
 - Explore new opportunities
 - Continuous optimization
 """
-        
-        with open(plan_file, 'w', encoding='utf-8') as f:
+
+        with open(plan_file, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         print(f"✅ Social media marketing plan created: {plan_file}")
-    
+
     def create_community_guidelines(self):
         """Create community guidelines template."""
         guidelines_file = "community_guidelines.md"
-        
+
         content = """# 📋 DBSBM Community Guidelines
 
 ## Welcome to DBSBM! 🎉
@@ -630,16 +631,16 @@ Thank you for being part of our community! 🚀
 *Last Updated: July 23, 2025*
 *Version: 1.0*
 """
-        
-        with open(guidelines_file, 'w', encoding='utf-8') as f:
+
+        with open(guidelines_file, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         print(f"✅ Community guidelines created: {guidelines_file}")
-    
+
     def create_implementation_checklist(self):
         """Create an implementation checklist."""
         checklist_file = "implementation_checklist.md"
-        
+
         content = """# ✅ DBSBM Community Engagement Implementation Checklist
 
 ## Phase 1: Foundation & Branding (Weeks 1-2)
@@ -897,25 +898,25 @@ Thank you for being part of our community! 🚀
 *Version: 1.0*
 *Status: Ready for Implementation*
 """
-        
-        with open(checklist_file, 'w', encoding='utf-8') as f:
+
+        with open(checklist_file, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         print(f"✅ Implementation checklist created: {checklist_file}")
-    
+
     def run_setup(self):
         """Run the complete setup process."""
         print("🚀 DBSBM Community Engagement Setup")
         print("=" * 50)
-        
+
         print("\n📋 Creating essential files...")
-        
+
         # Create all necessary files
         self.create_content_calendar()
         self.create_social_media_plan()
         self.create_community_guidelines()
         self.create_implementation_checklist()
-        
+
         print("\n✅ Setup completed successfully!")
         print("\n📁 Created files:")
         print("  - content_calendar_template.md")
@@ -923,26 +924,30 @@ Thank you for being part of our community! 🚀
         print("  - community_guidelines.md")
         print("  - implementation_checklist.md")
         print("  - community_engagement_config.json")
-        
+
         print("\n🎯 Next Steps:")
         print("  1. Review the created files")
         print("  2. Customize content for your specific needs")
         print("  3. Start with Phase 1 implementation")
         print("  4. Track progress using the checklist")
         print("  5. Monitor KPIs and adjust strategies")
-        
+
         print("\n📊 Current Configuration:")
         print(f"  - Project: {self.config['project_name']}")
         print(f"  - Start Date: {self.config['start_date']}")
         print(f"  - Target Users: 10,000+")
-        print(f"  - Target Engagement: {self.config['kpis']['engagement_rate_target']}%")
-        
+        print(
+            f"  - Target Engagement: {self.config['kpis']['engagement_rate_target']}%"
+        )
+
         print("\n🚀 Ready to launch your community engagement campaign!")
+
 
 def main():
     """Main setup function."""
     setup = CommunityEngagementSetup()
     setup.run_setup()
 
+
 if __name__ == "__main__":
-    main() 
+    main()

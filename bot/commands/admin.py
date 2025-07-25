@@ -229,23 +229,20 @@ class SubscriptionView(discord.ui.View):
         embed = discord.Embed(
             title="🔗 Premium Subscription",
             description="Click the link below to subscribe to premium features:",
-            color=0x00ff00
+            color=0x00FF00,
         )
         embed.add_field(
             name="Premium Features",
             value="• Multiple embed channels\n• Advanced analytics\n• Priority support\n• Custom branding",
-            inline=False
+            inline=False,
         )
         embed.add_field(
             name="Subscription Link",
             value="[Subscribe to Premium](https://your-subscription-page.com)",
-            inline=False
+            inline=False,
         )
-        
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True
-        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="Continue with Free Tier", style=discord.ButtonStyle.grey)
@@ -327,6 +324,18 @@ class GuildSettingsView(discord.ui.View):
             "setting_key": "admin_channel_1",
             "max_count": 1,  # Only one admin channel allowed
             "free_count": 1,
+        },
+        {
+            "name": "Main Chat Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "main_chat_channel_id",
+            "max_count": 1,  # Only one main chat channel allowed
+            "free_count": 1,
+            "description": "Channel for achievement notifications and community updates",
         },
         {
             "name": "Admin Role",
@@ -544,11 +553,12 @@ class GuildSettingsView(discord.ui.View):
                             final_settings[k] = [int(v)]
                     elif k in [
                         "admin_channel_1",
+                        "main_chat_channel_id",
                         "admin_role",
                         "authorized_role",
                         "member_role",
                     ]:
-                        # Handle single values for roles and admin channel
+                        # Handle single values for roles and channels
                         final_settings[k] = int(v)
                     else:
                         final_settings[k] = v
@@ -775,102 +785,104 @@ class AdminCog(commands.Cog):
         try:
             guild_id = interaction.guild_id
             user = interaction.user
-            
+
             # Check if user has authorized role - REQUIRED for all users
             guild_settings = await self.bot.admin_service.get_guild_settings(guild_id)
-            if guild_settings and guild_settings.get('authorized_role'):
-                authorized_role_id = guild_settings['authorized_role']
-                has_authorized_role = any(role.id == authorized_role_id for role in user.roles)
+            if guild_settings and guild_settings.get("authorized_role"):
+                authorized_role_id = guild_settings["authorized_role"]
+                has_authorized_role = any(
+                    role.id == authorized_role_id for role in user.roles
+                )
                 if not has_authorized_role:
                     await interaction.response.send_message(
-                        "❌ You need the authorized user role to use this command.", ephemeral=True
+                        "❌ You need the authorized user role to use this command.",
+                        ephemeral=True,
                     )
                     return
             else:
                 # If no authorized role is set, only allow admins
                 if not user.guild_permissions.administrator:
                     await interaction.response.send_message(
-                        "❌ You need administrator permissions to use this command.", ephemeral=True
+                        "❌ You need administrator permissions to use this command.",
+                        ephemeral=True,
                     )
                     return
-            
+
             # Check if user is admin for subscription link
             is_admin = user.guild_permissions.administrator
-            
+
             embed = discord.Embed(
                 title="⭐ Premium Tier - Upgrade Available",
                 description="Unlock advanced features with Premium tier!",
-                color=0x00ff00
+                color=0x00FF00,
             )
-            
+
             embed.add_field(
                 name="Premium Features",
                 value="🎯 Advanced Betting Tools\n"
-                      "📊 Enhanced Analytics\n"
-                      "🔔 Custom Notifications\n"
-                      "🎨 Custom Branding\n"
-                      "📈 Performance Tracking\n"
-                      "⚡ Priority Support",
-                inline=True
+                "📊 Enhanced Analytics\n"
+                "🔔 Custom Notifications\n"
+                "🎨 Custom Branding\n"
+                "📈 Performance Tracking\n"
+                "⚡ Priority Support",
+                inline=True,
             )
-            
+
             embed.add_field(
                 name="Pricing",
-                value="⭐ **Premium**: $49.99/month\n"
-                      "💎 **Platinum**: $99.99/month",
-                inline=True
+                value="⭐ **Premium**: $49.99/month\n" "💎 **Platinum**: $99.99/month",
+                inline=True,
             )
-            
+
             if is_admin:
                 subscription_url = "https://betting-server-manager.us/subscribe"
                 embed.add_field(
                     name="Subscribe Now",
                     value=f"[Click here to subscribe]({subscription_url})",
-                    inline=False
+                    inline=False,
                 )
             else:
                 embed.add_field(
                     name="Contact Admin",
                     value="Please contact a server administrator to upgrade to Premium tier.",
-                    inline=False
+                    inline=False,
                 )
-            
+
             embed.set_footer(text="Upgrade to unlock these powerful features!")
-            
+
             await interaction.response.send_message(embed=embed)
-            
+
         except Exception as e:
             logger.error(f"Error in premium_command: {e}")
             await interaction.response.send_message(
                 "❌ An error occurred while processing your request.", ephemeral=True
             )
-            
+
     @app_commands.command(
-        name="fix_commands",
-        description="🔧 Fix and sync all bot commands (admin only)"
+        name="fix_commands", description="🔧 Fix and sync all bot commands (admin only)"
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def fix_commands(self, interaction: Interaction):
         """Fix and sync all bot commands."""
         try:
             await interaction.response.defer(ephemeral=True)
-            
+
             embed = discord.Embed(
                 title="🔧 EMERGENCY COMMAND FIX",
                 description="Force syncing ALL commands to this guild...",
-                color=0xff0000
+                color=0xFF0000,
             )
-            
+
             # Force reload ALL extensions first
             embed.add_field(
                 name="🔄 Step 1: Reloading Extensions",
                 value="Reloading all command extensions...",
-                inline=False
+                inline=False,
             )
-            
+
             extensions_to_reload = [
                 "bot.commands.admin",
-                "bot.commands.betting", 
+                "bot.commands.betting",
                 "bot.commands.enhanced_player_props",
                 "bot.commands.parlay_betting",
                 "bot.commands.remove_user",
@@ -883,9 +895,9 @@ class AdminCog(commands.Cog):
                 "bot.commands.odds",
                 "bot.commands.platinum_fixed",
                 "bot.commands.platinum_api",
-                "bot.commands.sync_cog"
+                "bot.commands.sync_cog",
             ]
-            
+
             reloaded_count = 0
             for ext in extensions_to_reload:
                 try:
@@ -893,90 +905,104 @@ class AdminCog(commands.Cog):
                     reloaded_count += 1
                 except Exception as e:
                     logger.warning(f"Failed to reload {ext}: {e}")
-            
+
             embed.add_field(
                 name="✅ Extensions Reloaded",
                 value=f"Successfully reloaded {reloaded_count}/{len(extensions_to_reload)} extensions",
-                inline=False
+                inline=False,
             )
-            
+
             # Clear all commands and re-add them
             embed.add_field(
                 name="🧹 Step 2: Clearing Commands",
                 value="Clearing existing command tree...",
-                inline=False
+                inline=False,
             )
-            
+
             self.bot.tree.clear_commands(guild=discord.Object(id=interaction.guild_id))
-            
+
             # Get all available commands after reload
             all_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
             logger.info(f"All available commands after reload: {all_commands}")
-            
+
             embed.add_field(
                 name="📋 Available Commands",
-                value="\n".join([f"• `/{cmd}`" for cmd in all_commands[:20]]) + 
-                      (f"\n... and {len(all_commands) - 20} more" if len(all_commands) > 20 else ""),
-                inline=False
+                value="\n".join([f"• `/{cmd}`" for cmd in all_commands[:20]])
+                + (
+                    f"\n... and {len(all_commands) - 20} more"
+                    if len(all_commands) > 20
+                    else ""
+                ),
+                inline=False,
             )
-            
+
             # Force sync to guild
             embed.add_field(
                 name="🔄 Step 3: Force Syncing",
                 value="Syncing all commands to this guild...",
-                inline=False
+                inline=False,
             )
-            
+
             guild_obj = discord.Object(id=interaction.guild_id)
             synced = await self.bot.tree.sync(guild=guild_obj)
             synced_names = [cmd.name for cmd in synced]
-            
+
             embed.add_field(
                 name="✅ SYNC COMPLETE",
                 value=f"Successfully synced {len(synced)} commands to guild!",
-                inline=False
+                inline=False,
             )
-            
+
             embed.add_field(
                 name="📋 Synced Commands",
-                value="\n".join([f"• `/{cmd}`" for cmd in synced_names[:25]]) + 
-                      (f"\n... and {len(synced_names) - 25} more" if len(synced_names) > 25 else ""),
-                inline=False
+                value="\n".join([f"• `/{cmd}`" for cmd in synced_names[:25]])
+                + (
+                    f"\n... and {len(synced_names) - 25} more"
+                    if len(synced_names) > 25
+                    else ""
+                ),
+                inline=False,
             )
-            
+
             # Check for critical commands
             critical_commands = ["fix_commands"]
-            missing_critical = [cmd for cmd in critical_commands if cmd not in synced_names]
-            
+            missing_critical = [
+                cmd for cmd in critical_commands if cmd not in synced_names
+            ]
+
             if missing_critical:
                 embed.add_field(
                     name="⚠️ MISSING CRITICAL COMMANDS",
                     value="\n".join([f"• `/{cmd}`" for cmd in missing_critical]),
-                    inline=False
+                    inline=False,
                 )
-                embed.color = 0xffa500
+                embed.color = 0xFFA500
             else:
                 embed.add_field(
                     name="🎉 SUCCESS!",
                     value="All critical commands are now available!",
-                    inline=False
+                    inline=False,
                 )
-                embed.color = 0x00ff00
-            
-            embed.set_footer(text=f"Guild ID: {interaction.guild_id} • Emergency fix at {discord.utils.utcnow().strftime('%H:%M:%S')}")
-            
+                embed.color = 0x00FF00
+
+            embed.set_footer(
+                text=f"Guild ID: {interaction.guild_id} • Emergency fix at {discord.utils.utcnow().strftime('%H:%M:%S')}"
+            )
+
             await interaction.followup.send(embed=embed, ephemeral=True)
-            
+
         except Exception as e:
             logger.error(f"Emergency fix commands failed: {e}", exc_info=True)
             error_embed = discord.Embed(
                 title="❌ EMERGENCY FIX FAILED",
                 description=f"Critical error: {str(e)}",
-                color=0xff0000
+                color=0xFF0000,
             )
-            
+
             if not interaction.response.is_done():
-                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+                await interaction.response.send_message(
+                    embed=error_embed, ephemeral=True
+                )
             else:
                 await interaction.followup.send(embed=error_embed, ephemeral=True)
 

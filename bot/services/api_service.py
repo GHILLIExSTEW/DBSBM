@@ -6,8 +6,9 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from bot.api.sports_api import APISportsFetcher
 from dotenv import load_dotenv
+
+from bot.api.sports_api import APISportsFetcher
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")

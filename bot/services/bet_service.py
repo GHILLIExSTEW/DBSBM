@@ -478,10 +478,10 @@ class BetService:
                 "bet_direction": bet_direction,
                 "odds": odds,
                 "api_game_id": api_game_id,
-                "sport": sport
+                "sport": sport,
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
-            
+
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, player_prop, player_name,
@@ -534,7 +534,8 @@ class BetService:
                 return None
         except Exception as e:
             logger.error(
-                f"[BET INSERT] Exception during player prop bet insert: {e}", exc_info=True
+                f"[BET INSERT] Exception during player prop bet insert: {e}",
+                exc_info=True,
             )
             return None
 
@@ -686,8 +687,6 @@ class BetService:
                 exc_info=True,
             )
 
-
-
     async def delete_bet(self, bet_serial: int):
         """Delete a bet and its associated data from the database."""
         logger.info(f"Attempting to delete bet {bet_serial} and associated data.")
@@ -768,7 +767,10 @@ class BetService:
 
             # Track reaction for community analytics
             try:
-                if hasattr(self.bot, 'community_analytics_service') and self.bot.community_analytics_service:
+                if (
+                    hasattr(self.bot, "community_analytics_service")
+                    and self.bot.community_analytics_service
+                ):
                     await self.bot.community_analytics_service.track_reaction_activity(
                         guild_id, payload.user_id, bet_serial, emoji_str
                     )

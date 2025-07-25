@@ -512,4 +512,4 @@ You now have access to the most advanced Discord betting bot features available.
 - **Grow your community** with professional tools
 - **Track your success** with advanced analytics
 
-**Happy betting! 🚀** 
+**Happy betting! 🚀**

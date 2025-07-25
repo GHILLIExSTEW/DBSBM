@@ -27,7 +27,9 @@ try:
         get_sport_category_for_path,
     )
     from bot.config.leagues import LEAGUE_IDS  # Contains league name to sport mapping
-    from bot.config.team_mappings import normalize_team_name  # For sanitizing team names
+    from bot.config.team_mappings import (  # For sanitizing team names
+        normalize_team_name,
+    )
 except ImportError as e:
     print(
         f"CRITICAL ERROR: Could not import from config package: {e}. "

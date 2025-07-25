@@ -1337,11 +1337,11 @@ class MultiProviderAPI:
                         # Update existing game
                         await cur.execute(
                             """
-                            UPDATE api_games SET 
-                                sport = %s, league_id = %s, league_name = %s, 
+                            UPDATE api_games SET
+                                sport = %s, league_id = %s, league_name = %s,
                                 home_team_id = %s, away_team_id = %s,
                                 home_team_name = %s, away_team_name = %s,
-                                start_time = %s, end_time = %s, status = %s, 
+                                start_time = %s, end_time = %s, status = %s,
                                 score = %s, venue = %s, referee = %s, season = %s,
                                 raw_json = %s, fetched_at = %s
                             WHERE api_game_id = %s

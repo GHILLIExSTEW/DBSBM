@@ -4,15 +4,16 @@ Test script to verify Serie A dropdown functionality
 """
 
 import asyncio
-import sys
 import os
+import sys
+
 import pytest
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bot.data.game_utils import get_normalized_games_for_dropdown
 from bot.data.db_manager import DatabaseManager
+from bot.data.game_utils import get_normalized_games_for_dropdown
 
 
 @pytest.mark.asyncio

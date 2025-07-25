@@ -253,4 +253,4 @@
 **For Support:**
 - Email: support@yourdomain.com
 - Discord Server: [Your Support Server]
-- Documentation: https://yourdomain.com/docs 
+- Documentation: https://yourdomain.com/docs

@@ -9,8 +9,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import discord
-from bot.config.leagues import LEAGUE_CONFIG
-from bot.data.game_utils import get_normalized_games_for_dropdown
 from discord import (
     ButtonStyle,
     File,
@@ -23,6 +21,9 @@ from discord import (
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
+from bot.commands.admin import require_registered_guild
+from bot.config.leagues import LEAGUE_CONFIG
+from bot.data.game_utils import get_normalized_games_for_dropdown
 from bot.utils.errors import ValidationError
 from bot.utils.league_loader import (
     get_all_league_names,
@@ -30,8 +31,6 @@ from bot.utils.league_loader import (
     get_leagues_by_sport,
 )
 from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
-
-from bot.commands.admin import require_registered_guild
 
 logger = logging.getLogger(__name__)
 
@@ -330,18 +329,26 @@ class ParlayGameSelect(Select):
         game_options = []
         seen_values = set()  # Track used values
         manual_added = False  # Track if manual entry has been added
-        
+
         logger.debug(f"[ParlayGameSelect] Processing {len(games)} games")
         logger.debug(f"[ParlayGameSelect] All games: {games}")
-        
+
         # Check for duplicate manual entries in the games list itself
-        manual_count = sum(1 for game in games if game.get("id") == "manual" or game.get("api_game_id") == "manual")
-        logger.debug(f"[ParlayGameSelect] Found {manual_count} manual entries in games list")
-        
+        manual_count = sum(
+            1
+            for game in games
+            if game.get("id") == "manual" or game.get("api_game_id") == "manual"
+        )
+        logger.debug(
+            f"[ParlayGameSelect] Found {manual_count} manual entries in games list"
+        )
+
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for i, game in enumerate(games[:24]):
             # Special handling for manual entry - only add once
-            if (game.get("id") == "manual" or game.get("api_game_id") == "manual") and not manual_added:
+            if (
+                game.get("id") == "manual" or game.get("api_game_id") == "manual"
+            ) and not manual_added:
                 logger.debug(f"[ParlayGameSelect] Adding manual entry at index {i}")
                 game_options.append(
                     SelectOption(
@@ -353,14 +360,18 @@ class ParlayGameSelect(Select):
                 manual_added = True
                 seen_values.add("manual")
                 continue
-            
+
             # Skip manual entry if already added
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
-                logger.debug(f"[ParlayGameSelect] Skipping duplicate manual entry at index {i}")
+                logger.debug(
+                    f"[ParlayGameSelect] Skipping duplicate manual entry at index {i}"
+                )
                 continue
-                
-            logger.debug(f"[ParlayGameSelect] Processing regular game at index {i}: {game.get('home_team_name')} vs {game.get('away_team_name')}")
-                
+
+            logger.debug(
+                f"[ParlayGameSelect] Processing regular game at index {i}: {game.get('home_team_name')} vs {game.get('away_team_name')}"
+            )
+
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -408,7 +419,9 @@ class ParlayGameSelect(Select):
             else:
                 desc = ""
 
-            logger.debug(f"[ParlayGameSelect] Adding game option: {label} with value: {value}")
+            logger.debug(
+                f"[ParlayGameSelect] Adding game option: {label} with value: {value}"
+            )
             game_options.append(
                 SelectOption(
                     label=label[:100], value=value[:100], description=desc[:100]
@@ -426,8 +439,10 @@ class ParlayGameSelect(Select):
         logger.debug(
             f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry). Manual added: {manual_added}"
         )
-        logger.debug(f"[ParlayGameSelect] Final options: {[(opt.label, opt.value) for opt in game_options]}")
-        
+        logger.debug(
+            f"[ParlayGameSelect] Final options: {[(opt.label, opt.value) for opt in game_options]}"
+        )
+
         # Final check for duplicate values
         values = [opt.value for opt in game_options]
         duplicates = [v for v in set(values) if values.count(v) > 1]
@@ -441,7 +456,9 @@ class ParlayGameSelect(Select):
         selected_value = self.values[0]
         logger.debug(f"Selected game value: {selected_value}")
         if selected_value == "manual":
-            logger.debug(f"[ParlayGameSelect] Manual entry selected, updating leg construction details")
+            logger.debug(
+                f"[ParlayGameSelect] Manual entry selected, updating leg construction details"
+            )
             self.parent_view.current_leg_construction_details.update(
                 {
                     "api_game_id": None,
@@ -450,7 +467,9 @@ class ParlayGameSelect(Select):
                     "away_team_name": "Manual Entry",
                 }
             )
-            logger.debug(f"[ParlayGameSelect] Updated leg construction details: {self.parent_view.current_leg_construction_details}")
+            logger.debug(
+                f"[ParlayGameSelect] Updated leg construction details: {self.parent_view.current_leg_construction_details}"
+            )
         else:
             selected_game = None
             if selected_value.startswith("api_"):
@@ -504,7 +523,9 @@ class ManualEntryModalButton(Button):
 
     async def callback(self, interaction: Interaction):
         logger.debug(f"[ManualEntryModalButton] Opening modal for manual entry")
-        logger.debug(f"[ManualEntryModalButton] Modal view_ref exists: {self.modal.view_ref is not None}")
+        logger.debug(
+            f"[ManualEntryModalButton] Modal view_ref exists: {self.modal.view_ref is not None}"
+        )
         await interaction.response.send_modal(self.modal)
 
 
@@ -747,23 +768,31 @@ class BetDetailsModal(Modal):
 
     async def on_submit(self, interaction: Interaction):
         try:
-            logger.info(f"[BetDetailsModal] on_submit called for line_type={self.line_type}, is_manual={self.is_manual}")
-            logger.info(f"[BetDetailsModal] view_ref exists: {self.view_ref is not None}")
-            logger.info(f"[BetDetailsModal] Available attributes: {[attr for attr in dir(self) if not attr.startswith('_')]}")
-            
+            logger.info(
+                f"[BetDetailsModal] on_submit called for line_type={self.line_type}, is_manual={self.is_manual}"
+            )
+            logger.info(
+                f"[BetDetailsModal] view_ref exists: {self.view_ref is not None}"
+            )
+            logger.info(
+                f"[BetDetailsModal] Available attributes: {[attr for attr in dir(self) if not attr.startswith('_')]}"
+            )
+
             # Check if view_ref is properly set
             if not self.view_ref:
-                logger.error("[BetDetailsModal] view_ref is None - modal not properly initialized")
+                logger.error(
+                    "[BetDetailsModal] view_ref is None - modal not properly initialized"
+                )
                 await interaction.response.send_message(
                     "❌ Error: Modal not properly initialized. Please try again.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
-                
+
             # Get league config to check sport type
-            if not hasattr(self.view_ref, 'current_leg_construction_details'):
+            if not hasattr(self.view_ref, "current_leg_construction_details"):
                 self.view_ref.current_leg_construction_details = {}
-                
+
             league_key = self.view_ref.current_leg_construction_details.get(
                 "league", ""
             )
@@ -773,69 +802,103 @@ class BetDetailsModal(Modal):
             logger.info(f"[BetDetailsModal] League config: {league_conf}")
             sport_type = league_conf.get("sport_type", "Team Sport")
             is_individual_sport = sport_type == "Individual Player"
-            logger.info(f"[BetDetailsModal] Sport type: {sport_type}, Is individual sport: {is_individual_sport}")
+            logger.info(
+                f"[BetDetailsModal] Sport type: {sport_type}, Is individual sport: {is_individual_sport}"
+            )
 
             # For manual game line, get team/opponent or player/opponent based on sport type
             if self.is_manual and self.line_type == "game_line":
-                logger.info(f"[BetDetailsModal] Processing manual game line for individual sport: {is_individual_sport}")
+                logger.info(
+                    f"[BetDetailsModal] Processing manual game line for individual sport: {is_individual_sport}"
+                )
                 if is_individual_sport:
                     # For individual sports, use player and opponent
                     # Check if the input fields exist before accessing them
-                    logger.info(f"[BetDetailsModal] Checking for player_input: {hasattr(self, 'player_input')}")
-                    logger.info(f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}")
-                    if hasattr(self, 'player_input') and hasattr(self, 'opponent_input'):
-                        logger.info(f"[BetDetailsModal] Player input value: {self.player_input.value}")
-                        logger.info(f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}")
-                        self.view_ref.current_leg_construction_details["player_name"] = (
-                            self.player_input.value.strip()[:100] or "Player"
+                    logger.info(
+                        f"[BetDetailsModal] Checking for player_input: {hasattr(self, 'player_input')}"
+                    )
+                    logger.info(
+                        f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}"
+                    )
+                    if hasattr(self, "player_input") and hasattr(
+                        self, "opponent_input"
+                    ):
+                        logger.info(
+                            f"[BetDetailsModal] Player input value: {self.player_input.value}"
                         )
+                        logger.info(
+                            f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}"
+                        )
+                        self.view_ref.current_leg_construction_details[
+                            "player_name"
+                        ] = (self.player_input.value.strip()[:100] or "Player")
                         self.view_ref.current_leg_construction_details["team"] = (
                             self.player_input.value.strip()[:100] or "Player"
                         )
-                        self.view_ref.current_leg_construction_details["home_team_name"] = (
-                            self.player_input.value.strip()[:100] or "Player"
-                        )
+                        self.view_ref.current_leg_construction_details[
+                            "home_team_name"
+                        ] = (self.player_input.value.strip()[:100] or "Player")
                         self.view_ref.current_leg_construction_details["opponent"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
-                        self.view_ref.current_leg_construction_details["away_team_name"] = (
-                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        self.view_ref.current_leg_construction_details[
+                            "away_team_name"
+                        ] = (self.opponent_input.value.strip()[:100] or "Opponent")
+                        logger.info(
+                            f"[BetDetailsModal] Successfully processed individual sport inputs"
                         )
-                        logger.info(f"[BetDetailsModal] Successfully processed individual sport inputs")
                     else:
-                        logger.error("Player input fields not found for individual sport")
-                        raise ValidationError("Modal configuration error for individual sport")
+                        logger.error(
+                            "Player input fields not found for individual sport"
+                        )
+                        raise ValidationError(
+                            "Modal configuration error for individual sport"
+                        )
                 else:
                     # For team sports, use team and opponent (existing logic)
                     # Check if the input fields exist before accessing them
-                    logger.info(f"[BetDetailsModal] Checking for team_input: {hasattr(self, 'team_input')}")
-                    logger.info(f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}")
-                    if hasattr(self, 'team_input') and hasattr(self, 'opponent_input'):
-                        logger.info(f"[BetDetailsModal] Team input value: {self.team_input.value}")
-                        logger.info(f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}")
+                    logger.info(
+                        f"[BetDetailsModal] Checking for team_input: {hasattr(self, 'team_input')}"
+                    )
+                    logger.info(
+                        f"[BetDetailsModal] Checking for opponent_input: {hasattr(self, 'opponent_input')}"
+                    )
+                    if hasattr(self, "team_input") and hasattr(self, "opponent_input"):
+                        logger.info(
+                            f"[BetDetailsModal] Team input value: {self.team_input.value}"
+                        )
+                        logger.info(
+                            f"[BetDetailsModal] Opponent input value: {self.opponent_input.value}"
+                        )
                         self.view_ref.current_leg_construction_details["team"] = (
                             self.team_input.value.strip()[:100] or "Team"
                         )
-                        self.view_ref.current_leg_construction_details["home_team_name"] = (
-                            self.team_input.value.strip()[:100] or "Team"
-                        )
+                        self.view_ref.current_leg_construction_details[
+                            "home_team_name"
+                        ] = (self.team_input.value.strip()[:100] or "Team")
                         self.view_ref.current_leg_construction_details["opponent"] = (
                             self.opponent_input.value.strip()[:100] or "Opponent"
                         )
-                        self.view_ref.current_leg_construction_details["away_team_name"] = (
-                            self.opponent_input.value.strip()[:100] or "Opponent"
+                        self.view_ref.current_leg_construction_details[
+                            "away_team_name"
+                        ] = (self.opponent_input.value.strip()[:100] or "Opponent")
+                        logger.info(
+                            f"[BetDetailsModal] Successfully processed team sport inputs"
                         )
-                        logger.info(f"[BetDetailsModal] Successfully processed team sport inputs")
                     else:
                         logger.error("Team input fields not found for team sport")
-                        raise ValidationError("Modal configuration error for team sport")
+                        raise ValidationError(
+                            "Modal configuration error for team sport"
+                        )
             elif self.line_type == "player_prop":
                 # For player props, we should never reach this point in BetDetailsModal
                 # Player props should always use ParlayEnhancedPlayerPropModal
-                logger.error("BetDetailsModal was used for player props - this should not happen")
+                logger.error(
+                    "BetDetailsModal was used for player props - this should not happen"
+                )
                 await interaction.response.send_message(
                     "❌ Error: Player props should use the enhanced modal. Please try again.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
 
@@ -867,15 +930,20 @@ class BetDetailsModal(Modal):
 
                 # Prepare leg data for preview
                 # Convert league key to full league name for asset loading
-                league_key = self.view_ref.current_leg_construction_details.get("league", "")
+                league_key = self.view_ref.current_leg_construction_details.get(
+                    "league", ""
+                )
                 league_name = league_key
                 try:
                     from bot.config.leagues import LEAGUE_CONFIG
+
                     if league_key in LEAGUE_CONFIG:
                         league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
                 except Exception as e:
-                    logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
-                
+                    logger.warning(
+                        f"Could not convert league key '{league_key}' to full name: {e}"
+                    )
+
                 leg_data = {
                     "bet_type": self.line_type,
                     "league": league_name,  # Use full league name
@@ -936,10 +1004,10 @@ class BetDetailsModal(Modal):
 
             # Advance workflow - add the leg to the parlay
             leg_details = self.view_ref.current_leg_construction_details.copy()
-            
+
             # Add the leg to the parlay
             await self.view_ref.add_leg(interaction, leg_details)
-            
+
             # Properly close the modal
             await interaction.response.defer()
 
@@ -991,7 +1059,7 @@ class TotalOddsModal(Modal):
             await interaction.response.edit_message(
                 content="Select units for your parlay:", view=self.view_ref
             )
-            
+
             # Properly close the modal
             await interaction.response.defer()
         except ValidationError as e:
@@ -1218,15 +1286,17 @@ class AddAnotherLegButton(Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
-        logger.info(f"[PARLAY WORKFLOW] AddAnotherLegButton clicked by user {interaction.user.id}")
-        
+        logger.info(
+            f"[PARLAY WORKFLOW] AddAnotherLegButton clicked by user {interaction.user.id}"
+        )
+
         # Reset to start of workflow for new leg
         self.parent_view.current_step = 0
         self.parent_view.current_leg_construction_details = {}
-        
+
         # Disable the button to prevent double-clicks
         self.disabled = True
-        
+
         await interaction.response.defer()
         await self.parent_view.go_next(interaction)
 
@@ -1401,7 +1471,7 @@ class TeamSelect(Select):
                 leg_number=len(self.parent_view.bet_details.get("legs", [])) + 1,
             )
             search_view.parent_view = self.parent_view
-            
+
             await self.parent_view.edit_message_for_current_leg(
                 interaction,
                 content=f"Search for a player in {self.parent_view.current_leg_construction_details.get('league', '')} to create your player prop bet:",
@@ -1415,10 +1485,10 @@ class TeamSelect(Select):
                 logger.error("Attempted to create BetDetailsModal for player props")
                 await interaction.response.send_message(
                     "❌ Error: Player props should use enhanced modal. Please try again.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
                 return
-            
+
             modal = BetDetailsModal(
                 line_type=line_type,
                 is_manual=self.parent_view.current_leg_construction_details.get(
@@ -1456,7 +1526,9 @@ class ConfirmUnitsButton(Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
-        logger.info(f"[PARLAY WORKFLOW] Confirm Units button clicked by user {interaction.user.id}")
+        logger.info(
+            f"[PARLAY WORKFLOW] Confirm Units button clicked by user {interaction.user.id}"
+        )
         await self.parent_view._handle_units_selection(
             interaction, float(self.parent_view.bet_details["units"])
         )
@@ -1509,7 +1581,9 @@ class ParlayBetWorkflowView(View):
     async def add_leg(
         self, modal_interaction: Interaction, leg_details: Dict[str, Any], file=None
     ):
-        logger.info(f"[PARLAY WORKFLOW] Adding leg: {leg_details.get('line_type', 'unknown')} - {leg_details.get('team', 'unknown')} vs {leg_details.get('opponent', 'unknown')}")
+        logger.info(
+            f"[PARLAY WORKFLOW] Adding leg: {leg_details.get('line_type', 'unknown')} - {leg_details.get('team', 'unknown')} vs {leg_details.get('opponent', 'unknown')}"
+        )
         logger.info(f"[PARLAY WORKFLOW] Leg details: {leg_details}")
         try:
             # Add the leg to the parlay
@@ -1528,11 +1602,16 @@ class ParlayBetWorkflowView(View):
                     league_name = league_key
                     try:
                         from bot.config.leagues import LEAGUE_CONFIG
+
                         if league_key in LEAGUE_CONFIG:
-                            league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
+                            league_name = LEAGUE_CONFIG[league_key].get(
+                                "name", league_key
+                            )
                     except Exception as e:
-                        logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
-                    
+                        logger.warning(
+                            f"Could not convert league key '{league_key}' to full name: {e}"
+                        )
+
                     leg_data = {
                         "bet_type": leg.get("line_type", "game_line"),
                         "league": league_name,  # Use full league name
@@ -1569,7 +1648,7 @@ class ParlayBetWorkflowView(View):
             leg_count = len(self.bet_details["legs"])
             summary_text = self._generate_parlay_summary_text()
             decision_view = LegDecisionView(self)
-            
+
             # Edit the existing message using the original interaction
             await self.edit_message_for_current_leg(
                 self.original_interaction,
@@ -1578,7 +1657,6 @@ class ParlayBetWorkflowView(View):
                 embed=embed,
                 file=preview_file,
             )
-            
 
         except Exception as e:
             logger.error(f"Error in add_leg: {e}")
@@ -1627,7 +1705,7 @@ class ParlayBetWorkflowView(View):
             f"Parlay: Attempting to edit message {self.message.id if self.message else 'None'}. Content: {content is not None}, View: {view is not None}"
         )
         attachments = [file] if file else discord.utils.MISSING
-        
+
         try:
             # Try to edit the existing message first
             if self.message:
@@ -1639,7 +1717,7 @@ class ParlayBetWorkflowView(View):
             logger.warning(f"Parlay: Failed to edit existing message: {e}")
             # Clear the message reference so we create a new one
             self.message = None
-        
+
         # If we get here, we need to create a new message
         try:
             # Only create a new message if we don't already have one
@@ -1653,7 +1731,10 @@ class ParlayBetWorkflowView(View):
                         ephemeral=True,
                     )
                     self.message = await interaction_context.original_response()
-                elif self.original_interaction and not self.original_interaction.response.is_done():
+                elif (
+                    self.original_interaction
+                    and not self.original_interaction.response.is_done()
+                ):
                     # Use the original interaction
                     await self.original_interaction.response.send_message(
                         content=content or "Parlay setup...",
@@ -1695,7 +1776,7 @@ class ParlayBetWorkflowView(View):
                         )
                 except:
                     pass
-                    
+
         except Exception as e:
             logger.exception(f"Parlay: Failed to create new message: {e}")
             # Try to send a simple error message
@@ -1703,7 +1784,7 @@ class ParlayBetWorkflowView(View):
                 if interaction_context and not interaction_context.response.is_done():
                     await interaction_context.response.send_message(
                         "❌ Error updating parlay display. Please try again.",
-                        ephemeral=True
+                        ephemeral=True,
                     )
             except:
                 pass
@@ -1712,10 +1793,16 @@ class ParlayBetWorkflowView(View):
         """Advance to the next step in the parlay workflow."""
         self.current_step += 1
         logger.info(f"[PARLAY WORKFLOW] go_next called for step {self.current_step}")
-        logger.info(f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}")
-        logger.debug(f"[PARLAY WORKFLOW] Current leg construction details: {self.current_leg_construction_details}")
-        logger.debug(f"[PARLAY WORKFLOW] Step {self.current_step} - is_manual: {self.current_leg_construction_details.get('is_manual', False)}")
-        
+        logger.info(
+            f"[PARLAY WORKFLOW] User: {self.original_interaction.user.id}, Guild: {self.original_interaction.guild_id}"
+        )
+        logger.debug(
+            f"[PARLAY WORKFLOW] Current leg construction details: {self.current_leg_construction_details}"
+        )
+        logger.debug(
+            f"[PARLAY WORKFLOW] Step {self.current_step} - is_manual: {self.current_leg_construction_details.get('is_manual', False)}"
+        )
+
         # Ensure view is properly cleared before adding new items
         self.clear_items()
 
@@ -1760,18 +1847,24 @@ class ParlayBetWorkflowView(View):
 
             try:
                 # Fetch games using the correct method
-                logger.debug(f"[PARLAY WORKFLOW] About to call get_normalized_games_for_dropdown for {league}")
+                logger.debug(
+                    f"[PARLAY WORKFLOW] About to call get_normalized_games_for_dropdown for {league}"
+                )
                 games = await get_normalized_games_for_dropdown(
                     self.bot.db_manager, league
                 )
 
-                logger.debug(f"[PARLAY WORKFLOW] Fetched {len(games)} games for {league}")
+                logger.debug(
+                    f"[PARLAY WORKFLOW] Fetched {len(games)} games for {league}"
+                )
                 logger.debug(f"[PARLAY WORKFLOW] Games list: {games}")
                 logger.debug(f"[PARLAY WORKFLOW] Games type: {type(games)}")
                 logger.debug(f"[PARLAY WORKFLOW] Games truthy check: {bool(games)}")
 
                 if not games:
-                    logger.error(f"[PARLAY WORKFLOW] No games returned from get_normalized_games_for_dropdown for {league}")
+                    logger.error(
+                        f"[PARLAY WORKFLOW] No games returned from get_normalized_games_for_dropdown for {league}"
+                    )
                     await self.edit_message_for_current_leg(
                         interaction,
                         content=f"No games found for {league}. Please try a different league or check back later.",
@@ -1780,13 +1873,19 @@ class ParlayBetWorkflowView(View):
                     self.stop()
                     return
 
-                logger.debug(f"[PARLAY WORKFLOW] Creating ParlayGameSelect with {len(games)} games")
+                logger.debug(
+                    f"[PARLAY WORKFLOW] Creating ParlayGameSelect with {len(games)} games"
+                )
                 try:
                     game_select = ParlayGameSelect(self, games)
-                    logger.debug(f"[PARLAY WORKFLOW] ParlayGameSelect created successfully")
+                    logger.debug(
+                        f"[PARLAY WORKFLOW] ParlayGameSelect created successfully"
+                    )
                     self.add_item(game_select)
                 except Exception as e:
-                    logger.error(f"[PARLAY WORKFLOW] Error creating ParlayGameSelect: {e}")
+                    logger.error(
+                        f"[PARLAY WORKFLOW] Error creating ParlayGameSelect: {e}"
+                    )
                     raise
                 self.add_item(CancelButton(self))
                 await self.edit_message_for_current_leg(
@@ -1812,8 +1911,10 @@ class ParlayBetWorkflowView(View):
 
             if is_manual:
                 # For manual entry, always open a modal regardless of sport type
-                logger.debug(f"[PARLAY WORKFLOW] Manual entry detected, opening modal for {line_type}")
-                
+                logger.debug(
+                    f"[PARLAY WORKFLOW] Manual entry detected, opening modal for {line_type}"
+                )
+
                 if line_type == "player_prop":
                     # Use interactive player search view for player props
                     from bot.commands.parlay_enhanced_player_prop_modal import (
@@ -1828,7 +1929,7 @@ class ParlayBetWorkflowView(View):
                         leg_number=len(self.bet_details.get("legs", [])) + 1,
                     )
                     search_view.parent_view = self
-                    
+
                     await self.edit_message_for_current_leg(
                         interaction,
                         content=f"Search for a player in {league} to create your player prop bet:",
@@ -1847,14 +1948,14 @@ class ParlayBetWorkflowView(View):
                     # Since interaction is already deferred, we need to use a different approach
                     # Create a button that opens the modal
                     from bot.commands.parlay_betting import ManualEntryModalButton
-                    
+
                     # Set the view_ref for the modal
                     modal.view_ref = self
-                    
+
                     modal_button = ManualEntryModalButton(modal)
                     self.add_item(modal_button)
                     self.add_item(CancelButton(self))
-                    
+
                     await self.edit_message_for_current_leg(
                         interaction,
                         content="Click the button below to enter manual bet details:",
@@ -1902,19 +2003,22 @@ class ParlayBetWorkflowView(View):
             self.add_item(UnitsSelect(self))
             self.add_item(ConfirmUnitsButton(self))
             self.add_item(CancelButton(self))
-            
+
             # Generate default preview with 1 unit
             await self._generate_default_preview(interaction)
-            
+
             file_to_send = None
             if self.preview_image_bytes:
                 self.preview_image_bytes.seek(0)
                 file_to_send = File(
                     self.preview_image_bytes, filename="parlay_preview.png"
                 )
-            
+
             await self.edit_message_for_current_leg(
-                interaction, content="Select units for your parlay:", view=self, file=file_to_send
+                interaction,
+                content="Select units for your parlay:",
+                view=self,
+                file=file_to_send,
             )
             self.current_step += 1
             return
@@ -1947,7 +2051,9 @@ class ParlayBetWorkflowView(View):
                                     if channel not in allowed_channels:
                                         allowed_channels.append(channel)
                             except Exception as e:
-                                logger.error(f"Error processing channel {channel_id}: {e}")
+                                logger.error(
+                                    f"Error processing channel {channel_id}: {e}"
+                                )
 
                 if not allowed_channels:
                     await self.edit_message_for_current_leg(
@@ -2048,14 +2154,14 @@ class ParlayBetWorkflowView(View):
                     leg_data["away_team"] = leg.get("player_name", "")
                     leg_data["selected_team"] = leg.get("team", "")
                 legs.append(leg_data)
-            
+
             if legs is None:
                 legs = []
-            
+
             total_odds = self.bet_details.get("total_odds", None)
             bet_id = str(self.bet_details.get("bet_serial", ""))
             bet_datetime = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            
+
             # Generate preview with 1 unit
             image_bytes = generator.generate_image(
                 legs=legs,
@@ -2068,19 +2174,21 @@ class ParlayBetWorkflowView(View):
                 units_display_mode=units_display_mode,
                 display_as_risk=False,
             )
-            
+
             if image_bytes:
                 self.preview_image_bytes = io.BytesIO(image_bytes)
                 self.preview_image_bytes.seek(0)
             else:
                 self.preview_image_bytes = None
-                
+
         except Exception as e:
             logger.exception(f"Error generating default parlay preview: {e}")
             self.preview_image_bytes = None
 
     async def _handle_units_selection(self, interaction: Interaction, units: float):
-        logger.info(f"[PARLAY WORKFLOW] _handle_units_selection called for user {interaction.user.id} with units {units}")
+        logger.info(
+            f"[PARLAY WORKFLOW] _handle_units_selection called for user {interaction.user.id} with units {units}"
+        )
         self.bet_details["units"] = units
         self.bet_details["units_str"] = str(units)
 
@@ -2097,7 +2205,9 @@ class ParlayBetWorkflowView(View):
         display_as_risk = self.bet_details.get("display_as_risk")
 
         try:
-            logger.info(f"[PARLAY WORKFLOW] Starting image generation for user {self.original_interaction.user.id}")
+            logger.info(
+                f"[PARLAY WORKFLOW] Starting image generation for user {self.original_interaction.user.id}"
+            )
             generator = ParlayBetImageGenerator(
                 guild_id=self.original_interaction.guild_id
             )
@@ -2108,11 +2218,14 @@ class ParlayBetWorkflowView(View):
                 league_name = league_key
                 try:
                     from bot.config.leagues import LEAGUE_CONFIG
+
                     if league_key in LEAGUE_CONFIG:
                         league_name = LEAGUE_CONFIG[league_key].get("name", league_key)
                 except Exception as e:
-                    logger.warning(f"Could not convert league key '{league_key}' to full name: {e}")
-                
+                    logger.warning(
+                        f"Could not convert league key '{league_key}' to full name: {e}"
+                    )
+
                 leg_data = {
                     "bet_type": leg.get("line_type", "game_line"),
                     "league": league_name,  # Use full league name
@@ -2152,14 +2265,18 @@ class ParlayBetWorkflowView(View):
                 display_as_risk=display_as_risk,
             )
             if image_bytes:
-                logger.info(f"[PARLAY WORKFLOW] Image generation completed successfully for user {self.original_interaction.user.id}")
+                logger.info(
+                    f"[PARLAY WORKFLOW] Image generation completed successfully for user {self.original_interaction.user.id}"
+                )
                 self.preview_image_bytes = io.BytesIO(image_bytes)
                 self.preview_image_bytes.seek(0)
                 file_to_send = File(
                     self.preview_image_bytes, filename="parlay_preview_units.png"
                 )
             else:
-                logger.warning(f"[PARLAY WORKFLOW] Image generation failed for user {self.original_interaction.user.id}")
+                logger.warning(
+                    f"[PARLAY WORKFLOW] Image generation failed for user {self.original_interaction.user.id}"
+                )
                 self.preview_image_bytes = None
                 file_to_send = None
         except Exception as e:
@@ -2169,7 +2286,7 @@ class ParlayBetWorkflowView(View):
 
         # Increment step counter to move to channel selection
         self.current_step += 1
-        
+
         # Now proceed to channel selection step
         await self.go_next(interaction)
 
@@ -2257,7 +2374,9 @@ class ParlayBetWorkflowView(View):
                     "odds": leg.get("odds", leg.get("odds_str", "")),
                 }
                 if leg.get("line_type") == "player_prop":
-                    leg_data["player_name"] = leg.get("player_name", "")  # Use player_name, not team
+                    leg_data["player_name"] = leg.get(
+                        "player_name", ""
+                    )  # Use player_name, not team
                     leg_data["prop_type"] = leg.get("prop_type", "")  # Add prop_type
                 legs.append(leg_data)
             # Defensive: ensure legs is a list
@@ -2395,7 +2514,9 @@ class ParlayBetWorkflowView(View):
                     view=None,
                     file=None,
                 )
-                logger.info(f"[PARLAY WORKFLOW] Bet posted successfully, stopping workflow for user {interaction.user.id}")
+                logger.info(
+                    f"[PARLAY WORKFLOW] Bet posted successfully, stopping workflow for user {interaction.user.id}"
+                )
                 self.stop()
                 return
 

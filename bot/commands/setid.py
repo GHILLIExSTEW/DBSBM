@@ -197,13 +197,15 @@ class ImageUploadView(View):
                     return
                 guild_id = str(self.guild_id)
                 user_id = str(self.user_id)
-                base_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to bot/ directory
+                base_dir = os.path.dirname(
+                    os.path.dirname(__file__)
+                )  # Go up to bot/ directory
                 save_dir = os.path.join(base_dir, "static", "guilds", guild_id, "users")
                 try:
                     os.makedirs(save_dir, exist_ok=True)
                     save_path = os.path.join(save_dir, f"{user_id}.webp")
                     logger.info(f"Attempting to save image to: {save_path}")
-                    img.save(save_path, "PNG")
+                    img.save(save_path, "WEBP")
                     logger.info(f"Successfully saved capper logo to {save_path}")
                 except OSError as e:
                     logger.error(f"Failed to save image to {save_path}: {e}")
@@ -277,7 +279,9 @@ class ImageURLModal(Modal, title="Enter Profile Image URL"):
                         return
                     guild_id = str(self.guild_id)
                     user_id = str(self.user_id)
-                    base_dir = os.path.dirname(os.path.dirname(__file__))  # Go up to bot/ directory
+                    base_dir = os.path.dirname(
+                        os.path.dirname(__file__)
+                    )  # Go up to bot/ directory
                     save_dir = os.path.join(
                         base_dir, "static", "guilds", guild_id, "users"
                     )
@@ -285,7 +289,7 @@ class ImageURLModal(Modal, title="Enter Profile Image URL"):
                         os.makedirs(save_dir, exist_ok=True)
                         save_path = os.path.join(save_dir, f"{user_id}.webp")
                         logger.info(f"Attempting to save image to: {save_path}")
-                        img.save(save_path, "PNG")
+                        img.save(save_path, "WEBP")
                         logger.info(f"Successfully saved capper logo to {save_path}")
                     except OSError as e:
                         logger.error(f"Failed to save image to {save_path}: {e}")

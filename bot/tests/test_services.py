@@ -2,16 +2,18 @@
 Tests for core services in DBSBM.
 """
 
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, Mock, patch
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
+from bot.data.db_manager import DatabaseManager
+from bot.services.admin_service import AdminService
 
 # Import services
 from bot.services.bet_service import BetService
 from bot.services.user_service import UserService
-from bot.services.admin_service import AdminService
-from bot.data.db_manager import DatabaseManager
 
 
 class TestBetService:

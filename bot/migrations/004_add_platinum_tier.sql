@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS platinum_features (
 );
 
 -- Add Platinum-specific settings
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS platinum_features_enabled BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS custom_branding_enabled BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS advanced_analytics_enabled BOOLEAN DEFAULT FALSE,
@@ -43,7 +43,7 @@ ADD COLUMN IF NOT EXISTS real_time_alerts_enabled BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS data_export_enabled BOOLEAN DEFAULT FALSE;
 
 -- Add Platinum-specific limits
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS max_embed_channels_platinum INTEGER DEFAULT 5,
 ADD COLUMN IF NOT EXISTS max_command_channels_platinum INTEGER DEFAULT 5,
 ADD COLUMN IF NOT EXISTS max_active_bets_platinum INTEGER DEFAULT 100,
@@ -115,4 +115,4 @@ CREATE TABLE IF NOT EXISTS data_exports (
 CREATE INDEX IF NOT EXISTS idx_platinum_features_guild ON platinum_features(guild_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_integrations_guild ON webhook_integrations(guild_id);
 CREATE INDEX IF NOT EXISTS idx_real_time_alerts_guild ON real_time_alerts(guild_id);
-CREATE INDEX IF NOT EXISTS idx_data_exports_guild ON data_exports(guild_id); 
+CREATE INDEX IF NOT EXISTS idx_data_exports_guild ON data_exports(guild_id);

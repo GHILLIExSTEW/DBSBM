@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
-import sys
 import os
+import sys
 
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), "bot"))

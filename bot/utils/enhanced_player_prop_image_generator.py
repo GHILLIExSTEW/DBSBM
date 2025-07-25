@@ -198,7 +198,9 @@ class EnhancedPlayerPropImageGenerator:
 
             if team_logo:
                 # Resize and position team logo
-                team_logo = team_logo.resize((100, 100), Image.Resampling.LANCZOS)  # Changed from 80x80 to 100x100 to match game line
+                team_logo = team_logo.resize(
+                    (100, 100), Image.Resampling.LANCZOS
+                )  # Changed from 80x80 to 100x100 to match game line
                 # Apply circular mask
                 team_logo = self._apply_circular_mask(team_logo)
                 # Position team logo (left side)
@@ -210,11 +212,14 @@ class EnhancedPlayerPropImageGenerator:
                 if player_image:
                     # Resize and position player image
                     player_image = player_image.resize(
-                        (100, 100), Image.Resampling.LANCZOS  # Changed from 120x120 to 100x100 to match game line
+                        (100, 100),
+                        Image.Resampling.LANCZOS,  # Changed from 120x120 to 100x100 to match game line
                     )
                     # Apply circular mask
                     player_image = self._apply_circular_mask(player_image)
-                    img.paste(player_image, (self.base_width - 140, 30), player_image)  # Adjusted position for new size
+                    img.paste(
+                        player_image, (self.base_width - 140, 30), player_image
+                    )  # Adjusted position for new size
 
         except Exception as e:
             logger.error(f"Error adding images: {e}")
@@ -295,7 +300,10 @@ class EnhancedPlayerPropImageGenerator:
         )
         direction_text = f"{bet_direction.upper()} {line_value}"
         draw.text(
-            (140, 180), direction_text, font=self.fonts["large"], fill=direction_color  # Increased from 160 to 180
+            (140, 180),
+            direction_text,
+            font=self.fonts["large"],
+            fill=direction_color,  # Increased from 160 to 180
         )
 
         # Odds (if available)

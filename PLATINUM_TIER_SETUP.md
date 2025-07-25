@@ -292,4 +292,4 @@ Alert: "Notify when any bet over 50 units is placed"
 
 **Platinum Tier is now ready for production use!** 🚀
 
-For technical support or questions, please refer to the documentation or contact the development team. 
+For technical support or questions, please refer to the documentation or contact the development team.

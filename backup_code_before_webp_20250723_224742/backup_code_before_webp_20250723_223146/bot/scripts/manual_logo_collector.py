@@ -4,13 +4,13 @@ Manual Logo Collector for Golf, Tennis, and F1
 Helps collect league logos from various sources when API doesn't provide them.
 """
 
+import logging
 import os
 import sys
-import logging
-import requests
-from typing import Dict, List, Optional
 from io import BytesIO
+from typing import Dict, List, Optional
 
+import requests
 from PIL import Image, UnidentifiedImageError
 
 # Add the bot directory to the path

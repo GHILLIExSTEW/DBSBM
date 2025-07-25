@@ -52,4 +52,3 @@
 - Total player images: 45
 
 ## Detailed Missing Analysis by League
-

@@ -142,6 +142,8 @@ class GameLineImageGenerator:
         """Generates a game line bet slip image."""
         import os
 
+        from PIL import Image, ImageDraw, ImageFont
+
         from bot.config.asset_paths import get_sport_category_for_path
         from bot.config.image_settings import (
             BACKGROUND_COLOR,
@@ -157,7 +159,6 @@ class GameLineImageGenerator:
             TEAM_FONT_SIZE,
             VS_FONT_SIZE,
         )
-        from PIL import Image, ImageDraw, ImageFont
 
         image_width, image_height = IMAGE_WIDTH, IMAGE_HEIGHT
         bg_color = BACKGROUND_COLOR
@@ -264,7 +265,7 @@ class GameLineImageGenerator:
         else:
             # If not found in LEAGUE_CONFIG, the league might already be a display name
             league_display_name = league
-            
+
         logger.info(
             f"[IMAGE GENERATOR] League: {league}, Display name: {league_display_name}"
         )
@@ -337,11 +338,9 @@ class GameLineImageGenerator:
         if league_logo:
             logo_y = block_y + (block_h - logo_display_size[1]) // 2
             text_y = block_y + (block_h - header_h) // 2
-            # Use the alpha channel as the mask for proper transparency
-            if league_logo.mode == 'RGBA':
-                # Extract alpha channel for mask
-                alpha = league_logo.split()[-1]
-                image.paste(league_logo, (block_x, logo_y), alpha)
+            # Use the RGBA image as the mask for proper transparency
+            if league_logo.mode == "RGBA":
+                image.paste(league_logo, (block_x, logo_y), league_logo)
             else:
                 # Fallback if not RGBA
                 image.paste(league_logo, (block_x, logo_y))
@@ -374,11 +373,10 @@ class GameLineImageGenerator:
                 # Use default logo for both teams
                 home_logo_x = int(home_section_center_x - logo_size[0] // 2)
                 away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                # Use alpha channel as mask for proper transparency
+                # Use RGBA image as mask for proper transparency
                 if default_logo_resized.mode == 'RGBA':
-                    alpha = default_logo_resized.split()[-1]
-                    image.paste(default_logo_resized, (home_logo_x, y_base), alpha)
-                    image.paste(default_logo_resized, (away_logo_x, y_base), alpha)
+                    image.paste(default_logo_resized, (home_logo_x, y_base), default_logo_resized)
+                    image.paste(default_logo_resized, (away_logo_x, y_base), default_logo_resized)
                 else:
                     image.paste(default_logo_resized, (home_logo_x, y_base))
                     image.paste(default_logo_resized, (away_logo_x, y_base))
@@ -415,19 +413,17 @@ class GameLineImageGenerator:
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        # Use alpha channel as mask for proper transparency
+                        # Use RGBA image as mask for proper transparency
                         if home_logo_resized.mode == 'RGBA':
-                            alpha = home_logo_resized.split()[-1]
-                            image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                            image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
                         else:
                             image.paste(home_logo_resized, (home_logo_x, y_base))
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        # Use alpha channel as mask for proper transparency
+                        # Use RGBA image as mask for proper transparency
                         if away_logo_resized.mode == 'RGBA':
-                            alpha = away_logo_resized.split()[-1]
-                            image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                            image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
                         else:
                             image.paste(away_logo_resized, (away_logo_x, y_base))
                 else:
@@ -435,19 +431,17 @@ class GameLineImageGenerator:
                     if away_logo:
                         away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                         away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                        # Use alpha channel as mask for proper transparency
+                        # Use RGBA image as mask for proper transparency
                         if away_logo_resized.mode == 'RGBA':
-                            alpha = away_logo_resized.split()[-1]
-                            image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                            image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
                         else:
                             image.paste(away_logo_resized, (away_logo_x, y_base))
                     if home_logo:
                         home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                         home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                        # Use alpha channel as mask for proper transparency
+                        # Use RGBA image as mask for proper transparency
                         if home_logo_resized.mode == 'RGBA':
-                            alpha = home_logo_resized.split()[-1]
-                            image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                            image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
                         else:
                             image.paste(home_logo_resized, (home_logo_x, y_base))
             else:
@@ -455,19 +449,17 @@ class GameLineImageGenerator:
                 if home_logo:
                     home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                     home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                    # Use alpha channel as mask for proper transparency
+                    # Use RGBA image as mask for proper transparency
                     if home_logo_resized.mode == 'RGBA':
-                        alpha = home_logo_resized.split()[-1]
-                        image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                        image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
                     else:
                         image.paste(home_logo_resized, (home_logo_x, y_base))
                 if away_logo:
                     away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                     away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                    # Use alpha channel as mask for proper transparency
+                    # Use RGBA image as mask for proper transparency
                     if away_logo_resized.mode == 'RGBA':
-                        alpha = away_logo_resized.split()[-1]
-                        image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                        image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
                     else:
                         image.paste(away_logo_resized, (away_logo_x, y_base))
         else:
@@ -476,10 +468,9 @@ class GameLineImageGenerator:
             if home_logo:
                 home_logo_resized = home_logo.convert("RGBA").resize(logo_size)
                 home_logo_x = int(home_section_center_x - logo_size[0] // 2)
-                # Use alpha channel as mask for proper transparency
+                # Use RGBA image as mask for proper transparency
                 if home_logo_resized.mode == 'RGBA':
-                    alpha = home_logo_resized.split()[-1]
-                    image.paste(home_logo_resized, (home_logo_x, y_base), alpha)
+                    image.paste(home_logo_resized, (home_logo_x, y_base), home_logo_resized)
                 else:
                     image.paste(home_logo_resized, (home_logo_x, y_base))
             # Away logo
@@ -487,10 +478,9 @@ class GameLineImageGenerator:
             if away_logo:
                 away_logo_resized = away_logo.convert("RGBA").resize(logo_size)
                 away_logo_x = int(away_section_center_x - logo_size[0] // 2)
-                # Use alpha channel as mask for proper transparency
+                # Use RGBA image as mask for proper transparency
                 if away_logo_resized.mode == 'RGBA':
-                    alpha = away_logo_resized.split()[-1]
-                    image.paste(away_logo_resized, (away_logo_x, y_base), alpha)
+                    image.paste(away_logo_resized, (away_logo_x, y_base), away_logo_resized)
                 else:
                     image.paste(away_logo_resized, (away_logo_x, y_base))
 
@@ -612,9 +602,11 @@ class GameLineImageGenerator:
         except Exception:
             lock_icon = None
         if lock_icon:
-            image.paste(
-                lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon
-            )
+            # Use RGBA image as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon)
+            else:
+                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y))
             draw.text(
                 ((image_width - payout_w) // 2, payout_y),
                 payout_text,
@@ -622,11 +614,11 @@ class GameLineImageGenerator:
                 fill="#FFD700",
                 anchor="lt",
             )
-            image.paste(
-                lock_icon,
-                ((image_width - payout_w) // 2 + payout_w + 8, payout_y),
-                lock_icon,
-            )
+            # Use RGBA image as mask for proper transparency
+            if lock_icon.mode == 'RGBA':
+                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), lock_icon)
+            else:
+                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y))
         else:
             draw.text(
                 ((image_width - payout_w) // 2, payout_y),
@@ -639,19 +631,21 @@ class GameLineImageGenerator:
         # Footer (bet id and timestamp)
         footer_padding = 12
         footer_y = image_height - footer_padding - font_footer.size
-        
+
         # Ensure bet_id is properly formatted
         if bet_id and str(bet_id).strip():
             bet_id_text = f"Bet #{str(bet_id).strip()}"
         else:
             bet_id_text = ""
-            
+
         timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC") if timestamp else ""
-        
+
         # Draw bet ID bottom left
         if bet_id_text:
-            draw.text((padding, footer_y), bet_id_text, font=font_footer, fill="#888888")
-            
+            draw.text(
+                (padding, footer_y), bet_id_text, font=font_footer, fill="#888888"
+            )
+
         # Draw timestamp bottom right
         if timestamp_text:
             ts_bbox = font_footer.getbbox(timestamp_text)
@@ -793,9 +787,11 @@ class GameLineImageGenerator:
         return y_base + text_y_offset + 50  # Return y position for next section
 
     def _load_team_logo(self, team_name: str, league: str):
-        from bot.utils.asset_loader import asset_loader
-        from PIL import Image
         import os
+
+        from PIL import Image
+
+        from bot.utils.asset_loader import asset_loader
 
         # Special handling for manual entry
         if league.upper() == "MANUAL":
@@ -806,7 +802,10 @@ class GameLineImageGenerator:
                 logger.warning(f"Default logo not found at {default_logo_path}")
                 return None
         # Special handling for individual sports - use specific logos
-        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(sport in league.lower() for sport in ["darts", "tennis", "golf", "f1", "formula"]):
+        elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(
+            sport in league.lower()
+            for sport in ["darts", "tennis", "golf", "f1", "formula"]
+        ):
             # Determine sport type for logo selection
             sport = "darts"  # default
             if "tennis" in league.lower():
@@ -824,7 +823,9 @@ class GameLineImageGenerator:
             if os.path.exists(sport_all_path):
                 return Image.open(sport_all_path)
             else:
-                logger.warning(f"{sport.capitalize()} logo not found at {sport_all_path}")
+                logger.warning(
+                    f"{sport.capitalize()} logo not found at {sport_all_path}"
+                )
                 return asset_loader.load_team_logo(
                     team_name, league, getattr(self, "guild_id", None)
                 )

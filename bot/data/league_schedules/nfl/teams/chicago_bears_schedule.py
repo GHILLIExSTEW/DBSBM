@@ -1,22 +1,64 @@
 """Chicago Bears 2025-2026 Schedule"""
 
 CHICAGO_BEARS_SCHEDULE = {
-    "week_1": ("MONDAY", "SEPTEMBER 8, 2025", "VS MINNESOTA VIKINGS", "8:15 PM", "ABC/ESPN"),
+    "week_1": (
+        "MONDAY",
+        "SEPTEMBER 8, 2025",
+        "VS MINNESOTA VIKINGS",
+        "8:15 PM",
+        "ABC/ESPN",
+    ),
     "week_2": ("SUNDAY", "SEPTEMBER 14, 2025", "AT DETROIT LIONS", "1:00 PM", "FOX"),
     "week_3": ("SUNDAY", "SEPTEMBER 21, 2025", "VS DALLAS COWBOYS", "4:25 PM", "FOX"),
-    "week_4": ("SUNDAY", "SEPTEMBER 28, 2025", "AT LAS VEGAS RAIDERS", "4:25 PM", "CBS"),
+    "week_4": (
+        "SUNDAY",
+        "SEPTEMBER 28, 2025",
+        "AT LAS VEGAS RAIDERS",
+        "4:25 PM",
+        "CBS",
+    ),
     "week_5": ("BYE WEEK", "", "BYE WEEK", "", ""),
-    "week_6": ("MONDAY", "OCTOBER 13, 2025", "AT WASHINGTON COMMANDERS", "8:15 PM", "ABC"),
+    "week_6": (
+        "MONDAY",
+        "OCTOBER 13, 2025",
+        "AT WASHINGTON COMMANDERS",
+        "8:15 PM",
+        "ABC",
+    ),
     "week_7": ("SUNDAY", "OCTOBER 19, 2025", "VS NEW ORLEANS SAINTS", "1:00 PM", "FOX"),
     "week_8": ("SUNDAY", "OCTOBER 26, 2025", "AT BALTIMORE RAVENS", "1:00 PM", "CBS"),
     "week_9": ("SUNDAY", "NOVEMBER 2, 2025", "AT CINCINNATI BENGALS", "1:00 PM", "CBS"),
     "week_10": ("SUNDAY", "NOVEMBER 9, 2025", "VS NEW YORK GIANTS", "1:00 PM", "FOX"),
-    "week_11": ("SUNDAY", "NOVEMBER 16, 2025", "AT MINNESOTA VIKINGS", "1:00 PM", "FOX"),
-    "week_12": ("SUNDAY", "NOVEMBER 23, 2025", "VS PITTSBURGH STEELERS", "1:00 PM", "CBS"),
-    "week_13": ("FRIDAY", "NOVEMBER 28, 2025", "AT PHILADELPHIA EAGLES (BLACK FRIDAY)", "3:00 PM", "PRIME VIDEO"),
+    "week_11": (
+        "SUNDAY",
+        "NOVEMBER 16, 2025",
+        "AT MINNESOTA VIKINGS",
+        "1:00 PM",
+        "FOX",
+    ),
+    "week_12": (
+        "SUNDAY",
+        "NOVEMBER 23, 2025",
+        "VS PITTSBURGH STEELERS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_13": (
+        "FRIDAY",
+        "NOVEMBER 28, 2025",
+        "AT PHILADELPHIA EAGLES (BLACK FRIDAY)",
+        "3:00 PM",
+        "PRIME VIDEO",
+    ),
     "week_14": ("SUNDAY", "DECEMBER 7, 2025", "AT GREEN BAY PACKERS", "1:00 PM", "FOX"),
     "week_15": ("SUNDAY", "DECEMBER 14, 2025", "VS CLEVELAND BROWNS", "1:00 PM", "FOX"),
     "week_16": ("SATURDAY", "DECEMBER 20, 2025", "VS GREEN BAY PACKERS", "TBD", "FOX"),
-    "week_17": ("SUNDAY", "DECEMBER 28, 2025", "AT SAN FRANCISCO 49ERS", "8:20 PM", "NBC"),
-    "week_18": ("SATURDAY", "JANUARY 3, 2026", "VS DETROIT LIONS", "TBD", "TBD")
-} 
+    "week_17": (
+        "SUNDAY",
+        "DECEMBER 28, 2025",
+        "AT SAN FRANCISCO 49ERS",
+        "8:20 PM",
+        "NBC",
+    ),
+    "week_18": ("SATURDAY", "JANUARY 3, 2026", "VS DETROIT LIONS", "TBD", "TBD"),
+}

@@ -165,7 +165,6 @@ NCAA_FOOTBALL_TEAMS = {
     "Virginia Cavaliers": "Cavaliers",
     "Virginia Tech Hokies": "Hokies",
     "Wake Forest Demon Deacons": "Demon Deacons",
-    
     # Big 12
     "Baylor Bears": "Bears",
     "BYU Cougars": "Cougars",
@@ -181,7 +180,6 @@ NCAA_FOOTBALL_TEAMS = {
     "Texas Tech Red Raiders": "Red Raiders",
     "UCF Knights": "Knights",
     "West Virginia Mountaineers": "Mountaineers",
-    
     # Big Ten
     "Illinois Fighting Illini": "Fighting Illini",
     "Indiana Hoosiers": "Hoosiers",
@@ -197,7 +195,6 @@ NCAA_FOOTBALL_TEAMS = {
     "Purdue Boilermakers": "Boilermakers",
     "Rutgers Scarlet Knights": "Scarlet Knights",
     "Wisconsin Badgers": "Badgers",
-    
     # SEC
     "Alabama Crimson Tide": "Crimson Tide",
     "Arkansas Razorbacks": "Razorbacks",
@@ -213,7 +210,6 @@ NCAA_FOOTBALL_TEAMS = {
     "Tennessee Volunteers": "Volunteers",
     "Texas A&M Aggies": "Aggies",
     "Vanderbilt Commodores": "Commodores",
-    
     # Pac-12
     "Arizona Wildcats": "Wildcats",
     "Arizona State Sun Devils": "Sun Devils",
@@ -247,7 +243,6 @@ NCAA_BASKETBALL_TEAMS = {
     "Virginia Cavaliers": "Cavaliers",
     "Virginia Tech Hokies": "Hokies",
     "Wake Forest Demon Deacons": "Demon Deacons",
-    
     # Big 12
     "Baylor Bears": "Bears",
     "BYU Cougars": "Cougars",
@@ -263,7 +258,6 @@ NCAA_BASKETBALL_TEAMS = {
     "Texas Tech Red Raiders": "Red Raiders",
     "UCF Knights": "Knights",
     "West Virginia Mountaineers": "Mountaineers",
-    
     # Big Ten
     "Illinois Fighting Illini": "Fighting Illini",
     "Indiana Hoosiers": "Hoosiers",
@@ -279,7 +273,6 @@ NCAA_BASKETBALL_TEAMS = {
     "Purdue Boilermakers": "Boilermakers",
     "Rutgers Scarlet Knights": "Scarlet Knights",
     "Wisconsin Badgers": "Badgers",
-    
     # SEC
     "Alabama Crimson Tide": "Crimson Tide",
     "Arkansas Razorbacks": "Razorbacks",
@@ -295,7 +288,6 @@ NCAA_BASKETBALL_TEAMS = {
     "Tennessee Volunteers": "Volunteers",
     "Texas A&M Aggies": "Aggies",
     "Vanderbilt Commodores": "Commodores",
-    
     # Pac-12
     "Arizona Wildcats": "Wildcats",
     "Arizona State Sun Devils": "Sun Devils",
@@ -354,7 +346,6 @@ SOCCER_TEAMS = {
     "Tottenham Hotspur": "Tottenham",
     "West Ham United": "West Ham",
     "Wolverhampton Wanderers": "Wolves",
-    
     # La Liga
     "Real Madrid": "Real Madrid",
     "Barcelona": "Barcelona",
@@ -376,7 +367,6 @@ SOCCER_TEAMS = {
     "Granada": "Granada",
     "Cadiz": "Cadiz",
     "Almeria": "Almeria",
-    
     # Bundesliga
     "Bayern Munich": "Bayern Munich",
     "Bayer Leverkusen": "Leverkusen",
@@ -398,7 +388,6 @@ SOCCER_TEAMS = {
     "VfB Stuttgart": "Stuttgart",
     "SV Darmstadt 98": "Darmstadt",
     "FC Augsburg": "Augsburg",
-    
     # Serie A
     "Inter Milan": "Inter",
     "Juventus": "Juventus",
@@ -420,7 +409,6 @@ SOCCER_TEAMS = {
     "Empoli": "Empoli",
     "Verona": "Verona",
     "Salernitana": "Salernitana",
-    
     # Ligue 1
     "Paris Saint-Germain": "PSG",
     "Nice": "Nice",
@@ -456,26 +444,28 @@ ALL_TEAM_MAPPINGS = {
     **SOCCER_TEAMS,
 }
 
+
 def get_team_display_name(team_name: str) -> str:
     """
     Get the display name for a team.
-    
+
     Args:
         team_name (str): The full team name
-        
+
     Returns:
         str: The display name (usually just the mascot/team name)
     """
     return ALL_TEAM_MAPPINGS.get(team_name, team_name)
 
+
 def get_team_display_name_by_league(team_name: str, league: str) -> str:
     """
     Get the display name for a team by specific league.
-    
+
     Args:
         team_name (str): The full team name
         league (str): The league name
-        
+
     Returns:
         str: The display name (usually just the mascot/team name)
     """
@@ -488,6 +478,6 @@ def get_team_display_name_by_league(team_name: str, league: str) -> str:
         "F1": F1_TEAMS,
         "SOCCER": SOCCER_TEAMS,
     }
-    
+
     league_teams = league_mappings.get(league, {})
-    return league_teams.get(team_name, team_name) 
+    return league_teams.get(team_name, team_name)

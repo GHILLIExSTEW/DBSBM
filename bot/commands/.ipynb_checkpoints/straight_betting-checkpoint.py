@@ -17,7 +17,6 @@ import discord
 import pytz
 import requests
 from api.sports_api import SportsAPI
-from config.leagues import LEAGUE_CONFIG
 from data.db_manager import DatabaseManager
 from data.game_utils import get_normalized_games_for_dropdown
 from discord import (
@@ -32,10 +31,11 @@ from discord import (
 )
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
-
 from utils.errors import BetServiceError, GameNotFoundError, ValidationError
 from utils.image_generator import BetSlipGenerator
 from utils.modals import StraightBetDetailsModal
+
+from config.leagues import LEAGUE_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -809,9 +809,11 @@ class StraightBetWorkflowView(View):
                     await self.latest_interaction.followup.send(
                         content=content or "Updating...",
                         view=view,
-                        files=attachments
-                        if attachments != discord.utils.MISSING
-                        else None,
+                        files=(
+                            attachments
+                            if attachments != discord.utils.MISSING
+                            else None
+                        ),
                         ephemeral=True,
                     )
                     self.message = await self.latest_interaction.original_response()
@@ -1036,7 +1038,8 @@ class StraightBetWorkflowView(View):
                     f"Unexpected step in StraightBetWorkflow: {self.current_step}"
                 )
                 await self.edit_message(
-                    content="❌ An unexpected error occurred in the workflow.", view=None
+                    content="❌ An unexpected error occurred in the workflow.",
+                    view=None,
                 )
                 self.stop()
                 return
@@ -1143,12 +1146,14 @@ class StraightBetWorkflowView(View):
                 )
                 bet_slip_gen = await self.get_bet_slip_generator()
                 bet_slip_image = await bet_slip_gen.generate_bet_slip(
-                    home_team=self.home_team
-                    if self.home_team
-                    else details.get("team", "N/A"),
-                    away_team=self.away_team
-                    if self.away_team
-                    else details.get("opponent", "N/A"),
+                    home_team=(
+                        self.home_team if self.home_team else details.get("team", "N/A")
+                    ),
+                    away_team=(
+                        self.away_team
+                        if self.away_team
+                        else details.get("opponent", "N/A")
+                    ),
                     league=self.league if self.league else details.get("league", "N/A"),
                     line=self.line if self.line else details.get("line", "N/A"),
                     odds=odds_val,

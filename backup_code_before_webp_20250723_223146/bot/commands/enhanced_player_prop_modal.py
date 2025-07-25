@@ -8,6 +8,7 @@ VERSION: 1.1.0 - Fixed PlayerPropSearchView attribute error
 import logging
 
 import discord
+
 from bot.config.prop_templates import (
     get_prop_groups_for_league,
     get_prop_templates_for_league,
@@ -286,7 +287,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             odds_input = self.odds.value.strip()
             try:
                 # Handle American odds (-110, +150) and decimal odds (2.5)
-                if odds_input.startswith('-') or odds_input.startswith('+'):
+                if odds_input.startswith("-") or odds_input.startswith("+"):
                     # American odds
                     odds_value = int(odds_input)
                     if odds_value == 0:
@@ -333,15 +334,17 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
     ) -> bool:
         """Create the player prop bet in the database using BetService."""
         try:
-            logger.info(f"Creating player prop bet for user {interaction.user.id} in guild {interaction.guild_id}")
+            logger.info(
+                f"Creating player prop bet for user {interaction.user.id} in guild {interaction.guild_id}"
+            )
             logger.info(f"Bet data: {bet_data}")
-            
+
             # Get bet service from bot
             bet_service = getattr(interaction.client, "bet_service", None)
             if not bet_service:
                 logger.error("BetService not found on bot instance")
                 return False
-            
+
             # Create the bet using BetService
             bet_serial = await bet_service.create_player_prop_bet(
                 guild_id=interaction.guild_id,
@@ -358,10 +361,12 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 api_game_id=bet_data.get("game_id"),  # Pass as api_game_id
                 confirmed=0,  # Not confirmed until units are set
             )
-            
+
             if bet_serial:
-                logger.info(f"Player prop bet created successfully with bet_serial: {bet_serial}")
-                
+                logger.info(
+                    f"Player prop bet created successfully with bet_serial: {bet_serial}"
+                )
+
                 # Add player to search cache for future searches
                 await self.player_search_service.add_player_to_cache(
                     bet_data["player_name"],
@@ -369,7 +374,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     bet_data["league"],
                     bet_data["sport"],
                 )
-                
+
                 return True
             else:
                 logger.error("Failed to create player prop bet - bet_serial is None")
@@ -379,10 +384,13 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             logger.error(f"Error creating player prop bet: {e}")
             logger.error(f"Exception type: {type(e)}")
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
             return False
 
-    async def _show_units_selection(self, interaction: discord.Interaction, bet_data: dict):
+    async def _show_units_selection(
+        self, interaction: discord.Interaction, bet_data: dict
+    ):
         """Show units selection screen after modal submission."""
         try:
             # Create units selection options
@@ -409,9 +417,11 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             async def units_callback(units_interaction: discord.Interaction):
                 selected_units = float(units_select.values[0])
-                
+
                 # Generate preview image with selected units
-                await self._show_units_preview(units_interaction, bet_data, selected_units)
+                await self._show_units_preview(
+                    units_interaction, bet_data, selected_units
+                )
 
             units_select.callback = units_callback
 
@@ -427,41 +437,44 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
                 f"**Units:** 1.0\n\n"
                 f"**Select unit amount for bet:**",
-                view=view
+                view=view,
             )
 
         except Exception as e:
             logger.error(f"Error showing units selection: {e}")
             await interaction.response.send_message(
-                "❌ Error showing units selection. Please try again.",
-                ephemeral=True
+                "❌ Error showing units selection. Please try again.", ephemeral=True
             )
 
-    async def _show_units_preview(self, interaction: discord.Interaction, bet_data: dict, units: float):
+    async def _show_units_preview(
+        self, interaction: discord.Interaction, bet_data: dict, units: float
+    ):
         """Show preview image after unit selection."""
         try:
             import io
-            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
-            from discord import File
             from datetime import datetime, timezone
-            
+
+            from discord import File
+
+            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+
             # Generate preview image
             generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
-            
+
             # Format the line value properly
-            line_value = bet_data.get('line_value', 'N/A')
+            line_value = bet_data.get("line_value", "N/A")
             if isinstance(line_value, (int, float)):
                 line_value = str(line_value)
-            
+
             # Format the prop type
-            prop_type = bet_data.get('prop_type', 'N/A')
-            prop_type = prop_type.replace('_', ' ').title()
-            
+            prop_type = bet_data.get("prop_type", "N/A")
+            prop_type = prop_type.replace("_", " ").title()
+
             # Generate the image
             image_bytes = generator.generate_player_prop_bet_image(
-                player_name=bet_data['player_name'],
-                team_name=bet_data['team_name'],
-                league=bet_data['league'],
+                player_name=bet_data["player_name"],
+                team_name=bet_data["team_name"],
+                league=bet_data["league"],
                 line=line_value,
                 prop_type=prop_type,
                 units=units,
@@ -469,42 +482,46 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 bet_id="PREVIEW",
                 timestamp=datetime.now(timezone.utc),
                 guild_id=str(interaction.guild_id),
-                odds=bet_data.get('odds', 0.0),
+                odds=bet_data.get("odds", 0.0),
                 units_display_mode="auto",
                 display_as_risk=False,
             )
-            
+
             if image_bytes:
                 # Create file object for Discord
-                file = File(io.BytesIO(image_bytes), filename="player_prop_preview.webp")
-                
+                file = File(
+                    io.BytesIO(image_bytes), filename="player_prop_preview.webp"
+                )
+
                 # Create confirmation buttons
                 confirm_button = discord.ui.Button(
                     label="✅ Confirm Bet",
                     style=discord.ButtonStyle.success,
-                    custom_id="confirm_bet"
+                    custom_id="confirm_bet",
                 )
-                
+
                 back_button = discord.ui.Button(
                     label="🔄 Change Units",
                     style=discord.ButtonStyle.secondary,
-                    custom_id="change_units"
+                    custom_id="change_units",
                 )
-                
+
                 async def confirm_callback(confirm_interaction: discord.Interaction):
-                    await self._update_bet_with_units(confirm_interaction, bet_data, units)
-                
+                    await self._update_bet_with_units(
+                        confirm_interaction, bet_data, units
+                    )
+
                 async def back_callback(back_interaction: discord.Interaction):
                     await self._show_units_selection(back_interaction, bet_data)
-                
+
                 confirm_button.callback = confirm_callback
                 back_button.callback = back_callback
-                
+
                 # Create view with buttons
                 view = discord.ui.View(timeout=300)
                 view.add_item(confirm_button)
                 view.add_item(back_button)
-                
+
                 # Send new message with file (can't edit with files)
                 await interaction.response.send_message(
                     content=f"🎯 **Player Prop Bet Preview**\n\n"
@@ -515,61 +532,60 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     f"**Preview your bet slip below:**",
                     view=view,
                     file=file,
-                    ephemeral=True
+                    ephemeral=True,
                 )
             else:
                 # Fallback if image generation fails
                 await interaction.response.send_message(
                     "❌ Error generating preview image. Please try again.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
-                
+
         except Exception as e:
             logger.error(f"Error showing units preview: {e}")
             await interaction.response.send_message(
-                "❌ Error showing preview. Please try again.",
-                ephemeral=True
+                "❌ Error showing preview. Please try again.", ephemeral=True
             )
 
-    async def _update_bet_with_units(self, interaction: discord.Interaction, bet_data: dict, units: float):
+    async def _update_bet_with_units(
+        self, interaction: discord.Interaction, bet_data: dict, units: float
+    ):
         """Update the bet with units, then show final confirmation."""
         try:
-            logger.info(f"Updating bet with units: {units} for user {interaction.user.id}")
-            
+            logger.info(
+                f"Updating bet with units: {units} for user {interaction.user.id}"
+            )
+
             # Get bet service from bot
             bet_service = getattr(interaction.client, "bet_service", None)
             if not bet_service:
                 logger.error("BetService not found on bot instance")
                 await interaction.response.send_message(
-                    "❌ Error updating bet. Please try again.",
-                    ephemeral=True
+                    "❌ Error updating bet. Please try again.", ephemeral=True
                 )
                 return
-            
+
             # Get the most recent player prop bet for this user
             bet_record = await self.db_manager.fetch_one(
                 "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
-                (interaction.user.id, interaction.guild_id)
+                (interaction.user.id, interaction.guild_id),
             )
-            
+
             if not bet_record:
                 logger.error("No player prop bet found to update")
                 await interaction.response.send_message(
-                    "❌ No bet found to update. Please try again.",
-                    ephemeral=True
+                    "❌ No bet found to update. Please try again.", ephemeral=True
                 )
                 return
-            
+
             bet_serial = bet_record["bet_serial"]
             logger.info(f"Updating bet_serial: {bet_serial} with units: {units}")
-            
+
             # Update the bet using BetService
             await bet_service.update_bet(
-                bet_serial=bet_serial,
-                units=units,
-                status="pending"
+                bet_serial=bet_serial, units=units, status="pending"
             )
-            
+
             logger.info(f"Bet updated successfully")
 
             # Show channel selection
@@ -578,11 +594,12 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
         except Exception as e:
             logger.error(f"Error updating bet with units: {e}")
             await interaction.response.send_message(
-                "❌ Error confirming bet. Please try again.",
-                ephemeral=True
+                "❌ Error confirming bet. Please try again.", ephemeral=True
             )
 
-    async def _show_channel_selection(self, interaction: discord.Interaction, bet_data: dict, units: float):
+    async def _show_channel_selection(
+        self, interaction: discord.Interaction, bet_data: dict, units: float
+    ):
         """Show channel selection for posting the bet."""
         try:
             # Get available channels from guild settings
@@ -591,7 +608,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
                 (str(interaction.guild_id),),
             )
-            
+
             if guild_settings:
                 for channel_id in (
                     guild_settings.get("embed_channel_1"),
@@ -600,10 +617,14 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     if channel_id:
                         try:
                             cid = int(channel_id)
-                            channel = interaction.client.get_channel(cid) or await interaction.client.fetch_channel(cid)
+                            channel = interaction.client.get_channel(
+                                cid
+                            ) or await interaction.client.fetch_channel(cid)
                             if (
                                 isinstance(channel, discord.TextChannel)
-                                and channel.permissions_for(interaction.guild.me).send_messages
+                                and channel.permissions_for(
+                                    interaction.guild.me
+                                ).send_messages
                             ):
                                 if channel not in allowed_channels:
                                     allowed_channels.append(channel)
@@ -613,7 +634,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             if not allowed_channels:
                 await interaction.response.edit_message(
                     content="❌ No valid embed channels configured. Please contact an admin.",
-                    view=None
+                    view=None,
                 )
                 return
 
@@ -624,7 +645,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     discord.SelectOption(
                         label=f"#{channel.name}",
                         value=str(channel.id),
-                        description=f"Post to {channel.name}"
+                        description=f"Post to {channel.name}",
                     )
                 )
 
@@ -637,7 +658,9 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             async def channel_callback(channel_interaction: discord.Interaction):
                 selected_channel_id = int(channel_select.values[0])
-                await self._post_bet_to_channel(channel_interaction, bet_data, units, selected_channel_id)
+                await self._post_bet_to_channel(
+                    channel_interaction, bet_data, units, selected_channel_id
+                )
 
             channel_select.callback = channel_callback
 
@@ -653,43 +676,50 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
                 f"**Units:** {units}\n\n"
                 f"**Select channel to post your bet:**",
-                view=view
+                view=view,
             )
 
         except Exception as e:
             logger.error(f"Error showing channel selection: {e}")
             await interaction.response.send_message(
-                "❌ Error showing channel selection. Please try again.",
-                ephemeral=True
+                "❌ Error showing channel selection. Please try again.", ephemeral=True
             )
 
-    async def _post_bet_to_channel(self, interaction: discord.Interaction, bet_data: dict, units: float, channel_id: int):
+    async def _post_bet_to_channel(
+        self,
+        interaction: discord.Interaction,
+        bet_data: dict,
+        units: float,
+        channel_id: int,
+    ):
         """Post the bet to the selected channel with image."""
         try:
             # Get the channel
             channel = interaction.client.get_channel(channel_id)
             if not channel:
                 await interaction.response.send_message(
-                    "❌ Selected channel not found. Please try again.",
-                    ephemeral=True
+                    "❌ Selected channel not found. Please try again.", ephemeral=True
                 )
                 return
 
             # Generate bet slip image
-            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
             import io
             from datetime import datetime, timezone
 
+            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+
             generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
-            
+
             # Get bet ID from database using the most recent bet for this user
-            logger.info(f"Retrieving bet_serial for user {interaction.user.id} in guild {interaction.guild_id}")
-            
+            logger.info(
+                f"Retrieving bet_serial for user {interaction.user.id} in guild {interaction.guild_id}"
+            )
+
             bet_record = await self.db_manager.fetch_one(
                 "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
-                (interaction.user.id, interaction.guild_id)
+                (interaction.user.id, interaction.guild_id),
             )
-            
+
             logger.info(f"Bet record found: {bet_record}")
 
             bet_id = str(bet_record.get("bet_serial", "")) if bet_record else ""
@@ -717,7 +747,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 # Create Discord file
                 image_file = discord.File(
                     io.BytesIO(bet_slip_image_bytes),
-                    filename=f"player_prop_slip_{bet_id}.webp"
+                    filename=f"player_prop_slip_{bet_id}.webp",
                 )
 
                 # Get capper data for webhook
@@ -725,7 +755,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
                     (interaction.guild_id, interaction.user.id),
                 )
-                
+
                 webhook_username = (
                     capper_data.get("display_name")
                     if capper_data and capper_data.get("display_name")
@@ -734,7 +764,10 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
                     from bot.utils.image_url_converter import convert_image_path_to_url
-                    webhook_avatar_url = convert_image_path_to_url(capper_data["image_path"])
+
+                    webhook_avatar_url = convert_image_path_to_url(
+                        capper_data["image_path"]
+                    )
 
                 # Get member role for mention
                 member_role_id = None
@@ -751,13 +784,13 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 # Get webhook for the channel
                 webhooks = await channel.webhooks()
                 webhook = None
-                
+
                 # Find existing webhook or create new one
                 for existing_webhook in webhooks:
                     if existing_webhook.name == "Bet Tracking AI":
                         webhook = existing_webhook
                         break
-                
+
                 if not webhook:
                     webhook = await channel.create_webhook(name="Bet Tracking AI")
 
@@ -766,7 +799,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     content=content,
                     file=image_file,
                     username=webhook_username,
-                    avatar_url=webhook_avatar_url
+                    avatar_url=webhook_avatar_url,
                 )
 
                 # Update bet with channel_id and message_id using BetService
@@ -776,15 +809,18 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                         await bet_service.update_straight_bet_channel(
                             bet_serial=int(bet_id),
                             channel_id=channel_id,
-                            message_id=webhook_message.id
+                            message_id=webhook_message.id,
                         )
-                        logger.info(f"Updated player prop bet {bet_id} with message_id {webhook_message.id} and channel_id {channel_id}")
+                        logger.info(
+                            f"Updated player prop bet {bet_id} with message_id {webhook_message.id} and channel_id {channel_id}"
+                        )
                     except Exception as e:
-                        logger.error(f"Failed to update player prop bet with message_id: {e}")
+                        logger.error(
+                            f"Failed to update player prop bet with message_id: {e}"
+                        )
                         # Fallback to just updating channel_id
                         await bet_service.update_bet(
-                            bet_serial=int(bet_id),
-                            channel_id=channel_id
+                            bet_serial=int(bet_id), channel_id=channel_id
                         )
 
                 # Show success message
@@ -795,20 +831,19 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                     f"**Bet:** {bet_data['bet_direction'].upper()} {bet_data['line_value']} @ {bet_data['odds']}\n"
                     f"**Units:** {units}\n\n"
                     f"🎉 Your bet has been posted to <#{channel_id}>!",
-                    view=None
+                    view=None,
                 )
 
             else:
                 await interaction.response.send_message(
                     "❌ Error generating bet slip image. Please try again.",
-                    ephemeral=True
+                    ephemeral=True,
                 )
 
         except Exception as e:
             logger.error(f"Error posting bet to channel: {e}")
             await interaction.response.send_message(
-                "❌ Error posting bet to channel. Please try again.",
-                ephemeral=True
+                "❌ Error posting bet to channel. Please try again.", ephemeral=True
             )
 
 
@@ -823,7 +858,7 @@ class PlayerPropSearchView(discord.ui.View):
         self.game_id = game_id
         self.team_name = team_name
         self.player_search_service = PlayerSearchService(db_manager)
-        
+
         # Pagination state
         self.all_players = []
         self.current_page = 0
@@ -837,7 +872,9 @@ class PlayerPropSearchView(discord.ui.View):
         try:
             # Load all players for this league and team
             self.all_players = await self.player_search_service.get_popular_players(
-                self.league, self.team_name, limit=100  # Get more players for pagination
+                self.league,
+                self.team_name,
+                limit=100,  # Get more players for pagination
             )
 
             if not self.all_players:
@@ -901,13 +938,13 @@ class PlayerPropSearchView(discord.ui.View):
             prev_button = discord.ui.Button(
                 label="◀️ Previous",
                 style=discord.ButtonStyle.secondary,
-                disabled=self.current_page == 0
+                disabled=self.current_page == 0,
             )
-            
+
             next_button = discord.ui.Button(
                 label="Next ▶️",
                 style=discord.ButtonStyle.secondary,
-                disabled=end_idx >= len(self.all_players)
+                disabled=end_idx >= len(self.all_players),
             )
 
             async def prev_callback(prev_interaction: discord.Interaction):
@@ -933,7 +970,9 @@ class PlayerPropSearchView(discord.ui.View):
             )
 
             # Calculate page info
-            total_pages = (len(self.all_players) + self.players_per_page - 1) // self.players_per_page
+            total_pages = (
+                len(self.all_players) + self.players_per_page - 1
+            ) // self.players_per_page
             page_info = f"Page {self.current_page + 1} of {total_pages}"
 
             await interaction.response.edit_message(
@@ -1008,7 +1047,7 @@ class PlayerPropSearchView(discord.ui.View):
             await interaction.response.edit_message(
                 content=f"**Select category for {selected_player}:**\n"
                 f"Choose a stat category to see available props:",
-                view=view
+                view=view,
             )
 
         except Exception as e:
@@ -1026,7 +1065,7 @@ class PlayerPropSearchView(discord.ui.View):
             # Get prop types for this category
             prop_groups = get_prop_groups_for_league(self.league)
             category_props = prop_groups.get(category_name, [])
-            
+
             if not category_props:
                 await interaction.response.send_message(
                     f"No props found in {category_name} category.", ephemeral=True
@@ -1039,17 +1078,19 @@ class PlayerPropSearchView(discord.ui.View):
                 template = self.prop_templates.get(prop_type)
                 if template:
                     # Format the range nicely
-                    range_text = f"{template.min_value}-{template.max_value} {template.unit}"
+                    range_text = (
+                        f"{template.min_value}-{template.max_value} {template.unit}"
+                    )
                     if template.min_value == 0.0:
                         range_text = f"0-{template.max_value} {template.unit}"
-                    
+
                     # Limit description to 100 characters (Discord limit)
                     if len(range_text) > 100:
                         range_text = range_text[:97] + "..."
-                    
+
                     # Limit label to 100 characters (Discord limit)
                     label = template.label[:100]
-                    
+
                     prop_options.append(
                         discord.SelectOption(
                             label=label,
@@ -1079,30 +1120,42 @@ class PlayerPropSearchView(discord.ui.View):
                         super().__init__(timeout=300)
                         self.parent_view = parent_view
 
-                    @discord.ui.button(label="Create Prop Bet", style=discord.ButtonStyle.success)
-                    async def create_prop_bet(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                    @discord.ui.button(
+                        label="Create Prop Bet", style=discord.ButtonStyle.success
+                    )
+                    async def create_prop_bet(
+                        self,
+                        button_interaction: discord.Interaction,
+                        button: discord.ui.Button,
+                    ):
                         try:
                             # Check if we have the required data
-                            if not hasattr(self.parent_view, 'selected_player') or not hasattr(self.parent_view, 'selected_prop_type'):
+                            if not hasattr(
+                                self.parent_view, "selected_player"
+                            ) or not hasattr(self.parent_view, "selected_prop_type"):
                                 await button_interaction.response.send_message(
                                     "❌ Error: Missing player or prop selection. Please try again.",
-                                    ephemeral=True
+                                    ephemeral=True,
                                 )
                                 return
 
                             # Create the enhanced player prop modal
                             modal = EnhancedPlayerPropModal(
-                                self.parent_view.bot, 
-                                self.parent_view.db_manager, 
-                                self.parent_view.league, 
-                                self.parent_view.game_id, 
-                                self.parent_view.team_name
+                                self.parent_view.bot,
+                                self.parent_view.db_manager,
+                                self.parent_view.league,
+                                self.parent_view.game_id,
+                                self.parent_view.team_name,
                             )
-                            
+
                             # Pre-fill the player name and prop type
-                            modal.player_search.default = self.parent_view.selected_player
-                            modal.prop_type.default = self.parent_view.selected_prop_type
-                            
+                            modal.player_search.default = (
+                                self.parent_view.selected_player
+                            )
+                            modal.prop_type.default = (
+                                self.parent_view.selected_prop_type
+                            )
+
                             await button_interaction.response.send_modal(modal)
 
                         except Exception as e:
@@ -1111,11 +1164,19 @@ class PlayerPropSearchView(discord.ui.View):
                                 "❌ Error opening bet modal.", ephemeral=True
                             )
 
-                    @discord.ui.button(label="Back to Categories", style=discord.ButtonStyle.secondary)
-                    async def back_to_categories(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                    @discord.ui.button(
+                        label="Back to Categories", style=discord.ButtonStyle.secondary
+                    )
+                    async def back_to_categories(
+                        self,
+                        button_interaction: discord.Interaction,
+                        button: discord.ui.Button,
+                    ):
                         try:
                             # Go back to category selection
-                            await self.parent_view._show_prop_type_selection(button_interaction, self.parent_view.selected_player)
+                            await self.parent_view._show_prop_type_selection(
+                                button_interaction, self.parent_view.selected_player
+                            )
                         except Exception as e:
                             logger.error(f"Error going back to categories: {e}")
                             await button_interaction.response.send_message(
@@ -1139,13 +1200,15 @@ class PlayerPropSearchView(discord.ui.View):
             view = discord.ui.View(timeout=300)
             view.add_item(prop_select)
             view.add_item(
-                discord.ui.Button(label="Back to Categories", style=discord.ButtonStyle.secondary)
+                discord.ui.Button(
+                    label="Back to Categories", style=discord.ButtonStyle.secondary
+                )
             )
 
             await interaction.response.edit_message(
                 content=f"**{category_name} Props for {self.selected_player}:**\n"
                 f"Choose the specific stat you want to bet on:",
-                view=view
+                view=view,
             )
 
         except Exception as e:
@@ -1154,8 +1217,6 @@ class PlayerPropSearchView(discord.ui.View):
                 "❌ Error showing props for category. Please try again.",
                 ephemeral=True,
             )
-
-
 
 
 async def setup_enhanced_player_prop(

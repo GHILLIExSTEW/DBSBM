@@ -17,27 +17,30 @@ from dotenv import load_dotenv
 try:
     from bot.api.sports_api import SportsAPI
     from bot.services.live_game_channel_service import LiveGameChannelService
-    from bot.utils.game_line_image_generator import GameLineImageGenerator
-    from bot.utils.parlay_image_generator import ParlayImageGenerator
-    from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
-    from bot.utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
-    from bot.utils.performance_monitor import get_performance_monitor, background_monitoring
     from bot.utils.error_handler import (
         get_error_handler,
         initialize_default_recovery_strategies,
     )
+    from bot.utils.game_line_image_generator import GameLineImageGenerator
+    from bot.utils.parlay_image_generator import ParlayImageGenerator
+    from bot.utils.performance_monitor import (
+        background_monitoring,
+        get_performance_monitor,
+    )
+    from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+    from bot.utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
 except ImportError:
     from api.sports_api import SportsAPI
     from services.live_game_channel_service import LiveGameChannelService
-    from utils.game_line_image_generator import GameLineImageGenerator
-    from utils.parlay_image_generator import ParlayImageGenerator
-    from utils.player_prop_image_generator import PlayerPropImageGenerator
-    from utils.rate_limiter import get_rate_limiter, cleanup_rate_limits
-    from utils.performance_monitor import get_performance_monitor, background_monitoring
     from utils.error_handler import (
         get_error_handler,
         initialize_default_recovery_strategies,
     )
+    from utils.game_line_image_generator import GameLineImageGenerator
+    from utils.parlay_image_generator import ParlayImageGenerator
+    from utils.performance_monitor import background_monitoring, get_performance_monitor
+    from utils.player_prop_image_generator import PlayerPropImageGenerator
+    from utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
 
 # --- Logging Setup ---
 log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -85,27 +88,27 @@ else:
 
 # Try to import with bot prefix first, then without
 try:
+    from bot.commands.sync_cog import setup_sync_cog
     from bot.data.db_manager import DatabaseManager
     from bot.services.admin_service import AdminService
     from bot.services.analytics_service import AnalyticsService
     from bot.services.bet_service import BetService
     from bot.services.data_sync_service import DataSyncService
     from bot.services.game_service import GameService
+    from bot.services.platinum_service import PlatinumService
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
-    from bot.services.platinum_service import PlatinumService
-    from bot.commands.sync_cog import setup_sync_cog
 except ImportError:
+    from commands.sync_cog import setup_sync_cog
     from data.db_manager import DatabaseManager
     from services.admin_service import AdminService
     from services.analytics_service import AnalyticsService
     from services.bet_service import BetService
     from services.data_sync_service import DataSyncService
     from services.game_service import GameService
+    from services.platinum_service import PlatinumService
     from services.user_service import UserService
     from services.voice_service import VoiceService
-    from services.platinum_service import PlatinumService
-    from commands.sync_cog import setup_sync_cog
 
 # --- Environment Variable Validation ---
 # Define required environment variables
@@ -378,11 +381,13 @@ class BettingBot(commands.Bot):
                     if cmd.name not in ("setup", "load_logos", "down", "up"):
                         guild_command_names.append(cmd.name)
 
-                logger.info(f"Stored {len(guild_command_names)} command names for guild syncing: {guild_command_names}")
+                logger.info(
+                    f"Stored {len(guild_command_names)} command names for guild syncing: {guild_command_names}"
+                )
 
                 # Clear all commands globally first
                 self.tree.clear_commands(guild=None)
-                
+
                 # Add setup command globally
                 self.tree.add_command(setup_command, guild=None)
                 await self.tree.sync()
@@ -442,15 +447,22 @@ class BettingBot(commands.Bot):
                         for cmd_name in guild_command_names:
                             try:
                                 # Get the command from the original all_commands list
-                                cmd = next((c for c in all_commands if c.name == cmd_name), None)
+                                cmd = next(
+                                    (c for c in all_commands if c.name == cmd_name),
+                                    None,
+                                )
                                 if cmd:
                                     self.tree.add_command(cmd, guild=guild_obj)
                                     commands_added += 1
                                 else:
-                                    logger.warning(f"Command {cmd_name} not found in all_commands")
+                                    logger.warning(
+                                        f"Command {cmd_name} not found in all_commands"
+                                    )
                             except Exception as e:
-                                logger.error(f"Failed to add command {cmd_name} to guild {guild_id}: {e}")
-                        
+                                logger.error(
+                                    f"Failed to add command {cmd_name} to guild {guild_id}: {e}"
+                                )
+
                         logger.info(
                             f"Synced {commands_added} commands to guild {guild_id} (subscription: {subscription_level})"
                         )
@@ -497,7 +509,10 @@ class BettingBot(commands.Bot):
             os.makedirs(os.path.dirname(webapp_log_path), exist_ok=True)
             with open(webapp_log_path, "a") as log_file:
                 self.webapp_process = subprocess.Popen(
-                    [sys.executable, os.path.join(os.path.dirname(BASE_DIR), "webapp.py")],
+                    [
+                        sys.executable,
+                        os.path.join(os.path.dirname(BASE_DIR), "webapp.py"),
+                    ],
                     stdout=log_file,
                     stderr=log_file,
                     text=True,
@@ -595,13 +610,17 @@ class BettingBot(commands.Bot):
 
             if self.fetcher_process.poll() is not None:
                 return_code = self.fetcher_process.returncode
-                
+
                 if return_code == 0:
                     # Fetcher exited successfully - this might be unexpected since it should run continuously
-                    logger.warning("Fetcher process exited with return code 0 - restarting to maintain continuous operation")
+                    logger.warning(
+                        "Fetcher process exited with return code 0 - restarting to maintain continuous operation"
+                    )
                     # Restart the fetcher to maintain continuous operation
                     await asyncio.sleep(5)
-                    logger.info("Restarting fetcher process to maintain continuous operation...")
+                    logger.info(
+                        "Restarting fetcher process to maintain continuous operation..."
+                    )
                     self.start_fetcher()
                 else:
                     # Fetcher crashed with error - restart it
@@ -616,7 +635,8 @@ class BettingBot(commands.Bot):
                             lines = f.readlines()
                             last_lines = lines[-20:] if len(lines) > 20 else lines
                             logger.error(
-                                "Last few lines from fetcher.log:\n%s", "".join(last_lines)
+                                "Last few lines from fetcher.log:\n%s",
+                                "".join(last_lines),
                             )
                     except Exception as e:
                         logger.error("Failed to read fetcher.log: %s", e)
@@ -662,20 +682,24 @@ class BettingBot(commands.Bot):
             logger.info("Registered commands: %s", commands_list)
 
         logger.info("Starting services...")
-        
+
         # Initialize community engagement services
         try:
-            from bot.services.community_events import CommunityEventsService
             from bot.services.community_analytics import CommunityAnalyticsService
-            
-            self.community_events_service = CommunityEventsService(self, self.db_manager)
-            self.community_analytics_service = CommunityAnalyticsService(self, self.db_manager)
+            from bot.services.community_events import CommunityEventsService
+
+            self.community_events_service = CommunityEventsService(
+                self, self.db_manager
+            )
+            self.community_analytics_service = CommunityAnalyticsService(
+                self, self.db_manager
+            )
             logger.info("Community engagement services initialized")
         except Exception as e:
             logger.error(f"Failed to initialize community engagement services: {e}")
             self.community_events_service = None
             self.community_analytics_service = None
-        
+
         service_starts = [
             self.admin_service.start(),
             self.analytics_service.start(),
@@ -687,7 +711,7 @@ class BettingBot(commands.Bot):
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
         ]
-        
+
         # Add community services if initialized
         if self.community_events_service:
             service_starts.append(self.community_events_service.start())
@@ -779,9 +803,7 @@ class BettingBot(commands.Bot):
             self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
             await self.tree.sync(guild=guild_obj)
-            logger.info(
-                f"Successfully synced setup command to new guild {guild.id}"
-            )
+            logger.info(f"Successfully synced setup command to new guild {guild.id}")
         except Exception as e:
             logger.error(
                 f"Failed to sync setup command to new guild {guild.id}: {e}",

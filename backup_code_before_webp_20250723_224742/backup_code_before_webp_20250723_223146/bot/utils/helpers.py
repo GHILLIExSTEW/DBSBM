@@ -7,8 +7,9 @@ from typing import List, Optional
 
 import requests
 import thesportsdb
-from bot.config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
 from PIL import Image
+
+from bot.config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
 
 # NCAA teams list (661 Division I and II teams, abridged for brevity)
 NCAA_TEAMS = [

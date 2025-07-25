@@ -79,24 +79,24 @@ This call does not count against the daily quota.
 get"https://v1.basketball.api-sports.io/status"
 // response
     "get": "status"
-    "parameters" : 
-    "errors" : 
+    "parameters" :
+    "errors" :
     "results" : 1
-    "response" : 
-        "account" : 
+    "response" :
+        "account" :
             "firstname" : "xxxx"
             "lastname" : "XXXXXX"
             "email": "xxx@xxx.com"
-        
-        "subscription" : 
+
+        "subscription" :
             "plan": "Free"
             "end": "2020-04-10T23:24:27+00:00"
             "active" : true
-        
-        "requests" : 
+
+        "requests" :
             "current" : 12
             "limit_day" : 100
-        
+
 (
 )
 ;
@@ -126,7 +126,7 @@ get"https://v1.basketball.api-sports.io/status"
 https://api-sports.io/documentation/basketball/v1 3/67
 
 --- Page 4 ---
-    
+
 Headers sent as response
 When consuming our API, you will always receive the following headers appended to the response:
 x-ratelimit-requests-limit : The number of requests allocated per day according to your
@@ -176,7 +176,7 @@ libcurl
 CURL *curl
 CURLcode res
 curl = curl_easy_init
-ifcurl 
+ifcurl
   curl_easy_setopt curl, CURLOPT_CUSTOMREQUEST, "GET"
   curl_easy_setopt curl, CURLOPT_URL, "https://v1.basketball.api-sports.io/leagues
   curl_easy_setopt curl, CURLOPT_FOLLOWLOCATION, 1L
@@ -246,21 +246,21 @@ https://api-sports.io/documentation/basketball/v1 7/67
 Console.WriteLine response.Content
 cURL
 Curl
-curl --request GET 
-    --url https://v1.basketball.api-sports.io/leagues 
-    --header 'x-rapidapi-host: v1.basketball.api-sports.io'  
+curl --request GET
+    --url https://v1.basketball.api-sports.io/leagues
+    --header 'x-rapidapi-host: v1.basketball.api-sports.io'
     --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
 Dart
 http
-var headers = 
+var headers =
   'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  'v1.basketball.api-sports.io'
 var request = httpRequest 'GET' Uriparse'https://v1.basketball.api-sports.io/l
 request headers addAllheaders
 httpStreamedResponse response = await request send
-if response statusCode == 200 
+if response statusCode == 200
   printawait response streambytesToString
-else 
+else
   printresponse reasonPhrase
 (
 )
@@ -316,33 +316,33 @@ https://api-sports.io/documentation/basketball/v1 8/67
 Go
 Native
 package main
-import 
+import
   "fmt"
   "net/http"
   "io/ioutil"
-func main 
+func main
   url := "https://v1.basketball.api-sports.io/leagues"
   method := "GET"
-  client := &httpClient 
-  
+  client := &httpClient
+
   req err := httpNewRequest method url nil
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   reqHeaderAdd"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
   reqHeaderAdd"x-rapidapi-host"  "v1.basketball.api-sports.io"
   res err := client Doreq
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   defer resBodyClose
   body err := ioutil ReadAll resBody
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   fmtPrintln stringbody
 (
 )
@@ -410,7 +410,7 @@ OkHttp
 var myHeaders = new Headers
 myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 myHeaders append"x-rapidapi-host"  "v1.basketball.api-sports.io"
-var requestOptions = 
+var requestOptions =
   method : 'GET'
   headers : myHeaders
   redirect : 'follow'
@@ -425,7 +425,7 @@ Fetch
 var myHeaders = new Headers
 myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 myHeaders append"x-rapidapi-host"  "v1.basketball.api-sports.io"
-var requestOptions = 
+var requestOptions =
   method: 'GET'
   headers: myHeaders
 (
@@ -492,23 +492,23 @@ fetch"https://v1.basketball.api-sports.io/leagues"  requestOptions
   thenresult => console logresult
   catcherror => console log'error'  error
 jQuery
-var settings = 
+var settings =
   "url": "https://v1.basketball.api-sports.io/leagues"
   "method" : "GET"
   "timeout" : 0
-  "headers" : 
+  "headers" :
     "x-rapidapi-key" : "XxXxXxXxXxXxXxXxXxXxXxXx"
     "x-rapidapi-host" : "v1.basketball.api-sports.io"
-  
-$ajaxsettings donefunction  response  
+
+$ajaxsettings donefunction  response
   console logresponse
 XHR
 var xhr = new XMLHttpRequest
 xhrwithCredentials = true
-xhraddEventListener "readystatechange"  function  
-  ifthisreadyState === 4 
+xhraddEventListener "readystatechange"  function
+  ifthisreadyState === 4
     console logthisresponseText
-  
+
 xhropen"GET" "https://v1.basketball.api-sports.io/leagues"
 xhrsetRequestHeader "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 xhrsetRequestHeader "x-rapidapi-host"  "v1.basketball.api-sports.io"
@@ -612,32 +612,32 @@ https://api-sports.io/documentation/basketball/v1 11/67
 NodeJs
 Axios
 var axios = require 'axios'
-var config = 
+var config =
   method  'get'
   url 'https://v1.basketball.api-sports.io/leagues'
-  headers  
+  headers
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v1.basketball.api-sports.io'
-  
+
 axiosconfig
-thenfunction  response  
+thenfunction  response
   console logJSONstringify response data
-catchfunction  error 
+catchfunction  error
   console logerror
 Native
 var https = require 'follow-redirects' https
 var fs = require 'fs'
-var options = 
+var options =
   'method'  'GET'
   'hostname'  'v1.basketball.api-sports.io'
   'path' '/leagues'
-  'headers'  
+  'headers'
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v1.basketball.api-sports.io'
-  
+
   'maxRedirects'  20
-var req = httpsrequest options  function  res 
-  var chunks = 
+var req = httpsrequest options  function  res
+  var chunks =
 (
 )
 ;
@@ -719,27 +719,27 @@ var req = httpsrequest options  function  res
 https://api-sports.io/documentation/basketball/v1 12/67
 
 --- Page 13 ---
-  reson"data" function  chunk 
+  reson"data" function  chunk
     chunks pushchunk
-  
-  reson"end" function  chunk 
+
+  reson"end" function  chunk
     var body = Buffer concatchunks
     console logbodytoString
-  
-  reson"error"  function  error 
+
+  reson"error"  function  error
     console errorerror
-  
+
 reqend
 Requests
 var request = require 'request'
-var options = 
+var options =
   'method'  'GET'
   'url' 'https://v1.basketball.api-sports.io/leagues'
-  'headers'  
+  'headers'
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v1.basketball.api-sports.io'
-  
-request options  function  error response  
+
+request options  function  error response
   if error throw new Errorerror
   console logresponse body
 Unirest
@@ -748,11 +748,11 @@ var req = unirest 'GET' 'https://v1.basketball.api-sports.io/leagues'
   headers
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v1.basketball.api-sports.io'
-  
-  endfunction  res 
+
+  endfunction  res
     if reserror throw new Errorreserror
     console logresraw_body
-  
+
 .
 (
 ,
@@ -892,17 +892,17 @@ request setAllHTTPHeaderFields headers
 request setHTTPMethod @"GET"
 NSURLSession *session = NSURLSession sharedSession
 NSURLSessionDataTask *dataTask = session dataTaskWithRequest request
-completionHandler ^NSData *data NSURLResponse *response  NSError *error 
-  if error 
+completionHandler ^NSData *data NSURLResponse *response  NSError *error
+  if error
     NSLog@"%@" error
     dispatch_semaphore_signal sema
-   else 
+   else
     NSHTTPURLResponse *httpResponse = NSHTTPURLResponse * response
     NSError *parseError = nil
     NSDictionary *responseDictionary = NSJSONSerialization JSONObjectWithData dat
     NSLog@"%@"responseDictionary
     dispatch_semaphore_signal sema
-  
+
 dataTask resume
 dispatch_semaphore_wait sema DISPATCH_TIME_FOREVER
 .
@@ -987,7 +987,7 @@ open Cohttp
 open Cohttp_lwt_unix
 let reqBody =
   let uri = Uriof_string "https://v1.basketball.api-sports.io/leagues"  in
-  let headers = Header init 
+  let headers = Header init
     |> fun h -> Header add h "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
     |> fun h -> Header add h "x-rapidapi-host"  "v1.basketball.api-sports.io"
   in
@@ -1045,7 +1045,7 @@ https://api-sports.io/documentation/basketball/v1 15/67
   CURLOPT_HTTPHEADER  => array
     'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host: v1.basketball.api-sports.io'
-  
+
 $response  = curl_exec $curl
 curl_close $curl
 echo $response
@@ -1060,16 +1060,16 @@ $request ->setConfig array
 $request ->setHeader array
   'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  => 'v1.basketball.api-sports.io'
-try 
+try
   $response  = $request ->send
-  if $response ->getStatus  == 200 
+  if $response ->getStatus  == 200
     echo $response ->getBody
-  
-  else 
+
+  else
     echo 'Unexpected HTTP status: '  . $response ->getStatus  . ' ' .
     $response ->getReasonPhrase
-  
-catchHTTP_Request2_Exception  $e 
+
+catchHTTP_Request2_Exception  $e
   echo 'Error: '  . $e->getMessage
 Http
 $client = new httpClient
@@ -1172,10 +1172,10 @@ Python
 http.client
 import httpclient
 conn = httpclientHTTPSConnection "v1.basketball.api-sports.io"
-headers = 
+headers =
     'x-rapidapi-host'  "v1.basketball.api-sports.io"
     'x-rapidapi-key'  "XxXxXxXxXxXxXxXxXxXxXxXx"
-    
+
 connrequest "GET" "/leagues"  headers =headers
 res = conngetresponse
 data = resread
@@ -1230,7 +1230,7 @@ printdatadecode"utf-8"
 Requests
 url = "https://v1.basketball.api-sports.io/leagues"
 payload=
-headers = 
+headers =
   'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  'v1.basketball.api-sports.io'
 response = requests request "GET" url headers =headers  data=payload
@@ -1301,15 +1301,15 @@ https://api-sports.io/documentation/basketball/v1 18/67
 --- Page 19 ---
  Shell
 Httpie
-http --follow --timeout 3600 GET 'https://v1.basketball.api-sports.io/leagues'  
- x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'  
+http --follow --timeout 3600 GET 'https://v1.basketball.api-sports.io/leagues'
+ x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'
  x-rapidapi-host: 'v1.basketball.api-sports.io'
 wget
-wget --no-check-certificate --quiet 
-  --method GET 
-  --timeout =0 
-  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'  
-  --header 'x-rapidapi-host: v1.basketball.api-sports.io'  
+wget --no-check-certificate --quiet
+  --method GET
+  --timeout =0
+  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+  --header 'x-rapidapi-host: v1.basketball.api-sports.io'
    'https://v1.basketball.api-sports.io/leagues'
 Swift
 URLSession
@@ -1352,11 +1352,11 @@ https://api-sports.io/documentation/basketball/v1 19/67
 
 --- Page 20 ---
  let task = URLSession shareddataTask with request   data response  error in
-  guard let data = data else 
+  guard let data = data else
     printStringdescribing  error
     semaphore signal
     return
-  
+
   printStringdata data encoding  utf8!
   semaphore signal
 taskresume
@@ -1818,10 +1818,10 @@ https://api-sports.io/documentation/basketball/v1 29/67
 Seasons
 {"get": "timezone"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 425
@@ -1895,10 +1895,10 @@ Expand allCollapse all Copy
 {
 "get": "seasons"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 8
@@ -2002,7 +2002,7 @@ Expand allCollapse all Copy
 "search" : "usa"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2125,7 +2125,7 @@ Expand allCollapse all Copy
 "season" : "2023-2024"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,Content type7/20/25, 9:21 PM API-Sports - Documentation Basketball
 https://api-sports.io/documentation/basketball/v1 36/67
@@ -2246,7 +2246,7 @@ Expand allCollapse all Copy
 "name": "Denver Nuggets"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2360,7 +2360,7 @@ Expand allCollapse all Copy
 "team": "139"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 5
@@ -2486,7 +2486,7 @@ Expand allCollapse all Copy
 "season" : "2023-2024"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 16
@@ -2656,7 +2656,7 @@ Expand allCollapse all Copy
 "team": "137"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2748,7 +2748,7 @@ Expand allCollapse all Copy
 "season" : "2019-2020"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2838,7 +2838,7 @@ Expand allCollapse all Copy
 "season" : "2019-2020"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 8
@@ -2985,7 +2985,7 @@ Expand allCollapse all Copy
 "season" : "2019-2020"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3082,7 +3082,7 @@ Expand allCollapse all Copy
 "id": "391053"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 2
@@ -3189,7 +3189,7 @@ Expand allCollapse all Copy
 "id": "391053"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 18
@@ -3358,7 +3358,7 @@ Odds
 "season" : "2019-2020"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 4
@@ -3478,7 +3478,7 @@ Expand allCollapse all Copy
 "game": "1912"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3562,10 +3562,10 @@ Expand allCollapse all Copy
 {
 "get": "bookmakers"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 15
@@ -3698,7 +3698,7 @@ https://api-sports.io/documentation/basketball/v1 66/67
 "search" : "under"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 7

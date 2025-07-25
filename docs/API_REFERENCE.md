@@ -456,8 +456,8 @@ try:
     pass
 except Exception as e:
     handler.record_error(
-        e, 
-        context={"operation": "user_registration"}, 
+        e,
+        context={"operation": "user_registration"},
         user_id=123456789,
         severity="warning"
     )
@@ -705,8 +705,8 @@ Update user balance.
 
 ```python
 updated_user = await user_service.update_user_balance(
-    123456789, 
-    50.0, 
+    123456789,
+    50.0,
     "bet_win"
 )
 ```
@@ -773,17 +773,17 @@ async def setup_system():
     if not validate_environment():
         print("Environment validation failed!")
         return False
-    
+
     # Initialize components
     rate_limiter = get_rate_limiter()
     performance_monitor = get_performance_monitor()
     error_handler = get_error_handler()
     initialize_default_recovery_strategies()
-    
+
     # Initialize database
     db_manager = DatabaseManager()
     await db_manager.connect()
-    
+
     print("System setup complete!")
     return True
 
@@ -801,7 +801,7 @@ async def create_user_with_error_handling(interaction):
     try:
         # Database operation
         user = await user_service.get_or_create_user(
-            interaction.user.id, 
+            interaction.user.id,
             interaction.user.name
         )
         return user
@@ -828,11 +828,11 @@ async def register_user(interaction):
 async def check_health():
     monitor = get_performance_monitor()
     health = await monitor.check_system_health()
-    
+
     if health['status'] == 'critical':
         await monitor.trigger_alert(
-            "system_health", 
-            health['message'], 
+            "system_health",
+            health['message'],
             "critical"
         )
 ```
@@ -950,4 +950,4 @@ monitor.export_metrics("debug_metrics.json")
 # Export errors
 handler = get_error_handler()
 handler.export_errors("debug_errors.json")
-``` 
+```

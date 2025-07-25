@@ -14,7 +14,6 @@ try:
     from bot.utils.errors import InsufficientUnitsError, UserServiceError
 except ImportError:
     from bot.data.cache_manager import CacheManager
-
     from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
     USER_CACHE_TTL = 3600  # Default TTL (1 hour)

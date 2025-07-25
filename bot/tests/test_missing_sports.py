@@ -7,14 +7,15 @@ import asyncio
 import logging
 import os
 import sys
-import pytest
 from datetime import datetime, timezone
+
+import pytest
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bot.utils.multi_provider_api import MultiProviderAPI
 from bot.data.db_manager import DatabaseManager
+from bot.utils.multi_provider_api import MultiProviderAPI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -119,9 +120,9 @@ async def test_missing_sports():
                     # Check total games by sport
                     await cur.execute(
                         """
-                        SELECT sport, COUNT(*) as count 
-                        FROM api_games 
-                        GROUP BY sport 
+                        SELECT sport, COUNT(*) as count
+                        FROM api_games
+                        GROUP BY sport
                         ORDER BY count DESC
                     """
                     )
@@ -135,8 +136,8 @@ async def test_missing_sports():
                     for sport in missing_sports:
                         await cur.execute(
                             """
-                            SELECT COUNT(*) as count 
-                            FROM api_games 
+                            SELECT COUNT(*) as count
+                            FROM api_games
                             WHERE LOWER(sport) = %s
                         """,
                             (sport,),
@@ -156,7 +157,7 @@ async def test_missing_sports():
                         await cur.execute(
                             """
                             SELECT api_game_id, league_name, home_team_name, away_team_name, start_time, status
-                            FROM api_games 
+                            FROM api_games
                             WHERE LOWER(sport) = %s
                             ORDER BY fetched_at DESC
                             LIMIT 3

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
+
 from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from bot.data.game_utils import get_league_abbreviation, normalize_team_name
 

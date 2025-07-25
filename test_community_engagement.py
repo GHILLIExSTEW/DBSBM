@@ -6,8 +6,8 @@ Tests all community engagement features to ensure they work correctly.
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -35,8 +35,8 @@ class CommunityEngagementTester:
         try:
             # Import required modules
             from bot.data.db_manager import DatabaseManager
-            from bot.services.community_events import CommunityEventsService
             from bot.services.community_analytics import CommunityAnalyticsService
+            from bot.services.community_events import CommunityEventsService
 
             # Initialize database manager
             self.db_manager = DatabaseManager()
@@ -106,7 +106,7 @@ class CommunityEngagementTester:
 
             # Verify metric was recorded
             query = """
-                SELECT metric_value FROM community_metrics 
+                SELECT metric_value FROM community_metrics
                 WHERE guild_id = %s AND metric_type = 'test_metric'
                 ORDER BY recorded_at DESC LIMIT 1
             """
@@ -142,7 +142,7 @@ class CommunityEngagementTester:
 
             # Verify user metric was recorded
             query = """
-                SELECT metric_value FROM user_metrics 
+                SELECT metric_value FROM user_metrics
                 WHERE guild_id = %s AND user_id = %s AND metric_type = 'test_user_metric'
                 ORDER BY recorded_at DESC LIMIT 1
             """
@@ -178,7 +178,7 @@ class CommunityEngagementTester:
 
             # Verify achievement was granted
             query = """
-                SELECT achievement_name FROM community_achievements 
+                SELECT achievement_name FROM community_achievements
                 WHERE guild_id = %s AND user_id = %s AND achievement_type = 'test_achievement'
                 ORDER BY earned_at DESC LIMIT 1
             """
@@ -216,7 +216,7 @@ class CommunityEngagementTester:
 
             # Verify reaction metrics were tracked
             query = """
-                SELECT metric_value FROM user_metrics 
+                SELECT metric_value FROM user_metrics
                 WHERE guild_id = %s AND user_id = %s AND metric_type = 'total_reactions'
                 ORDER BY recorded_at DESC LIMIT 1
             """
@@ -251,7 +251,7 @@ class CommunityEngagementTester:
 
             # Verify event was tracked
             query = """
-                SELECT event_name FROM community_events 
+                SELECT event_name FROM community_events
                 WHERE guild_id = %s AND event_type = 'test'
                 ORDER BY started_at DESC LIMIT 1
             """
@@ -371,7 +371,7 @@ class CommunityEngagementTester:
 
             # Verify command was tracked
             query = """
-                SELECT metric_value FROM user_metrics 
+                SELECT metric_value FROM user_metrics
                 WHERE guild_id = %s AND user_id = %s AND metric_type = 'commands_test_command'
                 ORDER BY recorded_at DESC LIMIT 1
             """

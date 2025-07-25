@@ -224,4 +224,4 @@ The collected logos will automatically work with:
 - Images are saved in PNG format with transparency
 - The system supports both API-based and manual logo collection
 - Existing logos are preserved and not overwritten
-- The scripts are designed to be run multiple times safely 
+- The scripts are designed to be run multiple times safely

@@ -1,8 +1,9 @@
-import discord
 import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
+
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +90,12 @@ class CommunityEventsService:
         }
 
     async def start_daily_event(self, guild_id: int, channel_id: Optional[int] = None):
-        """Start the daily community event."""
-        today = datetime.now().strftime("%A").lower()
-        if today in self.daily_events:
-            event = self.daily_events[today]
+        """Start a daily community event."""
+        # Get current day of week
+        current_day = datetime.now().strftime("%A").lower()
+
+        if current_day in self.daily_events:
+            event = self.daily_events[current_day]
 
             embed = discord.Embed(
                 title=f"{event['emoji']} {event['name']}",
@@ -101,13 +104,8 @@ class CommunityEventsService:
                 timestamp=datetime.utcnow(),
             )
             embed.add_field(
-                name="How to Participate",
-                value="Use the community commands to join in the fun! Try `/discuss`, `/funfact`, `/celebrate`, or `/poll`",
-                inline=False,
-            )
-            embed.add_field(
-                name="Community Commands",
-                value="• `/discuss` - Start discussions\n• `/funfact` - Share facts\n• `/celebrate` - Celebrate wins\n• `/poll` - Create polls\n• `/encourage` - Encourage others",
+                name="Event Details",
+                value="This is a daily community event. Participate to earn recognition and build community bonds!",
                 inline=False,
             )
             embed.set_footer(text="Community Event • Daily")
@@ -119,14 +117,30 @@ class CommunityEventsService:
                     channel = self.bot.get_channel(channel_id)
 
                 if not channel:
-                    # Try to find channel by name
+                    # Get main chat channel from guild settings
+                    guild_settings = await self.db_manager.fetch_one(
+                        "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = %s",
+                        (guild_id,)
+                    )
+
+                    if guild_settings and guild_settings.get("main_chat_channel_id"):
+                        # Use the configured main chat channel
+                        channel = self.bot.get_channel(guild_settings["main_chat_channel_id"])
+                        logger.info(f"Using configured main chat channel {guild_settings['main_chat_channel_id']} for daily event")
+
+                if not channel:
+                    # Fallback: try to find channel by name
                     guild = self.bot.get_guild(guild_id)
                     if guild:
-                        channel_name = event.get("channel", "general-chat")
+                        channel_name = event.get("channel", "main-chat")
                         channel = discord.utils.get(guild.channels, name=channel_name)
 
                         if not channel:
-                            # Fallback to first text channel
+                            # Try general-chat as fallback
+                            channel = discord.utils.get(guild.channels, name="general-chat")
+
+                        if not channel:
+                            # Final fallback to first text channel
                             channel = discord.utils.get(
                                 guild.channels, type=discord.ChannelType.text
                             )
@@ -134,7 +148,7 @@ class CommunityEventsService:
                 if channel:
                     await channel.send(embed=embed)
                     logger.info(
-                        f"Started daily event {event['name']} in guild {guild_id}"
+                        f"Started daily event {event['name']} in guild {guild_id} in channel {channel.name}"
                     )
 
                     # Track event in database
@@ -173,16 +187,36 @@ class CommunityEventsService:
                     channel = self.bot.get_channel(channel_id)
 
                 if not channel:
+                    # Get main chat channel from guild settings
+                    guild_settings = await self.db_manager.fetch_one(
+                        "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = %s",
+                        (guild_id,)
+                    )
+
+                    if guild_settings and guild_settings.get("main_chat_channel_id"):
+                        # Use the configured main chat channel
+                        channel = self.bot.get_channel(guild_settings["main_chat_channel_id"])
+                        logger.info(f"Using configured main chat channel {guild_settings['main_chat_channel_id']} for weekly event")
+
+                if not channel:
+                    # Fallback: try to find channel by name
                     guild = self.bot.get_guild(guild_id)
                     if guild:
-                        channel = discord.utils.get(
-                            guild.channels, type=discord.ChannelType.text
-                        )
+                        channel = discord.utils.get(guild.channels, name="main-chat")
+
+                        if not channel:
+                            channel = discord.utils.get(guild.channels, name="general-chat")
+
+                        if not channel:
+                            # Final fallback to first text channel
+                            channel = discord.utils.get(
+                                guild.channels, type=discord.ChannelType.text
+                            )
 
                 if channel:
                     await channel.send(embed=embed)
                     logger.info(
-                        f"Started weekly event {event['name']} in guild {guild_id}"
+                        f"Started weekly event {event['name']} in guild {guild_id} in channel {channel.name}"
                     )
 
                     # Track event in database
@@ -283,14 +317,14 @@ class CommunityEventsService:
         """Get event participation statistics."""
         try:
             query = """
-                SELECT 
+                SELECT
                     event_type,
                     event_name,
                     COUNT(*) as event_count,
                     MIN(started_at) as first_event,
                     MAX(started_at) as last_event
                 FROM community_events
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 GROUP BY event_type, event_name
                 ORDER BY event_count DESC

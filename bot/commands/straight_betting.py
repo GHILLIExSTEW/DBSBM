@@ -245,7 +245,9 @@ class GameSelect(Select):
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in filtered_games[:24]:
             # Special handling for manual entry - only add once
-            if (game.get("id") == "manual" or game.get("api_game_id") == "manual") and not manual_added:
+            if (
+                game.get("id") == "manual" or game.get("api_game_id") == "manual"
+            ) and not manual_added:
                 game_options.append(
                     SelectOption(
                         label="Manual Entry",
@@ -256,11 +258,11 @@ class GameSelect(Select):
                 manual_added = True
                 seen_values.add("manual")
                 continue
-            
+
             # Skip manual entry if already added
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
                 continue
-                
+
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -274,7 +276,7 @@ class GameSelect(Select):
 
             home_team = game.get("home_team_name", "").strip() or "N/A"
             away_team = game.get("away_team_name", "").strip() or "N/A"
-            
+
             # Format the label with team names (no status)
             label = f"{home_team} vs {away_team}"
             label = label[:100] if label else "N/A"
@@ -1238,8 +1240,14 @@ class StraightBetWorkflowView(View):
                 )
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
+                    logger.info(f"Found capper image_path: {capper_data['image_path']}")
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]
+                    )
+                    logger.info(f"Converted webhook_avatar_url: {webhook_avatar_url}")
+                else:
+                    logger.info(
+                        f"No capper image_path found for user {interaction.user.id}"
                     )
 
                 # Fetch member_role for mention
@@ -1772,7 +1780,9 @@ class StraightBetDetailsModal(Modal):
                     output_path=None,
                 )
                 preview_bytes = image_bytes
-                preview_file = File(io.BytesIO(image_bytes), filename="bet_preview.webp")
+                preview_file = File(
+                    io.BytesIO(image_bytes), filename="bet_preview.webp"
+                )
             except Exception as e:
                 logging.error(
                     f"[StraightBetDetailsModal] Failed to generate preview image: {e}\n{traceback.format_exc()}"

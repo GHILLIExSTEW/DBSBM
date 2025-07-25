@@ -1,24 +1,60 @@
-import requests
 import csv
 import os
-from getpass import getpass
 from datetime import datetime
+from getpass import getpass
+
+import requests
 
 # List of API endpoints to query
 API_ENDPOINTS = [
     {"sport": "AFL", "base_url": "https://v1.afl.api-sports.io", "has_teams": True},
-    {"sport": "Baseball", "base_url": "https://v1.baseball.api-sports.io", "has_teams": True},
-    {"sport": "Basketball", "base_url": "https://v1.basketball.api-sports.io", "has_teams": True},
-    {"sport": "Formula-1", "base_url": "https://v1.formula-1.api-sports.io", "has_teams": False, "player_endpoint": "drivers"},
-    {"sport": "Handball", "base_url": "https://v1.handball.api-sports.io", "has_teams": True},
-    {"sport": "Hockey", "base_url": "https://v1.hockey.api-sports.io", "has_teams": True},
-    {"sport": "MMA", "base_url": "https://v1.mma.api-sports.io", "has_teams": False, "player_endpoint": "fighters"},
+    {
+        "sport": "Baseball",
+        "base_url": "https://v1.baseball.api-sports.io",
+        "has_teams": True,
+    },
+    {
+        "sport": "Basketball",
+        "base_url": "https://v1.basketball.api-sports.io",
+        "has_teams": True,
+    },
+    {
+        "sport": "Formula-1",
+        "base_url": "https://v1.formula-1.api-sports.io",
+        "has_teams": False,
+        "player_endpoint": "drivers",
+    },
+    {
+        "sport": "Handball",
+        "base_url": "https://v1.handball.api-sports.io",
+        "has_teams": True,
+    },
+    {
+        "sport": "Hockey",
+        "base_url": "https://v1.hockey.api-sports.io",
+        "has_teams": True,
+    },
+    {
+        "sport": "MMA",
+        "base_url": "https://v1.mma.api-sports.io",
+        "has_teams": False,
+        "player_endpoint": "fighters",
+    },
     {"sport": "NBA", "base_url": "https://v2.nba.api-sports.io", "has_teams": True},
     {"sport": "NFL", "base_url": "https://v1.nfl.api-sports.io", "has_teams": True},
     {"sport": "Rugby", "base_url": "https://v1.rugby.api-sports.io", "has_teams": True},
-    {"sport": "Volleyball", "base_url": "https://v1.volleyball.api-sports.io", "has_teams": True},
-    {"sport": "Football", "base_url": "https://v3.football.api-sports.io", "has_teams": True},
+    {
+        "sport": "Volleyball",
+        "base_url": "https://v1.volleyball.api-sports.io",
+        "has_teams": True,
+    },
+    {
+        "sport": "Football",
+        "base_url": "https://v3.football.api-sports.io",
+        "has_teams": True,
+    },
 ]
+
 
 def fetch_leagues(api_key, base_url):
     """
@@ -40,6 +76,7 @@ def fetch_leagues(api_key, base_url):
     except requests.RequestException as e:
         print(f"Error fetching leagues from {base_url}: {e}")
         return None
+
 
 def fetch_teams(api_key, base_url, league_id, season):
     """
@@ -65,7 +102,10 @@ def fetch_teams(api_key, base_url, league_id, season):
         print(f"Error fetching teams for league {league_id} from {base_url}: {e}")
         return None
 
-def fetch_players(api_key, base_url, team_id=None, season=None, player_endpoint="players"):
+
+def fetch_players(
+    api_key, base_url, team_id=None, season=None, player_endpoint="players"
+):
     """
     Fetch all players (or drivers/fighters) for a given team/season or league.
 
@@ -94,6 +134,7 @@ def fetch_players(api_key, base_url, team_id=None, season=None, player_endpoint=
         print(f"Error fetching {player_endpoint} from {base_url}: {e}")
         return None
 
+
 def save_to_csv(data, filename="scripts/teams_and_players.csv"):
     """
     Save league, team, player data to a CSV file at the specified location.
@@ -112,6 +153,7 @@ def save_to_csv(data, filename="scripts/teams_and_players.csv"):
         print(f"Data saved to {filename}")
     except OSError as e:
         print(f"Error saving to {filename}: {e}")
+
 
 def main():
     """Main function to fetch leagues, teams, players from multiple APIs and save to CSV."""
@@ -164,7 +206,9 @@ def main():
                     team_name = team.get("name", "Unknown Team")
 
                     # Fetch players for the team
-                    players = fetch_players(api_key, base_url, team_id, season, player_endpoint)
+                    players = fetch_players(
+                        api_key, base_url, team_id, season, player_endpoint
+                    )
                     if not players:
                         continue
 
@@ -176,7 +220,9 @@ def main():
                         csv_data.append([league_name, team_name, player_name, ""])
             else:
                 # For non-team sports (e.g., MMA, Formula-1), fetch players directly
-                players = fetch_players(api_key, base_url, player_endpoint=player_endpoint)
+                players = fetch_players(
+                    api_key, base_url, player_endpoint=player_endpoint
+                )
                 if not players:
                     continue
 
@@ -192,6 +238,7 @@ def main():
         save_to_csv(csv_data)
     else:
         print("No data to save.")
+
 
 if __name__ == "__main__":
     main()

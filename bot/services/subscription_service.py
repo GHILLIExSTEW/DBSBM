@@ -179,7 +179,7 @@ class SubscriptionService:
             # Enable Platinum features in guild_settings
             await self.db_manager.execute(
                 """
-                UPDATE guild_settings SET 
+                UPDATE guild_settings SET
                     platinum_features_enabled = TRUE,
                     custom_branding_enabled = TRUE,
                     advanced_analytics_enabled = TRUE,
@@ -233,7 +233,7 @@ class SubscriptionService:
             # Disable Platinum features in guild_settings
             await self.db_manager.execute(
                 """
-                UPDATE guild_settings SET 
+                UPDATE guild_settings SET
                     platinum_features_enabled = FALSE,
                     custom_branding_enabled = FALSE,
                     advanced_analytics_enabled = FALSE,

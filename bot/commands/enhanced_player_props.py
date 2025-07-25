@@ -11,13 +11,13 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import discord
-from bot.config.leagues import LEAGUE_CONFIG
+from commands.admin import require_registered_guild
+from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
 from discord import ButtonStyle, File, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from commands.admin import require_registered_guild
-from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
+from bot.config.leagues import LEAGUE_CONFIG
 from bot.utils.league_loader import get_all_sport_categories, get_leagues_by_sport
 from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
 
@@ -148,9 +148,9 @@ class PlayerPropsWorkflowView(View):
             return
         elif self.current_step == 3:
             # Step 3: Game selection
-            from bot.data.game_utils import get_normalized_games_for_dropdown
-
             from commands.straight_betting import GameSelect
+
+            from bot.data.game_utils import get_normalized_games_for_dropdown
 
             league = self.bet_details.get("league", "N/A")
             logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
@@ -231,10 +231,7 @@ class PlayerPropsWorkflowView(View):
             return
         elif self.current_step == 6:
             # Step 6: Units selection
-            from commands.straight_betting import (
-                ConfirmUnitsButton,
-                UnitsSelect,
-            )
+            from commands.straight_betting import ConfirmUnitsButton, UnitsSelect
 
             self.clear_items()
             self.add_item(UnitsSelect(self))
@@ -294,10 +291,7 @@ class PlayerPropsWorkflowView(View):
             return
         elif self.current_step == 7:
             # Step 7: Channel selection
-            from commands.straight_betting import (
-                ChannelSelect,
-                FinalConfirmButton,
-            )
+            from commands.straight_betting import ChannelSelect, FinalConfirmButton
 
             try:
                 # Fetch allowed embed channels from guild settings
@@ -639,10 +633,16 @@ class PlayerPropsWorkflowView(View):
                 )
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
+                    logger.info(f"Found capper image_path: {capper_data['image_path']}")
                     from bot.utils.image_url_converter import convert_image_path_to_url
 
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]
+                    )
+                    logger.info(f"Converted webhook_avatar_url: {webhook_avatar_url}")
+                else:
+                    logger.info(
+                        f"No capper image_path found for user {interaction.user.id}"
                     )
 
                 # Fetch member_role for mention

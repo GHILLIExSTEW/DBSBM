@@ -69,9 +69,6 @@ class ConfigurationError(Exception):
     """Raised when there's an error in configuration."""
 
 
-
-
-
 class PaymentError(Exception):
     """Raised when there's an error in payment operations."""
 

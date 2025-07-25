@@ -20,7 +20,7 @@ API_KEY = os.getenv("API_KEY")
 logger = logging.getLogger(__name__)
 
 # Import the league discovery utility
-from bot.utils.league_discovery import LeagueDiscovery, SPORT_ENDPOINTS
+from bot.utils.league_discovery import SPORT_ENDPOINTS, LeagueDiscovery
 
 
 class ComprehensiveFetcher:
@@ -468,20 +468,25 @@ class ComprehensiveFetcher:
                 async with conn.cursor() as cur:
                     # Get current time in UTC
                     current_time = datetime.now(timezone.utc)
-                    
+
                     # Remove finished games and games that have started
-                    await cur.execute("""
-                        DELETE FROM api_games 
+                    await cur.execute(
+                        """
+                        DELETE FROM api_games
                         WHERE status IN (
                             'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
                             'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted', 'Completed'
                         )
                         OR start_time < %s
-                    """, (current_time,))
-                    
+                    """,
+                        (current_time,),
+                    )
+
                     deleted_count = cur.rowcount
                     await conn.commit()
-                    logger.info(f"Cleared {deleted_count} finished/past games from api_games table")
+                    logger.info(
+                        f"Cleared {deleted_count} finished/past games from api_games table"
+                    )
         except Exception as e:
             logger.error(f"Error clearing finished/past games data: {e}")
             # Don't raise - continue with fetch even if cleanup fails

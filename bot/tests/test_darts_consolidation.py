@@ -7,14 +7,15 @@ import asyncio
 import logging
 import os
 import sys
-import pytest
 from datetime import datetime
+
+import pytest
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bot.utils.multi_provider_api import MultiProviderAPI
 from bot.data.db_manager import DatabaseManager
+from bot.utils.multi_provider_api import MultiProviderAPI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -61,10 +62,10 @@ async def test_darts_consolidation():
                     # Check darts games by league name
                     await cur.execute(
                         """
-                        SELECT league_name, COUNT(*) as count 
-                        FROM api_games 
+                        SELECT league_name, COUNT(*) as count
+                        FROM api_games
                         WHERE LOWER(sport) = 'darts'
-                        GROUP BY league_name 
+                        GROUP BY league_name
                         ORDER BY count DESC
                     """
                     )
@@ -77,8 +78,8 @@ async def test_darts_consolidation():
                     # Check total darts games
                     await cur.execute(
                         """
-                        SELECT COUNT(*) as count 
-                        FROM api_games 
+                        SELECT COUNT(*) as count
+                        FROM api_games
                         WHERE LOWER(sport) = 'darts'
                     """
                     )
@@ -91,7 +92,7 @@ async def test_darts_consolidation():
                     await cur.execute(
                         """
                         SELECT api_game_id, league_name, home_team_name, away_team_name, start_time, status
-                        FROM api_games 
+                        FROM api_games
                         WHERE LOWER(sport) = 'darts'
                         ORDER BY fetched_at DESC
                         LIMIT 10

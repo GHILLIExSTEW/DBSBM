@@ -245,7 +245,9 @@ class GameSelect(Select):
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in filtered_games[:24]:
             # Special handling for manual entry - only add once
-            if (game.get("id") == "manual" or game.get("api_game_id") == "manual") and not manual_added:
+            if (
+                game.get("id") == "manual" or game.get("api_game_id") == "manual"
+            ) and not manual_added:
                 game_options.append(
                     SelectOption(
                         label="Manual Entry",
@@ -256,11 +258,11 @@ class GameSelect(Select):
                 manual_added = True
                 seen_values.add("manual")
                 continue
-            
+
             # Skip manual entry if already added
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
                 continue
-                
+
             # Prefer api_game_id if present, else use internal id
             if game.get("api_game_id"):
                 value = f"api_{game['api_game_id']}"
@@ -274,7 +276,7 @@ class GameSelect(Select):
 
             home_team = game.get("home_team_name", "").strip() or "N/A"
             away_team = game.get("away_team_name", "").strip() or "N/A"
-            
+
             # Format the label with team names (no status)
             label = f"{home_team} vs {away_team}"
             label = label[:100] if label else "N/A"

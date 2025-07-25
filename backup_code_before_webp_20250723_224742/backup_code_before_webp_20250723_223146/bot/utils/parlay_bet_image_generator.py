@@ -130,19 +130,21 @@ class ParlayBetImageGenerator:
             # Footer (bet id and timestamp)
             footer_padding = 12
             footer_y = int(image_height - footer_padding - self.font_mini.size)
-            
+
             # Ensure bet_id is properly formatted
             if bet_id and str(bet_id).strip():
                 bet_id_text = f"Bet #{str(bet_id).strip()}"
             else:
                 bet_id_text = ""
-                
+
             timestamp_text = bet_datetime if bet_datetime else ""
-            
+
             # Draw bet ID bottom left
             if bet_id_text:
-                draw.text((32, footer_y), bet_id_text, font=self.font_mini, fill="#888888")
-                
+                draw.text(
+                    (32, footer_y), bet_id_text, font=self.font_mini, fill="#888888"
+                )
+
             # Draw timestamp bottom right
             if timestamp_text:
                 ts_bbox = self.font_mini.getbbox(timestamp_text)
@@ -203,25 +205,34 @@ class ParlayBetImageGenerator:
             logo_y = card_center_y - logo_size[1] // 2
             name_y = logo_y + logo_size[1] + 6
             line_y = name_y + 38
-            
+
             # Calculate positions for horizontal layout
             left_margin = card_x0 + 20
             right_margin = card_x1 - 20
             available_width = right_margin - left_margin
-            
+
             # Import team display name function
             from bot.utils.team_display_names import get_team_display_name
-            
+
             # Team (left-aligned)
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
-            
+
             team_display = get_team_display_name(home_team)
-            team_color = "#00ff66" if selected and selected.lower() == home_team.lower() else "#ffffff"
-            draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill=team_color)
-            
+            team_color = (
+                "#00ff66"
+                if selected and selected.lower() == home_team.lower()
+                else "#ffffff"
+            )
+            draw.text(
+                (int(left_margin), int(name_y)),
+                team_display,
+                font=team_font,
+                fill=team_color,
+            )
+
             # VS (to right of team)
             vs_text = "VS"
             vs_font = self.font_vs_small
@@ -230,26 +241,46 @@ class ParlayBetImageGenerator:
             vs_x = left_margin + team_name_width + 35  # Increased spacing from 20 to 35
             vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
-            
+
             # Opponent (to right of VS)
             opponent_logo = self._load_team_logo(away_team, league)
             if opponent_logo:
                 opponent_logo = opponent_logo.convert("RGBA").resize(logo_size)
-                opponent_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
-                image.paste(opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo)
-            
+                opponent_logo_x = (
+                    vs_x + vs_width + 35
+                )  # Increased spacing from 20 to 35
+                image.paste(
+                    opponent_logo, (int(opponent_logo_x), int(logo_y)), opponent_logo
+                )
+
             opponent_display = get_team_display_name(away_team)
-            opponent_color = "#00ff66" if selected and selected.lower() == away_team.lower() else "#ffffff"
+            opponent_color = (
+                "#00ff66"
+                if selected and selected.lower() == away_team.lower()
+                else "#ffffff"
+            )
             opponent_name_x = opponent_logo_x
-            draw.text((int(opponent_name_x), int(name_y)), opponent_display, font=team_font, fill=opponent_color)
-            
+            draw.text(
+                (int(opponent_name_x), int(name_y)),
+                opponent_display,
+                font=team_font,
+                fill=opponent_color,
+            )
+
             # Line (to right of opponent)
             line_w = draw.textlength(line, font=line_font)
             opponent_name_width = draw.textlength(opponent_display, font=team_font)
-            line_x = opponent_name_x + opponent_name_width + 40  # Increased spacing from 20 to 40
+            line_x = (
+                opponent_name_x + opponent_name_width + 40
+            )  # Increased spacing from 20 to 40
             # Center line vertically with team names and VS
             line_y_centered = card_center_y - line_font.size // 2
-            draw.text((int(line_x), int(line_y_centered)), line, font=line_font, fill="#ffffff")
+            draw.text(
+                (int(line_x), int(line_y_centered)),
+                line,
+                font=line_font,
+                fill="#ffffff",
+            )
         elif bet_type == "player_prop":
             # Horizontal layout: Team | VS | Player | Line | Odds (similar to game lines)
             # Center everything vertically in the card
@@ -257,24 +288,29 @@ class ParlayBetImageGenerator:
             logo_y = card_center_y - logo_size[1] // 2
             name_y = logo_y + logo_size[1] + 6
             line_y = name_y + 38
-            
+
             # Calculate positions for horizontal layout
             left_margin = card_x0 + 20
             right_margin = card_x1 - 20
             available_width = right_margin - left_margin
-            
+
             # Import team display name function
             from bot.utils.team_display_names import get_team_display_name
-            
+
             # Team (left-aligned) - like home team in game lines
             team_logo = self._load_team_logo(home_team, league)
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
-            
+
             team_display = get_team_display_name(home_team)
-            draw.text((int(left_margin), int(name_y)), team_display, font=team_font, fill="#ffffff")
-            
+            draw.text(
+                (int(left_margin), int(name_y)),
+                team_display,
+                font=team_font,
+                fill="#ffffff",
+            )
+
             # VS (to right of team)
             vs_text = "VS"
             vs_font = self.font_vs_small
@@ -283,7 +319,7 @@ class ParlayBetImageGenerator:
             vs_x = left_margin + team_name_width + 35  # Increased spacing from 20 to 35
             vs_y = card_center_y - self.font_vs_small.size // 2  # Center vertically
             draw.text((int(vs_x), int(vs_y)), vs_text, font=vs_font, fill="#888888")
-            
+
             # Player (to right of VS) - like away team in game lines
             # Use the team that the player belongs to (usually home_team for player props)
             player_team = home_team  # Default to home team
@@ -291,22 +327,33 @@ class ParlayBetImageGenerator:
             if player_image:
                 player_image = player_image.convert("RGBA").resize(logo_size)
                 player_logo_x = vs_x + vs_width + 35  # Increased spacing from 20 to 35
-                image.paste(player_image, (int(player_logo_x), int(logo_y)), player_image)
+                image.paste(
+                    player_image, (int(player_logo_x), int(logo_y)), player_image
+                )
             else:
                 # Fallback to team logo if no player image
                 player_logo_x = vs_x + vs_width + 35
                 fallback_logo = self._load_team_logo(player_team, league)
                 if fallback_logo:
                     fallback_logo = fallback_logo.convert("RGBA").resize(logo_size)
-                    image.paste(fallback_logo, (int(player_logo_x), int(logo_y)), fallback_logo)
-            
+                    image.paste(
+                        fallback_logo, (int(player_logo_x), int(logo_y)), fallback_logo
+                    )
+
             # Player name (below player image)
-            draw.text((int(player_logo_x), int(name_y)), player_name, font=team_font, fill="#ffffff")
-            
+            draw.text(
+                (int(player_logo_x), int(name_y)),
+                player_name,
+                font=team_font,
+                fill="#ffffff",
+            )
+
             # Line (to right of player) - include prop type if available
             line_w = draw.textlength(line, font=line_font)
             player_name_width = draw.textlength(player_name, font=team_font)
-            line_x = player_logo_x + player_name_width + 40  # Increased spacing from 20 to 40
+            line_x = (
+                player_logo_x + player_name_width + 40
+            )  # Increased spacing from 20 to 40
             # Center line vertically with team names and VS
             line_y_centered = card_center_y - line_font.size // 2
             prop_type = str(leg.get("prop_type", "") or "")
@@ -315,7 +362,12 @@ class ParlayBetImageGenerator:
                 full_line = f"{line} {prop_type.title()}"
             else:
                 full_line = line
-            draw.text((int(line_x), int(line_y_centered)), full_line, font=line_font, fill="#ffffff")
+            draw.text(
+                (int(line_x), int(line_y_centered)),
+                full_line,
+                font=line_font,
+                fill="#ffffff",
+            )
         # Odds badge (right side, vertically centered)
         badge_w = 90
         badge_h = 48
@@ -469,19 +521,27 @@ class ParlayBetImageGenerator:
         )
 
     def _load_team_logo(self, team_name: str, league: str):
-        logger.info(f"[ParlayBetImageGenerator] Loading team logo for '{team_name}' in league '{league}'")
+        logger.info(
+            f"[ParlayBetImageGenerator] Loading team logo for '{team_name}' in league '{league}'"
+        )
         result = asset_loader.load_team_logo(
             team_name, league, getattr(self, "guild_id", None)
         )
-        logger.info(f"[ParlayBetImageGenerator] Team logo loaded: {'Success' if result else 'Failed'}")
+        logger.info(
+            f"[ParlayBetImageGenerator] Team logo loaded: {'Success' if result else 'Failed'}"
+        )
         return result
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        logger.info(f"[ParlayBetImageGenerator] Loading player image for '{player_name}' from team '{team_name}' in league '{league}'")
+        logger.info(
+            f"[ParlayBetImageGenerator] Loading player image for '{player_name}' from team '{team_name}' in league '{league}'"
+        )
         result = asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)
         )
         # load_player_image returns (image, display_name), we just want the image
         image = result[0] if result else None
-        logger.info(f"[ParlayBetImageGenerator] Player image loaded: {'Success' if image else 'Failed'}")
+        logger.info(
+            f"[ParlayBetImageGenerator] Player image loaded: {'Success' if image else 'Failed'}"
+        )
         return image

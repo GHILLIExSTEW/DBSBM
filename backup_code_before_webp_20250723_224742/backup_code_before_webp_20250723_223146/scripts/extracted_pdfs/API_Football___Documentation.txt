@@ -49,16 +49,16 @@ This call does not count against the daily quota.
 get"https://v3.football.api-sports.io/status"
 // response
     "get": "status"
-    "parameters" : 
-    "errors" : 
+    "parameters" :
+    "errors" :
     "results" : 1
-    "response" : 
-        "account" : 
+    "response" :
+        "account" :
             "firstname" : "xxxx"
             "lastname" : "XXXXXX"
             "email": "xxx@xxx.com"
-        
-        "subscription" : 
+
+        "subscription" :
             "plan": "Free"
             "end": "2020-04-10T23:24:27+00:00"
             "active" : true
@@ -86,12 +86,12 @@ get"https://v3.football.api-sports.io/status"
 https://www.api-football.com/documentation-v3 2/140
 
 --- Page 3 ---
-        
-        "requests" : 
+
+        "requests" :
             "current" : 12
             "limit_day" : 100
-        
-    
+
+
 Headers sent as response
 When consuming our API, you will always receive the following headers appended to the response:
 x-ratelimit-requests-limit : The number of requests allocated per day according to your
@@ -177,7 +177,7 @@ libcurl
 CURL *curl
 CURLcode res
 curl = curl_easy_init
-ifcurl 
+ifcurl
   curl_easy_setopt curl, CURLOPT_CUSTOMREQUEST, "GET"
   curl_easy_setopt curl, CURLOPT_URL, "https://v3.football.api-sports.io/leagues"
   curl_easy_setopt curl, CURLOPT_FOLLOWLOCATION, 1L
@@ -248,21 +248,21 @@ https://www.api-football.com/documentation-v3 7/140
 Console.WriteLine response.Content
 cURL
 Curl
-curl --request GET 
-    --url https://v3.football.api-sports.io/leagues 
-    --header 'x-rapidapi-host: v3.football.api-sports.io'  
+curl --request GET
+    --url https://v3.football.api-sports.io/leagues
+    --header 'x-rapidapi-host: v3.football.api-sports.io'
     --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
 Dart
 http
-var headers = 
+var headers =
   'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  'v3.football.api-sports.io'
 var request = httpRequest 'GET' Uriparse'https://v3.football.api-sports.io/lea
 request headers addAllheaders
 httpStreamedResponse response = await request send
-if response statusCode == 200 
+if response statusCode == 200
   printawait response streambytesToString
-else 
+else
   printresponse reasonPhrase
 (
 )
@@ -318,33 +318,33 @@ https://www.api-football.com/documentation-v3 8/140
 Go
 Native
 package main
-import 
+import
   "fmt"
   "net/http"
   "io/ioutil"
-func main 
+func main
   url := "https://v3.football.api-sports.io/leagues"
   method := "GET"
-  client := &httpClient 
-  
+  client := &httpClient
+
   req err := httpNewRequest method url nil
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   reqHeaderAdd"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
   reqHeaderAdd"x-rapidapi-host"  "v3.football.api-sports.io"
   res err := client Doreq
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   defer resBodyClose
   body err := ioutil ReadAll resBody
-  if err != nil 
+  if err != nil
     fmt Println err
     return
-  
+
   fmtPrintln stringbody
 (
 )
@@ -412,7 +412,7 @@ OkHttp
 var myHeaders = new Headers
 myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 myHeaders append"x-rapidapi-host"  "v3.football.api-sports.io"
-var requestOptions = 
+var requestOptions =
   method : 'GET'
   headers : myHeaders
   redirect : 'follow'
@@ -427,7 +427,7 @@ Fetch
 var myHeaders = new Headers
 myHeaders append"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 myHeaders append"x-rapidapi-host"  "v3.football.api-sports.io"
-var requestOptions = 
+var requestOptions =
   method: 'GET'
   headers: myHeaders
 (
@@ -494,23 +494,23 @@ fetch"https://v3.football.api-sports.io/leagues"  requestOptions
   thenresult => console logresult
   catcherror => console log'error'  error
 jQuery
-var settings = 
+var settings =
   "url": "https://v3.football.api-sports.io/leagues"
   "method" : "GET"
   "timeout" : 0
-  "headers" : 
+  "headers" :
     "x-rapidapi-key" : "XxXxXxXxXxXxXxXxXxXxXxXx"
     "x-rapidapi-host" : "v3.football.api-sports.io"
-  
-$ajaxsettings donefunction  response  
+
+$ajaxsettings donefunction  response
   console logresponse
 XHR
 var xhr = new XMLHttpRequest
 xhrwithCredentials = true
-xhraddEventListener "readystatechange"  function  
-  ifthisreadyState === 4 
+xhraddEventListener "readystatechange"  function
+  ifthisreadyState === 4
     console logthisresponseText
-  
+
 xhropen"GET" "https://v3.football.api-sports.io/leagues"
 xhrsetRequestHeader "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 xhrsetRequestHeader "x-rapidapi-host"  "v3.football.api-sports.io"
@@ -614,32 +614,32 @@ https://www.api-football.com/documentation-v3 11/140
 NodeJs
 Axios
 var axios = require 'axios'
-var config = 
+var config =
   method  'get'
   url 'https://v3.football.api-sports.io/leagues'
-  headers  
+  headers
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v3.football.api-sports.io'
-  
+
 axiosconfig
-thenfunction  response  
+thenfunction  response
   console logJSONstringify response data
-catchfunction  error 
+catchfunction  error
   console logerror
 Native
 var https = require 'follow-redirects' https
 var fs = require 'fs'
-var options = 
+var options =
   'method'  'GET'
   'hostname'  'v3.football.api-sports.io'
   'path' '/leagues'
-  'headers'  
+  'headers'
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v3.football.api-sports.io'
-  
+
   'maxRedirects'  20
-var req = httpsrequest options  function  res 
-  var chunks = 
+var req = httpsrequest options  function  res
+  var chunks =
 (
 )
 ;
@@ -721,27 +721,27 @@ var req = httpsrequest options  function  res
 https://www.api-football.com/documentation-v3 12/140
 
 --- Page 13 ---
-  reson"data" function  chunk 
+  reson"data" function  chunk
     chunks pushchunk
-  
-  reson"end" function  chunk 
+
+  reson"end" function  chunk
     var body = Buffer concatchunks
     console logbodytoString
-  
-  reson"error"  function  error 
+
+  reson"error"  function  error
     console errorerror
-  
+
 reqend
 Requests
 var request = require 'request'
-var options = 
+var options =
   'method'  'GET'
   'url' 'https://v3.football.api-sports.io/leagues'
-  'headers'  
+  'headers'
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v3.football.api-sports.io'
-  
-request options  function  error response  
+
+request options  function  error response
   if error throw new Errorerror
   console logresponse body
 Unirest
@@ -750,11 +750,11 @@ var req = unirest 'GET' 'https://v3.football.api-sports.io/leagues'
   headers
     'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host'  'v3.football.api-sports.io'
-  
-  endfunction  res 
+
+  endfunction  res
     if reserror throw new Errorreserror
     console logresraw_body
-  
+
 .
 (
 ,
@@ -894,17 +894,17 @@ request setAllHTTPHeaderFields headers
 request setHTTPMethod @"GET"
 NSURLSession *session = NSURLSession sharedSession
 NSURLSessionDataTask *dataTask = session dataTaskWithRequest request
-completionHandler ^NSData *data NSURLResponse *response  NSError *error 
-  if error 
+completionHandler ^NSData *data NSURLResponse *response  NSError *error
+  if error
     NSLog@"%@" error
     dispatch_semaphore_signal sema
-   else 
+   else
     NSHTTPURLResponse *httpResponse = NSHTTPURLResponse * response
     NSError *parseError = nil
     NSDictionary *responseDictionary = NSJSONSerialization JSONObjectWithData dat
     NSLog@"%@"responseDictionary
     dispatch_semaphore_signal sema
-  
+
 dataTask resume
 dispatch_semaphore_wait sema DISPATCH_TIME_FOREVER
 .
@@ -989,7 +989,7 @@ open Cohttp
 open Cohttp_lwt_unix
 let reqBody =
   let uri = Uriof_string "https://v3.football.api-sports.io/leagues"  in
-  let headers = Header init 
+  let headers = Header init
     |> fun h -> Header add h "x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
     |> fun h -> Header add h "x-rapidapi-host"  "v3.football.api-sports.io"
   in
@@ -1047,7 +1047,7 @@ https://www.api-football.com/documentation-v3 15/140
   CURLOPT_HTTPHEADER  => array
     'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
     'x-rapidapi-host: v3.football.api-sports.io'
-  
+
 $response  = curl_exec $curl
 curl_close $curl
 echo $response
@@ -1062,16 +1062,16 @@ $request ->setConfig array
 $request ->setHeader array
   'x-rapidapi-key'  => 'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  => 'v3.football.api-sports.io'
-try 
+try
   $response  = $request ->send
-  if $response ->getStatus  == 200 
+  if $response ->getStatus  == 200
     echo $response ->getBody
-  
-  else 
+
+  else
     echo 'Unexpected HTTP status: '  . $response ->getStatus  . ' ' .
     $response ->getReasonPhrase
-  
-catchHTTP_Request2_Exception  $e 
+
+catchHTTP_Request2_Exception  $e
   echo 'Error: '  . $e->getMessage
 Http
 $client = new httpClient
@@ -1168,16 +1168,16 @@ RestMethod
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers Add"x-rapidapi-key"  "XxXxXxXxXxXxXxXxXxXxXxXx"
 $headers Add"x-rapidapi-host"  "v3.football.api-sports.io"
-$response = Invoke-RestMethod 'https://v3.football.api-sports.io/leagues'  -Method 
+$response = Invoke-RestMethod 'https://v3.football.api-sports.io/leagues'  -Method
 $response | ConvertTo -Json
 Python
 http.client
 import httpclient
 conn = httpclientHTTPSConnection "v3.football.api-sports.io"
-headers = 
+headers =
     'x-rapidapi-host'  "v3.football.api-sports.io"
     'x-rapidapi-key'  "XxXxXxXxXxXxXxXxXxXxXxXx"
-    
+
 connrequest "GET" "/leagues"  headers =headers
 res = conngetresponse
 data = resread
@@ -1232,7 +1232,7 @@ printdatadecode"utf-8"
 Requests
 url = "https://v3.football.api-sports.io/leagues"
 payload=
-headers = 
+headers =
   'x-rapidapi-key'  'XxXxXxXxXxXxXxXxXxXxXxXx'
   'x-rapidapi-host'  'v3.football.api-sports.io'
 response = requests request "GET" url headers =headers  data=payload
@@ -1303,15 +1303,15 @@ https://www.api-football.com/documentation-v3 18/140
 --- Page 19 ---
 Shell
 Httpie
-http --follow --timeout 3600 GET 'https://v3.football.api-sports.io/leagues'  
- x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'  
+http --follow --timeout 3600 GET 'https://v3.football.api-sports.io/leagues'
+ x-rapidapi-key: 'XxXxXxXxXxXxXxXxXxXxXxXx'
  x-rapidapi-host: 'v3.football.api-sports.io'
 wget
-wget --no-check-certificate --quiet 
-  --method GET 
-  --timeout =0 
-  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'  
-  --header 'x-rapidapi-host: v3.football.api-sports.io'  
+wget --no-check-certificate --quiet
+  --method GET
+  --timeout =0
+  --header 'x-rapidapi-key: XxXxXxXxXxXxXxXxXxXxXxXx'
+  --header 'x-rapidapi-host: v3.football.api-sports.io'
    'https://v3.football.api-sports.io/leagues'
 Swift
 URLSession
@@ -1354,11 +1354,11 @@ https://www.api-football.com/documentation-v3 19/140
 
 --- Page 20 ---
  let task = URLSession shareddataTask with request   data response  error in
-  guard let data = data else 
+  guard let data = data else
     printStringdescribing  error
     semaphore signal
     return
-  
+
   printStringdata data encoding  utf8!
   semaphore signal
 taskresume
@@ -1999,10 +1999,10 @@ https://www.api-football.com/documentation-v3 33/140
 Countries
 {"get": "timezone"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 425
@@ -2026,7 +2026,7 @@ Countries
 Countries
 Get the list of available countries for the leagues  endpoint.
 The name and code fields can be used in other endpoints as filters.
-To get the flag of a country you have to call the following url: 
+To get the flag of a country you have to call the following url:
 https://media.api-
 sports.io/flags/{country_code}.svg
 Examples available in Request samples "Use Cases".
@@ -2095,7 +2095,7 @@ Expand allCollapse all Copy
 "name": "england"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2120,7 +2120,7 @@ https://www.api-football.com/documentation-v3 36/140
 Leagues
 Get the list of available leagues and cups.
 The league id are unique in the API and leagues keep it across all seasons
-To get the logo of a competition you have to call the following url: 
+To get the logo of a competition you have to call the following url:
 https://media.api-
 sports.io/football/leagues/{league_id}.png
 This endpoint also returns the coverage  of each competition, which makes it possible to know what is
@@ -2130,13 +2130,13 @@ competition that has not yet started, it is normal to have all the features set 
 updated once the competition has started.
 You can find all the leagues ids on our Dashboard.
 Example :
-"coverage"  
-  "fixtures"  
+"coverage"
+  "fixtures"
       "events"  true
       "lineups"  true
       "statistics_fixtures"  false
       "statistics_players"  false
-  
+
   "standings"  true
   "players"  true
   "top_scorers"  true
@@ -2329,7 +2329,7 @@ Expand allCollapse all Copy
 "id": "39"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2419,10 +2419,10 @@ Expand allCollapse all Copy
 {
 "get": "leagues/seasons"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 12
@@ -2457,7 +2457,7 @@ Teams information
 Get the list of available teams.
 The team id are unique in the API and teams keep it among all the leagues/cups in which they
 participate.
-To get the logo of a team you have to call the following url: 
+To get the logo of a team you have to call the following url:
 https://media.api-
 sports.io/football/teams/{team_id}.png
 You can find all the teams ids on our Dashboard.
@@ -2565,7 +2565,7 @@ Expand allCollapse all Copy
 "id": "33"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2649,7 +2649,7 @@ Expand allCollapse all Copy
 "team": "33"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 11
@@ -2752,7 +2752,7 @@ Expand allCollapse all Copy
 "team": "33"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -2814,10 +2814,10 @@ Expand allCollapse all Copy
 {
 "get": "teams/countries"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 258
@@ -2843,7 +2843,7 @@ Venues
 Venues
 Get the list of available venues.
 The venue id are unique in the API.
-To get the image of a venue you have to call the following url: 
+To get the image of a venue you have to call the following url:
 https://media.api-
 sports.io/football/venues/{venue_id}.png
 Examples available in Request samples "Use Cases".
@@ -2930,7 +2930,7 @@ Expand allCollapse all Copy
 "id": "556"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3018,7 +3018,7 @@ Expand allCollapse all Copy
 "season" : "2019"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3084,7 +3084,7 @@ Responses
 Use CasesPhpPythonNodeJavaScriptCurlRuby
 // Get all available rounds from one {league} & {season}
 get"https://v3.football.api-sports.io/fixtures/rounds?league=39&season=2019"
-// Get all available rounds from one {league} & {season} With the dates of each 
+// Get all available rounds from one {league} & {season} With the dates of each
 get"https://v3.football.api-sports.io/fixtures/rounds?league=39&season=2019&dat
 // Get current round from one {league} & {season}
 get"https://v3.football.api-sports.io/fixtures/rounds?league=39&season=2019&cur
@@ -3112,7 +3112,7 @@ Expand allCollapse all Copy
 "season" : "2019"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 38
@@ -3381,7 +3381,7 @@ Expand allCollapse all Copy
 "live": "all"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 4
@@ -3496,7 +3496,7 @@ Expand allCollapse all Copy
 "last": "1"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3561,7 +3561,7 @@ half7/20/25, 9:21 PM API-Football - Documentation
 https://www.api-football.com/documentation-v3 71/140
 
 --- Page 72 ---
-Add the halftime statistics in the response 
+Add the halftime statistics in the response
 Data start from 2024 season
 for half parameter
 HEADER PARAMETERS
@@ -3609,7 +3609,7 @@ Expand allCollapse all Copy
 "fixture" : "215662"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -3709,7 +3709,7 @@ https://www.api-football.com/documentation-v3 75/140
 "fixture" : "215662"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 18
@@ -3870,7 +3870,7 @@ Expand allCollapse all Copy
 "fixture" : "592872"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 2
@@ -3942,7 +3942,7 @@ Injuries"parameters" : -
 "fixture" : "169080"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 2
@@ -4021,7 +4021,7 @@ Use CasesPhpPythonNodeJavaScriptCurlRuby
 get"https://v3.football.api-sports.io/injuries?league=2&season=2020"
 // Get all available injuries from one {fixture}
 get"https://v3.football.api-sports.io/injuries?fixture=686314"
-// Get all available injuries from severals fixtures {ids} 
+// Get all available injuries from severals fixtures {ids}
 get"https://v3.football.api-sports.io/injuries?ids=686314-686315-686316-686317-
 // Get all available injuries from one {team} & {season}
 get"https://v3.football.api-sports.io/injuries?team=85&season=2020"
@@ -4074,7 +4074,7 @@ Expand allCollapse all Copy
 "fixture" : "686314"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 13
@@ -4189,7 +4189,7 @@ Expand allCollapse all Copy
 https://www.api-football.com/documentation-v3 87/140
 
 --- Page 88 ---
-Coachs"errors" : 
+Coachs"errors" :
 [ ]
 ,
 "results" : 1
@@ -4210,7 +4210,7 @@ Coachs"errors" :
 }
 Coachs
 Get all the information about the coachs and their careers.
-To get the photo of a coach you have to call the following url: 
+To get the photo of a coach you have to call the following url:
 https://media.api-
 sports.io/football/coachs/{coach_id}.png
 Update Frequency : This endpoint is updated every day.
@@ -4270,7 +4270,7 @@ Expand allCollapse all Copy
 "team": "85"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -4332,10 +4332,10 @@ Expand allCollapse all Copy
 https://www.api-football.com/documentation-v3 91/140
 
 --- Page 92 ---
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 35
@@ -4396,7 +4396,7 @@ Profiles
 Returns the list of all available players.
 It is possible to call this endpoint without parameters, but you will need to use the pagination to get all
 available players.
-To get the photo of a player you have to call the following url: 
+To get the photo of a player you have to call the following url:
 https://media.api-
 sports.io/football/players/{player_id}.png
 This endpoint uses a pagination system, you can navigate between the different pages with to the page
@@ -4465,7 +4465,7 @@ Expand allCollapse all Copy
 "player" : "276"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -4500,7 +4500,7 @@ season. This data is calculated according to the performance of the player in re
 of the game or the season who occupy the same position (Attacker, defender, goal...). There are different
 algorithms that take into account the position of the player and assign points according to his
 performance.
-To get the photo of a player you have to call the following url: 
+To get the photo of a player you have to call the following url:
 https://media.api-
 sports.io/football/players/{player_id}.png
 This endpoint uses a pagination system, you can navigate between the different pages with to the page
@@ -4604,7 +4604,7 @@ Expand allCollapse all Copy
 "season" : "2019"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -4677,7 +4677,7 @@ Expand allCollapse all Copy
 "team": "33"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -4743,7 +4743,7 @@ https://www.api-football.com/documentation-v3 102/140
 "player" : "276"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 8
@@ -4888,7 +4888,7 @@ Expand allCollapse all Copy
 "season" : "2018"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 20
@@ -5016,7 +5016,7 @@ https://www.api-football.com/documentation-v3 107/140
 "league" : "61"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 20
@@ -5191,7 +5191,7 @@ Expand allCollapse all Copy
 "league" : "61"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 20
@@ -5370,7 +5370,7 @@ Expand allCollapse all Copy
 "league" : "61"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 20
@@ -5501,7 +5501,7 @@ Expand allCollapse all Copy
 "player" : "35845"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -5591,7 +5591,7 @@ Expand allCollapse all Copy
 "player" : "276"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 38
@@ -5709,7 +5709,7 @@ Expand allCollapse all Copy
 "player" : "276"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 27
@@ -5821,7 +5821,7 @@ to start, fixtures in progress and fixtures that have just ended are available i
 Update Frequency : This endpoint is updated every 5 seconds.*
 * This value can change in the range of 5 to 60 seconds
 INFORMATIONS ABOUT STATUS
-"status"  
+"status"
     "stopped"  false // True if the fixture is stopped by the referee for X reaso
     "blocked"  false // True if bets on this fixture are temporarily blocked
     "finished"  false // True if the fixture has not started or if it is finished
@@ -5833,21 +5833,21 @@ When a value is unique for a bet the main value will always be False or null.
 Example below :
 "id" 36
 "name" "Over/Under Line"
-"values"  
-    
+"values"
+
         "value"  "Over"
         "odd" "1.975"
         "handicap"  "2"
         "main" true // Bet to consider
         "suspended"  false // True if this bet is temporarily suspended
-    
-    
+
+
         "value"  "Over"
         "odd" "3.45"
         "handicap"  "2"
         "main" false // Bet to no consider
         "suspended"  false
-    
+
 QUERY PARAMETERS
 :
 {
@@ -5953,7 +5953,7 @@ Expand allCollapse all Copy
 "fixture" : "721238"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -6025,10 +6025,10 @@ Expand allCollapse all Copy
 {
 "get": "odds/live/bets"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 137
@@ -6570,7 +6570,7 @@ Expand allCollapse all Copy
 "bookmaker" : "6"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 1
@@ -6665,13 +6665,13 @@ Expand allCollapse all Copy
 {
 "get": "odds/mapping"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,Content type7/20/25, 9:21 PM API-Football - Documentation
 https://www.api-football.com/documentation-v3 135/140
 
 --- Page 136 ---
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 129
@@ -6748,10 +6748,10 @@ Expand allCollapse all Copy
 {
 "get": "odds/bookmakers"
 ,
-"parameters" : 
+"parameters" :
 [ ]
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 15
@@ -6873,7 +6873,7 @@ Expand allCollapse all Copy
 "search" : "under"
 }
 ,
-"errors" : 
+"errors" :
 [ ]
 ,
 "results" : 7

@@ -6,6 +6,7 @@ Generates simple placeholder logos for leagues that don't have real logos yet.
 
 import os
 import sys
+
 from PIL import Image, ImageDraw, ImageFont
 
 # Add the bot directory to the path

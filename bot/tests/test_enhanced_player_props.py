@@ -49,8 +49,9 @@ async def test_enhanced_player_props():
         # Test 4: Test database connection (if available)
         print("\n4️⃣ Testing database connection...")
         try:
-            from bot.data.db_manager import DatabaseManager
             from dotenv import load_dotenv
+
+            from bot.data.db_manager import DatabaseManager
 
             # Load environment variables
             load_dotenv()
@@ -72,8 +73,12 @@ async def test_enhanced_player_props():
             )
 
             # Test popular players
-            popular = await player_search.get_popular_players("NBA", "Los Angeles Lakers", limit=5)
-            print(f"✅ Popular players test: Found {len(popular)} popular Lakers players")
+            popular = await player_search.get_popular_players(
+                "NBA", "Los Angeles Lakers", limit=5
+            )
+            print(
+                f"✅ Popular players test: Found {len(popular)} popular Lakers players"
+            )
 
             await db_manager.close()
 

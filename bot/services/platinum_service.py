@@ -1,31 +1,32 @@
-import logging
-import json
 import asyncio
+import json
+import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import discord
-from discord import Webhook, Embed
+from discord import Embed, Webhook
 
 logger = logging.getLogger(__name__)
 
 
 class PlatinumService:
     """Service for handling Platinum tier advanced features."""
-    
+
     def __init__(self, db_manager, bot):
         self.db_manager = db_manager
         self.bot = bot
         self.active_webhooks = {}
         self.active_alerts = {}
-        
+
     async def start(self):
         """Initialize the Platinum service."""
         logger.info("Starting Platinum service...")
         await self.load_active_webhooks()
         await self.load_active_alerts()
         logger.info("Platinum service started successfully")
-        
+
     async def load_active_webhooks(self):
         """Load active webhook integrations from database."""
         try:
@@ -33,11 +34,11 @@ class PlatinumService:
                 "SELECT * FROM webhook_integrations WHERE is_active = TRUE"
             )
             for webhook in webhooks:
-                self.active_webhooks[webhook['id']] = webhook
+                self.active_webhooks[webhook["id"]] = webhook
             logger.info(f"Loaded {len(webhooks)} active webhooks")
         except Exception as e:
             logger.error(f"Error loading webhooks: {e}")
-            
+
     async def load_active_alerts(self):
         """Load active real-time alerts from database."""
         try:
@@ -45,73 +46,83 @@ class PlatinumService:
                 "SELECT * FROM real_time_alerts WHERE is_active = TRUE"
             )
             for alert in alerts:
-                self.active_alerts[alert['id']] = alert
+                self.active_alerts[alert["id"]] = alert
             logger.info(f"Loaded {len(alerts)} active alerts")
         except Exception as e:
             logger.error(f"Error loading alerts: {e}")
 
-
-
     # Webhook Integrations
-    async def create_webhook_integration(self, guild_id: int, webhook_name: str,
-                                       webhook_url: str, webhook_type: str) -> bool:
+    async def create_webhook_integration(
+        self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str
+    ) -> bool:
         """Create a webhook integration for a Platinum guild."""
         try:
             if not await self.is_platinum_guild(guild_id):
                 return False
-                
+
             # Check webhook limit
             current_webhooks = await self.get_webhook_integrations(guild_id)
             if len(current_webhooks) >= 10:  # Platinum limit
                 return False
-                
+
             await self.db_manager.execute(
                 """
                 INSERT INTO webhook_integrations (guild_id, webhook_name, webhook_url, webhook_type)
                 VALUES (%s, %s, %s, %s)
                 """,
-                guild_id, webhook_name, webhook_url, webhook_type
+                guild_id,
+                webhook_name,
+                webhook_url,
+                webhook_type,
             )
-            
+
             await self.load_active_webhooks()  # Refresh cache
             await self.track_feature_usage(guild_id, "webhook_integrations")
-            
+
             return True
         except Exception as e:
             logger.error(f"Error creating webhook integration: {e}")
             return False
-            
+
     async def get_webhook_integrations(self, guild_id: int) -> List[Dict[str, Any]]:
         """Get all webhook integrations for a guild."""
         try:
             return await self.db_manager.fetch_all(
                 "SELECT * FROM webhook_integrations WHERE guild_id = %s AND is_active = TRUE",
-                guild_id
+                guild_id,
             )
         except Exception as e:
             logger.error(f"Error getting webhook integrations: {e}")
             return []
-            
-    async def send_webhook_notification(self, webhook_id: int, data: Dict[str, Any]) -> bool:
+
+    async def send_webhook_notification(
+        self, webhook_id: int, data: Dict[str, Any]
+    ) -> bool:
         """Send a notification to a webhook."""
         try:
             webhook_data = self.active_webhooks.get(webhook_id)
             if not webhook_data:
                 return False
-                
-            webhook = Webhook.from_url(webhook_data['webhook_url'], session=self.bot.session)
-            
+
+            webhook = Webhook.from_url(
+                webhook_data["webhook_url"], session=self.bot.session
+            )
+
             embed = Embed(
                 title=f"{webhook_data['webhook_name']} - {data.get('type', 'Notification')}",
-                description=data.get('message', ''),
-                color=0x00ff00,
-                timestamp=datetime.utcnow()
+                description=data.get("message", ""),
+                color=0x00FF00,
+                timestamp=datetime.utcnow(),
             )
-            
-            if data.get('fields'):
-                for field in data['fields']:
-                    embed.add_field(name=field['name'], value=field['value'], inline=field.get('inline', False))
-                    
+
+            if data.get("fields"):
+                for field in data["fields"]:
+                    embed.add_field(
+                        name=field["name"],
+                        value=field["value"],
+                        inline=field.get("inline", False),
+                    )
+
             await webhook.send(embed=embed)
             return True
         except Exception as e:
@@ -119,63 +130,74 @@ class PlatinumService:
             return False
 
     # Real-Time Alerts
-    async def create_real_time_alert(self, guild_id: int, alert_type: str,
-                                   alert_conditions: Dict[str, Any], 
-                                   alert_channel_id: int) -> bool:
+    async def create_real_time_alert(
+        self,
+        guild_id: int,
+        alert_type: str,
+        alert_conditions: Dict[str, Any],
+        alert_channel_id: int,
+    ) -> bool:
         """Create a real-time alert for a Platinum guild."""
         try:
             if not await self.is_platinum_guild(guild_id):
                 return False
-                
+
             await self.db_manager.execute(
                 """
                 INSERT INTO real_time_alerts (guild_id, alert_type, alert_conditions, alert_channel_id)
                 VALUES (%s, %s, %s, %s)
                 """,
-                guild_id, alert_type, json.dumps(alert_conditions), alert_channel_id
+                guild_id,
+                alert_type,
+                json.dumps(alert_conditions),
+                alert_channel_id,
             )
-            
+
             await self.load_active_alerts()  # Refresh cache
             await self.track_feature_usage(guild_id, "real_time_alerts")
-            
+
             return True
         except Exception as e:
             logger.error(f"Error creating real-time alert: {e}")
             return False
-            
+
     async def get_real_time_alerts(self, guild_id: int) -> List[Dict[str, Any]]:
         """Get all real-time alerts for a guild."""
         try:
             return await self.db_manager.fetch_all(
                 "SELECT * FROM real_time_alerts WHERE guild_id = %s AND is_active = TRUE",
-                guild_id
+                guild_id,
             )
         except Exception as e:
             logger.error(f"Error getting real-time alerts: {e}")
             return []
-            
+
     async def trigger_alert(self, alert_id: int, data: Dict[str, Any]) -> bool:
         """Trigger a real-time alert."""
         try:
             alert_data = self.active_alerts.get(alert_id)
             if not alert_data:
                 return False
-                
-            channel = self.bot.get_channel(alert_data['alert_channel_id'])
+
+            channel = self.bot.get_channel(alert_data["alert_channel_id"])
             if not channel:
                 return False
-                
+
             embed = Embed(
                 title=f"🚨 {alert_data['alert_type'].title()} Alert",
-                description=data.get('message', ''),
-                color=0xff0000,
-                timestamp=datetime.utcnow()
+                description=data.get("message", ""),
+                color=0xFF0000,
+                timestamp=datetime.utcnow(),
             )
-            
-            if data.get('fields'):
-                for field in data['fields']:
-                    embed.add_field(name=field['name'], value=field['value'], inline=field.get('inline', False))
-                    
+
+            if data.get("fields"):
+                for field in data["fields"]:
+                    embed.add_field(
+                        name=field["name"],
+                        value=field["value"],
+                        inline=field.get("inline", False),
+                    )
+
             await channel.send(embed=embed)
             return True
         except Exception as e:
@@ -183,27 +205,41 @@ class PlatinumService:
             return False
 
     # Data Export
-    async def create_data_export(self, guild_id: int, export_type: str,
-                               export_format: str, created_by: int, user_id: Optional[int] = None) -> int:
+    async def create_data_export(
+        self,
+        guild_id: int,
+        export_type: str,
+        export_format: str,
+        created_by: int,
+        user_id: Optional[int] = None,
+    ) -> int:
         """Create a data export for a Platinum guild."""
         try:
-            logger.critical(f"[EXPORT DEBUG] create_data_export function ENTERED - guild_id={guild_id}, type={export_type}, format={export_format}, user_filter={user_id}")
-            
+            logger.critical(
+                f"[EXPORT DEBUG] create_data_export function ENTERED - guild_id={guild_id}, type={export_type}, format={export_format}, user_filter={user_id}"
+            )
+
             if not await self.is_platinum_guild(guild_id):
                 logger.critical(f"[EXPORT DEBUG] Not a platinum guild: {guild_id}")
                 return 0
-                
-            logger.critical(f"[EXPORT DEBUG] Platinum check passed for guild_id={guild_id}")
-            
+
+            logger.critical(
+                f"[EXPORT DEBUG] Platinum check passed for guild_id={guild_id}"
+            )
+
             # Check export limit
             current_month = datetime.now().month
             current_exports = await self.get_export_count(guild_id, current_month)
             if current_exports >= 50:  # Platinum limit
-                logger.critical(f"[EXPORT DEBUG] Export limit reached for guild_id={guild_id}: {current_exports}/50")
+                logger.critical(
+                    f"[EXPORT DEBUG] Export limit reached for guild_id={guild_id}: {current_exports}/50"
+                )
                 return 0
-                
-            logger.critical(f"[EXPORT DEBUG] Export limit check passed: {current_exports}/50")
-            
+
+            logger.critical(
+                f"[EXPORT DEBUG] Export limit check passed: {current_exports}/50"
+            )
+
             # Create export record
             logger.critical(f"[EXPORT DEBUG] About to create DB record for export")
             result = await self.db_manager.execute(
@@ -211,50 +247,106 @@ class PlatinumService:
                 INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at, user_filter)
                 VALUES (%s, %s, %s, %s, NOW(), %s)
                 """,
-                guild_id, export_type, export_format, created_by, user_id
+                guild_id,
+                export_type,
+                export_format,
+                created_by,
+                user_id,
             )
-            
+
             # Extract the last_id from the result tuple
             rowcount, export_id = result if result else (0, None)
-            logger.critical(f"[EXPORT DEBUG] DB insert completed. rowcount={rowcount}, export_id={export_id}")
-            
+            logger.critical(
+                f"[EXPORT DEBUG] DB insert completed. rowcount={rowcount}, export_id={export_id}"
+            )
+
             if export_id:
-                logger.critical(f"[EXPORT DEBUG] export_id is valid: {export_id}. About to schedule background task.")
+                logger.critical(
+                    f"[EXPORT DEBUG] export_id is valid: {export_id}. About to schedule background task."
+                )
                 try:
                     # Use get_running_loop for reliability
                     loop = asyncio.get_running_loop()
                     logger.critical(f"[EXPORT DEBUG] Got running loop successfully")
-                    
+
                     async def run_export_with_logging():
                         try:
-                            logger.critical(f"[EXPORT DEBUG] Background export task starting for export_id={export_id}")
-                            await self._generate_export(export_id, guild_id, export_type, export_format, created_by, user_id)
-                            logger.critical(f"[EXPORT DEBUG] Background export task completed for export_id={export_id}")
+                            logger.critical(
+                                f"[EXPORT DEBUG] Background export task starting for export_id={export_id}"
+                            )
+                            await self._generate_export(
+                                export_id,
+                                guild_id,
+                                export_type,
+                                export_format,
+                                created_by,
+                                user_id,
+                            )
+                            logger.critical(
+                                f"[EXPORT DEBUG] Background export task completed for export_id={export_id}"
+                            )
                         except Exception as e:
-                            logger.critical(f"[EXPORT DEBUG] Background export task failed for export_id={export_id}: {e}", exc_info=True)
+                            logger.critical(
+                                f"[EXPORT DEBUG] Background export task failed for export_id={export_id}: {e}",
+                                exc_info=True,
+                            )
                             try:
-                                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Export failed: {e}", user_id)
+                                await self._send_export_notification(
+                                    guild_id,
+                                    created_by,
+                                    export_type,
+                                    export_format,
+                                    False,
+                                    f"Export failed: {e}",
+                                    user_id,
+                                )
                             except Exception as notify_error:
-                                logger.critical(f"[EXPORT DEBUG] Failed to send error notification for export_id={export_id}: {notify_error}")
-                    
-                    logger.critical(f"[EXPORT DEBUG] About to create task for export_id={export_id}")
+                                logger.critical(
+                                    f"[EXPORT DEBUG] Failed to send error notification for export_id={export_id}: {notify_error}"
+                                )
+
+                    logger.critical(
+                        f"[EXPORT DEBUG] About to create task for export_id={export_id}"
+                    )
                     task = loop.create_task(run_export_with_logging())
-                    logger.critical(f"[EXPORT DEBUG] Background export task created and started for export_id={export_id}")
+                    logger.critical(
+                        f"[EXPORT DEBUG] Background export task created and started for export_id={export_id}"
+                    )
                 except Exception as e:
-                    logger.critical(f"[EXPORT DEBUG] Failed to start background export task for export_id={export_id}: {e}", exc_info=True)
-                    await self._send_export_notification(guild_id, created_by, export_type, export_format, False, f"Failed to start export: {e}", user_id)
+                    logger.critical(
+                        f"[EXPORT DEBUG] Failed to start background export task for export_id={export_id}: {e}",
+                        exc_info=True,
+                    )
+                    await self._send_export_notification(
+                        guild_id,
+                        created_by,
+                        export_type,
+                        export_format,
+                        False,
+                        f"Failed to start export: {e}",
+                        user_id,
+                    )
             else:
-                logger.critical(f"[EXPORT DEBUG] export_id is None or 0 - DB insert may have failed")
-                
-            logger.critical(f"[EXPORT DEBUG] About to track feature usage for guild_id={guild_id}")
+                logger.critical(
+                    f"[EXPORT DEBUG] export_id is None or 0 - DB insert may have failed"
+                )
+
+            logger.critical(
+                f"[EXPORT DEBUG] About to track feature usage for guild_id={guild_id}"
+            )
             await self.track_feature_usage(guild_id, "data_exports")
             logger.critical(f"[EXPORT DEBUG] Feature usage tracked successfully")
-            
-            logger.critical(f"[EXPORT DEBUG] create_data_export function COMPLETED successfully. Returning export_id={export_id}")
+
+            logger.critical(
+                f"[EXPORT DEBUG] create_data_export function COMPLETED successfully. Returning export_id={export_id}"
+            )
             return export_id
-            
+
         except Exception as e:
-            logger.critical(f"[EXPORT DEBUG] CRITICAL ERROR in create_data_export: {e}", exc_info=True)
+            logger.critical(
+                f"[EXPORT DEBUG] CRITICAL ERROR in create_data_export: {e}",
+                exc_info=True,
+            )
             return 0
 
     def _handle_export_task_completion(self, task, export_id: int):
@@ -263,23 +355,39 @@ class PlatinumService:
             if task.cancelled():
                 logger.warning(f"Export task {export_id} was cancelled")
             elif task.exception():
-                logger.error(f"Export task {export_id} failed with exception: {task.exception()}")
+                logger.error(
+                    f"Export task {export_id} failed with exception: {task.exception()}"
+                )
             else:
                 logger.info(f"Export task {export_id} completed successfully")
         except Exception as e:
-            logger.error(f"Error in export task completion handler for {export_id}: {e}")
+            logger.error(
+                f"Error in export task completion handler for {export_id}: {e}"
+            )
 
-    async def _generate_export(self, export_id: int, guild_id: int, export_type: str, export_format: str, created_by: int, user_id: Optional[int] = None):
+    async def _generate_export(
+        self,
+        export_id: int,
+        guild_id: int,
+        export_type: str,
+        export_format: str,
+        created_by: int,
+        user_id: Optional[int] = None,
+    ):
         """Generate the actual export file and send notification."""
         try:
-            logger.info(f"Starting export generation for export_id={export_id}, type={export_type}, format={export_format}")
-            
+            logger.info(
+                f"Starting export generation for export_id={export_id}, type={export_type}, format={export_format}"
+            )
+
             # Generate the export data
             logger.info(f"Fetching export data for export_id={export_id}")
             export_data = await self._get_export_data(guild_id, export_type, user_id)
-            
-            logger.info(f"Export data fetched for export_id={export_id}: {len(export_data) if isinstance(export_data, list) else 'dict'} items")
-            
+
+            logger.info(
+                f"Export data fetched for export_id={export_id}: {len(export_data) if isinstance(export_data, list) else 'dict'} items"
+            )
+
             # Log sample of raw data for debugging
             if export_data:
                 if isinstance(export_data, list) and len(export_data) > 0:
@@ -287,39 +395,79 @@ class PlatinumService:
                 elif isinstance(export_data, dict):
                     for key, value in export_data.items():
                         if isinstance(value, list) and len(value) > 0:
-                            logger.info(f"Sample raw data for {key} (first item): {value[0]}")
-            
+                            logger.info(
+                                f"Sample raw data for {key} (first item): {value[0]}"
+                            )
+
             if not export_data:
-                logger.warning(f"No data found for export_id={export_id}, type={export_type}")
-                await self._update_export_status(export_id, False, "No data found for export")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "No data found", user_id)
+                logger.warning(
+                    f"No data found for export_id={export_id}, type={export_type}"
+                )
+                await self._update_export_status(
+                    export_id, False, "No data found for export"
+                )
+                await self._send_export_notification(
+                    guild_id,
+                    created_by,
+                    export_type,
+                    export_format,
+                    False,
+                    "No data found",
+                    user_id,
+                )
                 return
-            
+
             # Create the export file
             logger.info(f"Creating export file for export_id={export_id}")
-            file_path = await self._create_export_file(export_data, export_type, export_format, export_id)
-            
+            file_path = await self._create_export_file(
+                export_data, export_type, export_format, export_id
+            )
+
             if file_path:
-                logger.info(f"Export file created successfully for export_id={export_id}: {file_path}")
+                logger.info(
+                    f"Export file created successfully for export_id={export_id}: {file_path}"
+                )
                 # Update export status to completed
                 await self._update_export_status(export_id, True, file_path)
-                
+
                 # Send success notification
                 logger.info(f"Sending success notification for export_id={export_id}")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, True, file_path, user_id)
-                
+                await self._send_export_notification(
+                    guild_id,
+                    created_by,
+                    export_type,
+                    export_format,
+                    True,
+                    file_path,
+                    user_id,
+                )
+
                 logger.info(f"Export {export_id} completed successfully: {file_path}")
             else:
                 logger.error(f"Failed to create export file for export_id={export_id}")
-                await self._update_export_status(export_id, False, "Failed to create file")
-                await self._send_export_notification(guild_id, created_by, export_type, export_format, False, "Failed to create file", user_id)
-                
+                await self._update_export_status(
+                    export_id, False, "Failed to create file"
+                )
+                await self._send_export_notification(
+                    guild_id,
+                    created_by,
+                    export_type,
+                    export_format,
+                    False,
+                    "Failed to create file",
+                    user_id,
+                )
+
         except Exception as e:
             logger.error(f"Error generating export {export_id}: {e}", exc_info=True)
             await self._update_export_status(export_id, False, str(e))
-            await self._send_export_notification(guild_id, created_by, export_type, export_format, False, str(e), user_id)
+            await self._send_export_notification(
+                guild_id, created_by, export_type, export_format, False, str(e), user_id
+            )
 
-    async def _get_export_data(self, guild_id: int, export_type: str, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def _get_export_data(
+        self, guild_id: int, export_type: str, user_id: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """Get data for the specified export type."""
         try:
             if export_type == "bets":
@@ -351,48 +499,50 @@ class PlatinumService:
                 bets_query = "SELECT * FROM bets WHERE guild_id = %s"
                 users_query = "SELECT * FROM users WHERE guild_id = %s"
                 analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = %s"
-                
+
                 params = [guild_id]
                 if user_id:
                     bets_query += " AND user_id = %s"
                     users_query += " AND user_id = %s"
                     analytics_query += " AND user_id = %s"
                     params.append(user_id)
-                
+
                 bets_query += " ORDER BY created_at DESC"
                 users_query += " ORDER BY created_at DESC"
                 analytics_query += " ORDER BY last_used DESC"
-                
+
                 bets = await self.db_manager.fetch_all(bets_query, *params)
                 users = await self.db_manager.fetch_all(users_query, *params)
                 analytics = await self.db_manager.fetch_all(analytics_query, *params)
-                
-                return {
-                    "bets": bets,
-                    "users": users,
-                    "analytics": analytics
-                }
+
+                return {"bets": bets, "users": users, "analytics": analytics}
             else:
                 return []
         except Exception as e:
             logger.error(f"Error getting export data: {e}")
             return []
 
-    async def _create_export_file(self, data: List[Dict[str, Any]], export_type: str, export_format: str, export_id: int) -> str:
+    async def _create_export_file(
+        self,
+        data: List[Dict[str, Any]],
+        export_type: str,
+        export_format: str,
+        export_id: int,
+    ) -> str:
         """Create the export file in the specified format."""
         try:
-            import json
             import csv
+            import json
             import tempfile
             from datetime import datetime
-            
+
             # Use system temp directory instead of local exports directory
             temp_dir = tempfile.gettempdir()
             logger.info(f"Creating export file in temp directory: {temp_dir}")
-            
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{export_type}_{export_format}_{timestamp}_{export_id}"
-            
+
             if export_format == "csv":
                 file_path = os.path.join(temp_dir, f"{filename}.csv")
                 await self._write_csv_file(data, file_path, export_type)
@@ -404,33 +554,35 @@ class PlatinumService:
                 await self._write_xlsx_file(data, file_path, export_type)
             else:
                 return None
-                
+
             logger.info(f"Export file created at: {file_path}")
             return file_path
         except Exception as e:
             logger.error(f"Error creating export file: {e}")
             return None
 
-    async def _write_csv_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
+    async def _write_csv_file(
+        self, data: List[Dict[str, Any]], file_path: str, export_type: str
+    ):
         """Write data to CSV file with improved formatting."""
         try:
             import csv
-            
+
             if not data:
                 logger.warning(f"No data to write for CSV export: {export_type}")
                 # Create empty CSV with message
-                with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
                     csvfile.write("No data available for export\n")
                 return
-                
-            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+
+            with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
                 if export_type == "all":
                     # Handle multiple data types with better formatting
                     for data_type, data_list in data.items():
                         csvfile.write(f"\n{'='*50}\n")
                         csvfile.write(f"{data_type.upper()} DATA\n")
                         csvfile.write(f"{'='*50}\n")
-                        
+
                         if data_list and len(data_list) > 0:
                             # Clean and format the data
                             cleaned_data = self._clean_export_data(data_list, data_type)
@@ -453,80 +605,97 @@ class PlatinumService:
                             writer.writerows(cleaned_data)
                     else:
                         csvfile.write("No data available\n")
-                        
+
             logger.info(f"CSV file written successfully: {file_path}")
-            
+
         except Exception as e:
             logger.error(f"Error writing CSV file {file_path}: {e}", exc_info=True)
             raise
 
-    def _clean_export_data(self, data: List[Dict[str, Any]], export_type: str) -> List[Dict[str, Any]]:
+    def _clean_export_data(
+        self, data: List[Dict[str, Any]], export_type: str
+    ) -> List[Dict[str, Any]]:
         """Clean and format export data for better readability."""
         try:
             cleaned_data = []
-            
+
             for item in data:
                 cleaned_item = {}
-                
+
                 if export_type == "bets":
                     # Format betting data for better readability based on actual schema
-                    bet_details = item.get('bet_details', {})
+                    bet_details = item.get("bet_details", {})
                     if isinstance(bet_details, str):
                         try:
                             import json
+
                             bet_details = json.loads(bet_details)
                         except:
                             bet_details = {}
-                    
+
                     cleaned_item = {
-                        "Bet Serial": item.get('bet_serial', 'N/A'),
-                        "User ID": item.get('user_id', 'N/A'),
-                        "Date": self._format_datetime(item.get('created_at')),
-                        "League": item.get('league', 'N/A'),
-                        "Bet Type": item.get('bet_type', 'N/A'),
-                        "Bet Details": str(bet_details)[:100] + "..." if len(str(bet_details)) > 100 else str(bet_details),
+                        "Bet Serial": item.get("bet_serial", "N/A"),
+                        "User ID": item.get("user_id", "N/A"),
+                        "Date": self._format_datetime(item.get("created_at")),
+                        "League": item.get("league", "N/A"),
+                        "Bet Type": item.get("bet_type", "N/A"),
+                        "Bet Details": (
+                            str(bet_details)[:100] + "..."
+                            if len(str(bet_details)) > 100
+                            else str(bet_details)
+                        ),
                         "Units": f"{item.get('units', 0):.2f}",
-                        "Status": item.get('status', 'pending').title(),
-                        "Result": item.get('result', 'N/A'),
-                        "Confirmed": "Yes" if item.get('confirmed', False) else "No",
-                        "Updated": self._format_datetime(item.get('updated_at'))
+                        "Status": item.get("status", "pending").title(),
+                        "Result": item.get("result", "N/A"),
+                        "Confirmed": "Yes" if item.get("confirmed", False) else "No",
+                        "Updated": self._format_datetime(item.get("updated_at")),
                     }
                 elif export_type == "users":
                     # Format user data for better readability
                     cleaned_item = {
-                        "User ID": item.get('user_id', 'N/A'),
-                        "Username": item.get('username', 'Unknown'),
-                        "Joined": self._format_datetime(item.get('created_at')),
-                        "Total Bets": item.get('total_bets', 0),
-                        "Wins": item.get('wins', 0),
-                        "Losses": item.get('losses', 0),
+                        "User ID": item.get("user_id", "N/A"),
+                        "Username": item.get("username", "Unknown"),
+                        "Joined": self._format_datetime(item.get("created_at")),
+                        "Total Bets": item.get("total_bets", 0),
+                        "Wins": item.get("wins", 0),
+                        "Losses": item.get("losses", 0),
                         "Win Rate": f"{item.get('win_rate', 0):.1f}%",
                         "Total Wagered": f"${item.get('total_wagered', 0):.2f}",
                         "Total Won": f"${item.get('total_won', 0):.2f}",
-                        "Net Profit": f"${item.get('net_profit', 0):.2f}"
+                        "Net Profit": f"${item.get('net_profit', 0):.2f}",
                     }
                 elif export_type == "analytics":
                     # Format analytics data for better readability
                     cleaned_item = {
-                        "Feature": item.get('feature_name', 'N/A'),
-                        "Last Used": self._format_datetime(item.get('last_used')),
-                        "Usage Count": item.get('usage_count', 0),
-                        "Guild ID": item.get('guild_id', 'N/A')
+                        "Feature": item.get("feature_name", "N/A"),
+                        "Last Used": self._format_datetime(item.get("last_used")),
+                        "Usage Count": item.get("usage_count", 0),
+                        "Guild ID": item.get("guild_id", "N/A"),
                     }
                 else:
                     # Generic formatting for unknown types
                     for key, value in item.items():
                         if isinstance(value, dict):
-                            cleaned_item[key] = str(value)[:100] + "..." if len(str(value)) > 100 else str(value)
-                        elif isinstance(value, (datetime, str)) and ('date' in key.lower() or 'time' in key.lower()):
+                            cleaned_item[key] = (
+                                str(value)[:100] + "..."
+                                if len(str(value)) > 100
+                                else str(value)
+                            )
+                        elif isinstance(value, (datetime, str)) and (
+                            "date" in key.lower() or "time" in key.lower()
+                        ):
                             cleaned_item[key] = self._format_datetime(value)
                         else:
-                            cleaned_item[key] = str(value)[:50] + "..." if len(str(value)) > 50 else str(value)
-                
+                            cleaned_item[key] = (
+                                str(value)[:50] + "..."
+                                if len(str(value)) > 50
+                                else str(value)
+                            )
+
                 cleaned_data.append(cleaned_item)
-            
+
             return cleaned_data
-            
+
         except Exception as e:
             logger.error(f"Error cleaning export data: {e}")
             return data  # Return original data if cleaning fails
@@ -537,13 +706,14 @@ class PlatinumService:
             if isinstance(value, str):
                 # Try to parse string datetime
                 from datetime import datetime
+
                 try:
-                    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
-                    return dt.strftime('%Y-%m-%d %H:%M:%S')
+                    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                    return dt.strftime("%Y-%m-%d %H:%M:%S")
                 except:
                     return value
-            elif hasattr(value, 'strftime'):
-                return value.strftime('%Y-%m-%d %H:%M:%S')
+            elif hasattr(value, "strftime"):
+                return value.strftime("%Y-%m-%d %H:%M:%S")
             else:
                 return str(value)
         except:
@@ -553,19 +723,19 @@ class PlatinumService:
         """Write data to JSON file with improved formatting."""
         try:
             import json
-            
+
             if not data:
                 logger.warning("No data to write for JSON export")
                 # Create empty JSON structure
                 empty_data = {
                     "message": "No data available for export",
                     "timestamp": str(datetime.utcnow()),
-                    "export_status": "empty"
+                    "export_status": "empty",
                 }
-                with open(file_path, 'w', encoding='utf-8') as jsonfile:
+                with open(file_path, "w", encoding="utf-8") as jsonfile:
                     json.dump(empty_data, jsonfile, indent=2, default=str)
                 return
-                
+
             # Clean and format the data for JSON
             cleaned_data = []
             for item in data:
@@ -573,60 +743,74 @@ class PlatinumService:
                 for key, value in item.items():
                     if isinstance(value, dict):
                         cleaned_item[key] = value
-                    elif isinstance(value, (datetime, str)) and ('date' in key.lower() or 'time' in key.lower()):
+                    elif isinstance(value, (datetime, str)) and (
+                        "date" in key.lower() or "time" in key.lower()
+                    ):
                         cleaned_item[key] = self._format_datetime(value)
                     else:
                         cleaned_item[key] = value
                 cleaned_data.append(cleaned_item)
-            
+
             # Create structured JSON output
             json_output = {
                 "export_info": {
                     "timestamp": str(datetime.utcnow()),
                     "total_records": len(cleaned_data),
-                    "export_status": "completed"
+                    "export_status": "completed",
                 },
-                "data": cleaned_data
+                "data": cleaned_data,
             }
-                
-            with open(file_path, 'w', encoding='utf-8') as jsonfile:
+
+            with open(file_path, "w", encoding="utf-8") as jsonfile:
                 json.dump(json_output, jsonfile, indent=2, default=str)
-                
+
             logger.info(f"JSON file written successfully: {file_path}")
-            
+
         except Exception as e:
             logger.error(f"Error writing JSON file {file_path}: {e}", exc_info=True)
             raise
 
-    async def _write_xlsx_file(self, data: List[Dict[str, Any]], file_path: str, export_type: str):
+    async def _write_xlsx_file(
+        self, data: List[Dict[str, Any]], file_path: str, export_type: str
+    ):
         """Write data to XLSX file."""
         try:
             import pandas as pd
-            
+
             if not data:
                 logger.warning("No data to write for XLSX export")
                 # Create empty Excel file with message
-                df = pd.DataFrame({"message": ["No data available"], "timestamp": [str(datetime.utcnow())]})
+                df = pd.DataFrame(
+                    {
+                        "message": ["No data available"],
+                        "timestamp": [str(datetime.utcnow())],
+                    }
+                )
                 df.to_excel(file_path, index=False)
                 return
-            
+
             if export_type == "all":
                 # Create Excel file with multiple sheets
-                with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
                     for data_type, data_list in data.items():
                         if data_list and len(data_list) > 0:
                             df = pd.DataFrame(data_list)
                             df.to_excel(writer, sheet_name=data_type, index=False)
                         else:
                             # Create empty sheet for this data type
-                            empty_df = pd.DataFrame({"message": ["No data available"], "timestamp": [str(datetime.utcnow())]})
+                            empty_df = pd.DataFrame(
+                                {
+                                    "message": ["No data available"],
+                                    "timestamp": [str(datetime.utcnow())],
+                                }
+                            )
                             empty_df.to_excel(writer, sheet_name=data_type, index=False)
             else:
                 df = pd.DataFrame(data)
                 df.to_excel(file_path, index=False)
-                
+
             logger.info(f"XLSX file written successfully: {file_path}")
-            
+
         except ImportError:
             logger.error("pandas not available for XLSX export")
             raise
@@ -634,45 +818,62 @@ class PlatinumService:
             logger.error(f"Error writing XLSX file {file_path}: {e}", exc_info=True)
             raise
 
-    async def _update_export_status(self, export_id: int, is_completed: bool, file_path: str = None):
+    async def _update_export_status(
+        self, export_id: int, is_completed: bool, file_path: str = None
+    ):
         """Update the export status in the database."""
         try:
             if is_completed:
                 await self.db_manager.execute(
                     """
-                    UPDATE data_exports 
+                    UPDATE data_exports
                     SET is_completed = TRUE, file_path = %s, completed_at = NOW()
                     WHERE id = %s
                     """,
-                    file_path, export_id
+                    file_path,
+                    export_id,
                 )
             else:
                 await self.db_manager.execute(
                     """
-                    UPDATE data_exports 
+                    UPDATE data_exports
                     SET is_completed = FALSE, file_path = %s, completed_at = NOW()
                     WHERE id = %s
                     """,
-                    file_path, export_id
+                    file_path,
+                    export_id,
                 )
         except Exception as e:
             logger.error(f"Error updating export status: {e}")
 
-    async def _send_export_notification(self, guild_id: int, user_id: int, export_type: str, export_format: str, success: bool, file_path: str = None, user_filter: Optional[int] = None):
+    async def _send_export_notification(
+        self,
+        guild_id: int,
+        user_id: int,
+        export_type: str,
+        export_format: str,
+        success: bool,
+        file_path: str = None,
+        user_filter: Optional[int] = None,
+    ):
         """Send notification to user about export completion with the actual file."""
         try:
-            logger.info(f"Sending export notification: guild_id={guild_id}, user_id={user_id}, success={success}")
-            
+            logger.info(
+                f"Sending export notification: guild_id={guild_id}, user_id={user_id}, success={success}"
+            )
+
             guild = self.bot.get_guild(guild_id)
             if not guild:
                 logger.error(f"Guild {guild_id} not found for export notification")
                 return
-                
+
             user = guild.get_member(user_id)
             if not user:
-                logger.error(f"User {user_id} not found in guild {guild_id} for export notification")
+                logger.error(
+                    f"User {user_id} not found in guild {guild_id} for export notification"
+                )
                 return
-            
+
             # Get user filter info if specified
             user_filter_info = ""
             if user_filter:
@@ -681,102 +882,142 @@ class PlatinumService:
                     user_filter_info = f" for @{filtered_user.display_name}"
                 else:
                     user_filter_info = f" for user {user_filter}"
-            
+
             embed = discord.Embed(
                 title="📊 Export Complete" if success else "❌ Export Failed",
-                description=f"Your {export_type} export{user_filter_info} in {export_format.upper()} format is ready!" if success else f"Failed to create {export_type} export{user_filter_info} in {export_format.upper()} format.",
-                color=0x00ff00 if success else 0xff0000,
-                timestamp=datetime.utcnow()
+                description=(
+                    f"Your {export_type} export{user_filter_info} in {export_format.upper()} format is ready!"
+                    if success
+                    else f"Failed to create {export_type} export{user_filter_info} in {export_format.upper()} format."
+                ),
+                color=0x00FF00 if success else 0xFF0000,
+                timestamp=datetime.utcnow(),
             )
-            
+
             embed.add_field(name="Type", value=export_type, inline=True)
             embed.add_field(name="Format", value=export_format.upper(), inline=True)
             if user_filter:
-                embed.add_field(name="User Filter", value=f"<@{user_filter}>", inline=True)
-            
+                embed.add_field(
+                    name="User Filter", value=f"<@{user_filter}>", inline=True
+                )
+
             if success and file_path and os.path.exists(file_path):
-                embed.add_field(name="File", value=f"`{os.path.basename(file_path)}`", inline=False)
+                embed.add_field(
+                    name="File", value=f"`{os.path.basename(file_path)}`", inline=False
+                )
                 embed.set_footer(text="File attached below")
-                
+
                 # Try to send file via DM first
                 notification_sent = False
                 try:
                     logger.info(f"Attempting to send file via DM to user {user_id}")
-                    with open(file_path, 'rb') as file:
-                        discord_file = discord.File(file, filename=os.path.basename(file_path))
+                    with open(file_path, "rb") as file:
+                        discord_file = discord.File(
+                            file, filename=os.path.basename(file_path)
+                        )
                         await user.send(embed=embed, file=discord_file)
                     notification_sent = True
                     logger.info(f"Export file sent via DM to user {user_id}")
                 except Exception as dm_error:
-                    logger.warning(f"Failed to send file via DM to user {user_id}: {dm_error}")
-                    
+                    logger.warning(
+                        f"Failed to send file via DM to user {user_id}: {dm_error}"
+                    )
+
                     # If DM fails, try to send to a channel the user can see
                     for channel in guild.text_channels:
-                        if channel.permissions_for(user).read_messages and channel.permissions_for(user).attach_files:
+                        if (
+                            channel.permissions_for(user).read_messages
+                            and channel.permissions_for(user).attach_files
+                        ):
                             try:
-                                logger.info(f"Attempting to send file to channel {channel.id}")
-                                with open(file_path, 'rb') as file:
-                                    discord_file = discord.File(file, filename=os.path.basename(file_path))
-                                    await channel.send(f"{user.mention}", embed=embed, file=discord_file)
+                                logger.info(
+                                    f"Attempting to send file to channel {channel.id}"
+                                )
+                                with open(file_path, "rb") as file:
+                                    discord_file = discord.File(
+                                        file, filename=os.path.basename(file_path)
+                                    )
+                                    await channel.send(
+                                        f"{user.mention}",
+                                        embed=embed,
+                                        file=discord_file,
+                                    )
                                 notification_sent = True
                                 logger.info(f"Export file sent to channel {channel.id}")
                                 break
                             except Exception as channel_error:
-                                logger.warning(f"Failed to send file to channel {channel.id}: {channel_error}")
+                                logger.warning(
+                                    f"Failed to send file to channel {channel.id}: {channel_error}"
+                                )
                                 continue
-                    
+
                     # If file sending fails, try sending just the notification
                     if not notification_sent:
                         try:
-                            embed.add_field(name="File Access", value="File created but couldn't be sent. Contact an admin.", inline=False)
+                            embed.add_field(
+                                name="File Access",
+                                value="File created but couldn't be sent. Contact an admin.",
+                                inline=False,
+                            )
                             await user.send(embed=embed)
                             notification_sent = True
                         except Exception as notify_error:
-                            logger.warning(f"Failed to send notification to user {user_id}: {notify_error}")
+                            logger.warning(
+                                f"Failed to send notification to user {user_id}: {notify_error}"
+                            )
             else:
-                embed.add_field(name="Error", value=file_path or "Unknown error", inline=False)
+                embed.add_field(
+                    name="Error", value=file_path or "Unknown error", inline=False
+                )
                 embed.set_footer(text="Please try again or contact support")
-                
+
                 # Send error notification
                 try:
                     await user.send(embed=embed)
                     notification_sent = True
                 except Exception as notify_error:
-                    logger.warning(f"Failed to send error notification to user {user_id}: {notify_error}")
+                    logger.warning(
+                        f"Failed to send error notification to user {user_id}: {notify_error}"
+                    )
                     notification_sent = False
-            
+
             if not notification_sent:
-                logger.error(f"Failed to send export notification to user {user_id} in guild {guild_id}")
+                logger.error(
+                    f"Failed to send export notification to user {user_id} in guild {guild_id}"
+                )
             else:
                 logger.info(f"Export notification successfully sent to user {user_id}")
-                
+
                 # Clean up the file after successful sending to save server space
                 if success and file_path and os.path.exists(file_path):
                     try:
                         os.remove(file_path)
                         logger.info(f"Cleaned up export file: {file_path}")
                     except Exception as cleanup_error:
-                        logger.warning(f"Failed to cleanup export file {file_path}: {cleanup_error}")
-                            
+                        logger.warning(
+                            f"Failed to cleanup export file {file_path}: {cleanup_error}"
+                        )
+
         except Exception as e:
             logger.error(f"Error sending export notification: {e}", exc_info=True)
-            
-    async def get_recent_exports(self, guild_id: int, days: int = 30) -> List[Dict[str, Any]]:
+
+    async def get_recent_exports(
+        self, guild_id: int, days: int = 30
+    ) -> List[Dict[str, Any]]:
         """Get recent data exports for a guild."""
         try:
             return await self.db_manager.fetch_all(
                 """
-                SELECT * FROM data_exports 
+                SELECT * FROM data_exports
                 WHERE guild_id = %s AND created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 ORDER BY created_at DESC
                 """,
-                guild_id, days
+                guild_id,
+                days,
             )
         except Exception as e:
             logger.error(f"Error getting recent exports: {e}")
             return []
-
-
 
     # Analytics and Usage Tracking
     async def track_feature_usage(self, guild_id: int, feature_name: str) -> bool:
@@ -790,24 +1031,25 @@ class PlatinumService:
                     usage_count = usage_count + 1,
                     last_used = NOW()
                 """,
-                guild_id, feature_name
+                guild_id,
+                feature_name,
             )
             return True
         except Exception as e:
             logger.error(f"Error tracking feature usage: {e}")
             return False
-            
+
     async def get_feature_analytics(self, guild_id: int) -> List[Dict[str, Any]]:
         """Get analytics for all Platinum features."""
         try:
             return await self.db_manager.fetch_all(
                 """
                 SELECT feature_name, usage_count, last_used
-                FROM platinum_analytics 
+                FROM platinum_analytics
                 WHERE guild_id = %s
                 ORDER BY usage_count DESC
                 """,
-                guild_id
+                guild_id,
             )
         except Exception as e:
             logger.error(f"Error getting feature analytics: {e}")
@@ -819,13 +1061,13 @@ class PlatinumService:
         try:
             result = await self.db_manager.fetch_one(
                 "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
-                guild_id
+                guild_id,
             )
             return bool(result and result.get("subscription_level") == "platinum")
         except Exception as e:
             logger.error(f"Error checking Platinum status: {e}")
             return False
-            
+
     async def get_platinum_limits(self, guild_id: int) -> Dict[str, int]:
         """Get Platinum tier limits for a guild."""
         try:
@@ -836,7 +1078,7 @@ class PlatinumService:
                        max_webhooks_platinum, max_data_exports_platinum
                 FROM guild_settings WHERE guild_id = %s
                 """,
-                guild_id
+                guild_id,
             )
             return result if result else {}
         except Exception as e:
@@ -848,36 +1090,40 @@ class PlatinumService:
         """Get comprehensive analytics for a Platinum guild."""
         try:
             analytics = {}
-            
+
             # Get webhook count
             webhooks = await self.get_webhook_integrations(guild_id)
-            analytics['webhook_count'] = len(webhooks)
-            
+            analytics["webhook_count"] = len(webhooks)
+
             # Get export count for current month
             from datetime import datetime
+
             current_month = datetime.now().month
             exports = await self.get_recent_exports(guild_id, days=30)
-            analytics['export_count'] = len(exports)
-            
+            analytics["export_count"] = len(exports)
+
             # Get API usage (placeholder for now)
-            analytics['api_requests'] = 0
-            
+            analytics["api_requests"] = 0
+
             # Get top features
             feature_analytics = await self.get_feature_analytics(guild_id)
             if feature_analytics:
-                top_features = [f"{feat['feature_name']}: {feat['usage_count']}" for feat in feature_analytics[:3]]
-                analytics['top_features'] = '\n'.join(top_features)
+                top_features = [
+                    f"{feat['feature_name']}: {feat['usage_count']}"
+                    for feat in feature_analytics[:3]
+                ]
+                analytics["top_features"] = "\n".join(top_features)
             else:
-                analytics['top_features'] = 'No data available'
-            
+                analytics["top_features"] = "No data available"
+
             return analytics
         except Exception as e:
             logger.error(f"Error getting analytics: {e}")
             return {
-                'webhook_count': 0,
-                'export_count': 0,
-                'api_requests': 0,
-                'top_features': 'Error loading data'
+                "webhook_count": 0,
+                "export_count": 0,
+                "api_requests": 0,
+                "top_features": "Error loading data",
             }
 
     async def get_webhook_count(self, guild_id: int) -> int:
@@ -893,37 +1139,53 @@ class PlatinumService:
         """Get the number of exports for a specific month."""
         try:
             from datetime import datetime
+
             current_year = datetime.now().year
             start_date = datetime(current_year, month, 1)
-            
+
             if month == 12:
                 end_date = datetime(current_year + 1, 1, 1)
             else:
                 end_date = datetime(current_year, month + 1, 1)
-            
+
             exports = await self.db_manager.fetch_all(
                 """
-                SELECT COUNT(*) as count FROM data_exports 
+                SELECT COUNT(*) as count FROM data_exports
                 WHERE guild_id = %s AND created_at >= %s AND created_at < %s
                 """,
-                guild_id, start_date, end_date
+                guild_id,
+                start_date,
+                end_date,
             )
-            
-            return exports[0]['count'] if exports else 0
+
+            return exports[0]["count"] if exports else 0
         except Exception as e:
             logger.error(f"Error getting export count: {e}")
             return 0
 
-    async def create_webhook(self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str) -> bool:
+    async def create_webhook(
+        self, guild_id: int, webhook_name: str, webhook_url: str, webhook_type: str
+    ) -> bool:
         """Create a webhook integration (alias for create_webhook_integration)."""
-        return await self.create_webhook_integration(guild_id, webhook_name, webhook_url, webhook_type)
+        return await self.create_webhook_integration(
+            guild_id, webhook_name, webhook_url, webhook_type
+        )
 
     # Export Methods (fix method names)
-    async def create_export(self, guild_id: int, export_type: str, export_format: str, created_by: int, user_id: Optional[int] = None) -> bool:
+    async def create_export(
+        self,
+        guild_id: int,
+        export_type: str,
+        export_format: str,
+        created_by: int,
+        user_id: Optional[int] = None,
+    ) -> bool:
         """Create a data export (alias for create_data_export)."""
         try:
-            export_id = await self.create_data_export(guild_id, export_type, export_format, created_by, user_id)
+            export_id = await self.create_data_export(
+                guild_id, export_type, export_format, created_by, user_id
+            )
             return export_id is not None and export_id > 0
         except Exception as e:
             logger.error(f"Error in create_export alias: {e}")
-            return False 
+            return False

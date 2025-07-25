@@ -426,10 +426,11 @@ class StatsCog(commands.Cog):
             if StatsImageGenerator is None:
                 logger.error("StatsImageGenerator not available")
                 await interaction.response.send_message(
-                    "❌ Stats functionality not available (missing dependencies).", ephemeral=True
+                    "❌ Stats functionality not available (missing dependencies).",
+                    ephemeral=True,
                 )
                 return
-            
+
             # Access db_manager attached to bot instance
             if not hasattr(self.bot, "db_manager"):
                 logger.error("db_manager not found on bot instance.")

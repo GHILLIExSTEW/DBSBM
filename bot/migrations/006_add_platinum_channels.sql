@@ -3,26 +3,26 @@
 -- =========================
 
 -- Add additional embed channels for Platinum tier (total of 5)
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS embed_channel_3 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS embed_channel_4 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS embed_channel_5 BIGINT NULL;
 
 -- Add additional command channels for Platinum tier (total of 5)
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS command_channel_3 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS command_channel_4 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS command_channel_5 BIGINT NULL;
 
 -- Add additional admin channels for Platinum tier (total of 5)
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS admin_channel_2 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS admin_channel_3 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS admin_channel_4 BIGINT NULL,
 ADD COLUMN IF NOT EXISTS admin_channel_5 BIGINT NULL;
 
 -- Add Platinum-specific channel columns
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 ADD COLUMN IF NOT EXISTS platinum_webhook_channel_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_analytics_channel_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_export_channel_id BIGINT NULL,
@@ -30,7 +30,7 @@ ADD COLUMN IF NOT EXISTS platinum_api_channel_id BIGINT NULL,
 ADD COLUMN IF NOT EXISTS platinum_alerts_channel_id BIGINT NULL;
 
 -- Add comments to document the Platinum tier channel structure
-ALTER TABLE guild_settings 
+ALTER TABLE guild_settings
 MODIFY COLUMN embed_channel_1 BIGINT NULL COMMENT 'Primary embed channel (Free/Premium/Platinum)',
 MODIFY COLUMN embed_channel_2 BIGINT NULL COMMENT 'Secondary embed channel (Premium/Platinum)',
 MODIFY COLUMN embed_channel_3 BIGINT NULL COMMENT 'Tertiary embed channel (Platinum only)',
@@ -62,4 +62,4 @@ CREATE INDEX IF NOT EXISTS idx_platinum_webhook_channel ON guild_settings(platin
 CREATE INDEX IF NOT EXISTS idx_platinum_analytics_channel ON guild_settings(platinum_analytics_channel_id);
 CREATE INDEX IF NOT EXISTS idx_platinum_export_channel ON guild_settings(platinum_export_channel_id);
 CREATE INDEX IF NOT EXISTS idx_platinum_api_channel ON guild_settings(platinum_api_channel_id);
-CREATE INDEX IF NOT EXISTS idx_platinum_alerts_channel ON guild_settings(platinum_alerts_channel_id); 
+CREATE INDEX IF NOT EXISTS idx_platinum_alerts_channel ON guild_settings(platinum_alerts_channel_id);

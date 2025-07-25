@@ -273,7 +273,7 @@ print(f"Current configuration: {debug_info}")
    # Add environment validation
    def validate_environment():
        required_vars = [
-           "DISCORD_TOKEN", "API_KEY", "MYSQL_HOST", 
+           "DISCORD_TOKEN", "API_KEY", "MYSQL_HOST",
            "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DB"
        ]
        missing = [var for var in required_vars if not os.getenv(var)]
@@ -414,4 +414,4 @@ The system is secure for production use with the recommended improvements implem
 
 ---
 
-*This security audit was conducted using automated analysis tools and manual code review. For questions or clarifications, please contact the security team.* 
+*This security audit was conducted using automated analysis tools and manual code review. For questions or clarifications, please contact the security team.*

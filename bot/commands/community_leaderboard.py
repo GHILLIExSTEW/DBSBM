@@ -1,8 +1,9 @@
+import logging
+from datetime import datetime
+
 import discord
 from discord import app_commands
 from discord.ext import commands
-import logging
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -285,7 +286,7 @@ class CommunityLeaderboardCog(commands.Cog):
                     {"user_id": row["user_id"], "reaction_count": row["reaction_count"]}
                     for row in results
                 ]
-                
+
             elif category == "achievements":
                 # Get top users by achievement count
                 query = """
@@ -298,16 +299,19 @@ class CommunityLeaderboardCog(commands.Cog):
                 """
                 results = await self.bot.db_manager.fetch_all(query, (guild_id,))
                 return [
-                    {"user_id": row["user_id"], "achievement_count": row["achievement_count"]}
+                    {
+                        "user_id": row["user_id"],
+                        "achievement_count": row["achievement_count"],
+                    }
                     for row in results
                 ]
-                
+
             elif category == "helpful":
                 # Get top users by helpful actions (encourage, thanks, help_community commands)
                 query = """
                     SELECT user_id, SUM(metric_value) as helpful_score
                     FROM user_metrics
-                    WHERE guild_id = %s 
+                    WHERE guild_id = %s
                     AND metric_type IN ('commands_encourage', 'commands_thanks', 'commands_help_community')
                     GROUP BY user_id
                     ORDER BY helpful_score DESC
@@ -315,13 +319,16 @@ class CommunityLeaderboardCog(commands.Cog):
                 """
                 results = await self.bot.db_manager.fetch_all(query, (guild_id,))
                 return [
-                    {"user_id": row["user_id"], "helpful_score": int(row["helpful_score"])}
+                    {
+                        "user_id": row["user_id"],
+                        "helpful_score": int(row["helpful_score"]),
+                    }
                     for row in results
                 ]
-                
+
             else:
                 return []
-                
+
         except Exception as e:
             logger.error(f"Failed to get leaderboard data: {e}")
             return []
@@ -337,7 +344,7 @@ class CommunityLeaderboardCog(commands.Cog):
                 ORDER BY earned_at DESC
             """
             results = await self.bot.db_manager.fetch_all(query, (guild_id, user_id))
-            
+
             return [
                 {
                     "achievement_type": row["achievement_type"],
@@ -346,7 +353,7 @@ class CommunityLeaderboardCog(commands.Cog):
                 }
                 for row in results
             ]
-            
+
         except Exception as e:
             logger.error(f"Failed to get user achievements: {e}")
             return []
@@ -355,15 +362,17 @@ class CommunityLeaderboardCog(commands.Cog):
         """Get community statistics from real data."""
         try:
             # Get the community analytics service from the bot
-            analytics_service = getattr(self.bot, 'community_analytics_service', None)
-            
+            analytics_service = getattr(self.bot, "community_analytics_service", None)
+
             if analytics_service:
                 # Use real data from the analytics service
-                return await analytics_service.get_comprehensive_community_stats(guild_id, days)
+                return await analytics_service.get_comprehensive_community_stats(
+                    guild_id, days
+                )
             else:
                 # Fallback to basic database queries if service not available
                 return await self._get_basic_community_stats(guild_id, days)
-                
+
         except Exception as e:
             logger.error(f"Failed to get community stats: {e}")
             return {
@@ -378,68 +387,90 @@ class CommunityLeaderboardCog(commands.Cog):
         """Fallback method to get basic community stats directly from database."""
         try:
             stats = {}
-            
+
             # Get total reactions (join with bets to get guild_id)
             reactions_query = """
                 SELECT COUNT(*) as total_reactions
                 FROM bet_reactions br
                 JOIN bets b ON br.bet_serial = b.bet_serial
-                WHERE b.guild_id = %s 
+                WHERE b.guild_id = %s
                 AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            reactions_result = await self.bot.db_manager.fetch_one(reactions_query, (guild_id, days))
-            stats["total_reactions"] = reactions_result["total_reactions"] if reactions_result else 0
-            
+            reactions_result = await self.bot.db_manager.fetch_one(
+                reactions_query, (guild_id, days)
+            )
+            stats["total_reactions"] = (
+                reactions_result["total_reactions"] if reactions_result else 0
+            )
+
             # Get total achievements
             achievements_query = """
                 SELECT COUNT(*) as total_achievements
                 FROM community_achievements
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            achievements_result = await self.bot.db_manager.fetch_one(achievements_query, (guild_id, days))
-            stats["total_achievements"] = achievements_result["total_achievements"] if achievements_result else 0
-            
+            achievements_result = await self.bot.db_manager.fetch_one(
+                achievements_query, (guild_id, days)
+            )
+            stats["total_achievements"] = (
+                achievements_result["total_achievements"] if achievements_result else 0
+            )
+
             # Get active users
             active_users_query = """
                 SELECT COUNT(DISTINCT user_id) as active_users
                 FROM (
-                    SELECT user_id FROM user_metrics 
-                    WHERE guild_id = %s 
+                    SELECT user_id FROM user_metrics
+                    WHERE guild_id = %s
                     AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                     UNION
                     SELECT br.user_id FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s 
+                    WHERE b.guild_id = %s
                     AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 ) as active_users
             """
-            active_users_result = await self.bot.db_manager.fetch_one(active_users_query, (guild_id, days, guild_id, days))
-            stats["active_users"] = active_users_result["active_users"] if active_users_result else 0
-            
+            active_users_result = await self.bot.db_manager.fetch_one(
+                active_users_query, (guild_id, days, guild_id, days)
+            )
+            stats["active_users"] = (
+                active_users_result["active_users"] if active_users_result else 0
+            )
+
             # Get community commands
             commands_query = """
                 SELECT SUM(metric_value) as community_commands
                 FROM community_metrics
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND metric_type LIKE %s
                 AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            commands_result = await self.bot.db_manager.fetch_one(commands_query, (guild_id, 'command_%', days))
-            stats["community_commands"] = int(commands_result["community_commands"]) if commands_result and commands_result["community_commands"] else 0
-            
+            commands_result = await self.bot.db_manager.fetch_one(
+                commands_query, (guild_id, "command_%", days)
+            )
+            stats["community_commands"] = (
+                int(commands_result["community_commands"])
+                if commands_result and commands_result["community_commands"]
+                else 0
+            )
+
             # Get events participated
             events_query = """
                 SELECT COUNT(*) as events_participated
                 FROM community_events
-                WHERE guild_id = %s 
+                WHERE guild_id = %s
                 AND started_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
-            events_result = await self.bot.db_manager.fetch_one(events_query, (guild_id, days))
-            stats["events_participated"] = events_result["events_participated"] if events_result else 0
-            
+            events_result = await self.bot.db_manager.fetch_one(
+                events_query, (guild_id, days)
+            )
+            stats["events_participated"] = (
+                events_result["events_participated"] if events_result else 0
+            )
+
             return stats
-            
+
         except Exception as e:
             logger.error(f"Failed to get basic community stats: {e}")
             return {
