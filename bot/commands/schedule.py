@@ -580,15 +580,15 @@ class WeekSelect(View):
             return
 
         # Create enhanced background overlay with rounded corners effect
-        overlay = Image.new("RGBA", (width - 80, height - 250), (255, 255, 255, 80))
+        overlay = Image.new("RGBA", (width - 80, height - 150), (255, 255, 255, 80))
         image.paste(overlay, (40, 200), overlay)
 
         # Add a subtle border around the main content area
         border_color = (100, 150, 200, 150)  # Blue border
-        border_overlay = Image.new("RGBA", (width - 60, height - 230), (0, 0, 0, 0))
+        border_overlay = Image.new("RGBA", (width - 60, height - 130), (0, 0, 0, 0))
         border_draw = ImageDraw.Draw(border_overlay)
         border_draw.rectangle(
-            [0, 0, width - 60, height - 230], outline=border_color, width=3
+            [0, 0, width - 60, height - 130], outline=border_color, width=3
         )
         image.paste(border_overlay, (50, 210), border_overlay)
 
@@ -633,7 +633,7 @@ class WeekSelect(View):
                         fill="#ffffff",
                         anchor="mm",
                     )
-                    y_position += 60
+                    y_position += 50
 
                 # Draw game details with enhanced styling
                 # Add subtle background for each game
@@ -653,10 +653,10 @@ class WeekSelect(View):
                     fill="#2a4a6a",
                 )
 
-                y_position += 50
+                y_position += 40
 
                 # Add enhanced separator line between games - but not if we're near the bottom
-                if y_position < height - 80:
+                if y_position < height - 50:
                     # Gradient separator line
                     for i in range(3):
                         alpha = 100 - (i * 30)
@@ -669,7 +669,7 @@ class WeekSelect(View):
                         image.paste(
                             line_overlay, (100, y_position - 5 + i), line_overlay
                         )
-                    y_position += 20
+                    y_position += 15
 
 
 class NCAAWeekSelect(View):
