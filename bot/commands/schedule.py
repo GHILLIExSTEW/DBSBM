@@ -151,110 +151,52 @@ TEAM_SCHEDULES = {
     "Seattle Seahawks": SEATTLE_SEAHAWKS_SCHEDULE,
 }
 
+# --- PAGINATED TEAM SELECT ---
+ALL_TEAMS = list(TEAM_SCHEDULES.keys())
+TEAMS_PER_PAGE = 25
 
-class ScheduleTypeSelect(View):
-    def __init__(self, cog=None):
+class PaginatedTeamSelect(View):
+    def __init__(self, cog=None, page=0):
         super().__init__(timeout=60)
         self.cog = cog
+        self.page = page
+        self.max_page = (len(ALL_TEAMS) - 1) // TEAMS_PER_PAGE
+        self.update_dropdown()
 
-    @discord.ui.button(label="League Schedule", style=discord.ButtonStyle.primary)
-    async def league_schedule(self, interaction: discord.Interaction, button: Button):
-        # Create league selection view
-        view = LeagueSelect(self.cog)
-        await interaction.response.edit_message(content="Select a league:", view=view)
+    def update_dropdown(self):
+        start = self.page * TEAMS_PER_PAGE
+        end = start + TEAMS_PER_PAGE
+        teams = ALL_TEAMS[start:end]
+        options = [discord.SelectOption(label=team, value=team) for team in teams]
+        if hasattr(self, 'team_select'):
+            self.remove_item(self.team_select)
+        self.team_select = Select(placeholder="Choose a team...", options=options)
+        self.team_select.callback = self.team_callback
+        self.add_item(self.team_select)
 
-    @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
-    async def team_schedule(self, interaction: discord.Interaction, button: Button):
-        # Create team selection view
-        view = TeamSelect(self.cog)
-        try:
-            await interaction.response.edit_message(content="Select a team:", view=view)
-        except Exception as e:
-            # Fallback: send a new message if edit fails
-            await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
-
-
-class TeamSelect(View):
-    def __init__(self, cog=None):
-        super().__init__(timeout=60)
-        self.cog = cog
-
-    @discord.ui.select(
-        placeholder="Choose a team...",
-        options=[
-            discord.SelectOption(label="Buffalo Bills", value="Buffalo Bills"),
-            discord.SelectOption(label="Miami Dolphins", value="Miami Dolphins"),
-            discord.SelectOption(
-                label="New England Patriots", value="New England Patriots"
-            ),
-            discord.SelectOption(label="New York Jets", value="New York Jets"),
-            discord.SelectOption(label="Baltimore Ravens", value="Baltimore Ravens"),
-            discord.SelectOption(
-                label="Cincinnati Bengals", value="Cincinnati Bengals"
-            ),
-            discord.SelectOption(label="Cleveland Browns", value="Cleveland Browns"),
-            discord.SelectOption(
-                label="Pittsburgh Steelers", value="Pittsburgh Steelers"
-            ),
-            discord.SelectOption(label="Houston Texans", value="Houston Texans"),
-            discord.SelectOption(
-                label="Indianapolis Colts", value="Indianapolis Colts"
-            ),
-            discord.SelectOption(
-                label="Jacksonville Jaguars", value="Jacksonville Jaguars"
-            ),
-            discord.SelectOption(label="Tennessee Titans", value="Tennessee Titans"),
-            discord.SelectOption(label="Denver Broncos", value="Denver Broncos"),
-            discord.SelectOption(
-                label="Kansas City Chiefs", value="Kansas City Chiefs"
-            ),
-            discord.SelectOption(label="Las Vegas Raiders", value="Las Vegas Raiders"),
-            discord.SelectOption(
-                label="Los Angeles Chargers", value="Los Angeles Chargers"
-            ),
-            discord.SelectOption(label="Dallas Cowboys", value="Dallas Cowboys"),
-            discord.SelectOption(label="New York Giants", value="New York Giants"),
-            discord.SelectOption(
-                label="Philadelphia Eagles", value="Philadelphia Eagles"
-            ),
-            discord.SelectOption(
-                label="Washington Commanders", value="Washington Commanders"
-            ),
-            discord.SelectOption(label="Chicago Bears", value="Chicago Bears"),
-            discord.SelectOption(label="Detroit Lions", value="Detroit Lions"),
-            discord.SelectOption(label="Green Bay Packers", value="Green Bay Packers"),
-            discord.SelectOption(label="Minnesota Vikings", value="Minnesota Vikings"),
-            discord.SelectOption(label="Atlanta Falcons", value="Atlanta Falcons"),
-            discord.SelectOption(label="Carolina Panthers", value="Carolina Panthers"),
-            discord.SelectOption(
-                label="New Orleans Saints", value="New Orleans Saints"
-            ),
-            discord.SelectOption(
-                label="Tampa Bay Buccaneers", value="Tampa Bay Buccaneers"
-            ),
-            discord.SelectOption(label="Arizona Cardinals", value="Arizona Cardinals"),
-            discord.SelectOption(label="Los Angeles Rams", value="Los Angeles Rams"),
-            discord.SelectOption(
-                label="San Francisco 49ers", value="San Francisco 49ers"
-            ),
-            discord.SelectOption(label="Seattle Seahawks", value="Seattle Seahawks"),
-        ],
-    )
-    async def team_callback(self, interaction: discord.Interaction, select: Select):
-        team_name = select.values[0]
+    async def team_callback(self, interaction: discord.Interaction):
+        team_name = self.team_select.values[0]
         team_schedule = TEAM_SCHEDULES[team_name]
-
-        # Create week selection view for team schedule
         view = TeamWeekSelect(team_name, team_schedule, self.cog)
-        try:
-            await interaction.response.edit_message(
-                content=f"Select a week for {team_name}:", view=view
-            )
-        except Exception as e:
-            # Fallback: send a new message if edit fails
-            await interaction.response.send_message(
-                content=f"Select a week for {team_name}:", view=view, ephemeral=True
-            )
+        await interaction.response.edit_message(content=f"Select a week for {team_name}:", view=view)
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary, row=1)
+    async def previous(self, interaction: discord.Interaction, button: Button):
+        if self.page > 0:
+            self.page -= 1
+            self.update_dropdown()
+            await interaction.response.edit_message(content="Select a team:", view=self)
+        else:
+            await interaction.response.defer()
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary, row=1)
+    async def next(self, interaction: discord.Interaction, button: Button):
+        if self.page < self.max_page:
+            self.page += 1
+            self.update_dropdown()
+            await interaction.response.edit_message(content="Select a team:", view=self)
+        else:
+            await interaction.response.defer()
 
 
 class TeamWeekSelect(View):
