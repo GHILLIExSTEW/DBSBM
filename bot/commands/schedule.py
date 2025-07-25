@@ -177,8 +177,8 @@ class PaginatedTeamSelect(View):
     async def team_callback(self, interaction: discord.Interaction):
         team_name = self.team_select.values[0]
         team_schedule = TEAM_SCHEDULES[team_name]
-        view = TeamWeekSelect(team_name, team_schedule, self.cog)
-        await interaction.response.edit_message(content=f"Select a week for {team_name}:", view=view)
+        view = TeamSeasonSelect(team_name, team_schedule, self.cog)
+        await interaction.response.edit_message(content=f"Select schedule type for {team_name}:", view=view)
 
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary, row=1)
     async def previous(self, interaction: discord.Interaction, button: Button):
@@ -218,7 +218,7 @@ class ScheduleTypeSelect(View):
             await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
 
 
-class TeamWeekSelect(View):
+class TeamSeasonSelect(View):
     def __init__(self, team_name: str, team_schedule: dict, cog=None):
         super().__init__(timeout=60)
         self.team_name = team_name
@@ -226,36 +226,16 @@ class TeamWeekSelect(View):
         self.cog = cog
 
     @discord.ui.select(
-        placeholder="Choose a week...",
+        placeholder="Choose schedule type...",
         options=[
-            discord.SelectOption(label="Week 1", value="week_1"),
-            discord.SelectOption(label="Week 2", value="week_2"),
-            discord.SelectOption(label="Week 3", value="week_3"),
-            discord.SelectOption(label="Week 4", value="week_4"),
-            discord.SelectOption(label="Week 5", value="week_5"),
-            discord.SelectOption(label="Week 6", value="week_6"),
-            discord.SelectOption(label="Week 7", value="week_7"),
-            discord.SelectOption(label="Week 8", value="week_8"),
-            discord.SelectOption(label="Week 9", value="week_9"),
-            discord.SelectOption(label="Week 10", value="week_10"),
-            discord.SelectOption(label="Week 11", value="week_11"),
-            discord.SelectOption(label="Week 12", value="week_12"),
-            discord.SelectOption(label="Week 13", value="week_13"),
-            discord.SelectOption(label="Week 14", value="week_14"),
-            discord.SelectOption(label="Week 15", value="week_15"),
-            discord.SelectOption(label="Week 16", value="week_16"),
-            discord.SelectOption(label="Week 17", value="week_17"),
-            discord.SelectOption(label="Week 18", value="week_18"),
+            discord.SelectOption(label="Full Season", value="season", description="View all games for the season"),
         ],
     )
-    async def week_callback(self, interaction: discord.Interaction, select: Select):
-        week = select.values[0]
-        game_info = self.team_schedule[week]
-
-        # Generate team schedule image
+    async def season_callback(self, interaction: discord.Interaction, select: Select):
+        # Generate team season schedule image
         try:
-            image_path = await self.generate_team_schedule_image(
-                interaction.guild, self.team_name, week, game_info, "NFL"
+            image_path = await self.generate_team_season_image(
+                interaction.guild, self.team_name, self.team_schedule, "NFL"
             )
 
             # Find member role and mention it
@@ -267,21 +247,21 @@ class TeamWeekSelect(View):
 
             mention_text = f"{member_role.mention} " if member_role else ""
             await interaction.response.send_message(
-                f"{mention_text}Here's your schedule!", file=discord.File(image_path)
+                f"{mention_text}Here's your season schedule!", file=discord.File(image_path)
             )
             os.remove(image_path)  # Clean up temp file
         except Exception as e:
-            logger.error(f"Error generating team schedule image: {e}")
+            logger.error(f"Error generating team season image: {e}")
             await interaction.response.send_message(
-                "Error generating team schedule image.", ephemeral=True
+                "Error generating team season image.", ephemeral=True
             )
 
-    async def generate_team_schedule_image(
-        self, guild, team_name: str, week: str, game_info: tuple, league="NFL"
+    async def generate_team_season_image(
+        self, guild, team_name: str, team_schedule: dict, league="NFL"
     ):
         # Create base image similar to league schedule
         if self.cog:
-            image = self.cog._create_schedule_base_image(guild, league, week)
+            image = self.cog._create_schedule_base_image(guild, league, "SEASON")
         else:
             # Fallback: create basic image
             image = Image.new("RGB", (1200, 1600), color="#1a1a1a")
@@ -297,12 +277,14 @@ class TeamWeekSelect(View):
         # Load fonts
         try:
             header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
-            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 20)
+            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 16)
+            week_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 18)
         except:
             header_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
             small_font = ImageFont.load_default()
+            week_font = ImageFont.load_default()
 
         # Get image dimensions
         width, height = image.size
@@ -311,23 +293,43 @@ class TeamWeekSelect(View):
         overlay = Image.new("RGBA", (width - 100, height - 500), (255, 255, 255, 100))
         image.paste(overlay, (50, 450), overlay)
 
-        # Add team and week title
-        week_title = week.replace("_", " ").title()
+        # Add team and season title
         draw.text(
-            (100, 500), f"{team_name} - {week_title}", font=header_font, fill="#000000"
+            (100, 500), f"{team_name} - Full Season Schedule", font=header_font, fill="#000000"
         )
 
-        # Add game information
-        day, date, opponent, time, network = game_info
+        # Add all games for the season
+        y_position = 580
+        for week_num in range(1, 19):  # Weeks 1-18
+            week_key = f"week_{week_num}"
+            if week_key in team_schedule:
+                game_info = team_schedule[week_key]
+                day, date, opponent, time, network = game_info
 
-        if day == "BYE WEEK":
-            draw.text((100, 600), "BYE WEEK", font=text_font, fill="#666666")
-        else:
-            draw.text((100, 600), f"{day}, {date}", font=small_font, fill="#000000")
-            draw.text((100, 625), opponent, font=text_font, fill="#000000")
-            draw.text(
-                (100, 650), f"{time} - {network}", font=small_font, fill="#000000"
-            )
+                # Add week header
+                draw.text(
+                    (100, y_position), f"Week {week_num}", font=week_font, fill="#2a4a6a"
+                )
+                y_position += 25
+
+                if day == "BYE WEEK":
+                    draw.text((120, y_position), "BYE WEEK", font=text_font, fill="#666666")
+                    y_position += 40
+                else:
+                    # Add game details
+                    draw.text((120, y_position), f"{day}, {date}", font=small_font, fill="#000000")
+                    y_position += 20
+                    draw.text((120, y_position), opponent, font=text_font, fill="#000000")
+                    y_position += 20
+                    draw.text(
+                        (120, y_position), f"{time} - {network}", font=small_font, fill="#000000"
+                    )
+                    y_position += 35
+
+                # Add separator line
+                if y_position < height - 100:
+                    draw.line([(100, y_position), (width - 100, y_position)], fill="#cccccc", width=1)
+                    y_position += 20
 
         # Save to temp file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".webp")
