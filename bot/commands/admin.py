@@ -400,6 +400,24 @@ class GuildSettingsView(discord.ui.View):
             "setting_key": "units_display_mode",
             "is_premium_only": True,
         },
+        {
+            "name": "Platinum: Custom Parlay Image",
+            "select": None,
+            "setting_key": "platinum_parlay_image",
+            "is_premium_only": True,
+        },
+        {
+            "name": "Platinum: Custom Win Emoji",
+            "select": None,
+            "setting_key": "platinum_win_emoji",
+            "is_premium_only": True,
+        },
+        {
+            "name": "Platinum: Custom Loss Emoji",
+            "select": None,
+            "setting_key": "platinum_loss_emoji",
+            "is_premium_only": True,
+        },
     ]
 
     def __init__(
@@ -617,6 +635,7 @@ class AdminCog(commands.Cog):
         self.bot = bot
         self.admin_service = admin_service
         self.active_views = {}  # Track active views by user ID
+        self.guild_setup_locks = set()  # Track guilds with active /setup
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -644,13 +663,21 @@ class AdminCog(commands.Cog):
     @app_commands.checks.has_permissions(administrator=True)
     async def setup_command(self, interaction: Interaction):
         """Starts the interactive server setup process."""
+        guild_id = interaction.guild_id
+        if guild_id in self.guild_setup_locks:
+            await interaction.response.send_message(
+                "❌ A setup is already in progress for this server. Please wait for it to complete before starting another.",
+                ephemeral=True,
+            )
+            return
+        self.guild_setup_locks.add(guild_id)
         logger.info(
-            f"Setup command initiated by {interaction.user} in guild {interaction.guild_id}"
+            f"Setup command initiated by {interaction.user} in guild {guild_id}"
         )
         try:
             # Check if guild exists in database
             existing_settings = await self.bot.db_manager.fetch_one(
-                "SELECT * FROM guild_settings WHERE guild_id = %s", interaction.guild_id
+                "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
             )
 
             # If guild doesn't exist, create it with default values
@@ -661,7 +688,7 @@ class AdminCog(commands.Cog):
                     (guild_id, is_paid, subscription_level)
                     VALUES (%s, 0, 'initial')
                     """,
-                    interaction.guild_id,
+                    guild_id,
                 )
                 subscription_level = "initial"
             else:
@@ -670,25 +697,23 @@ class AdminCog(commands.Cog):
                 subscription_level = "premium" if is_paid else "initial"
 
                 logger.info(
-                    f"Guild {interaction.guild_id} - is_paid: {is_paid}, subscription_level: {subscription_level}"
+                    f"Guild {guild_id} - is_paid: {is_paid}, subscription_level: {subscription_level}"
                 )
 
                 # Update subscription_level in database if it doesn't match is_paid
                 if is_paid and existing_settings.get("subscription_level") != "premium":
                     await self.bot.db_manager.execute(
                         "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
-                        interaction.guild_id,
+                        guild_id,
                     )
                     logger.info(
-                        f"Updated subscription_level to 'premium' for guild {interaction.guild_id}"
+                        f"Updated subscription_level to 'premium' for guild {guild_id}"
                     )
 
             # --- Create static/guilds/{guild_id}/users directory ---
             try:
                 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                guild_dir = os.path.join(
-                    base_dir, "static", "guilds", str(interaction.guild_id)
-                )
+                guild_dir = os.path.join(base_dir, "static", "guilds", str(guild_id))
                 users_dir = os.path.join(guild_dir, "users")
                 os.makedirs(users_dir, exist_ok=True)
                 logger.info(f"Created guild users directory: {users_dir}")
@@ -732,6 +757,8 @@ class AdminCog(commands.Cog):
                 await interaction.followup.send(
                     "❌ An error occurred while starting the setup.", ephemeral=True
                 )
+        finally:
+            self.guild_setup_locks.discard(guild_id)
 
     @app_commands.command(
         name="setchannel", description="Set or remove voice channels for stat tracking."
