@@ -223,7 +223,6 @@ class GameSelect(Select):
 
         game_options = []
         seen_values = set()
-        manual_added = False  # Track if manual entry has been added
         eastern = pytz.timezone("US/Eastern")
         # --- Filter out finished games here as well ---
         finished_statuses = [
@@ -244,22 +243,7 @@ class GameSelect(Select):
                 )
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for game in filtered_games[:24]:
-            # Special handling for manual entry - only add once
-            if (
-                game.get("id") == "manual" or game.get("api_game_id") == "manual"
-            ) and not manual_added:
-                game_options.append(
-                    SelectOption(
-                        label="Manual Entry",
-                        value="manual",
-                        description="Enter game details manually",
-                    )
-                )
-                manual_added = True
-                seen_values.add("manual")
-                continue
-
-            # Skip manual entry if already added
+            # Manual entry is already added by get_normalized_games_for_dropdown, so skip it here
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
                 continue
 
@@ -309,7 +293,7 @@ class GameSelect(Select):
         self.parent_view = parent_view
         self.games = filtered_games
         logger.debug(
-            f"Created GameSelect with {len(game_options)} unique options (including manual entry). Manual added: {manual_added}"
+            f"Created GameSelect with {len(game_options)} unique options (including manual entry)."
         )
 
     async def callback(self, interaction: Interaction):

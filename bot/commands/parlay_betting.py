@@ -328,7 +328,6 @@ class ParlayGameSelect(Select):
     def __init__(self, parent_view: View, games: List[Dict]):
         game_options = []
         seen_values = set()  # Track used values
-        manual_added = False  # Track if manual entry has been added
 
         logger.debug(f"[ParlayGameSelect] Processing {len(games)} games")
         logger.debug(f"[ParlayGameSelect] All games: {games}")
@@ -345,26 +344,10 @@ class ParlayGameSelect(Select):
 
         # Only include up to 24 games (Discord limit is 25 options including manual entry)
         for i, game in enumerate(games[:24]):
-            # Special handling for manual entry - only add once
-            if (
-                game.get("id") == "manual" or game.get("api_game_id") == "manual"
-            ) and not manual_added:
-                logger.debug(f"[ParlayGameSelect] Adding manual entry at index {i}")
-                game_options.append(
-                    SelectOption(
-                        label="Manual Entry",
-                        value="manual",
-                        description="Enter game details manually",
-                    )
-                )
-                manual_added = True
-                seen_values.add("manual")
-                continue
-
-            # Skip manual entry if already added
+            # Manual entry is already added by get_normalized_games_for_dropdown, so skip it here
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
                 logger.debug(
-                    f"[ParlayGameSelect] Skipping duplicate manual entry at index {i}"
+                    f"[ParlayGameSelect] Skipping manual entry at index {i} (already added by get_normalized_games_for_dropdown)"
                 )
                 continue
 
@@ -437,7 +420,7 @@ class ParlayGameSelect(Select):
         self.parent_view = parent_view
         self.games = games
         logger.debug(
-            f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry). Manual added: {manual_added}"
+            f"Created ParlayGameSelect with {len(game_options)} unique options (including manual entry)."
         )
         logger.debug(
             f"[ParlayGameSelect] Final options: {[(opt.label, opt.value) for opt in game_options]}"
