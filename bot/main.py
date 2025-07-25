@@ -521,17 +521,24 @@ class BettingBot(commands.Bot):
 
             try:
                 with open(webapp_log_path, "a") as log_file:
+                    # Get the correct path to webapp.py (it's in the root directory)
+                    webapp_path = os.path.join(os.path.dirname(BASE_DIR), "webapp.py")
+                    
+                    if not os.path.exists(webapp_path):
+                        logger.error(f"webapp.py not found at {webapp_path}")
+                        return
+                    
                     self.webapp_process = subprocess.Popen(
                         [
                             sys.executable,
-                            os.path.join(os.path.dirname(BASE_DIR), "webapp.py"),
+                            webapp_path,
                         ],
                         stdout=log_file,
                         stderr=log_file,
                         text=True,
                         bufsize=1,
                         env=env,
-                        cwd=os.path.dirname(BASE_DIR),  # Set working directory to project root
+                        cwd=os.path.dirname(BASE_DIR),  # Set working directory to project root where webapp.py is located
                     )
                 logger.info(
                     "Started Flask web server (webapp.py) as a subprocess with PID %d, logging to %s",

@@ -250,11 +250,10 @@ class GameLineImageGenerator:
         league_logo = None
         if league_logo_path:
             try:
-                league_logo = (
-                    Image.open(league_logo_path)
-                    .convert("RGBA")
-                    .resize(logo_display_size)
-                )
+                league_logo_original = Image.open(league_logo_path).convert("RGBA")
+                # Maintain aspect ratio when resizing
+                league_logo_original.thumbnail(logo_display_size, Image.Resampling.LANCZOS)
+                league_logo = league_logo_original
             except Exception:
                 league_logo = None
         # Get proper league display name
