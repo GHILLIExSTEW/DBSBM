@@ -166,13 +166,14 @@ class ScheduleTypeSelect(View):
     @discord.ui.button(label="Team Schedule", style=discord.ButtonStyle.secondary)
     async def team_schedule(self, interaction: discord.Interaction, button: Button):
         # Create team selection view
-        view = TeamSelect()
+        view = TeamSelect(self.cog)
         await interaction.response.edit_message(content="Select a team:", view=view)
 
 
 class TeamSelect(View):
-    def __init__(self):
+    def __init__(self, cog=None):
         super().__init__(timeout=60)
+        self.cog = cog
 
     @discord.ui.select(
         placeholder="Choose a team...",
@@ -240,17 +241,18 @@ class TeamSelect(View):
         team_schedule = TEAM_SCHEDULES[team_name]
 
         # Create week selection view for team schedule
-        view = TeamWeekSelect(team_name, team_schedule)
+        view = TeamWeekSelect(team_name, team_schedule, self.cog)
         await interaction.response.edit_message(
             content=f"Select a week for {team_name}:", view=view
         )
 
 
 class TeamWeekSelect(View):
-    def __init__(self, team_name: str, team_schedule: dict):
+    def __init__(self, team_name: str, team_schedule: dict, cog=None):
         super().__init__(timeout=60)
         self.team_name = team_name
         self.team_schedule = team_schedule
+        self.cog = cog
 
     @discord.ui.select(
         placeholder="Choose a week...",
@@ -307,14 +309,25 @@ class TeamWeekSelect(View):
         self, guild, team_name: str, week: str, game_info: tuple, league="NFL"
     ):
         # Create base image similar to league schedule
-        image = self._create_schedule_base_image(guild, league, week)
+        if self.cog:
+            image = self.cog._create_schedule_base_image(guild, league, week)
+        else:
+            # Fallback: create basic image
+            image = Image.new("RGB", (1200, 1600), color="#1a1a1a")
+            draw = ImageDraw.Draw(image)
+            draw.text(
+                (600, 800),
+                "Error: Could not access image creation method",
+                fill="#ffffff",
+                anchor="mm",
+            )
         draw = ImageDraw.Draw(image)
 
         # Load fonts
         try:
-            header_font = ImageFont.truetype("bot/static/fonts/Roboto-Bold.ttf", 36)
-            text_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 24)
-            small_font = ImageFont.truetype("bot/static/fonts/Roboto-Regular.ttf", 18)
+            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
         except:
             header_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
