@@ -24,7 +24,8 @@ class SyncCog(commands.Cog):
             interaction.guild_id,
         )
         try:
-            await interaction.response.defer(ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.response.defer(ephemeral=True)
 
             # Get all available commands
             all_commands = [cmd.name for cmd in self.bot.tree.get_commands()]
