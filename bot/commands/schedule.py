@@ -167,7 +167,11 @@ class ScheduleTypeSelect(View):
     async def team_schedule(self, interaction: discord.Interaction, button: Button):
         # Create team selection view
         view = TeamSelect(self.cog)
-        await interaction.response.edit_message(content="Select a team:", view=view)
+        try:
+            await interaction.response.edit_message(content="Select a team:", view=view)
+        except Exception as e:
+            # Fallback: send a new message if edit fails
+            await interaction.response.send_message(content="Select a team:", view=view, ephemeral=True)
 
 
 class TeamSelect(View):
@@ -242,9 +246,15 @@ class TeamSelect(View):
 
         # Create week selection view for team schedule
         view = TeamWeekSelect(team_name, team_schedule, self.cog)
-        await interaction.response.edit_message(
-            content=f"Select a week for {team_name}:", view=view
-        )
+        try:
+            await interaction.response.edit_message(
+                content=f"Select a week for {team_name}:", view=view
+            )
+        except Exception as e:
+            # Fallback: send a new message if edit fails
+            await interaction.response.send_message(
+                content=f"Select a week for {team_name}:", view=view, ephemeral=True
+            )
 
 
 class TeamWeekSelect(View):
