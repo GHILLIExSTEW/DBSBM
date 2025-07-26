@@ -22,6 +22,12 @@ MYSQL_DB = os.getenv("MYSQL_DB")
 MYSQL_POOL_MIN_SIZE = int(os.getenv("MYSQL_POOL_MIN_SIZE", "1"))
 MYSQL_POOL_MAX_SIZE = int(os.getenv("MYSQL_POOL_MAX_SIZE", "10"))
 
+# --- Redis Configuration from Environment Variables ---
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))  # Default Redis port
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")  # Optional password
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))  # Default Redis database
+
 # Basic check for essential config
 required_vars = {
     "MYSQL_HOST": MYSQL_HOST,
@@ -41,3 +47,6 @@ if missing_vars:
         k: v if k != "MYSQL_PASSWORD" else "***" for k, v in required_vars.items()
     }
     print(f"Current configuration: {debug_info}")
+
+# Redis configuration info (optional)
+print(f"Redis configuration: Host={REDIS_HOST}, Port={REDIS_PORT}, DB={REDIS_DB}")

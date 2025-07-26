@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 
 # Import all league dictionaries
 

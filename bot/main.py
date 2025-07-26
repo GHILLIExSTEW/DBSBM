@@ -96,6 +96,7 @@ try:
     from bot.services.data_sync_service import DataSyncService
     from bot.services.game_service import GameService
     from bot.services.platinum_service import PlatinumService
+    from bot.services.predictive_service import PredictiveService
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
 except ImportError:
@@ -107,6 +108,7 @@ except ImportError:
     from services.data_sync_service import DataSyncService
     from services.game_service import GameService
     from services.platinum_service import PlatinumService
+    from services.predictive_service import PredictiveService
     from services.user_service import UserService
     from services.voice_service import VoiceService
 
@@ -294,6 +296,7 @@ class BettingBot(commands.Bot):
         self.fetcher_process = None
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
+        self.predictive_service = PredictiveService(self.db_manager)
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
@@ -339,6 +342,7 @@ class BettingBot(commands.Bot):
             "sync_cog.py",  # Sync commands
             "community.py",  # Community engagement commands
             "community_leaderboard.py",  # Community leaderboard commands
+            "predictive.py",  # Predictive analytics commands
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -523,11 +527,11 @@ class BettingBot(commands.Bot):
                 with open(webapp_log_path, "a") as log_file:
                     # Get the correct path to webapp.py (it's in the root directory)
                     webapp_path = os.path.join(os.path.dirname(BASE_DIR), "webapp.py")
-                    
+
                     if not os.path.exists(webapp_path):
                         logger.error(f"webapp.py not found at {webapp_path}")
                         return
-                    
+
                     self.webapp_process = subprocess.Popen(
                         [
                             sys.executable,
@@ -772,6 +776,7 @@ class BettingBot(commands.Bot):
             self.data_sync_service.start(),
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
+            self.predictive_service.initialize(),
         ]
 
         # Add community services if initialized

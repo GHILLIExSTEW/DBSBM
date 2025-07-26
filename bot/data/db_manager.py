@@ -1,17 +1,20 @@
 import asyncio
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
 
-from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from bot.data.game_utils import get_league_abbreviation, normalize_team_name
+from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from data.game_utils import get_league_abbreviation, normalize_team_name
+from data.cache_manager import cache_get, cache_set, cache_query
+from services.performance_monitor import record_query, time_operation
 
 logger = logging.getLogger(__name__)
 
-from bot.config.database_mysql import (
+from config.database_mysql import (
     MYSQL_DB,
     MYSQL_HOST,
     MYSQL_PASSWORD,
@@ -100,142 +103,92 @@ class DatabaseManager:
                         f"Attempt {attempt + 1}/{max_retries} failed to connect to MySQL: {op_err}"
                     )
                     if attempt < max_retries - 1:
-                        logger.info(f"Retrying in {retry_delay} seconds...")
                         await asyncio.sleep(retry_delay)
-                        retry_delay *= 2  # Exponential backoff
                 except Exception as e:
                     last_error = e
-                    logger.critical(
-                        "FATAL: Failed to connect to MySQL: %s", e, exc_info=True
+                    logger.error(
+                        f"Unexpected error during connection attempt {attempt + 1}: {e}"
                     )
-                    self._pool = None
-                    raise ConnectionError(f"Failed to connect: {e}") from e
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
 
-            if last_error:
-                logger.critical("FATAL: All connection attempts failed")
-                self._pool = None
-                raise ConnectionError(
-                    f"Failed to connect after {max_retries} attempts: {last_error}"
-                ) from last_error
-
+            logger.error(
+                f"Failed to create MySQL connection pool after {max_retries} attempts. Last error: {last_error}"
+            )
+            return None
         return self._pool
 
     async def close(self):
-        """Close the MySQL connection pool."""
-        if self._pool is not None:
-            logger.info("Closing MySQL connection pool...")
-            try:
-                self._pool.close()
-                try:
-                    await asyncio.wait_for(self._pool.wait_closed(), timeout=5.0)
-                except asyncio.TimeoutError:
-                    logger.warning("Timeout while waiting for MySQL pool to close")
-                except RuntimeError as e:
-                    if "Event loop is closed" in str(e):
-                        logger.warning(
-                            "Event loop was closed before pool could be properly closed"
-                        )
-                    else:
-                        raise
-                finally:
-                    self._pool = None
-                    logger.info("MySQL connection pool closed.")
-            except Exception as e:
-                logger.error("Error closing MySQL pool: %s", e)
-                self._pool = None
+        """Close the database connection pool."""
+        if self._pool:
+            self._pool.close()
+            await self._pool.wait_closed()
+            self._pool = None
+            logger.info("MySQL connection pool closed.")
 
+    @time_operation("db_execute")
     async def execute(self, query: str, *args) -> Tuple[Optional[int], Optional[int]]:
-        """Execute INSERT, UPDATE, DELETE. Returns (rowcount, lastrowid)."""
+        """Execute a query and return affected rows and last insert ID."""
         pool = await self.connect()
         if not pool:
-            logger.error("[DB EXECUTE] Cannot execute: DB pool unavailable.")
+            logger.error("Cannot execute: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
-        flat_args = (
-            tuple(args[0])
-            if len(args) == 1 and isinstance(args[0], (tuple, list))
-            else args
-        )
+        if len(args) == 1 and isinstance(args[0], (tuple, list)):
+            args = tuple(args[0])
 
-        logger.info("[DB EXECUTE] Starting query execution")
-        logger.debug("[DB EXECUTE] Query: %s", query)
-        logger.debug("[DB EXECUTE] Args: %s", flat_args)
+        logger.debug("Executing DB Query: %s Args: %s", query, args)
+        start_time = time.time()
 
-        last_id = None
-        rowcount = None
         try:
             async with pool.acquire() as conn:
-                logger.debug("[DB EXECUTE] Acquired connection from pool")
                 async with conn.cursor() as cursor:
-                    logger.debug("[DB EXECUTE] Executing query...")
-                    rowcount = await cursor.execute(query, flat_args)
-                    logger.info("[DB EXECUTE] Query executed. Rowcount: %s", rowcount)
+                    await cursor.execute(query, args)
+                    affected_rows = cursor.rowcount
+                    last_insert_id = cursor.lastrowid
 
-                    if (
-                        rowcount is not None
-                        and rowcount > 0
-                        and query.strip().upper().startswith("INSERT")
-                    ):
-                        last_id = cursor.lastrowid
-                        logger.info(
-                            "[DB EXECUTE] Insert successful. Last ID: %s", last_id
-                        )
+                    execution_time = time.time() - start_time
+                    record_query(query, execution_time, success=True, rows_affected=affected_rows)
 
-                    if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
-                        logger.debug("[DB EXECUTE] Committing transaction...")
-                        await conn.commit()
-                        logger.info("[DB EXECUTE] Transaction committed successfully")
-
-            logger.info(
-                "[DB EXECUTE] Query execution completed. Rowcount: %s, Last ID: %s",
-                rowcount,
-                last_id,
-            )
-            return rowcount, last_id
+                    return affected_rows, last_insert_id
         except Exception as e:
+            execution_time = time.time() - start_time
+            record_query(query, execution_time, success=False, error_message=str(e))
+
             logger.error(
-                "[DB EXECUTE] Error executing query: %s", str(e), exc_info=True
+                "[DB EXECUTE] Error executing query: %s Args: %s. Error: %s",
+                query,
+                args,
+                str(e),
+                exc_info=True,
             )
-            logger.error("[DB EXECUTE] Query that failed: %s", query)
-            logger.error("[DB EXECUTE] Args that failed: %s", flat_args)
-            return None, None
+            raise
 
+    @time_operation("db_executemany")
     async def executemany(self, query: str, args_list: List[Tuple]) -> Optional[int]:
-        """Execute INSERT, UPDATE, DELETE for multiple rows. Returns total rowcount."""
+        """Execute a query multiple times with different arguments."""
         pool = await self.connect()
         if not pool:
-            logger.error("[DB EXECUTEMANY] Cannot execute: DB pool unavailable.")
+            logger.error("Cannot executemany: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
-        logger.info("[DB EXECUTEMANY] Starting batch execution")
-        logger.debug("[DB EXECUTEMANY] Query: %s", query)
-        logger.debug("[DB EXECUTEMANY] Batch size: %s", len(args_list))
+        logger.debug("Executing Many DB Query: %s Batch size: %s", query, len(args_list))
+        start_time = time.time()
 
-        total_rowcount = 0
         try:
             async with pool.acquire() as conn:
-                logger.debug("[DB EXECUTEMANY] Acquired connection from pool")
                 async with conn.cursor() as cursor:
-                    logger.debug("[DB EXECUTEMANY] Executing batch query...")
-                    total_rowcount = await cursor.executemany(query, args_list)
-                    logger.info(
-                        "[DB EXECUTEMANY] Batch executed. Total rowcount: %s",
-                        total_rowcount,
-                    )
+                    await cursor.executemany(query, args_list)
+                    affected_rows = cursor.rowcount
 
-                    if query.strip().upper().startswith(("INSERT", "UPDATE", "DELETE")):
-                        logger.debug("[DB EXECUTEMANY] Committing transaction...")
-                        await conn.commit()
-                        logger.info(
-                            "[DB EXECUTEMANY] Transaction committed successfully"
-                        )
+                    execution_time = time.time() - start_time
+                    record_query(query, execution_time, success=True, rows_affected=affected_rows)
 
-            logger.info(
-                "[DB EXECUTEMANY] Batch execution completed. Total rowcount: %s",
-                total_rowcount,
-            )
-            return total_rowcount
+                    return affected_rows
         except Exception as e:
+            execution_time = time.time() - start_time
+            record_query(query, execution_time, success=False, error_message=str(e))
+
             logger.error(
                 "[DB EXECUTEMANY] Error executing batch query: %s",
                 str(e),
@@ -245,8 +198,9 @@ class DatabaseManager:
             logger.error("[DB EXECUTEMANY] Batch size that failed: %s", len(args_list))
             return None
 
+    @time_operation("db_fetch_one")
     async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
-        """Fetch one row as a dictionary."""
+        """Fetch one row as a dictionary with caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetch_one: DB pool unavailable.")
@@ -255,13 +209,36 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
+        # Generate cache key
+        cache_key = f"fetch_one:{hash(query + str(args))}"
+
+        # Try to get from cache first
+        cached_result = await cache_get("db_query", cache_key)
+        if cached_result is not None:
+            logger.debug(f"Cache HIT for fetch_one: {query[:50]}...")
+            return cached_result
+
         logger.debug("Fetching One DB Query: %s Args: %s", query, args)
+        start_time = time.time()
+
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.DictCursor) as cursor:
                     await cursor.execute(query, args)
-                    return await cursor.fetchone()
+                    result = await cursor.fetchone()
+
+                    execution_time = time.time() - start_time
+                    record_query(query, execution_time, success=True, cache_hit=False)
+
+                    # Cache the result for 10 minutes
+                    if result is not None:
+                        await cache_set("db_query", cache_key, result, ttl=600)
+
+                    return result
         except Exception as e:
+            execution_time = time.time() - start_time
+            record_query(query, execution_time, success=False, error_message=str(e))
+
             logger.error(
                 "Error fetching one row: %s Args: %s. Error: %s",
                 query,
@@ -271,8 +248,9 @@ class DatabaseManager:
             )
             return None
 
+    @time_operation("db_fetch_all")
     async def fetch_all(self, query: str, *args) -> List[Dict[str, Any]]:
-        """Fetch all rows as a list of dictionaries."""
+        """Fetch all rows as a list of dictionaries with caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetch_all: DB pool unavailable.")
@@ -281,13 +259,36 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
+        # Generate cache key
+        cache_key = f"fetch_all:{hash(query + str(args))}"
+
+        # Try to get from cache first
+        cached_result = await cache_get("db_query", cache_key)
+        if cached_result is not None:
+            logger.debug(f"Cache HIT for fetch_all: {query[:50]}...")
+            return cached_result
+
         logger.debug("Fetching All DB Query: %s Args: %s", query, args)
+        start_time = time.time()
+
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.DictCursor) as cursor:
                     await cursor.execute(query, args)
-                    return await cursor.fetchall()
+                    result = await cursor.fetchall()
+
+                    execution_time = time.time() - start_time
+                    record_query(query, execution_time, success=True, cache_hit=False)
+
+                    # Cache the result for 10 minutes
+                    if result:
+                        await cache_set("db_query", cache_key, result, ttl=600)
+
+                    return result
         except Exception as e:
+            execution_time = time.time() - start_time
+            record_query(query, execution_time, success=False, error_message=str(e))
+
             logger.error(
                 "Error fetching all rows: %s Args: %s. Error: %s",
                 query,
@@ -297,8 +298,9 @@ class DatabaseManager:
             )
             return []
 
+    @time_operation("db_fetchval")
     async def fetchval(self, query: str, *args) -> Optional[Any]:
-        """Fetch a single value from the first row."""
+        """Fetch a single value from the first row with caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetchval: DB pool unavailable.")
@@ -307,14 +309,37 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
+        # Generate cache key
+        cache_key = f"fetchval:{hash(query + str(args))}"
+
+        # Try to get from cache first
+        cached_result = await cache_get("db_query", cache_key)
+        if cached_result is not None:
+            logger.debug(f"Cache HIT for fetchval: {query[:50]}...")
+            return cached_result
+
         logger.debug("Fetching Value DB Query: %s Args: %s", query, args)
+        start_time = time.time()
+
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.Cursor) as cursor:
                     await cursor.execute(query, args)
                     row = await cursor.fetchone()
-                    return row[0] if row else None
+                    result = row[0] if row else None
+
+                    execution_time = time.time() - start_time
+                    record_query(query, execution_time, success=True, cache_hit=False)
+
+                    # Cache the result for 10 minutes
+                    if result is not None:
+                        await cache_set("db_query", cache_key, result, ttl=600)
+
+                    return result
         except Exception as e:
+            execution_time = time.time() - start_time
+            record_query(query, execution_time, success=False, error_message=str(e))
+
             logger.error(
                 "Error fetching value: %s Args: %s. Error: %s",
                 query,
