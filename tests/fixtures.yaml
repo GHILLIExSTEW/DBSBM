@@ -1,0 +1,25 @@
+# Test fixtures and sample data
+users:
+  - id: 1001
+    name: testuser1
+    roles: [admin]
+  - id: 1002
+    name: testuser2
+    roles: [moderator]
+  - id: 1003
+    name: testuser3
+    roles: [everyone]
+
+guilds:
+  - id: 1328116926903353398
+    name: Test Guild 1
+    settings:
+      platinum: true
+      embed_channel_1: 2001
+      admin_role: 3001
+  - id: 1328126227013439601
+    name: Test Guild 2
+    settings:
+      platinum: false
+      embed_channel_1: 2002
+      admin_role: 3002

@@ -1,0 +1,59 @@
+teams:
+  # ATP (sample)
+  - id: 1
+    name: Novak Djokovic
+    league: ATP
+    country: Serbia
+    logo_path: static/logos/teams/ATP/novak_djokovic.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 2
+    name: Rafael Nadal
+    league: ATP
+    country: Spain
+    logo_path: static/logos/teams/ATP/rafael_nadal.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  # WTA (sample)
+  - id: 101
+    name: Iga Swiatek
+    league: WTA
+    country: Poland
+    logo_path: static/logos/teams/WTA/iga_swiatek.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 102
+    name: Aryna Sabalenka
+    league: WTA
+    country: Belarus
+    logo_path: static/logos/teams/WTA/aryna_sabalenka.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  # Davis Cup (sample)
+  - id: 201
+    name: Team Spain
+    league: DAVIS_CUP
+    country: Spain
+    logo_path: static/logos/teams/DAVIS_CUP/team_spain.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  # Fed Cup (sample)
+  - id: 301
+    name: Team USA
+    league: FED_CUP
+    country: USA
+    logo_path: static/logos/teams/FED_CUP/team_usa.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''

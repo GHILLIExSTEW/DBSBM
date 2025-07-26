@@ -1,0 +1,9 @@
+# English localization strings
+messages:
+  welcome: "Welcome to the server!"
+  setup_complete: "✅ Guild setup completed successfully!"
+  error_generic: "❌ An error occurred. Please try again."
+  permission_denied: "You do not have permission to use this command."
+  select_embed_channel: "Please select an embed channel:"
+  sync_success: "✅ Commands synced successfully!"
+  sync_failed: "❌ Sync failed. Please contact an admin."

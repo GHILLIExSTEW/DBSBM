@@ -1,0 +1,124 @@
+teams:
+  # MLB (sample, add all teams as needed)
+  - id: 1
+    name: New York Yankees
+    league: MLB
+    city: New York
+    logo_path: static/logos/teams/MLB/new_york_yankees.webp
+    venue:
+      name: Yankee Stadium
+      city: New York
+      capacity: 47309
+  - id: 2
+    name: Los Angeles Dodgers
+    league: MLB
+    city: Los Angeles
+    logo_path: static/logos/teams/MLB/los_angeles_dodgers.webp
+    venue:
+      name: Dodger Stadium
+      city: Los Angeles
+      capacity: 56000
+  - id: 3
+    name: Boston Red Sox
+    league: MLB
+    city: Boston
+    logo_path: static/logos/teams/MLB/boston_red_sox.webp
+    venue:
+      name: Fenway Park
+      city: Boston
+      capacity: 37755
+  - id: 4
+    name: Chicago Cubs
+    league: MLB
+    city: Chicago
+    logo_path: static/logos/teams/MLB/chicago_cubs.webp
+    venue:
+      name: Wrigley Field
+      city: Chicago
+      capacity: 41268
+  - id: 5
+    name: Houston Astros
+    league: MLB
+    city: Houston
+    logo_path: static/logos/teams/MLB/houston_astros.webp
+    venue:
+      name: Minute Maid Park
+      city: Houston
+      capacity: 41168
+  # NPB (Japan)
+  - id: 101
+    name: Yomiuri Giants
+    league: NPB
+    city: Tokyo
+    logo_path: static/logos/teams/NPB/yomiuri_giants.webp
+    venue:
+      name: Tokyo Dome
+      city: Tokyo
+      capacity: 55000
+  - id: 102
+    name: Hanshin Tigers
+    league: NPB
+    city: Nishinomiya
+    logo_path: static/logos/teams/NPB/hanshin_tigers.webp
+    venue:
+      name: Koshien Stadium
+      city: Nishinomiya
+      capacity: 47008
+  # KBO (Korea)
+  - id: 201
+    name: Doosan Bears
+    league: KBO
+    city: Seoul
+    logo_path: static/logos/teams/KBO/doosan_bears.webp
+    venue:
+      name: Jamsil Baseball Stadium
+      city: Seoul
+      capacity: 25553
+  - id: 202
+    name: LG Twins
+    league: KBO
+    city: Seoul
+    logo_path: static/logos/teams/KBO/lg_twins.webp
+    venue:
+      name: Jamsil Baseball Stadium
+      city: Seoul
+      capacity: 25553
+  # LIDOM (Dominican Republic)
+  - id: 301
+    name: Tigres del Licey
+    league: LIDOM
+    city: Santo Domingo
+    logo_path: static/logos/teams/LIDOM/tigres_del_licey.webp
+    venue:
+      name: Estadio Quisqueya Juan Marichal
+      city: Santo Domingo
+      capacity: 14500
+  # CPBL (Taiwan)
+  - id: 401
+    name: Rakuten Monkeys
+    league: CPBL
+    city: Taoyuan
+    logo_path: static/logos/teams/CPBL/rakuten_monkeys.webp
+    venue:
+      name: Taoyuan International Baseball Stadium
+      city: Taoyuan
+      capacity: 20000
+  # World Baseball Classic (sample)
+  - id: 501
+    name: Team USA
+    league: WBC
+    city: ''
+    logo_path: static/logos/teams/WorldBaseballClassic/team_usa.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 502
+    name: Team Japan
+    league: WBC
+    city: ''
+    logo_path: static/logos/teams/WorldBaseballClassic/team_japan.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''

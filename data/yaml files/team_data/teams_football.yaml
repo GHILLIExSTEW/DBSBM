@@ -1,0 +1,1297 @@
+teams:
+  - id: 1
+    name: Arizona Cardinals
+    league: NFL
+    city: Glendale
+    logo_path: static/logos/teams/NFL/arizona_cardinals.webp
+    venue:
+      name: State Farm Stadium
+      city: Glendale
+      capacity: 63400
+  - id: 2
+    name: Atlanta Falcons
+    league: NFL
+    city: Atlanta
+    logo_path: static/logos/teams/NFL/atlanta_falcons.webp
+    venue:
+      name: Mercedes-Benz Stadium
+      city: Atlanta
+      capacity: 71000
+  - id: 3
+    name: Baltimore Ravens
+    league: NFL
+    city: Baltimore
+    logo_path: static/logos/teams/NFL/baltimore_ravens.webp
+    venue:
+      name: M&T Bank Stadium
+      city: Baltimore
+      capacity: 71008
+  - id: 4
+    name: Buffalo Bills
+    league: NFL
+    city: Orchard Park
+    logo_path: static/logos/teams/NFL/buffalo_bills.webp
+    venue:
+      name: Highmark Stadium
+      city: Orchard Park
+      capacity: 71608
+  - id: 5
+    name: Carolina Panthers
+    league: NFL
+    city: Charlotte
+    logo_path: static/logos/teams/NFL/carolina_panthers.webp
+    venue:
+      name: Bank of America Stadium
+      city: Charlotte
+      capacity: 74767
+  - id: 6
+    name: Chicago Bears
+    league: NFL
+    city: Chicago
+    logo_path: static/logos/teams/NFL/chicago_bears.webp
+    venue:
+      name: Soldier Field
+      city: Chicago
+      capacity: 61500
+  - id: 7
+    name: Cincinnati Bengals
+    league: NFL
+    city: Cincinnati
+    logo_path: static/logos/teams/NFL/cincinnati_bengals.webp
+    venue:
+      name: Paycor Stadium
+      city: Cincinnati
+      capacity: 65515
+  - id: 8
+    name: Cleveland Browns
+    league: NFL
+    city: Cleveland
+    logo_path: static/logos/teams/NFL/cleveland_browns.webp
+    venue:
+      name: Cleveland Browns Stadium
+      city: Cleveland
+      capacity: 67431
+  - id: 9
+    name: Dallas Cowboys
+    league: NFL
+    city: Arlington
+    logo_path: static/logos/teams/NFL/dallas_cowboys.webp
+    venue:
+      name: AT&T Stadium
+      city: Arlington
+      capacity: 80000
+  - id: 10
+    name: Denver Broncos
+    league: NFL
+    city: Denver
+    logo_path: static/logos/teams/NFL/denver_broncos.webp
+    venue:
+      name: Empower Field at Mile High
+      city: Denver
+      capacity: 76125
+  - id: 11
+    name: Detroit Lions
+    league: NFL
+    city: Detroit
+    logo_path: static/logos/teams/NFL/detroit_lions.webp
+    venue:
+      name: Ford Field
+      city: Detroit
+      capacity: 65000
+  - id: 12
+    name: Green Bay Packers
+    league: NFL
+    city: Green Bay
+    logo_path: static/logos/teams/NFL/green_bay_packers.webp
+    venue:
+      name: Lambeau Field
+      city: Green Bay
+      capacity: 81441
+  - id: 13
+    name: Houston Texans
+    league: NFL
+    city: Houston
+    logo_path: static/logos/teams/NFL/houston_texans.webp
+    venue:
+      name: NRG Stadium
+      city: Houston
+      capacity: 72220
+  - id: 14
+    name: Indianapolis Colts
+    league: NFL
+    city: Indianapolis
+    logo_path: static/logos/teams/NFL/indianapolis_colts.webp
+    venue:
+      name: Lucas Oil Stadium
+      city: Indianapolis
+      capacity: 70000
+  - id: 15
+    name: Jacksonville Jaguars
+    league: NFL
+    city: Jacksonville
+    logo_path: static/logos/teams/NFL/jacksonville_jaguars.webp
+    venue:
+      name: EverBank Stadium
+      city: Jacksonville
+      capacity: 67246
+  - id: 16
+    name: Kansas City Chiefs
+    league: NFL
+    city: Kansas City
+    logo_path: static/logos/teams/NFL/kansas_city_chiefs.webp
+    venue:
+      name: Arrowhead Stadium
+      city: Kansas City
+      capacity: 76416
+  - id: 17
+    name: Las Vegas Raiders
+    league: NFL
+    city: Las Vegas
+    logo_path: static/logos/teams/NFL/las_vegas_raiders.webp
+    venue:
+      name: Allegiant Stadium
+      city: Las Vegas
+      capacity: 65000
+  - id: 18
+    name: Los Angeles Chargers
+    league: NFL
+    city: Inglewood
+    logo_path: static/logos/teams/NFL/los_angeles_chargers.webp
+    venue:
+      name: SoFi Stadium
+      city: Inglewood
+      capacity: 70240
+  - id: 19
+    name: Los Angeles Rams
+    league: NFL
+    city: Inglewood
+    logo_path: static/logos/teams/NFL/los_angeles_rams.webp
+    venue:
+      name: SoFi Stadium
+      city: Inglewood
+      capacity: 70240
+  - id: 20
+    name: Miami Dolphins
+    league: NFL
+    city: Miami Gardens
+    logo_path: static/logos/teams/NFL/miami_dolphins.webp
+    venue:
+      name: Hard Rock Stadium
+      city: Miami Gardens
+      capacity: 65326
+  - id: 21
+    name: Minnesota Vikings
+    league: NFL
+    city: Minneapolis
+    logo_path: static/logos/teams/NFL/minnesota_vikings.webp
+    venue:
+      name: U.S. Bank Stadium
+      city: Minneapolis
+      capacity: 66655
+  - id: 22
+    name: New England Patriots
+    league: NFL
+    city: Foxborough
+    logo_path: static/logos/teams/NFL/new_england_patriots.webp
+    venue:
+      name: Gillette Stadium
+      city: Foxborough
+      capacity: 65878
+  - id: 23
+    name: New Orleans Saints
+    league: NFL
+    city: New Orleans
+    logo_path: static/logos/teams/NFL/new_orleans_saints.webp
+    venue:
+      name: Caesars Superdome
+      city: New Orleans
+      capacity: 73208
+  - id: 24
+    name: New York Giants
+    league: NFL
+    city: East Rutherford
+    logo_path: static/logos/teams/NFL/new_york_giants.webp
+    venue:
+      name: MetLife Stadium
+      city: East Rutherford
+      capacity: 82500
+  - id: 25
+    name: New York Jets
+    league: NFL
+    city: East Rutherford
+    logo_path: static/logos/teams/NFL/new_york_jets.webp
+    venue:
+      name: MetLife Stadium
+      city: East Rutherford
+      capacity: 82500
+  - id: 26
+    name: Philadelphia Eagles
+    league: NFL
+    city: Philadelphia
+    logo_path: static/logos/teams/NFL/philadelphia_eagles.webp
+    venue:
+      name: Lincoln Financial Field
+      city: Philadelphia
+      capacity: 69596
+  - id: 27
+    name: Pittsburgh Steelers
+    league: NFL
+    city: Pittsburgh
+    logo_path: static/logos/teams/NFL/pittsburgh_steelers.webp
+    venue:
+      name: Acrisure Stadium
+      city: Pittsburgh
+      capacity: 68400
+  - id: 28
+    name: San Francisco 49ers
+    league: NFL
+    city: Santa Clara
+    logo_path: static/logos/teams/NFL/san_francisco_49ers.webp
+    venue:
+      name: Levi's Stadium
+      city: Santa Clara
+      capacity: 68500
+  - id: 29
+    name: Seattle Seahawks
+    league: NFL
+    city: Seattle
+    logo_path: static/logos/teams/NFL/seattle_seahawks.webp
+    venue:
+      name: Lumen Field
+      city: Seattle
+      capacity: 72000
+  - id: 30
+    name: Tampa Bay Buccaneers
+    league: NFL
+    city: Tampa
+    logo_path: static/logos/teams/NFL/tampa_bay_buccaneers.webp
+    venue:
+      name: Raymond James Stadium
+      city: Tampa
+      capacity: 65890
+  - id: 31
+    name: Tennessee Titans
+    league: NFL
+    city: Nashville
+    logo_path: static/logos/teams/NFL/tennessee_titans.webp
+    venue:
+      name: Nissan Stadium
+      city: Nashville
+      capacity: 69143
+  - id: 32
+    name: Washington Commanders
+    league: NFL
+    city: Landover
+    logo_path: static/logos/teams/NFL/washington_commanders.webp
+    venue:
+      name: FedExField
+      city: Landover
+      capacity: 82000
+  - id: 33
+    name: BC Lions
+    league: CFL
+    city: Vancouver
+    logo_path: static/logos/teams/CFL/bc_lions.webp
+    venue:
+      name: BC Place
+      city: Vancouver
+      capacity: 54500
+  - id: 34
+    name: Calgary Stampeders
+    league: CFL
+    city: Calgary
+    logo_path: static/logos/teams/CFL/calgary_stampeders.webp
+    venue:
+      name: McMahon Stadium
+      city: Calgary
+      capacity: 35650
+  - id: 35
+    name: Edmonton Elks
+    league: CFL
+    city: Edmonton
+    logo_path: static/logos/teams/CFL/edmonton_elks.webp
+    venue:
+      name: Commonwealth Stadium
+      city: Edmonton
+      capacity: 56167
+  - id: 36
+    name: Hamilton Tiger-Cats
+    league: CFL
+    city: Hamilton
+    logo_path: static/logos/teams/CFL/hamilton_tiger_cats.webp
+    venue:
+      name: Tim Hortons Field
+      city: Hamilton
+      capacity: 23500
+  - id: 37
+    name: Montreal Alouettes
+    league: CFL
+    city: Montreal
+    logo_path: static/logos/teams/CFL/montreal_alouettes.webp
+    venue:
+      name: Percival Molson Memorial Stadium
+      city: Montreal
+      capacity: 20202
+  - id: 38
+    name: Ottawa Redblacks
+    league: CFL
+    city: Ottawa
+    logo_path: static/logos/teams/CFL/ottawa_redblacks.webp
+    venue:
+      name: TD Place Stadium
+      city: Ottawa
+      capacity: 24500
+  - id: 39
+    name: Saskatchewan Roughriders
+    league: CFL
+    city: Regina
+    logo_path: static/logos/teams/CFL/saskatchewan_roughriders.webp
+    venue:
+      name: Mosaic Stadium
+      city: Regina
+      capacity: 33350
+  - id: 40
+    name: Toronto Argonauts
+    league: CFL
+    city: Toronto
+    logo_path: static/logos/teams/CFL/toronto_argonauts.webp
+    venue:
+      name: BMO Field
+      city: Toronto
+      capacity: 30000
+  - id: 41
+    name: Winnipeg Blue Bombers
+    league: CFL
+    city: Winnipeg
+    logo_path: static/logos/teams/CFL/winnipeg_blue_bombers.webp
+    venue:
+      name: IG Field
+      city: Winnipeg
+      capacity: 33300
+  - id: 42
+    name: Arlington Renegades
+    league: XFL
+    city: Arlington
+    logo_path: static/logos/teams/XFL/arlington_renegades.webp
+    venue:
+      name: Choctaw Stadium
+      city: Arlington
+      capacity: 48000
+  - id: 43
+    name: DC Defenders
+    league: XFL
+    city: Washington, D.C.
+    logo_path: static/logos/teams/XFL/dc_defenders.webp
+    venue:
+      name: Audi Field
+      city: Washington, D.C.
+      capacity: 20000
+  - id: 44
+    name: Houston Roughnecks
+    league: XFL
+    city: Houston
+    logo_path: static/logos/teams/XFL/houston_roughnecks.webp
+    venue:
+      name: TDECU Stadium
+      city: Houston
+      capacity: 40000
+  - id: 45
+    name: Orlando Guardians
+    league: XFL
+    city: Orlando
+    logo_path: static/logos/teams/XFL/orlando_guardians.webp
+    venue:
+      name: Camping World Stadium
+      city: Orlando
+      capacity: 65000
+  - id: 46
+    name: San Antonio Brahmas
+    league: XFL
+    city: San Antonio
+    logo_path: static/logos/teams/XFL/san_antonio_brahmas.webp
+    venue:
+      name: Alamodome
+      city: San Antonio
+      capacity: 64000
+  - id: 47
+    name: Seattle Sea Dragons
+    league: XFL
+    city: Seattle
+    logo_path: static/logos/teams/XFL/seattle_sea_dragons.webp
+    venue:
+      name: Lumen Field
+      city: Seattle
+      capacity: 72000
+  - id: 48
+    name: St. Louis Battlehawks
+    league: XFL
+    city: St. Louis
+    logo_path: static/logos/teams/XFL/st_louis_battlehawks.webp
+    venue:
+      name: The Dome at America's Center
+      city: St. Louis
+      capacity: 67000
+  - id: 49
+    name: Vegas Vipers
+    league: XFL
+    city: Las Vegas
+    logo_path: static/logos/teams/XFL/vegas_vipers.webp
+    venue:
+      name: Cashman Field
+      city: Las Vegas
+      capacity: 12500
+  - id: 50
+    name: Birmingham Stallions
+    league: USFL
+    city: Birmingham
+    logo_path: static/logos/teams/USFL/birmingham_stallions.webp
+    venue:
+      name: Protective Stadium
+      city: Birmingham
+      capacity: 47100
+  - id: 51
+    name: Houston Gamblers
+    league: USFL
+    city: Houston
+    logo_path: static/logos/teams/USFL/houston_gamblers.webp
+    venue:
+      name: Rice Stadium
+      city: Houston
+      capacity: 47000
+  - id: 52
+    name: Memphis Showboats
+    league: USFL
+    city: Memphis
+    logo_path: static/logos/teams/USFL/memphis_showboats.webp
+    venue:
+      name: Simmons Bank Liberty Stadium
+      city: Memphis
+      capacity: 58500
+  - id: 53
+    name: Michigan Panthers
+    league: USFL
+    city: Detroit
+    logo_path: static/logos/teams/USFL/michigan_panthers.webp
+    venue:
+      name: Ford Field
+      city: Detroit
+      capacity: 65000
+  - id: 54
+    name: New Jersey Generals
+    league: USFL
+    city: New Jersey
+    logo_path: static/logos/teams/USFL/new_jersey_generals.webp
+    venue:
+      name: Tom Benson Hall of Fame Stadium
+      city: Canton
+      capacity: 23500
+  - id: 55
+    name: New Orleans Breakers
+    league: USFL
+    city: New Orleans
+    logo_path: static/logos/teams/USFL/new_orleans_breakers.webp
+    venue:
+      name: Protective Stadium
+      city: Birmingham
+      capacity: 47100
+  - id: 56
+    name: Philadelphia Stars
+    league: USFL
+    city: Philadelphia
+    logo_path: static/logos/teams/USFL/philadelphia_stars.webp
+    venue:
+      name: Ford Field
+      city: Detroit
+      capacity: 65000
+  - id: 57
+    name: Pittsburgh Maulers
+    league: USFL
+    city: Pittsburgh
+    logo_path: static/logos/teams/USFL/pittsburgh_maulers.webp
+    venue:
+      name: Tom Benson Hall of Fame Stadium
+      city: Canton
+      capacity: 23500
+  - id: 58
+    name: Adelaide Crows
+    league: AFL
+    city: Adelaide
+    logo_path: static/logos/teams/AFL/adelaide_crows.webp
+    venue:
+      name: Adelaide Oval
+      city: Adelaide
+      capacity: 53000
+  - id: 59
+    name: Brisbane Lions
+    league: AFL
+    city: Brisbane
+    logo_path: static/logos/teams/AFL/brisbane_lions.webp
+    venue:
+      name: The Gabba
+      city: Brisbane
+      capacity: 42000
+  - id: 60
+    name: Carlton Blues
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/carlton_blues.webp
+    venue:
+      name: Marvel Stadium
+      city: Melbourne
+      capacity: 53500
+  - id: 61
+    name: Collingwood Magpies
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/collingwood_magpies.webp
+    venue:
+      name: Melbourne Cricket Ground
+      city: Melbourne
+      capacity: 100024
+  - id: 62
+    name: Essendon Bombers
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/essendon_bombers.webp
+    venue:
+      name: Marvel Stadium
+      city: Melbourne
+      capacity: 53500
+  - id: 63
+    name: Fremantle Dockers
+    league: AFL
+    city: Perth
+    logo_path: static/logos/teams/AFL/fremantle_dockers.webp
+    venue:
+      name: Optus Stadium
+      city: Perth
+      capacity: 60000
+  - id: 64
+    name: Geelong Cats
+    league: AFL
+    city: Geelong
+    logo_path: static/logos/teams/AFL/geelong_cats.webp
+    venue:
+      name: GMHBA Stadium
+      city: Geelong
+      capacity: 36000
+  - id: 65
+    name: Gold Coast Suns
+    league: AFL
+    city: Gold Coast
+    logo_path: static/logos/teams/AFL/gold_coast_suns.webp
+    venue:
+      name: Heritage Bank Stadium
+      city: Gold Coast
+      capacity: 25000
+  - id: 66
+    name: GWS Giants
+    league: AFL
+    city: Sydney
+    logo_path: static/logos/teams/AFL/gws_giants.webp
+    venue:
+      name: Giants Stadium
+      city: Sydney
+      capacity: 24000
+  - id: 67
+    name: Hawthorn Hawks
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/hawthorn_hawks.webp
+    venue:
+      name: Melbourne Cricket Ground
+      city: Melbourne
+      capacity: 100024
+  - id: 68
+    name: Melbourne Demons
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/melbourne_demons.webp
+    venue:
+      name: Melbourne Cricket Ground
+      city: Melbourne
+      capacity: 100024
+  - id: 69
+    name: North Melbourne Kangaroos
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/north_melbourne_kangaroos.webp
+    venue:
+      name: Marvel Stadium
+      city: Melbourne
+      capacity: 53500
+  - id: 70
+    name: Port Adelaide Power
+    league: AFL
+    city: Adelaide
+    logo_path: static/logos/teams/AFL/port_adelaide_power.webp
+    venue:
+      name: Adelaide Oval
+      city: Adelaide
+      capacity: 53000
+  - id: 71
+    name: Richmond Tigers
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/richmond_tigers.webp
+    venue:
+      name: Melbourne Cricket Ground
+      city: Melbourne
+      capacity: 100024
+  - id: 72
+    name: St Kilda Saints
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/st_kilda_saints.webp
+    venue:
+      name: Marvel Stadium
+      city: Melbourne
+      capacity: 53500
+  - id: 73
+    name: Sydney Swans
+    league: AFL
+    city: Sydney
+    logo_path: static/logos/teams/AFL/sydney_swans.webp
+    venue:
+      name: Sydney Cricket Ground
+      city: Sydney
+      capacity: 48000
+  - id: 74
+    name: West Coast Eagles
+    league: AFL
+    city: Perth
+    logo_path: static/logos/teams/AFL/west_coast_eagles.webp
+    venue:
+      name: Optus Stadium
+      city: Perth
+      capacity: 60000
+  - id: 75
+    name: Western Bulldogs
+    league: AFL
+    city: Melbourne
+    logo_path: static/logos/teams/AFL/western_bulldogs.webp
+    venue:
+      name: Marvel Stadium
+      city: Melbourne
+      capacity: 53500
+  - id: 76
+    name: Boston College Eagles
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/boston_college_eagles.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 77
+    name: Clemson Tigers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/clemson_tigers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 78
+    name: Duke Blue Devils
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/duke_blue_devils.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 79
+    name: Florida State Seminoles
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/florida_state_seminoles.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 80
+    name: Georgia Tech Yellow Jackets
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/georgia_tech_yellow_jackets.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 81
+    name: Louisville Cardinals
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/louisville_cardinals.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 82
+    name: Miami Hurricanes
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/miami_hurricanes.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 83
+    name: NC State Wolfpack
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/nc_state_wolfpack.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 84
+    name: North Carolina Tar Heels
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/north_carolina_tar_heels.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 85
+    name: Notre Dame Fighting Irish
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/notre_dame_fighting_irish.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 86
+    name: Pittsburgh Panthers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/pittsburgh_panthers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 87
+    name: Syracuse Orange
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/syracuse_orange.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 88
+    name: Virginia Cavaliers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/virginia_cavaliers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 89
+    name: Virginia Tech Hokies
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/virginia_tech_hokies.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 90
+    name: Wake Forest Demon Deacons
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/wake_forest_demon_deacons.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 91
+    name: Baylor Bears
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/baylor_bears.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 92
+    name: BYU Cougars
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/byu_cougars.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 93
+    name: Cincinnati Bearcats
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/cincinnati_bearcats.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 94
+    name: Houston Cougars
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/houston_cougars.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 95
+    name: Iowa State Cyclones
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/iowa_state_cyclones.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 96
+    name: Kansas Jayhawks
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/kansas_jayhawks.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 97
+    name: Kansas State Wildcats
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/kansas_state_wildcats.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 98
+    name: Oklahoma Sooners
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/oklahoma_sooners.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 99
+    name: Oklahoma State Cowboys
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/oklahoma_state_cowboys.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 100
+    name: TCU Horned Frogs
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/tcu_horned_frogs.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 101
+    name: Texas Longhorns
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/texas_longhorns.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 102
+    name: Texas Tech Red Raiders
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/texas_tech_red_raiders.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 103
+    name: UCF Knights
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/ucf_knights.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 104
+    name: West Virginia Mountaineers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/west_virginia_mountaineers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 105
+    name: Illinois Fighting Illini
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/illinois_fighting_illini.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 106
+    name: Indiana Hoosiers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/indiana_hoosiers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 107
+    name: Iowa Hawkeyes
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/iowa_hawkeyes.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 108
+    name: Maryland Terrapins
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/maryland_terrapins.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 109
+    name: Michigan Wolverines
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/michigan_wolverines.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 110
+    name: Michigan State Spartans
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/michigan_state_spartans.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 111
+    name: Minnesota Golden Gophers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/minnesota_golden_gophers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 112
+    name: Nebraska Cornhuskers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/nebraska_cornhuskers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 113
+    name: Northwestern Wildcats
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/northwestern_wildcats.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 114
+    name: Ohio State Buckeyes
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/ohio_state_buckeyes.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 115
+    name: Penn State Nittany Lions
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/penn_state_nittany_lions.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 116
+    name: Purdue Boilermakers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/purdue_boilermakers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 117
+    name: Rutgers Scarlet Knights
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/rutgers_scarlet_knights.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 118
+    name: Wisconsin Badgers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/wisconsin_badgers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 119
+    name: Alabama Crimson Tide
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/alabama_crimson_tide.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 120
+    name: Arkansas Razorbacks
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/arkansas_razorbacks.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 121
+    name: Auburn Tigers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/auburn_tigers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 122
+    name: Florida Gators
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/florida_gators.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 123
+    name: Georgia Bulldogs
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/georgia_bulldogs.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 124
+    name: Kentucky Wildcats
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/kentucky_wildcats.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 125
+    name: LSU Tigers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/lsu_tigers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 126
+    name: Mississippi State Bulldogs
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/mississippi_state_bulldogs.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 127
+    name: Missouri Tigers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/missouri_tigers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 128
+    name: Ole Miss Rebels
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/ole_miss_rebels.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 129
+    name: South Carolina Gamecocks
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/south_carolina_gamecocks.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 130
+    name: Tennessee Volunteers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/tennessee_volunteers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 131
+    name: Texas A&M Aggies
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/texas_a_m_aggies.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 132
+    name: Vanderbilt Commodores
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/vanderbilt_commodores.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 133
+    name: Arizona Wildcats
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/arizona_wildcats.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 134
+    name: Arizona State Sun Devils
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/arizona_state_sun_devils.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 135
+    name: California Golden Bears
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/california_golden_bears.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 136
+    name: Colorado Buffaloes
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/colorado_buffaloes.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 137
+    name: Oregon Ducks
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/oregon_ducks.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 138
+    name: Oregon State Beavers
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/oregon_state_beavers.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 139
+    name: Stanford Cardinal
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/stanford_cardinal.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 140
+    name: UCLA Bruins
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/ucla_bruins.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 141
+    name: USC Trojans
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/usc_trojans.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 142
+    name: Utah Utes
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/utah_utes.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 143
+    name: Washington Huskies
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/washington_huskies.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 144
+    name: Washington State Cougars
+    league: NCAA
+    city: ''
+    logo_path: static/logos/teams/NCAA/washington_state_cougars.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''

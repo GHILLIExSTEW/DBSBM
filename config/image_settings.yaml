@@ -1,0 +1,105 @@
+# Image Dimensions
+image:
+  width: 600
+  height: 400
+  parlay_width: 800
+  parlay_leg_height: 170
+  parlay_header_height: 40
+  parlay_extra_header_padding: 64
+  parlay_odds_section_height: 120
+  parlay_footer_height: 50
+  schedule_width: 800
+  schedule_height: 260
+  stats_width: 800
+  stats_height: 600
+
+# Padding and Spacing
+padding:
+  default: 24
+logo_size: [120, 120]
+parlay_logo_size: [64, 64]
+schedule_logo_size: 60
+parlay_card_radius: 28
+parlay_card_margin_x: 24
+parlay_card_margin_y: 10
+parlay_card_height: 150
+
+# Font Sizes
+font_sizes:
+  header: 36
+  team: 24
+  vs: 28
+  line: 24
+  odds: 28
+  risk: 24
+  footer: 18
+  parlay_regular: 28
+  parlay_bold: 36
+  parlay_small: 22
+  parlay_mini: 18
+  parlay_huge: 48
+  parlay_vs_small: 21
+  schedule_title: 36
+  schedule_team: 24
+  schedule_time: 20
+
+# Colors
+colors:
+  background: '#232733'
+  parlay_background: '#232733'
+  parlay_card_background: '#181c24'
+  parlay_badge: '#222b3a'
+  parlay_badge_text: '#00d8ff'
+  schedule_background: '#1a1a1a'
+  text: '#ffffff'
+  odds: '#FFD700'
+  separator: '#444444'
+
+# Discord Limits
+discord_limits:
+  max_options: 25
+  max_games_in_dropdown: 24
+  max_label_length: 100
+  max_description_length: 100
+  max_value_length: 100
+
+# Timeouts and Delays
+timeouts:
+  request_delay_seconds: 0.25
+  download_timeout_seconds: 15
+  voice_channel_check_interval: 300
+  voice_channel_grace_period: 3600
+
+# Betting Limits
+betting_limits:
+  min_units: 0.5
+  max_units: 3.0
+  default_units: 1.0
+  unit_options: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+
+# Odds Range
+odds_range:
+  min: -1000
+  max: 1000
+
+# Cache Settings
+cache:
+  ttl: 3600
+  game_ttl: 300
+  league_ttl: 86400
+  team_ttl: 86400
+  user_ttl: 86400
+
+# Database Pool Settings
+db_pool:
+  min_size: 1
+  max_size: 5
+  connect_timeout: 30
+  max_retries: 3
+  retry_delay: 5
+
+# API Settings
+api:
+  timeout: 30
+  retry_attempts: 3
+  retry_delay: 5

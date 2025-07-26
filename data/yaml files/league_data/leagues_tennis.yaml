@@ -1,0 +1,21 @@
+leagues:
+  - code: ATP
+    name: Association of Tennis Professionals (ATP)
+    sport: Tennis
+    country: International
+    logo_path: static/logos/leagues/TENNIS/ATP/atp.webp
+  - code: WTA
+    name: Women's Tennis Association (WTA)
+    sport: Tennis
+    country: International
+    logo_path: static/logos/leagues/TENNIS/WTA/wta.webp
+  - code: DAVIS_CUP
+    name: Davis Cup
+    sport: Tennis
+    country: International
+    logo_path: static/logos/leagues/TENNIS/DAVIS_CUP/davis_cup.webp
+  - code: FED_CUP
+    name: Fed Cup (Billie Jean King Cup)
+    sport: Tennis
+    country: International
+    logo_path: static/logos/leagues/TENNIS/FED_CUP/fed_cup.webp

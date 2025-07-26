@@ -1,0 +1,21 @@
+leagues:
+  - code: PGA
+    name: PGA Tour
+    sport: Golf
+    country: USA
+    logo_path: static/logos/leagues/GOLF/PGA/pga.webp
+  - code: EUROPEAN_TOUR
+    name: European Tour (DP World Tour)
+    sport: Golf
+    country: Europe
+    logo_path: static/logos/leagues/GOLF/EUROPEAN_TOUR/european_tour.webp
+  - code: LPGA
+    name: Ladies Professional Golf Association (LPGA)
+    sport: Golf
+    country: USA
+    logo_path: static/logos/leagues/GOLF/LPGA/lpga.webp
+  - code: OLYMPIC_GOLF
+    name: Olympic Golf
+    sport: Golf
+    country: International
+    logo_path: static/logos/leagues/GOLF/OLYMPIC_GOLF/olympic_golf.webp

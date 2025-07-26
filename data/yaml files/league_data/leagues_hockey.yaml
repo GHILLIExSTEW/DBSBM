@@ -1,0 +1,11 @@
+leagues:
+  - code: NHL
+    name: National Hockey League
+    sport: Hockey
+    country: USA/Canada
+    logo_path: static/logos/leagues/HOCKEY/NHL/nhl.webp
+  - code: KHL
+    name: Kontinental Hockey League
+    sport: Hockey
+    country: Russia/International
+    logo_path: static/logos/leagues/HOCKEY/KHL/khl.webp
