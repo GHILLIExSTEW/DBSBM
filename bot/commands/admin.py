@@ -276,16 +276,22 @@ class SkipButton(discord.ui.Button):
                 "Error: Cannot process skip action.", ephemeral=True
             )
             return
+        try:
+            # Defer the interaction to prevent timeout
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+            # Store the message for editing
+            self.view.message = interaction.message
+            # Move to next step
+            self.view.current_step += 1
+            await self.view.process_next_selection(interaction)
+        except Exception as e:
+            import logging
 
-        # Defer the interaction to prevent timeout
-        await interaction.response.defer()
-
-        # Store the message for editing
-        self.view.message = interaction.message
-
-        # Move to next step
-        self.view.current_step += 1
-        await self.view.process_next_selection(interaction)
+            logging.exception(f"Skip button failed: {e}")
+            await interaction.followup.send(
+                f"An error occurred while skipping: {e}", ephemeral=True
+            )
 
 
 class GuildSettingsView(discord.ui.View):
@@ -544,9 +550,15 @@ class GuildSettingsView(discord.ui.View):
         self.add_item(select)
         skip_button = SkipButton()
         self.add_item(skip_button)
-        await self.message.edit(
-            content=f"Please select a {step['name'].lower()}:", view=self
-        )
+        try:
+            await self.message.edit(
+                content=f"Please select a {step['name'].lower()}:", view=self
+            )
+        except Exception as e:
+            logger.error(f"Failed to update message with new view: {e}")
+            await interaction.followup.send(
+                f"An error occurred updating the setup view: {e}", ephemeral=True
+            )
 
         # Fallback: if for any reason the step is not handled, always advance
         # (This should be unreachable, but ensures no infinite loop)
