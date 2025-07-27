@@ -741,9 +741,11 @@ class AdminCog(commands.Cog):
                 subscription_level=subscription_level,
             )
 
-            # Send initial message as a normal channel message (not ephemeral)
-            msg = await interaction.channel.send("Starting server setup...", view=view)
-            view.message = msg
+            # Send initial message as ephemeral
+            await interaction.response.send_message(
+                "Starting server setup...", view=view, ephemeral=True
+            )
+            view.message = await interaction.original_response()
 
             # Process first step
             await view.process_next_selection(interaction, initial=True)
