@@ -93,14 +93,27 @@ def get_all_sport_categories():
     """Return a sorted list of all unique sport categories from ALL_LEAGUES."""
     categories = set()
     for league in ALL_LEAGUES.values():
-        categories.add(league["sport"])
+        sport = league["sport"]
+        # Map MMA to FIGHTING for better user experience
+        if sport == "MMA":
+            categories.add("FIGHTING")
+        else:
+            categories.add(sport)
     return sorted(categories)
 
 
 def get_leagues_by_sport(sport: str):
     """Return a list of league names for a given sport category."""
-    return [
-        info["name"]
-        for info in ALL_LEAGUES.values()
-        if info["sport"].lower() == sport.lower()
-    ]
+    if sport.upper() == "FIGHTING":
+        # For FIGHTING category, include MMA and other fighting leagues
+        return [
+            info["name"]
+            for info in ALL_LEAGUES.values()
+            if info["sport"].lower() in ["mma", "fighting"]
+        ]
+    else:
+        return [
+            info["name"]
+            for info in ALL_LEAGUES.values()
+            if info["sport"].lower() == sport.lower()
+        ]

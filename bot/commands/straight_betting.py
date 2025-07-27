@@ -1769,6 +1769,8 @@ class StraightBetDetailsModal(Modal):
     async def on_submit(self, interaction: Interaction):
         try:
             # Get values from inputs
+            line = "Line"  # Default value
+
             if self.is_manual:
                 # Handle player props
                 if self.line_type == "player_prop":
@@ -1828,6 +1830,10 @@ class StraightBetDetailsModal(Modal):
                                 self.opponent_input.value.strip()[:100] or "Opponent"
                             )
 
+                    line = self.line_input.value.strip()[:100] or "Line"
+            else:
+                # For non-manual entries (existing games), get line from line_input
+                if hasattr(self, "line_input"):
                     line = self.line_input.value.strip()[:100] or "Line"
 
             odds_str = self.odds_input.value.strip()[:100] or "0"
