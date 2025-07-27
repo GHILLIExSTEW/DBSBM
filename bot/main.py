@@ -297,6 +297,7 @@ class BettingBot(commands.Bot):
         self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
         self.predictive_service = PredictiveService(self.db_manager)
+        self.real_ml_service = None  # Will be initialized in setup_hook
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
@@ -343,6 +344,7 @@ class BettingBot(commands.Bot):
             "community.py",  # Community engagement commands
             "community_leaderboard.py",  # Community leaderboard commands
             "predictive.py",  # Predictive analytics commands
+            "real_ml_commands.py",  # Real ML commands (Platinum only)
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -778,6 +780,15 @@ class BettingBot(commands.Bot):
             self.platinum_service.start(),
             self.predictive_service.initialize(),
         ]
+
+        # Initialize real ML service
+        try:
+            from bot.services.real_ml_service import RealMLService
+            self.real_ml_service = RealMLService(self.db_manager, self.sports_api, self.predictive_service)
+            logger.info("Real ML service initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize real ML service: {e}")
+            self.real_ml_service = None
 
         # Add community services if initialized
         if self.community_events_service:
