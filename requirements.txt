@@ -140,7 +140,7 @@ spacy>=3.6.0
 
 # WebSocket Support
 websockets>=11.0.0
-socketio>=5.8.0
+python-socketio>=5.8.0
 
 # GraphQL Support
 graphene>=3.2.0
