@@ -1036,8 +1036,8 @@ class StraightBetWorkflowView(View):
             )
             return
 
-        elif self.current_step == 6:
-            # Step 6: Channel selection
+        elif self.current_step == 7:
+            # Step 7: Channel selection
             try:
                 # Fetch allowed embed channels from guild settings
                 allowed_channels = []
@@ -1089,12 +1089,12 @@ class StraightBetWorkflowView(View):
                 )
                 return
             except Exception as e:
-                logger.error(f"Error in step 6: {e}")
+                logger.error(f"Error in step 7: {e}")
                 await self.edit_message(content=f"❌ Error: {e}", view=None)
                 self.stop()
                 return
-        elif self.current_step == 7:
-            # Step 7: Final confirmation
+        elif self.current_step == 8:
+            # Step 8: Final confirmation
             self.clear_items()
             self.add_item(FinalConfirmButton(self))
             self.add_item(CancelButton(self))
