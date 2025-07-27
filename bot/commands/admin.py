@@ -148,7 +148,10 @@ class ChannelSelect(discord.ui.Select):
         else:
             self.view.settings[self.setting_key] = selected_value
 
-        await interaction.response.defer()
+        # Defer the interaction to prevent timeout
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+
         self.view.current_step += 1
         await self.view.process_next_selection(interaction)
 
@@ -177,7 +180,8 @@ class RoleSelect(discord.ui.Select):
             options=options,
             min_values=1,
             max_values=1,
-            disabled=not options or options[0].value == "none",  # Disable if no roles
+            # Disable if no roles
+            disabled=not options or options[0].value == "none",
         )
         self.setting_key = setting_key
 
@@ -196,7 +200,11 @@ class RoleSelect(discord.ui.Select):
             return
 
         self.view.settings[self.setting_key] = selected_value
-        await interaction.response.defer()
+
+        # Defer the interaction to prevent timeout
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+
         self.view.current_step += 1
         await self.view.process_next_selection(interaction)
 
@@ -277,21 +285,28 @@ class SkipButton(discord.ui.Button):
             )
             return
         try:
-            # Defer the interaction to prevent timeout
-            if not interaction.response.is_done():
-                await interaction.response.defer()
             # Store the message for editing
             self.view.message = interaction.message
             # Move to next step
             self.view.current_step += 1
+
+            # Defer the interaction to prevent timeout
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+
             await self.view.process_next_selection(interaction)
         except Exception as e:
             import logging
 
             logging.exception(f"Skip button failed: {e}")
-            await interaction.followup.send(
-                f"An error occurred while skipping: {e}", ephemeral=True
-            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    f"An error occurred while skipping: {e}", ephemeral=True
+                )
+            else:
+                await interaction.followup.send(
+                    f"An error occurred while skipping: {e}", ephemeral=True
+                )
 
 
 class GuildSettingsView(discord.ui.View):
@@ -410,19 +425,19 @@ class GuildSettingsView(discord.ui.View):
             "name": "Platinum: Custom Parlay Image",
             "select": None,
             "setting_key": "platinum_parlay_image",
-            "is_premium_only": True,
+            "is_platinum_only": True,
         },
         {
             "name": "Platinum: Custom Win Emoji",
             "select": None,
             "setting_key": "platinum_win_emoji",
-            "is_premium_only": True,
+            "is_platinum_only": True,
         },
         {
             "name": "Platinum: Custom Loss Emoji",
             "select": None,
             "setting_key": "platinum_loss_emoji",
-            "is_premium_only": True,
+            "is_platinum_only": True,
         },
     ]
 
@@ -432,7 +447,7 @@ class GuildSettingsView(discord.ui.View):
         guild,
         admin_service,
         original_interaction,
-        subscription_level="initial",
+        subscription_level="free",
     ):
         super().__init__(timeout=300)
         self.bot = bot
@@ -447,6 +462,51 @@ class GuildSettingsView(discord.ui.View):
         self.waiting_for_url = False  # Track if we're waiting for a URL input
         self.message = None  # Initialize message attribute
 
+        # Filter setup steps based on subscription level
+        self.filtered_steps = self._filter_steps_by_subscription()
+        logger.info(
+            f"Filtered {len(self.filtered_steps)} steps for subscription level '{subscription_level}'"
+        )
+
+    def _filter_steps_by_subscription(self):
+        """Filter setup steps based on subscription level."""
+        filtered_steps = []
+
+        for step in self.SETUP_STEPS:
+            # Skip premium-only steps for free users
+            if step.get("is_premium_only", False) and self.subscription_level not in [
+                "premium",
+                "platinum",
+            ]:
+                logger.info(
+                    f"Skipping premium step '{step['name']}' for subscription level '{self.subscription_level}'"
+                )
+                continue
+
+            # Skip platinum-only steps for non-platinum users
+            if (
+                step.get("is_platinum_only", False)
+                and self.subscription_level != "platinum"
+            ):
+                logger.info(
+                    f"Skipping platinum step '{step['name']}' for subscription level '{self.subscription_level}'"
+                )
+                continue
+
+            # Skip steps that start with "Platinum:" for non-platinum users (backward compatibility)
+            if (
+                step.get("name", "").startswith("Platinum:")
+                and self.subscription_level != "platinum"
+            ):
+                logger.info(
+                    f"Skipping platinum step '{step['name']}' for subscription level '{self.subscription_level}'"
+                )
+                continue
+
+            filtered_steps.append(step)
+
+        return filtered_steps
+
     async def start_selection(self):
         """Start the selection process"""
         # This method is now just a placeholder since we handle the setup in setup_command
@@ -454,21 +514,12 @@ class GuildSettingsView(discord.ui.View):
     async def process_next_selection(
         self, interaction: discord.Interaction, initial: bool = False
     ):
-        if self.current_step >= len(self.SETUP_STEPS):
+        if self.current_step >= len(self.filtered_steps):
             await self.finalize_setup(interaction)
             return
 
-        step = self.SETUP_STEPS[self.current_step]
+        step = self.filtered_steps[self.current_step]
         logger.info(f"Processing setup step {self.current_step}: {step}")
-
-        # Skip premium-only steps for non-premium users
-        if step.get("is_premium_only", False) and self.subscription_level != "premium":
-            logger.info(
-                f"Skipping premium step '{step['name']}' for subscription level '{self.subscription_level}'"
-            )
-            self.current_step += 1
-            await self.process_next_selection(interaction)
-            return
 
         # Handle boolean (yes/no) steps
         if step.get("is_boolean", False):
@@ -490,17 +541,24 @@ class GuildSettingsView(discord.ui.View):
             no_btn.callback = no_callback
             view.add_item(yes_btn)
             view.add_item(no_btn)
-            await self.message.edit(
-                content=f"Would you like to enable live game update channels?",
-                view=view,
-            )
+
+            try:
+                await self.message.edit(
+                    content=f"Would you like to enable {step['name'].lower()}?",
+                    view=view,
+                )
+            except Exception as e:
+                logger.error(f"Failed to update message for boolean step: {e}")
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        f"Would you like to enable {step['name'].lower()}?",
+                        view=view,
+                        ephemeral=True,
+                    )
             return
 
-        if not interaction.response.is_done():
-            await interaction.response.defer()
-
+        # Handle modal input steps (URL inputs, etc.)
         select_class = step["select"]
-        # Always handle select_class is None: show modal if setting_key is present, otherwise skip
         if select_class is None:
             if step.get("setting_key") not in [None, ""]:
 
@@ -514,23 +572,38 @@ class GuildSettingsView(discord.ui.View):
 
                 modal = InputModal()
                 modal.view = self
-                await interaction.response.send_modal(modal)
-                return
-            # Otherwise, always skip this step
-            self.current_step += 1
-            await self.process_next_selection(interaction)
-            return
 
+                try:
+                    await interaction.response.send_modal(modal)
+                except discord.errors.InteractionResponded:
+                    # If interaction already responded, use followup
+                    await interaction.followup.send_modal(modal)
+                return
+            else:
+                # Skip this step if no setting_key
+                self.current_step += 1
+                await self.process_next_selection(interaction)
+                return
+
+        # Handle select menu steps
         if select_class == ChannelSelect:
             items = interaction.guild.text_channels
         else:
             items = interaction.guild.roles
 
         if not items:
-            await self.message.edit(
-                content=f"No {step['name'].lower()} found. Please create one and try again.",
-                view=None,
-            )
+            try:
+                await self.message.edit(
+                    content=f"No {step['name'].lower()} found. Please create one and try again.",
+                    view=None,
+                )
+            except Exception as e:
+                logger.error(f"Failed to update message for empty items: {e}")
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        f"No {step['name'].lower()} found. Please create one and try again.",
+                        ephemeral=True,
+                    )
             return
 
         # Remove all items from the current view and add the new select and skip button
@@ -550,23 +623,25 @@ class GuildSettingsView(discord.ui.View):
         self.add_item(select)
         skip_button = SkipButton()
         self.add_item(skip_button)
+
         try:
             await self.message.edit(
                 content=f"Please select a {step['name'].lower()}:", view=self
             )
         except Exception as e:
             logger.error(f"Failed to update message with new view: {e}")
-            await interaction.followup.send(
-                f"An error occurred updating the setup view: {e}", ephemeral=True
-            )
-
-        # Fallback: if for any reason the step is not handled, always advance
-        # (This should be unreachable, but ensures no infinite loop)
-        if not self.children:
-            logger.warning(f"Step {self.current_step} was not handled, skipping.")
-            self.current_step += 1
-            await self.process_next_selection(interaction)
-            return
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    f"Please select a {step['name'].lower()}:",
+                    view=self,
+                    ephemeral=True,
+                )
+            else:
+                await interaction.followup.send(
+                    f"Please select a {step['name'].lower()}:",
+                    view=self,
+                    ephemeral=True,
+                )
 
     async def finalize_setup(self, interaction: discord.Interaction):
         """Saves the collected settings to the database."""
@@ -698,28 +773,39 @@ class AdminCog(commands.Cog):
                     """
                     INSERT INTO guild_settings
                     (guild_id, is_paid, subscription_level)
-                    VALUES (%s, 0, 'initial')
+                    VALUES (%s, 0, 'free')
                     """,
                     guild_id,
                 )
-                subscription_level = "initial"
+                subscription_level = "free"
             else:
-                # Determine subscription level based on is_paid field
+                # Determine subscription level based on is_paid field and subscription_level
                 is_paid = existing_settings.get("is_paid", 0)
-                subscription_level = "premium" if is_paid else "initial"
-
-                logger.info(
-                    f"Guild {guild_id} - is_paid: {is_paid}, subscription_level: {subscription_level}"
+                db_subscription_level = existing_settings.get(
+                    "subscription_level", "free"
                 )
 
-                # Update subscription_level in database if it doesn't match is_paid
-                if is_paid and existing_settings.get("subscription_level") != "premium":
+                # Map subscription levels properly
+                if db_subscription_level == "platinum":
+                    subscription_level = "platinum"
+                elif is_paid or db_subscription_level == "premium":
+                    subscription_level = "premium"
+                else:
+                    subscription_level = "free"
+
+                logger.info(
+                    f"Guild {guild_id} - is_paid: {is_paid}, db_subscription_level: {db_subscription_level}, final_subscription_level: {subscription_level}"
+                )
+
+                # Update subscription_level in database if it doesn't match
+                if subscription_level != db_subscription_level:
                     await self.bot.db_manager.execute(
-                        "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
+                        "UPDATE guild_settings SET subscription_level = %s WHERE guild_id = %s",
+                        subscription_level,
                         guild_id,
                     )
                     logger.info(
-                        f"Updated subscription_level to 'premium' for guild {guild_id}"
+                        f"Updated subscription_level to '{subscription_level}' for guild {guild_id}"
                     )
 
             # --- Create static/guilds/{guild_id}/users directory ---
@@ -743,7 +829,9 @@ class AdminCog(commands.Cog):
 
             # Send initial message as ephemeral
             await interaction.response.send_message(
-                "Starting server setup...", view=view, ephemeral=True
+                f"Starting server setup... (Subscription Level: {subscription_level.title()})",
+                view=view,
+                ephemeral=True,
             )
             view.message = await interaction.original_response()
 

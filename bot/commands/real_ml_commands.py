@@ -336,22 +336,29 @@ class MLCommandView(discord.ui.View):
             await self._execute_live_odds(interaction)
 
     async def _execute_analyze_today(self, interaction: discord.Interaction):
-        """Execute analyze today command."""
+        """Execute analyze today command using data from api_games table."""
         await interaction.response.defer()
 
         try:
-            if not self.bot.real_ml_service:
-                await interaction.followup.send("❌ Real ML service not available")
-                return
+            # Query the api_games table for today's games
+            query = """
+                SELECT
+                    id, api_game_id, sport, league_id, league_name,
+                    home_team_name, away_team_name, start_time, status,
+                    score, odds, venue, referee, season
+                FROM api_games
+                WHERE DATE(start_time) = CURDATE()
+                AND status IN ('NS', 'LIVE', 'HT', '1H', '2H')
+                ORDER BY start_time ASC
+                LIMIT 10
+            """
 
-            opportunities = await self.bot.real_ml_service.analyze_todays_games(
-                interaction.user.id
-            )
+            games = await self.bot.db_manager.fetch_all(query)
 
-            if not opportunities:
+            if not games:
                 embed = discord.Embed(
-                    title="📅 No High-Confidence Opportunities Today",
-                    description="No games with strong ML predictions found for today.\n"
+                    title="📅 No Games Found Today",
+                    description="No games found in the database for today.\n"
                     "💡 Try again later or use `/analyze_game` for specific games.",
                     color=discord.Color.orange(),
                 )
@@ -359,28 +366,67 @@ class MLCommandView(discord.ui.View):
                 return
 
             embed = discord.Embed(
-                title="🎯 Today's Best Betting Opportunities",
-                description=f"ML-powered analysis using real sports data\n"
-                f"Found {len(opportunities)} high-confidence opportunities",
+                title="🎯 Today's Games Analysis",
+                description=f"Found {len(games)} games scheduled for today\n"
+                f"Data from api_games table",
                 color=discord.Color.green(),
                 timestamp=datetime.now(),
             )
 
-            for i, opp in enumerate(opportunities[:3], 1):
-                game_info = opp["game_info"]
+            for i, game in enumerate(games[:5], 1):
+                # Format start time
+                start_time = game.get("start_time")
+                if start_time:
+                    if isinstance(start_time, str):
+                        try:
+                            start_time = datetime.fromisoformat(
+                                start_time.replace("Z", "+00:00")
+                            )
+                        except:
+                            pass
+
+                    time_str = (
+                        f"<t:{int(start_time.timestamp())}:R>"
+                        if isinstance(start_time, datetime)
+                        else str(start_time)
+                    )
+                else:
+                    time_str = "Unknown"
+
+                # Get score if available
+                score = game.get("score")
+                score_str = ""
+                if score and isinstance(score, dict):
+                    home_score = score.get("home", "N/A")
+                    away_score = score.get("away", "N/A")
+                    score_str = f" | Score: {home_score}-{away_score}"
+
+                # Get odds if available
+                odds = game.get("odds")
+                odds_str = " | Odds: Available" if odds else ""
+
                 embed.add_field(
-                    name=f"{i}. {game_info['home_team']} vs {game_info['away_team']}",
-                    value=f"**Sport:** {game_info['sport'].title()}\n"
-                    f"**League:** {game_info['league']}\n"
-                    f"**Prediction:** {opp['prediction']}\n"
-                    f"**Confidence:** {opp['confidence']}%\n"
-                    f"**Recommended Bet:** {opp['recommended_bet']}",
+                    name=f"{i}. {game['home_team_name']} vs {game['away_team_name']}",
+                    value=f"**Sport:** {game['sport'].title()}\n"
+                    f"**League:** {game.get('league_name', game.get('league_id', 'Unknown'))}\n"
+                    f"**Time:** {time_str}\n"
+                    f"**Status:** {game.get('status', 'Unknown')}{score_str}{odds_str}",
                     inline=False,
                 )
+
+            if len(games) > 5:
+                embed.add_field(
+                    name="📊 More Games",
+                    value=f"Showing 5 of {len(games)} games. Use `/analyze_game` for specific game details.",
+                    inline=False,
+                )
+
+            embed.set_footer(text="Data from api_games table")
 
             await interaction.followup.send(embed=embed)
 
         except Exception as e:
+            logger.error(f"Error analyzing today's games: {e}")
             await interaction.followup.send(
                 f"❌ Error analyzing today's games: {str(e)}"
             )
@@ -429,20 +475,30 @@ class MLCommandView(discord.ui.View):
             await interaction.followup.send(f"❌ Error getting insights: {str(e)}")
 
     async def _execute_live_odds(self, interaction: discord.Interaction):
-        """Execute live odds command."""
+        """Execute live odds command using data from api_games table."""
         await interaction.response.defer()
 
         try:
-            if not self.bot.real_ml_service:
-                await interaction.followup.send("❌ Real ML service not available")
-                return
+            # Query the api_games table for games with odds
+            query = """
+                SELECT
+                    id, api_game_id, sport, league_id, league_name,
+                    home_team_name, away_team_name, start_time, status,
+                    score, odds, venue, referee, season
+                FROM api_games
+                WHERE odds IS NOT NULL
+                AND JSON_LENGTH(odds) > 0
+                AND status IN ('NS', 'LIVE', 'HT', '1H', '2H')
+                ORDER BY start_time ASC
+                LIMIT 10
+            """
 
-            odds_data = await self.bot.real_ml_service.get_live_odds()
+            games = await self.bot.db_manager.fetch_all(query)
 
-            if not odds_data:
+            if not games:
                 embed = discord.Embed(
                     title="📊 No Live Odds Available",
-                    description="No live odds data found for today's games.",
+                    description="No games with odds data found in the database.",
                     color=discord.Color.orange(),
                 )
                 await interaction.followup.send(embed=embed)
@@ -450,67 +506,225 @@ class MLCommandView(discord.ui.View):
 
             embed = discord.Embed(
                 title="💰 Live Odds Analysis",
-                description="Current odds for today's games with ML insights",
+                description=f"Found {len(games)} games with odds data\n"
+                f"Data from api_games table",
                 color=discord.Color.gold(),
                 timestamp=datetime.now(),
             )
 
-            for i, game in enumerate(odds_data[:5], 1):
+            for i, game in enumerate(games[:5], 1):
+                # Format start time
+                start_time = game.get("start_time")
+                if start_time:
+                    if isinstance(start_time, str):
+                        try:
+                            start_time = datetime.fromisoformat(
+                                start_time.replace("Z", "+00:00")
+                            )
+                        except:
+                            pass
+
+                    time_str = (
+                        f"<t:{int(start_time.timestamp())}:R>"
+                        if isinstance(start_time, datetime)
+                        else str(start_time)
+                    )
+                else:
+                    time_str = "Unknown"
+
+                # Parse odds data
+                odds = game.get("odds")
+                odds_info = "Odds data available"
+                if odds and isinstance(odds, dict):
+                    # Try to extract specific odds
+                    if "home" in odds and "away" in odds:
+                        home_odds = odds.get("home", "N/A")
+                        away_odds = odds.get("away", "N/A")
+                        draw_odds = odds.get("draw", "N/A")
+                        odds_info = (
+                            f"Home: {home_odds} | Away: {away_odds} | Draw: {draw_odds}"
+                        )
+                    else:
+                        odds_info = "Complex odds structure available"
+
                 embed.add_field(
-                    name=f"{i}. {game['home_team']} vs {game['away_team']}",
+                    name=f"{i}. {game['home_team_name']} vs {game['away_team_name']}",
                     value=f"**Sport:** {game['sport'].title()}\n"
-                    f"**League:** {game['league']}\n"
-                    f"**Home:** {game['home_odds']}\n"
-                    f"**Away:** {game['away_odds']}\n"
-                    f"**Draw:** {game.get('draw_odds', 'N/A')}\n"
-                    f"**ML Value:** {game.get('ml_value', 'N/A')}",
+                    f"**League:** {game.get('league_name', game.get('league_id', 'Unknown'))}\n"
+                    f"**Time:** {time_str}\n"
+                    f"**Status:** {game.get('status', 'Unknown')}\n"
+                    f"**Odds:** {odds_info}",
                     inline=False,
                 )
+
+            if len(games) > 5:
+                embed.add_field(
+                    name="📊 More Games",
+                    value=f"Showing 5 of {len(games)} games with odds. Use `/analyze_game` for specific game details.",
+                    inline=False,
+                )
+
+            embed.set_footer(text="Data from api_games table")
 
             await interaction.followup.send(embed=embed)
 
         except Exception as e:
+            logger.error(f"Error getting live odds: {e}")
             await interaction.followup.send(f"❌ Error getting live odds: {str(e)}")
 
     async def _execute_team_stats(
         self, interaction: discord.Interaction, sport: str, league: str, team: str
     ):
-        """Execute team stats command."""
+        """Execute team stats command using data from api_games table."""
         await interaction.response.defer()
 
         try:
-            if not self.bot.real_ml_service:
-                await interaction.followup.send("❌ Real ML service not available")
-                return
+            # Query the api_games table for games involving the specified team
+            query = """
+                SELECT
+                    id, api_game_id, sport, league_id, league_name,
+                    home_team_name, away_team_name, start_time, status,
+                    score, odds, venue, referee, season
+                FROM api_games
+                WHERE sport = %s
+                AND (league_id = %s OR league_name LIKE %s)
+                AND (home_team_name LIKE %s OR away_team_name LIKE %s)
+                ORDER BY start_time DESC
+                LIMIT 20
+            """
 
-            stats = await self.bot.real_ml_service.get_team_statistics(team, sport)
+            team_pattern = f"%{team}%"
+            league_pattern = f"%{league}%"
 
-            if not stats:
+            games = await self.bot.db_manager.fetch_all(
+                query, sport, league, league_pattern, team_pattern, team_pattern
+            )
+
+            if not games:
                 embed = discord.Embed(
                     title="📊 No Team Statistics Available",
-                    description=f"No statistics found for {team} in {league}.",
+                    description=f"No games found for {team} in {league} ({sport}).",
                     color=discord.Color.orange(),
+                )
+                embed.add_field(
+                    name="💡 Tips",
+                    value="• Check team name spelling\n"
+                    "• Try using partial team names\n"
+                    "• Verify the league and sport are correct\n"
+                    "• The team might not have recent games in our database",
+                    inline=False,
                 )
                 await interaction.followup.send(embed=embed)
                 return
 
+            # Calculate team statistics
+            total_games = len(games)
+            wins = 0
+            losses = 0
+            draws = 0
+            goals_for = 0
+            goals_against = 0
+            recent_games = []
+
+            for game in games:
+                score = game.get("score")
+                if score and isinstance(score, dict):
+                    home_score = score.get("home", 0)
+                    away_score = score.get("away", 0)
+
+                    # Determine if this team won, lost, or drew
+                    if game["home_team_name"] == team:
+                        team_score = home_score
+                        opponent_score = away_score
+                        if home_score > away_score:
+                            wins += 1
+                        elif home_score < away_score:
+                            losses += 1
+                        else:
+                            draws += 1
+                    else:  # team is away team
+                        team_score = away_score
+                        opponent_score = home_score
+                        if away_score > home_score:
+                            wins += 1
+                        elif away_score < home_score:
+                            losses += 1
+                        else:
+                            draws += 1
+
+                    goals_for += team_score
+                    goals_against += opponent_score
+
+                    # Add to recent games list
+                    recent_games.append(
+                        {
+                            "opponent": (
+                                game["away_team_name"]
+                                if game["home_team_name"] == team
+                                else game["home_team_name"]
+                            ),
+                            "score": f"{team_score}-{opponent_score}",
+                            "result": (
+                                "W"
+                                if team_score > opponent_score
+                                else "L" if team_score < opponent_score else "D"
+                            ),
+                            "date": game.get("start_time", "Unknown"),
+                        }
+                    )
+
+            # Calculate win percentage
+            win_percentage = (wins / total_games * 100) if total_games > 0 else 0
+            avg_goals_for = goals_for / total_games if total_games > 0 else 0
+            avg_goals_against = goals_against / total_games if total_games > 0 else 0
+
             embed = discord.Embed(
                 title=f"📊 {team} Statistics",
-                description=f"Team performance data for {league}",
+                description=f"Team performance data for {league} ({sport})",
                 color=discord.Color.blue(),
                 timestamp=datetime.now(),
             )
 
-            for stat_name, stat_value in stats.items():
+            embed.add_field(
+                name="📈 Overall Record",
+                value=f"**Games:** {total_games}\n"
+                f"**Wins:** {wins}\n"
+                f"**Losses:** {losses}\n"
+                f"**Draws:** {draws}\n"
+                f"**Win %:** {win_percentage:.1f}%",
+                inline=True,
+            )
+
+            embed.add_field(
+                name="⚽ Goal Statistics",
+                value=f"**Goals For:** {goals_for}\n"
+                f"**Goals Against:** {goals_against}\n"
+                f"**Avg Goals For:** {avg_goals_for:.1f}\n"
+                f"**Avg Goals Against:** {avg_goals_against:.1f}\n"
+                f"**Goal Difference:** {goals_for - goals_against:+d}",
+                inline=True,
+            )
+
+            # Add recent games
+            if recent_games:
+                recent_text = ""
+                for i, game in enumerate(recent_games[:5], 1):
+                    recent_text += f"{i}. vs {game['opponent']}: {game['score']} ({game['result']})\n"
+
                 embed.add_field(
-                    name=stat_name.replace("_", " ").title(),
-                    value=str(stat_value),
-                    inline=True,
+                    name="🕐 Recent Games",
+                    value=recent_text,
+                    inline=False,
                 )
+
+            embed.set_footer(
+                text=f"Data from api_games table • Based on {total_games} games"
+            )
 
             await interaction.followup.send(embed=embed)
 
         except Exception as e:
+            logger.error(f"Error getting team stats: {e}")
             await interaction.followup.send(f"❌ Error getting team stats: {str(e)}")
 
     async def _execute_analyze_game(
@@ -521,61 +735,158 @@ class MLCommandView(discord.ui.View):
         home_team: str,
         away_team: str,
     ):
-        """Execute analyze game command."""
+        """Execute analyze game command using data from api_games table."""
         await interaction.response.defer()
 
         try:
-            if not self.bot.real_ml_service:
-                await interaction.followup.send("❌ Real ML service not available")
-                return
+            # Query the api_games table for the specific game
+            query = """
+                SELECT
+                    id, api_game_id, sport, league_id, league_name,
+                    home_team_name, away_team_name, start_time, status,
+                    score, odds, venue, referee, season
+                FROM api_games
+                WHERE sport = %s
+                AND (league_id = %s OR league_name LIKE %s)
+                AND (
+                    (home_team_name LIKE %s AND away_team_name LIKE %s)
+                    OR (home_team_name LIKE %s AND away_team_name LIKE %s)
+                )
+                ORDER BY start_time DESC
+                LIMIT 1
+            """
 
-            analysis = await self.bot.real_ml_service.analyze_specific_game(
-                home_team, away_team, sport, interaction.user.id
+            # Use wildcards for flexible team name matching
+            home_team_pattern = f"%{home_team}%"
+            away_team_pattern = f"%{away_team}%"
+            league_pattern = f"%{league}%"
+
+            game = await self.bot.db_manager.fetch_one(
+                query,
+                sport,
+                league,
+                league_pattern,
+                home_team_pattern,
+                away_team_pattern,
+                away_team_pattern,  # Reverse order for flexibility
+                home_team_pattern,
             )
 
-            if not analysis:
+            if not game:
                 embed = discord.Embed(
-                    title="❌ Game Analysis Failed",
-                    description=f"Could not analyze {home_team} vs {away_team}",
+                    title="❌ Game Not Found",
+                    description=f"Could not find {home_team} vs {away_team} in {league} ({sport})",
                     color=discord.Color.red(),
+                )
+                embed.add_field(
+                    name="💡 Tips",
+                    value="• Check team names are spelled correctly\n"
+                    "• Try using partial team names\n"
+                    "• Verify the league and sport are correct\n"
+                    "• The game might not be in our database yet",
+                    inline=False,
                 )
                 await interaction.followup.send(embed=embed)
                 return
 
+            # Create analysis embed with game data
             embed = discord.Embed(
-                title=f"🎯 {home_team} vs {away_team} Analysis",
-                description=f"ML-powered analysis for {league} game",
+                title=f"🎯 {game['home_team_name']} vs {game['away_team_name']} Analysis",
+                description=f"Game analysis for {game.get('league_name', league)} ({sport})",
                 color=discord.Color.green(),
                 timestamp=datetime.now(),
             )
 
-            embed.add_field(
-                name="📊 Prediction",
-                value=analysis.get("prediction", "No prediction available"),
-                inline=False,
-            )
+            # Add game details
+            start_time = game.get("start_time")
+            if start_time:
+                if isinstance(start_time, str):
+                    try:
+                        start_time = datetime.fromisoformat(
+                            start_time.replace("Z", "+00:00")
+                        )
+                    except:
+                        pass
+
+                time_str = (
+                    f"<t:{int(start_time.timestamp())}:F>"
+                    if isinstance(start_time, datetime)
+                    else str(start_time)
+                )
+                embed.add_field(
+                    name="🕐 Game Time",
+                    value=time_str,
+                    inline=True,
+                )
 
             embed.add_field(
-                name="🎯 Confidence",
-                value=f"{analysis.get('confidence', 0)}%",
+                name="📊 Status",
+                value=game.get("status", "Unknown"),
                 inline=True,
             )
 
+            # Add score if available
+            score = game.get("score")
+            if score and isinstance(score, dict):
+                home_score = score.get("home", "N/A")
+                away_score = score.get("away", "N/A")
+                embed.add_field(
+                    name="📈 Score",
+                    value=f"{home_score} - {away_score}",
+                    inline=True,
+                )
+
+            # Add odds if available
+            odds = game.get("odds")
+            if odds and isinstance(odds, dict):
+                embed.add_field(
+                    name="💰 Odds Available",
+                    value="Yes",
+                    inline=True,
+                )
+
+            # Add venue if available
+            venue = game.get("venue")
+            if venue:
+                embed.add_field(
+                    name="🏟️ Venue",
+                    value=venue,
+                    inline=True,
+                )
+
+            # Add referee if available
+            referee = game.get("referee")
+            if referee:
+                embed.add_field(
+                    name="👨‍⚖️ Referee",
+                    value=referee,
+                    inline=True,
+                )
+
+            # Add season if available
+            season = game.get("season")
+            if season:
+                embed.add_field(
+                    name="📅 Season",
+                    value=season,
+                    inline=True,
+                )
+
+            # Add game ID for reference
             embed.add_field(
-                name="💰 Recommended Bet",
-                value=analysis.get("recommended_bet", "No recommendation"),
-                inline=True,
+                name="🆔 Game ID",
+                value=f"`{game.get('api_game_id', 'N/A')}`",
+                inline=False,
             )
 
-            embed.add_field(
-                name="📈 Reasoning",
-                value=analysis.get("reasoning", "No reasoning available"),
-                inline=False,
+            embed.set_footer(
+                text=f"Data from api_games table • Game ID: {game.get('id')}"
             )
 
             await interaction.followup.send(embed=embed)
 
         except Exception as e:
+            logger.error(f"Error analyzing game: {e}")
             await interaction.followup.send(f"❌ Error analyzing game: {str(e)}")
 
 
