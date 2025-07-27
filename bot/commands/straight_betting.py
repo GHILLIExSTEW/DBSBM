@@ -246,10 +246,17 @@ class GameSelect(Select):
                 logger.debug(
                     f"[GameSelect] Excluding game {game.get('api_game_id')} ({game.get('home_team_name')} vs {game.get('away_team_name')}) - status: {status}"
                 )
-        # Manual entry is already added by get_normalized_games_for_dropdown
+        # Always add manual entry as the first option
+        game_options.append(
+            SelectOption(
+                label="📝 Manual Entry",
+                value="manual",
+                description="Enter game details manually",
+            )
+        )
 
-        # Only include up to 24 games (Discord limit is 25 options, manual entry is already included)
-        for game in filtered_games[:24]:
+        # Only include up to 23 games (Discord limit is 25 options, we have 1 manual entry + 23 games = 24 total)
+        for game in filtered_games[:23]:
             # Skip manual entry if it exists in the games list
             if game.get("id") == "manual" or game.get("api_game_id") == "manual":
                 continue
