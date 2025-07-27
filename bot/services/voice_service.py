@@ -178,13 +178,13 @@ class VoiceService:
                 f"voice_channel={guild_settings['voice_channel_id']}, yearly_channel={guild_settings['yearly_channel_id']}"
             )
 
-            # Only proceed if guild is active and has premium subscription
+            # Only proceed if guild is active and has premium or platinum subscription
             if (
                 not guild_settings["is_active"]
-                or guild_settings["subscription_level"] != "premium"
+                or guild_settings["subscription_level"] not in ["premium", "platinum"]
             ):
                 logger.info(
-                    f"[VoiceService] Skipping guild {guild_id} - not active or not premium"
+                    f"[VoiceService] Skipping guild {guild_id} - not active or not premium/platinum"
                 )
                 return
 
