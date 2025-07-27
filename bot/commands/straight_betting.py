@@ -23,7 +23,8 @@ from bot.utils.league_loader import (
     get_all_sport_categories,
     get_leagues_by_sport,
 )
-from bot.utils.modals import StraightBetDetailsModal
+
+# Using local StraightBetDetailsModal class instead of importing from utils.modals
 from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
@@ -1926,9 +1927,9 @@ class StraightBetDetailsModal(Modal):
                 if not interaction.response.is_done():
                     await interaction.response.defer()
 
-                # Go to units selection (step 5)
+                # Go to units selection (step 6)
                 self.view_ref.current_step = (
-                    4  # Set to 4 so go_next increments to 5 (units selection)
+                    5  # Set to 5 so go_next increments to 6 (units selection)
                 )
                 await self.view_ref.go_next(interaction)
         except Exception as e:
