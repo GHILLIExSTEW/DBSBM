@@ -7,14 +7,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
 
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from data.game_utils import get_league_abbreviation, normalize_team_name
-from data.cache_manager import cache_get, cache_set, cache_query
-from services.performance_monitor import record_query, time_operation
+from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+from bot.data.game_utils import get_league_abbreviation, normalize_team_name
+from bot.data.cache_manager import cache_get, cache_set, cache_query
+from bot.services.performance_monitor import record_query, time_operation
 
 logger = logging.getLogger(__name__)
 
-from config.database_mysql import (
+from bot.config.database_mysql import (
     MYSQL_DB,
     MYSQL_HOST,
     MYSQL_PASSWORD,

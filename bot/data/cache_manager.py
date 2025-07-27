@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import redis.asyncio as redis
 
-from config.database_mysql import REDIS_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT
+from bot.config.database_mysql import REDIS_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT
 
 logger = logging.getLogger(__name__)
 

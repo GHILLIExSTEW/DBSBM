@@ -32,7 +32,7 @@ import pandas as pd
 
 from bot.services.performance_monitor import time_operation, record_metric
 from bot.data.db_manager import DatabaseManager
-from bot.utils.cache_manager import cache_get, cache_set
+from bot.data.cache_manager import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 

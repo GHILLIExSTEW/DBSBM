@@ -100,17 +100,17 @@ try:
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
 except ImportError:
-    from commands.sync_cog import setup_sync_cog
-    from data.db_manager import DatabaseManager
-    from services.admin_service import AdminService
-    from services.analytics_service import AnalyticsService
-    from services.bet_service import BetService
-    from services.data_sync_service import DataSyncService
-    from services.game_service import GameService
-    from services.platinum_service import PlatinumService
-    from services.predictive_service import PredictiveService
-    from services.user_service import UserService
-    from services.voice_service import VoiceService
+    from bot.commands.sync_cog import setup_sync_cog
+    from bot.data.db_manager import DatabaseManager
+    from bot.services.admin_service import AdminService
+    from bot.services.analytics_service import AnalyticsService
+    from bot.services.bet_service import BetService
+    from bot.services.data_sync_service import DataSyncService
+    from bot.services.game_service import GameService
+    from bot.services.platinum_service import PlatinumService
+    from bot.services.predictive_service import PredictiveService
+    from bot.services.user_service import UserService
+    from bot.services.voice_service import VoiceService
 
 # --- Environment Variable Validation ---
 # Define required environment variables

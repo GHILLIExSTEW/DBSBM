@@ -19,9 +19,9 @@ import aiohttp
 import pandas as pd
 from io import BytesIO
 
-from data.db_manager import DatabaseManager
-from data.cache_manager import cache_get, cache_set
-from services.performance_monitor import time_operation, record_metric
+from bot.data.db_manager import DatabaseManager
+from bot.data.cache_manager import cache_get, cache_set
+from bot.services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
