@@ -284,7 +284,7 @@ class BettingBot(commands.Bot):
         self.db_manager = DatabaseManager()
         self.db = self.db_manager
         self.admin_service = AdminService(self, self.db_manager)
-        self.analytics_service = AnalyticsService(self, self.db_manager)
+        self.analytics_service = AnalyticsService(self.db_manager)
         self.bet_service = BetService(self, self.db_manager)
         self.sports_api = SportsAPI(self.db_manager)
         self.game_service = GameService(self.sports_api, self.db_manager)
