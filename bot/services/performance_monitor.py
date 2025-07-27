@@ -329,9 +329,9 @@ def record_metric(name: str, value: float, tags: Optional[Dict[str, str]] = None
 
 
 def record_query(query: str, execution_time: float, success: bool = True,
-                error_message: Optional[str] = None, cache_hit: bool = False) -> None:
+                error_message: Optional[str] = None, rows_affected: Optional[int] = None, cache_hit: bool = False) -> None:
     """Record database query performance."""
-    performance_monitor.record_query(query, execution_time, success, error_message, cache_hit=cache_hit)
+    performance_monitor.record_query(query, execution_time, success, error_message, rows_affected=rows_affected, cache_hit=cache_hit)
 
 
 def record_api_call(endpoint: str, method: str, response_time: float, status_code: int,
