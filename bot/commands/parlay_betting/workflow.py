@@ -267,6 +267,18 @@ class ParlayBetWorkflowView(View):
 
     async def _handle_game_selection(self, interaction: Interaction):
         """Handle game selection."""
+        # Check if manual entry was selected
+        if self.selected_game.get("is_manual", False):
+            # For manual entry, show bet details modal directly
+            modal = BetDetailsModal(
+                line_type=self.selected_line_type,
+                leg_number=len(self.legs) + 1,
+                is_manual=True,
+            )
+            await interaction.response.send_modal(modal)
+            self.current_step = "bet_details"
+            return
+
         home_team = self.selected_game.get("home_team", "Unknown")
         away_team = self.selected_game.get("away_team", "Unknown")
 

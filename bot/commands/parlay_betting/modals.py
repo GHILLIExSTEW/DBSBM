@@ -39,11 +39,47 @@ class BetDetailsModal(Modal):
         self._create_text_inputs()
 
     def _create_text_inputs(self):
-        """Create appropriate text inputs based on line type."""
+        """Create text inputs based on line type and manual entry status."""
+
+        # Add manual entry fields if needed
+        if self.is_manual:
+            if self.line_type in ["Moneyline", "Spread", "Total"]:
+                # For team sports, add team fields
+                self.home_team = TextInput(
+                    label="Home Team",
+                    placeholder="e.g., Lakers, Patriots, Yankees",
+                    style=TextStyle.short,
+                    required=True,
+                    max_length=100,
+                    value=self.bet_details_from_view.get("home_team", ""),
+                )
+                self.add_item(self.home_team)
+
+                self.away_team = TextInput(
+                    label="Away Team",
+                    placeholder="e.g., Warriors, Bills, Red Sox",
+                    style=TextStyle.short,
+                    required=True,
+                    max_length=100,
+                    value=self.bet_details_from_view.get("away_team", ""),
+                )
+                self.add_item(self.away_team)
+            elif self.line_type == "Player Props":
+                # For player props, add player field
+                self.player_name = TextInput(
+                    label="Player Name",
+                    placeholder="e.g., LeBron James, Patrick Mahomes",
+                    style=TextStyle.short,
+                    required=True,
+                    max_length=100,
+                    value=self.bet_details_from_view.get("player_name", ""),
+                )
+                self.add_item(self.player_name)
+
         if self.line_type == "Moneyline":
             self.selection = TextInput(
-                label="Team Selection",
-                placeholder="Enter team name (e.g., Lakers, Celtics)",
+                label="Moneyline Selection",
+                placeholder="Enter team (e.g., Lakers, Patriots)",
                 style=TextStyle.short,
                 required=True,
                 max_length=100,
@@ -51,7 +87,7 @@ class BetDetailsModal(Modal):
             )
             self.odds = TextInput(
                 label="Odds",
-                placeholder="Enter odds (e.g., +150, -110)",
+                placeholder="Enter odds (e.g., -110, +150)",
                 style=TextStyle.short,
                 required=True,
                 max_length=10,
@@ -60,8 +96,8 @@ class BetDetailsModal(Modal):
 
         elif self.line_type == "Spread":
             self.selection = TextInput(
-                label="Team Selection",
-                placeholder="Enter team name and spread (e.g., Lakers -5.5)",
+                label="Spread Selection",
+                placeholder="Enter team and spread (e.g., Lakers -3.5)",
                 style=TextStyle.short,
                 required=True,
                 max_length=100,
@@ -112,69 +148,11 @@ class BetDetailsModal(Modal):
                 value=self.bet_details_from_view.get("odds", ""),
             )
 
-        elif self.line_type == "Team Props":
-            self.selection = TextInput(
-                label="Team Prop Selection",
-                placeholder="Enter team and prop (e.g., Lakers Over 110.5 points)",
-                style=TextStyle.short,
-                required=True,
-                max_length=100,
-                value=self.bet_details_from_view.get("selection", ""),
-            )
-            self.odds = TextInput(
-                label="Odds",
-                placeholder="Enter odds (e.g., -110)",
-                style=TextStyle.short,
-                required=True,
-                max_length=10,
-                value=self.bet_details_from_view.get("odds", ""),
-            )
-
-        elif self.line_type == "Futures":
-            self.selection = TextInput(
-                label="Futures Selection",
-                placeholder="Enter futures bet (e.g., Lakers to win NBA Championship)",
-                style=TextStyle.short,
-                required=True,
-                max_length=100,
-                value=self.bet_details_from_view.get("selection", ""),
-            )
-            self.odds = TextInput(
-                label="Odds",
-                placeholder="Enter odds (e.g., +500)",
-                style=TextStyle.short,
-                required=True,
-                max_length=10,
-                value=self.bet_details_from_view.get("odds", ""),
-            )
-
-        elif self.line_type == "Live Betting":
-            self.selection = TextInput(
-                label="Live Bet Selection",
-                placeholder="Enter live bet selection",
-                style=TextStyle.short,
-                required=True,
-                max_length=100,
-                value=self.bet_details_from_view.get("selection", ""),
-            )
-            self.odds = TextInput(
-                label="Odds",
-                placeholder="Enter odds (e.g., +150)",
-                style=TextStyle.short,
-                required=True,
-                max_length=10,
-                value=self.bet_details_from_view.get("odds", ""),
-            )
-
-        # Add notes field for all types
-        self.notes = TextInput(
-            label="Notes (Optional)",
-            placeholder="Add any additional notes about this bet",
-            style=TextStyle.paragraph,
-            required=False,
-            max_length=500,
-            value=self.bet_details_from_view.get("notes", ""),
-        )
+        # Add the selection and odds fields
+        if hasattr(self, "selection"):
+            self.add_item(self.selection)
+        if hasattr(self, "odds"):
+            self.add_item(self.odds)
 
     async def on_submit(self, interaction: Interaction):
         """Handle modal submission."""
@@ -184,10 +162,17 @@ class BetDetailsModal(Modal):
                 "line_type": self.line_type,
                 "selection": self.selection.value.strip(),
                 "odds": self.odds.value.strip(),
-                "notes": self.notes.value.strip() if self.notes.value else "",
                 "is_manual": self.is_manual,
                 "leg_number": self.leg_number,
             }
+
+            # Add manual entry fields if present
+            if self.is_manual:
+                if hasattr(self, "home_team") and hasattr(self, "away_team"):
+                    leg_details["home_team"] = self.home_team.value.strip()
+                    leg_details["away_team"] = self.away_team.value.strip()
+                elif hasattr(self, "player_name"):
+                    leg_details["player_name"] = self.player_name.value.strip()
 
             # Validate the bet details
             if not validate_bet_details(leg_details):

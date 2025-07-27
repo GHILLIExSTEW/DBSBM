@@ -109,6 +109,16 @@ class ParlayGameSelect(Select):
         self.games = games
 
         options = []
+
+        # Add manual entry as the first option
+        options.append(
+            SelectOption(
+                label="📝 Manual Entry",
+                value="manual",
+                description="Enter game details manually",
+            )
+        )
+
         for game in games:
             home_team = game.get("home_team", "Unknown")
             away_team = game.get("away_team", "Unknown")
@@ -127,18 +137,28 @@ class ParlayGameSelect(Select):
             )
 
         super().__init__(
-            placeholder="Select a game...", options=options, custom_id="game_select"
+            placeholder="Select a game or Manual Entry...",
+            options=options,
+            custom_id="game_select",
         )
 
     async def callback(self, interaction: Interaction):
         """Handle game selection."""
-        selected_game_id = self.values[0]
+        selected_value = self.values[0]
+
+        if selected_value == "manual":
+            # Handle manual entry
+            self.parent_view.selected_game = {
+                "game_id": "manual",
+                "home_team": "Manual Entry",
+                "away_team": "Manual Entry",
+                "is_manual": True,
+            }
+            await self.parent_view.go_next(interaction)
+            return
+
         selected_game = next(
-            (
-                game
-                for game in self.games
-                if str(game.get("game_id")) == selected_game_id
-            ),
+            (game for game in self.games if str(game.get("game_id")) == selected_value),
             None,
         )
 
