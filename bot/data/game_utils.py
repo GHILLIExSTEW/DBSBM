@@ -409,12 +409,12 @@ async def get_normalized_games_for_dropdown(
         {
             "id": "manual",
             "api_game_id": "manual",
-            "home_team": "Manual Entry",
-            "away_team": "Manual Entry",
+            "home_team": "📝 Manual Entry",
+            "away_team": "📝 Manual Entry",
             "start_time": datetime.now(timezone.utc),
             "status": "Manual",
-            "home_team_name": "Manual Entry",
-            "away_team_name": "Manual Entry",
+            "home_team_name": "📝 Manual Entry",
+            "away_team_name": "📝 Manual Entry",
         }
     ]
 

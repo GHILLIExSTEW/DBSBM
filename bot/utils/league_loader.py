@@ -94,9 +94,9 @@ def get_all_sport_categories():
     categories = set()
     for league in ALL_LEAGUES.values():
         sport = league["sport"]
-        # Map MMA to FIGHTING for better user experience
+        # Map MMA to Fighting for better user experience
         if sport == "MMA":
-            categories.add("FIGHTING")
+            categories.add("Fighting")
         else:
             categories.add(sport)
     return sorted(categories)
