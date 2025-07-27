@@ -834,10 +834,15 @@ class BetService:
 
                 if new_status == "won":
                     if odds_val > 0:
+                        # Positive odds: win $odds for every $100 bet
+                        # For units: if 1 unit = $100, then profit in units = (odds/100) * units_staked
                         calculated_result_value = units_staked * (odds_val / 100.0)
                     elif odds_val < 0:
+                        # Negative odds: need to bet $abs(odds) to win $100
+                        # For units: if 1 unit = $100, then profit in units = (100/abs(odds)) * units_staked
                         calculated_result_value = units_staked * (100.0 / abs(odds_val))
                 elif new_status == "lost":
+                    # Lose the units staked
                     calculated_result_value = -units_staked
 
                 rowcount, _ = await self.db_manager.execute(

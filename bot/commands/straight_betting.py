@@ -618,8 +618,8 @@ class ChannelSelect(Select):
         )
         self.disabled = True
         await interaction.response.defer()
-        # FIX: Set to 6 so go_next increments to 7 (final confirm step)
-        self.parent_view.current_step = 6
+        # Set to 7 so go_next increments to 8 (final confirm step)
+        self.parent_view.current_step = 7
         await self.parent_view.go_next(interaction)
 
 
