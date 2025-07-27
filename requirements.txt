@@ -136,7 +136,7 @@ pmdarima>=2.0.0
 # Natural Language Processing
 nltk>=3.8.0
 textblob>=0.17.0
-spacy>=3.6.0
+#spacy>=3.6.0
 
 # WebSocket Support
 websockets>=11.0.0
