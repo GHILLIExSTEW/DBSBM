@@ -576,8 +576,15 @@ class GuildSettingsView(discord.ui.View):
                 try:
                     await interaction.response.send_modal(modal)
                 except discord.errors.InteractionResponded:
-                    # If interaction already responded, use followup
-                    await interaction.followup.send_modal(modal)
+                    # If interaction already responded, we can't send a modal via followup
+                    # Instead, send a message asking the user to try again
+                    await interaction.followup.send(
+                        f"Please enter the {step['name']} manually. The setup will continue automatically.",
+                        ephemeral=True,
+                    )
+                    # Skip this step for now and continue to the next one
+                    self.current_step += 1
+                    await self.process_next_selection(interaction)
                 return
             else:
                 # Skip this step if no setting_key
