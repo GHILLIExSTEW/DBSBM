@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import API settings and database manager
 from bot.config.api_settings import API_KEY
 from bot.data.db_manager import DatabaseManager
+from bot.services.api_response_cache_service import cache_api_response, cache_api_response_with_invalidation
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -288,6 +289,7 @@ class MultiProviderAPI:
         provider = self.get_provider_for_sport(sport)
         return ENDPOINT_CONFIGS.get(provider, {}).get(sport, {})
 
+    @cache_api_response(ttl=300, provider="multi-provider")
     async def make_request(
         self,
         sport: str,
@@ -347,6 +349,7 @@ class MultiProviderAPI:
             logger.error(f"API request failed for {sport}: {e}")
             raise
 
+    @cache_api_response(ttl=3600, provider="multi-provider")  # 1 hour for league data
     async def discover_leagues(self, sport: str) -> List[Dict]:
         """Discover leagues for a specific sport."""
         endpoint_config = self.get_endpoint_config(sport)
@@ -609,6 +612,7 @@ class MultiProviderAPI:
             logger.error(f"Error fetching golf players: {e}")
             return {}
 
+    @cache_api_response(ttl=900, provider="multi-provider")  # 15 minutes for game data
     async def fetch_games(self, sport: str, league: Dict, date: str) -> List[Dict]:
         """Fetch games for a specific league on a specific date or in the future."""
         endpoint_config = self.get_endpoint_config(sport)

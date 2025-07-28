@@ -1,253 +1,390 @@
-"""Service for synchronizing external data with the database."""
+"""Data synchronization service for managing game and team data."""
 
 import asyncio
-import json
 import logging
-import os
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
-from dateutil import parser
-from dotenv import load_dotenv
-
-from bot.config.leagues import LEAGUE_CONFIG
-
-# Load environment variables
-load_dotenv()
-API_KEY = os.getenv("API_KEY")
-if not API_KEY:
-    raise ValueError("API_KEY not found in .env file")
-
-EDT = ZoneInfo("America/New_York")
-
-
-def iso_to_mysql_datetime(iso_str):
-    """Convert ISO 8601 string to MySQL DATETIME string (ETC)."""
-    if not iso_str:
-        return None
-    dt = parser.isoparse(iso_str)
-    dt_etc = dt.astimezone(EDT).replace(tzinfo=None)
-    return dt_etc.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def normalize_sport_name(sport: str) -> str:
-    """Normalize sport name for consistent matching."""
-    sport = sport.lower().replace("-", "").replace(" ", "")
-    if sport in ["icehockey", "hockey"]:
-        return "icehockey"
-    if sport in ["americanfootball", "football"]:
-        return "americanfootball"
-    return sport
-
-
-def safe_get(obj, *keys, default=""):
-    """Safely access nested dictionary keys, returning default if any key is missing or invalid."""
-    current = obj
-    for key in keys:
-        if not isinstance(current, dict):
-            return default
-        current = current.get(key, default)
-    return current
-
-
-try:
-    from bot.config.api_settings import API_ENABLED
-    from bot.data.cache_manager import CacheManager
-except ImportError:
-    from bot.config.api_settings import API_ENABLED
-    from bot.data.cache_manager import CacheManager
-
+from bot.services.game_service import GameService
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
 
+# Cache TTLs for different data types
+CACHE_TTLS = {
+    "game_data": 900,  # 15 minutes
+    "team_data": 7200,  # 2 hours
+    "league_data": 14400,  # 4 hours
+    "sync_status": 300,  # 5 minutes
+}
+
 
 class DataSyncService:
-    def __init__(self, game_service, db_manager):
-        self.game_service = game_service
-        self.db = db_manager
-        self.cache = CacheManager()
-        self._sync_task: Optional[asyncio.Task] = None
-        self.running = False
-        self.logger = logging.getLogger(__name__)
-        self.rate_limit_delay = 1.1
+    """Service for synchronizing game and team data with external APIs."""
 
-        if not API_KEY:
-            raise ValueError("API_KEY not found in .env file")
+    def __init__(self, game_service: GameService, db_manager: DatabaseManager):
+        self.game_service = game_service
+        self.db_manager = db_manager
+        self.cache = enhanced_cache_manager
+        self._sync_task = None
+        self._is_running = False
+
+        # Sync configuration
+        self.config = {
+            'sync_interval': 300,  # 5 minutes
+            'max_games_per_sync': 100,
+            'retry_attempts': 3,
+            'retry_delay': 30,  # seconds
+            'batch_size': 50,
+        }
+
+        logger.info("DataSyncService initialized")
 
     async def start(self):
-        """Start the data sync service without daily sync."""
-        if not API_ENABLED:
-            logger.warning("API is disabled. DataSyncService will not run.")
+        """Start the data sync service."""
+        if self._is_running:
+            logger.warning("DataSyncService is already running")
             return
-        if not self.running:
-            if hasattr(self.cache, "connect"):
-                await self.cache.connect()
-            self.running = True
-            logger.info(
-                "Data sync service started, relying on fetch_and_cache.py for fetches."
-            )
+
+        self._is_running = True
+        self._sync_task = asyncio.create_task(self._periodic_sync())
+        logger.info("DataSyncService started")
 
     async def stop(self):
-        """Stop the data sync service background task."""
-        self.running = False
-        logger.info("Stopping DataSyncService...")
+        """Stop the data sync service."""
+        if not self._is_running:
+            return
+
+        self._is_running = False
         if self._sync_task:
             self._sync_task.cancel()
             try:
-                await asyncio.wait_for(self._sync_task, timeout=5.0)
+                await self._sync_task
             except asyncio.CancelledError:
-                logger.info("Data sync task cancelled.")
-            except asyncio.TimeoutError:
-                logger.warning("Data sync task did not cancel within timeout.")
-            except Exception as e:
-                logger.error(f"Error awaiting data sync task cancellation: {e}")
-            finally:
-                self._sync_task = None
+                pass
+        logger.info("DataSyncService stopped")
 
-        if hasattr(self.cache, "close"):
-            await self.cache.close()
-        logger.info("Data sync service stopped.")
-
-    async def _save_games(
-        self, games: List[Dict], sport: str, league: str, league_id: str
-    ) -> int:
-        """Save games to database and return count of saved games."""
-        saved_count = 0
-        for game in games:
-            if not isinstance(game, dict):
-                self.logger.error(f"Skipping non-dict game object: {json.dumps(game)}")
-                continue
+    async def _periodic_sync(self):
+        """Periodic data synchronization task."""
+        while self._is_running:
             try:
-                teams = safe_get(game, "teams")
-                if not isinstance(teams, dict):
-                    self.logger.error(
-                        f"Skipping game with invalid 'teams' field: {json.dumps(game)}"
-                    )
-                    continue
-                home_team = safe_get(teams, "home")
-                away_team = safe_get(teams, "away")
-                if not (isinstance(home_team, dict) and isinstance(away_team, dict)):
-                    self.logger.error(
-                        f"Skipping game with invalid 'home' or 'away' team: {json.dumps(game)}"
-                    )
-                    continue
-                if sport.lower() in ["football", "soccer"]:
-                    fixture = safe_get(game, "fixture", default={})
-                    league_info = safe_get(game, "league", default={})
-                    score = safe_get(game, "score", default={})
-                    game_data = {
-                        "id": str(
-                            safe_get(game, "id", default=safe_get(fixture, "id"))
-                        ),
-                        "sport": sport,
-                        "league_id": league_id,
-                        "league_name": safe_get(league_info, "name", default=league),
-                        "home_team_id": str(safe_get(home_team, "id")),
-                        "away_team_id": str(safe_get(away_team, "id")),
-                        "home_team_name": safe_get(home_team, "name"),
-                        "away_team_name": safe_get(away_team, "name"),
-                        "start_time": iso_to_mysql_datetime(safe_get(fixture, "date")),
-                        "status": safe_get(
-                            fixture, "status", "long", default="Scheduled"
-                        ),
-                        "score": json.dumps(score),
-                        "venue": safe_get(fixture, "venue", "name"),
-                        "referee": safe_get(fixture, "referee"),
-                        "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                    }
-                elif sport.lower() in ["baseball", "mlb"]:
-                    game_data = {
-                        "id": str(safe_get(game, "id")),
-                        "sport": sport,
-                        "league_id": league_id,
-                        "league_name": LEAGUE_CONFIG.get(league, {}).get(
-                            "name", league
-                        ),
-                        "home_team_id": str(safe_get(home_team, "id")),
-                        "away_team_id": str(safe_get(away_team, "id")),
-                        "home_team_name": safe_get(home_team, "name"),
-                        "away_team_name": safe_get(away_team, "name"),
-                        "start_time": iso_to_mysql_datetime(safe_get(game, "date")),
-                        "status": safe_get(game, "status", "long", default="Scheduled"),
-                        "score": json.dumps(
-                            {
-                                "home": safe_get(
-                                    game, "scores", "home", "total", default=0
-                                ),
-                                "away": safe_get(
-                                    game, "scores", "away", "total", default=0
-                                ),
-                            }
-                        ),
-                        "venue": safe_get(game, "venue", "name"),
-                        "referee": None,
-                        "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                    }
-                else:
-                    game_data = {
-                        "id": str(safe_get(game, "id")),
-                        "sport": sport,
-                        "league_id": league_id,
-                        "league_name": LEAGUE_CONFIG.get(league, {}).get(
-                            "name", league
-                        ),
-                        "home_team_id": str(safe_get(home_team, "id")),
-                        "away_team_id": str(safe_get(away_team, "id")),
-                        "home_team_name": safe_get(home_team, "name"),
-                        "away_team_name": safe_get(away_team, "name"),
-                        "start_time": iso_to_mysql_datetime(safe_get(game, "date")),
-                        "status": safe_get(game, "status", "long", default="Scheduled"),
-                        "score": json.dumps(
-                            {
-                                "home": safe_get(
-                                    game, "scores", "home", "total", default=0
-                                ),
-                                "away": safe_get(
-                                    game, "scores", "away", "total", default=0
-                                ),
-                            }
-                        ),
-                        "venue": safe_get(game, "venue", "name"),
-                        "referee": safe_get(game, "referee"),
-                        "raw_json": json.dumps(game),
-                        "fetched_at": datetime.now(timezone.utc).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                    }
-                if not game_data["id"] or not game_data["start_time"]:
-                    self.logger.error(
-                        f"Skipping game with missing id or start_time: {json.dumps(game)}"
-                    )
-                    continue
-                if await self.db.upsert_api_game(game_data):
-                    saved_count += 1
+                await self.sync_all_data()
+                await asyncio.sleep(self.config['sync_interval'])
+            except asyncio.CancelledError:
+                break
             except Exception as e:
-                self.logger.error(
-                    f"Error saving game for {sport}/{league}: {str(e)}. Game data: {json.dumps(game)}"
-                )
-                continue
-        return saved_count
+                logger.error(f"Error in periodic sync: {e}")
+                await asyncio.sleep(self.config['retry_delay'])
 
-    async def _fetch_active_bets(self, live_game_ids: List[str]) -> List[Dict]:
-        """Fetch active bets for live games."""
+    async def sync_all_data(self) -> Dict[str, Any]:
+        """Synchronize all data types."""
         try:
-            query = """
-                SELECT b.*, g.start_time
-                FROM bets b
-                JOIN api_games g ON b.game_id = g.id
-                WHERE b.status = 'pending'
-                AND g.id IN %s
-                AND g.start_time <= NOW()
-                AND g.status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended')
-            """
-            return await self.db.fetch_all(query, (tuple(live_game_ids),))
+            sync_results = {
+                'games_synced': 0,
+                'teams_synced': 0,
+                'leagues_synced': 0,
+                'errors': [],
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+
+            # Sync games
+            try:
+                games_synced = await self.sync_games()
+                sync_results['games_synced'] = games_synced
+            except Exception as e:
+                sync_results['errors'].append(f"Game sync error: {e}")
+
+            # Sync teams
+            try:
+                teams_synced = await self.sync_teams()
+                sync_results['teams_synced'] = teams_synced
+            except Exception as e:
+                sync_results['errors'].append(f"Team sync error: {e}")
+
+            # Sync leagues
+            try:
+                leagues_synced = await self.sync_leagues()
+                sync_results['leagues_synced'] = leagues_synced
+            except Exception as e:
+                sync_results['errors'].append(f"League sync error: {e}")
+
+            # Cache sync results
+            await enhanced_cache_set("sync_status", "last_sync", sync_results, ttl=CACHE_TTLS['sync_status'])
+
+            logger.info(f"Data sync completed: {sync_results}")
+            return sync_results
+
         except Exception as e:
-            self.logger.error(f"Error fetching active bets: {e}")
-            return []
+            logger.error(f"Error in sync_all_data: {e}")
+            raise DataSyncError(f"Failed to sync data: {e}")
+
+    async def sync_games(self) -> int:
+        """Synchronize game data from external APIs."""
+        try:
+            # Get upcoming games from API
+            upcoming_games = await self.game_service.get_upcoming_games(limit=self.config['max_games_per_sync'])
+
+            if not upcoming_games:
+                logger.info("No upcoming games to sync")
+                return 0
+
+            synced_count = 0
+            for game in upcoming_games:
+                try:
+                    # Store game data in database
+                    await self._store_game_data(game)
+                    synced_count += 1
+                except Exception as e:
+                    logger.error(f"Error syncing game {game.get('id', 'unknown')}: {e}")
+
+            # Clear game cache after sync
+            await enhanced_cache_delete("game_data", "upcoming_games")
+
+            logger.info(f"Synced {synced_count} games")
+            return synced_count
+
+        except Exception as e:
+            logger.error(f"Error in sync_games: {e}")
+            raise DataSyncError(f"Failed to sync games: {e}")
+
+    async def sync_teams(self) -> int:
+        """Synchronize team data from external APIs."""
+        try:
+            # Get teams from API
+            teams = await self.game_service.get_teams()
+
+            if not teams:
+                logger.info("No teams to sync")
+                return 0
+
+            synced_count = 0
+            for team in teams:
+                try:
+                    # Store team data in database
+                    await self._store_team_data(team)
+                    synced_count += 1
+                except Exception as e:
+                    logger.error(f"Error syncing team {team.get('id', 'unknown')}: {e}")
+
+            # Clear team cache after sync
+            await enhanced_cache_delete("team_data", "all_teams")
+
+            logger.info(f"Synced {synced_count} teams")
+            return synced_count
+
+        except Exception as e:
+            logger.error(f"Error in sync_teams: {e}")
+            raise DataSyncError(f"Failed to sync teams: {e}")
+
+    async def sync_leagues(self) -> int:
+        """Synchronize league data from external APIs."""
+        try:
+            # Get leagues from API
+            leagues = await self.game_service.get_leagues()
+
+            if not leagues:
+                logger.info("No leagues to sync")
+                return 0
+
+            synced_count = 0
+            for league in leagues:
+                try:
+                    # Store league data in database
+                    await self._store_league_data(league)
+                    synced_count += 1
+                except Exception as e:
+                    logger.error(f"Error syncing league {league.get('id', 'unknown')}: {e}")
+
+            # Clear league cache after sync
+            await enhanced_cache_delete("league_data", "all_leagues")
+
+            logger.info(f"Synced {synced_count} leagues")
+            return synced_count
+
+        except Exception as e:
+            logger.error(f"Error in sync_leagues: {e}")
+            raise DataSyncError(f"Failed to sync leagues: {e}")
+
+    async def _store_game_data(self, game_data: Dict[str, Any]) -> bool:
+        """Store game data in the database."""
+        try:
+            # Check if game already exists
+            existing_game = await self.db_manager.fetch_one(
+                "SELECT id FROM api_games WHERE game_id = %s",
+                game_data.get('id')
+            )
+
+            if existing_game:
+                # Update existing game
+                await self.db_manager.execute(
+                    """
+                    UPDATE api_games
+                    SET home_team = %s, away_team = %s, game_time = %s,
+                        league = %s, sport = %s, status = %s, updated_at = UTC_TIMESTAMP()
+                    WHERE game_id = %s
+                    """,
+                    game_data.get('home_team'),
+                    game_data.get('away_team'),
+                    game_data.get('game_time'),
+                    game_data.get('league'),
+                    game_data.get('sport'),
+                    game_data.get('status'),
+                    game_data.get('id')
+                )
+            else:
+                # Insert new game
+                await self.db_manager.execute(
+                    """
+                    INSERT INTO api_games
+                    (game_id, home_team, away_team, game_time, league, sport, status, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    """,
+                    game_data.get('id'),
+                    game_data.get('home_team'),
+                    game_data.get('away_team'),
+                    game_data.get('game_time'),
+                    game_data.get('league'),
+                    game_data.get('sport'),
+                    game_data.get('status')
+                )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error storing game data: {e}")
+            return False
+
+    async def _store_team_data(self, team_data: Dict[str, Any]) -> bool:
+        """Store team data in the database."""
+        try:
+            # Check if team already exists
+            existing_team = await self.db_manager.fetch_one(
+                "SELECT id FROM teams WHERE team_id = %s",
+                team_data.get('id')
+            )
+
+            if existing_team:
+                # Update existing team
+                await self.db_manager.execute(
+                    """
+                    UPDATE teams
+                    SET name = %s, league = %s, sport = %s, updated_at = UTC_TIMESTAMP()
+                    WHERE team_id = %s
+                    """,
+                    team_data.get('name'),
+                    team_data.get('league'),
+                    team_data.get('sport'),
+                    team_data.get('id')
+                )
+            else:
+                # Insert new team
+                await self.db_manager.execute(
+                    """
+                    INSERT INTO teams
+                    (team_id, name, league, sport, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    """,
+                    team_data.get('id'),
+                    team_data.get('name'),
+                    team_data.get('league'),
+                    team_data.get('sport')
+                )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error storing team data: {e}")
+            return False
+
+    async def _store_league_data(self, league_data: Dict[str, Any]) -> bool:
+        """Store league data in the database."""
+        try:
+            # Check if league already exists
+            existing_league = await self.db_manager.fetch_one(
+                "SELECT id FROM leagues WHERE league_id = %s",
+                league_data.get('id')
+            )
+
+            if existing_league:
+                # Update existing league
+                await self.db_manager.execute(
+                    """
+                    UPDATE leagues
+                    SET name = %s, sport = %s, country = %s, updated_at = UTC_TIMESTAMP()
+                    WHERE league_id = %s
+                    """,
+                    league_data.get('name'),
+                    league_data.get('sport'),
+                    league_data.get('country'),
+                    league_data.get('id')
+                )
+            else:
+                # Insert new league
+                await self.db_manager.execute(
+                    """
+                    INSERT INTO leagues
+                    (league_id, name, sport, country, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    """,
+                    league_data.get('id'),
+                    league_data.get('name'),
+                    league_data.get('sport'),
+                    league_data.get('country')
+                )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error storing league data: {e}")
+            return False
+
+    async def get_sync_status(self) -> Dict[str, Any]:
+        """Get the current sync status."""
+        try:
+            cached_status = await enhanced_cache_get("sync_status", "last_sync")
+            if cached_status:
+                return cached_status
+
+            return {
+                'games_synced': 0,
+                'teams_synced': 0,
+                'leagues_synced': 0,
+                'errors': [],
+                'timestamp': None
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting sync status: {e}")
+            return {}
+
+    async def force_sync(self) -> Dict[str, Any]:
+        """Force an immediate data sync."""
+        try:
+            logger.info("Forcing immediate data sync")
+            return await self.sync_all_data()
+        except Exception as e:
+            logger.error(f"Error in force sync: {e}")
+            raise DataSyncError(f"Failed to force sync: {e}")
+
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics for data sync."""
+        try:
+            return await self.cache.get_stats()
+        except Exception as e:
+            logger.error(f"Error getting cache stats: {e}")
+            return {}
+
+    async def clear_sync_cache(self) -> bool:
+        """Clear all sync-related cache."""
+        try:
+            await enhanced_cache_delete("sync_status", "last_sync")
+            await enhanced_cache_delete("game_data", "upcoming_games")
+            await enhanced_cache_delete("team_data", "all_teams")
+            await enhanced_cache_delete("league_data", "all_leagues")
+            logger.info("Sync cache cleared")
+            return True
+        except Exception as e:
+            logger.error(f"Error clearing sync cache: {e}")
+            return False

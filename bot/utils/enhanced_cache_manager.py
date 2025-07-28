@@ -132,6 +132,11 @@ class EnhancedCacheManager:
         self._connection_retries = 3
         self._retry_delay = 2
         self._circuit_breaker = CircuitBreaker()
+        # Local cache fallback (in-memory cache when Redis is unavailable)
+        self._local_cache = {}
+        self._local_cache_ttl = {}
+        self._use_local_fallback = True
+
         self._performance_stats = {
             "hits": 0,
             "misses": 0,
@@ -139,74 +144,101 @@ class EnhancedCacheManager:
             "total_operations": 0,
         }
 
-                # Get Redis configuration
+        # Get Redis configuration
         if self.settings and hasattr(self.settings, 'redis'):
             self._redis_host = self.settings.redis.host
             self._redis_port = self.settings.redis.port
-            self._redis_password = self.settings.redis.password.get_secret_value() if self.settings.redis.password else None
+            self._redis_username = getattr(
+                self.settings.redis, 'username', None)
+            self._redis_password = self.settings.redis.password.get_secret_value(
+            ) if self.settings.redis.password else None
             self._redis_db = self.settings.redis.database
         else:
             # Fallback to environment variables
             import os
-            self._redis_host = os.getenv("REDIS_HOST", "localhost")
-            self._redis_port = int(os.getenv("REDIS_PORT", "6379"))
+            self._redis_host = os.getenv(
+                "REDIS_HOST", "redis-11437.c309.us-east-2-1.ec2.redns.redis-cloud.com")
+            self._redis_port = int(os.getenv("REDIS_PORT", "11437"))
+            self._redis_username = os.getenv("REDIS_USERNAME", "default")
             self._redis_password = os.getenv("REDIS_PASSWORD")
             self._redis_db = int(os.getenv("REDIS_DB", "0"))
 
         # Validate Redis configuration
         if not self._redis_host:
-            logger.warning("REDIS_HOST not configured, caching will be disabled")
+            logger.warning(
+                "REDIS_HOST not configured, caching will be disabled")
             self._enabled = False
         else:
             self._enabled = True
-            logger.info(f"Enhanced cache manager initialized with Redis host: {self._redis_host}:{self._redis_port}")
+            logger.info(
+                f"Enhanced cache manager initialized with Redis Cloud: {self._redis_host}:{self._redis_port}")
+            if self._redis_username:
+                logger.info(f"Redis username: {self._redis_username}")
 
     async def connect(self) -> bool:
-        """Connect to Redis server with connection pooling."""
+        """Connect to Redis Cloud server with connection pooling and authentication."""
         if not self._enabled:
-            logger.warning("Caching is disabled due to missing Redis configuration")
+            logger.warning(
+                "Caching is disabled due to missing Redis configuration")
             return False
 
         if self._is_connected:
             return True
 
         if not self._circuit_breaker.can_execute():
-            logger.warning("Circuit breaker is OPEN, skipping connection attempt")
+            logger.warning(
+                "Circuit breaker is OPEN, skipping connection attempt")
             return False
 
         for attempt in range(self._connection_retries):
             try:
-                # Create connection pool
-                self._connection_pool = ConnectionPool(
-                    host=self._redis_host,
-                    port=self._redis_port,
-                    password=self._redis_password,
-                    db=self._redis_db,
-                    decode_responses=False,  # Keep as bytes for pickle compatibility
-                    socket_connect_timeout=5,
-                    socket_timeout=5,
-                    retry_on_timeout=True,
-                    health_check_interval=30,
-                    max_connections=20,
-                )
+                # Create connection pool with Redis Cloud configuration
+                pool_kwargs = {
+                    'host': self._redis_host,
+                    'port': self._redis_port,
+                    'db': self._redis_db,
+                    'decode_responses': False,  # Keep as bytes for pickle compatibility
+                    'socket_connect_timeout': 10,  # Increased for cloud connections
+                    'socket_timeout': 10,
+                    'retry_on_timeout': True,
+                    'health_check_interval': 30,
+                    'max_connections': 20,
+                    'retry_on_error': [redis.ConnectionError, redis.TimeoutError],
+                }
+
+                # Add authentication if provided
+                if self._redis_username and self._redis_password:
+                    pool_kwargs['username'] = self._redis_username
+                    pool_kwargs['password'] = self._redis_password
+                elif self._redis_password:
+                    pool_kwargs['password'] = self._redis_password
+
+                self._connection_pool = ConnectionPool(**pool_kwargs)
 
                 # Create Redis client with connection pool
-                self._redis_client = redis.Redis(connection_pool=self._connection_pool)
+                self._redis_client = redis.Redis(
+                    connection_pool=self._connection_pool)
 
-                # Test connection
+                # Test connection with authentication
                 await self._redis_client.ping()
                 self._is_connected = True
                 self._circuit_breaker.on_success()
-                logger.info("Successfully connected to Redis cache with connection pooling")
+                logger.info(
+                    f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}")
                 return True
 
+            except redis.AuthenticationError as e:
+                logger.error(f"Redis authentication failed: {e}")
+                self._circuit_breaker.on_failure()
+                break  # Don't retry authentication errors
             except Exception as e:
-                logger.warning(f"Redis connection attempt {attempt + 1} failed: {e}")
+                logger.warning(
+                    f"Redis connection attempt {attempt + 1} failed: {e}")
                 self._circuit_breaker.on_failure()
                 if attempt < self._connection_retries - 1:
                     await asyncio.sleep(self._retry_delay)
 
-        logger.error("Failed to connect to Redis after all retries")
+        logger.error("Failed to connect to Redis Cloud after all retries")
         self._enabled = False
         return False
 
@@ -255,51 +287,93 @@ class EnhancedCacheManager:
                 return None
 
     async def get(self, prefix: str, key: str) -> Optional[Any]:
-        """Get a value from cache with performance tracking."""
+        """Get a value from cache with performance tracking and local fallback."""
         self._performance_stats["total_operations"] += 1
 
-        if not self._enabled or not self._is_connected:
-            self._performance_stats["misses"] += 1
-            return None
+        # Try Redis first
+        if self._enabled and self._is_connected:
+            try:
+                cache_key = self._get_cache_key(prefix, key)
+                value = await self._redis_client.get(cache_key)
 
-        try:
-            cache_key = self._get_cache_key(prefix, key)
-            value = await self._redis_client.get(cache_key)
+                if value is not None:
+                    logger.debug(f"Cache HIT: {cache_key}")
+                    self._performance_stats["hits"] += 1
+                    return self._deserialize_value(value)
+                else:
+                    logger.debug(f"Cache MISS: {cache_key}")
+                    self._performance_stats["misses"] += 1
+                    return None
+            except Exception as e:
+                logger.warning(
+                    f"Redis cache error, falling back to local cache: {e}")
+                self._performance_stats["errors"] += 1
 
-            if value is not None:
-                logger.debug(f"Cache HIT: {cache_key}")
-                self._performance_stats["hits"] += 1
-                return self._deserialize_value(value)
-            else:
-                logger.debug(f"Cache MISS: {cache_key}")
+        # Fallback to local cache
+        if self._use_local_fallback:
+            try:
+                local_key = f"{prefix}:{key}"
+                if local_key in self._local_cache:
+                    # Check TTL
+                    if local_key in self._local_cache_ttl:
+                        if time.time() < self._local_cache_ttl[local_key]:
+                            logger.debug(f"Local cache HIT: {local_key}")
+                            self._performance_stats["hits"] += 1
+                            return self._local_cache[local_key]
+                        else:
+                            # Expired, remove from cache
+                            del self._local_cache[local_key]
+                            del self._local_cache_ttl[local_key]
+
+                logger.debug(f"Local cache MISS: {local_key}")
                 self._performance_stats["misses"] += 1
                 return None
-        except Exception as e:
-            logger.error(f"Error getting from cache: {e}")
-            self._performance_stats["errors"] += 1
-            return None
+            except Exception as e:
+                logger.error(f"Error accessing local cache: {e}")
+                self._performance_stats["errors"] += 1
+
+        return None
 
     async def set(self, prefix: str, key: str, value: Any, ttl: Optional[int] = None) -> bool:
-        """Set a value in cache with optional TTL."""
+        """Set a value in cache with optional TTL and local fallback."""
         self._performance_stats["total_operations"] += 1
 
-        if not self._enabled or not self._is_connected:
-            return False
+        if ttl is None:
+            ttl = DEFAULT_TTLS.get(prefix, 300)
 
-        try:
-            cache_key = self._get_cache_key(prefix, key)
-            serialized_value = self._serialize_value(value)
+        # Try Redis first
+        if self._enabled and self._is_connected:
+            try:
+                cache_key = self._get_cache_key(prefix, key)
+                serialized_value = self._serialize_value(value)
+                await self._redis_client.setex(cache_key, ttl, serialized_value)
+                logger.debug(f"Cache SET: {cache_key} (TTL: {ttl}s)")
 
-            if ttl is None:
-                ttl = DEFAULT_TTLS.get(prefix, 300)
+                # Also set in local cache for fallback
+                if self._use_local_fallback:
+                    local_key = f"{prefix}:{key}"
+                    self._local_cache[local_key] = value
+                    self._local_cache_ttl[local_key] = time.time() + ttl
 
-            await self._redis_client.setex(cache_key, ttl, serialized_value)
-            logger.debug(f"Cache SET: {cache_key} (TTL: {ttl}s)")
-            return True
-        except Exception as e:
-            logger.error(f"Error setting cache: {e}")
-            self._performance_stats["errors"] += 1
-            return False
+                return True
+            except Exception as e:
+                logger.warning(
+                    f"Redis cache error, using local cache only: {e}")
+                self._performance_stats["errors"] += 1
+
+        # Fallback to local cache only
+        if self._use_local_fallback:
+            try:
+                local_key = f"{prefix}:{key}"
+                self._local_cache[local_key] = value
+                self._local_cache_ttl[local_key] = time.time() + ttl
+                logger.debug(f"Local cache SET: {local_key} (TTL: {ttl}s)")
+                return True
+            except Exception as e:
+                logger.error(f"Error setting local cache: {e}")
+                self._performance_stats["errors"] += 1
+
+        return False
 
     async def mget(self, prefix: str, keys: List[str]) -> List[Optional[Any]]:
         """Get multiple values from cache efficiently."""
@@ -399,17 +473,24 @@ class EnhancedCacheManager:
             logger.error(f"Error setting cache expiration: {e}")
             return False
 
-    async def clear_prefix(self, prefix: str) -> int:
+    async def clear_prefix(self, prefix: str, pattern: str = None) -> int:
         """Clear all keys with a specific prefix."""
         if not self._enabled or not self._is_connected:
             return 0
 
         try:
-            pattern = f"{CACHE_PREFIXES[prefix]}*"
-            keys = await self._redis_client.keys(pattern)
+            if pattern:
+                # Use the provided pattern directly
+                search_pattern = f"{CACHE_PREFIXES.get(prefix, prefix)}*{pattern}*"
+            else:
+                # Use the default prefix pattern
+                search_pattern = f"{CACHE_PREFIXES[prefix]}*"
+
+            keys = await self._redis_client.keys(search_pattern)
             if keys:
                 deleted = await self._redis_client.delete(*keys)
-                logger.info(f"Cleared {deleted} cache keys with prefix: {prefix}")
+                logger.info(
+                    f"Cleared {deleted} cache keys with prefix: {prefix}, pattern: {pattern}")
                 return deleted
             return 0
         except Exception as e:
@@ -417,7 +498,7 @@ class EnhancedCacheManager:
             return 0
 
     async def get_stats(self) -> Dict[str, Any]:
-        """Get comprehensive cache statistics."""
+        """Get comprehensive Redis Cloud statistics."""
         if not self._enabled or not self._is_connected:
             return {"enabled": False, "connected": False}
 
@@ -434,6 +515,12 @@ class EnhancedCacheManager:
                 "enabled": True,
                 "connected": True,
                 "circuit_breaker_state": self._circuit_breaker.state,
+                "redis_cloud_config": {
+                    "host": self._redis_host,
+                    "port": self._redis_port,
+                    "username": self._redis_username,
+                    "database": self._redis_db,
+                },
                 "performance": {
                     "hits": hits,
                     "misses": misses,
@@ -441,22 +528,37 @@ class EnhancedCacheManager:
                     "total_operations": self._performance_stats["total_operations"],
                     "hit_rate": hit_rate,
                 },
-                "redis_info": {
+                "redis_cloud_info": {
+                    "version": info.get("redis_version", "unknown"),
                     "used_memory": info.get("used_memory_human", "N/A"),
                     "connected_clients": info.get("connected_clients", 0),
                     "total_commands_processed": info.get("total_commands_processed", 0),
                     "keyspace_hits": info.get("keyspace_hits", 0),
                     "keyspace_misses": info.get("keyspace_misses", 0),
+                    "uptime_in_seconds": info.get("uptime_in_seconds", 0),
+                },
+                "local_cache": {
+                    "size": len(self._local_cache),
+                    "ttl_entries": len(self._local_cache_ttl),
                 }
             }
 
+            # Calculate Redis Cloud hit rate
+            redis_hits = info.get("keyspace_hits", 0)
+            redis_misses = info.get("keyspace_misses", 0)
+            redis_total = redis_hits + redis_misses
+            if redis_total > 0:
+                stats["redis_cloud_info"]["redis_hit_rate"] = f"{(redis_hits/redis_total)*100:.2f}%"
+            else:
+                stats["redis_cloud_info"]["redis_hit_rate"] = "0.00%"
+
             return stats
         except Exception as e:
-            logger.error(f"Error getting cache stats: {e}")
+            logger.error(f"Error getting Redis Cloud stats: {e}")
             return {"enabled": True, "connected": False, "error": str(e)}
 
     async def health_check(self) -> bool:
-        """Perform a health check on the cache connection."""
+        """Perform a comprehensive health check on the Redis Cloud connection."""
         if not self._enabled:
             return False
 
@@ -464,11 +566,52 @@ class EnhancedCacheManager:
             if not self._is_connected:
                 return await self.connect()
 
+            # Test basic connectivity
             await self._redis_client.ping()
+
+            # Test basic operations
+            test_key = "_health_check_test"
+            test_value = "health_check"
+
+            # Test set operation
+            await self._redis_client.setex(test_key, 10, test_value.encode())
+
+            # Test get operation
+            result = await self._redis_client.get(test_key)
+            if result.decode() != test_value:
+                raise Exception("Health check get/set test failed")
+
+            # Test delete operation
+            await self._redis_client.delete(test_key)
+
+            # Test Redis Cloud specific features
+            try:
+                # Test info command to get Redis Cloud info
+                info = await self._redis_client.info()
+                if 'redis_version' in info:
+                    logger.debug(f"Redis version: {info['redis_version']}")
+                if 'used_memory_human' in info:
+                    logger.debug(f"Memory usage: {info['used_memory_human']}")
+            except Exception as e:
+                logger.warning(f"Could not get Redis info: {e}")
+
+            # Check circuit breaker state
+            if not self._circuit_breaker.can_execute():
+                logger.warning("Circuit breaker is OPEN during health check")
+                return False
+
+            logger.debug("Redis Cloud health check passed")
             return True
-        except Exception as e:
-            logger.error(f"Cache health check failed: {e}")
+        except redis.AuthenticationError as e:
+            logger.error(
+                f"Redis Cloud authentication failed during health check: {e}")
             self._is_connected = False
+            self._circuit_breaker.on_failure()
+            return False
+        except Exception as e:
+            logger.error(f"Redis Cloud health check failed: {e}")
+            self._is_connected = False
+            self._circuit_breaker.on_failure()
             return False
 
     async def warm_cache(self, warming_functions: List[Callable]) -> int:
@@ -481,9 +624,11 @@ class EnhancedCacheManager:
             try:
                 await func(self)
                 warmed_count += 1
-                logger.info(f"Successfully warmed cache with function: {func.__name__}")
+                logger.info(
+                    f"Successfully warmed cache with function: {func.__name__}")
             except Exception as e:
-                logger.error(f"Failed to warm cache with function {func.__name__}: {e}")
+                logger.error(
+                    f"Failed to warm cache with function {func.__name__}: {e}")
 
         return warmed_count
 
@@ -523,9 +668,9 @@ async def enhanced_cache_exists(prefix: str, key: str) -> bool:
     return await enhanced_cache_manager.exists(prefix, key)
 
 
-async def enhanced_cache_clear_prefix(prefix: str) -> int:
+async def enhanced_cache_clear_prefix(prefix: str, pattern: str = None) -> int:
     """Clear all keys with a specific prefix in enhanced cache."""
-    return await enhanced_cache_manager.clear_prefix(prefix)
+    return await enhanced_cache_manager.clear_prefix(prefix, pattern)
 
 
 # Enhanced caching decorators

@@ -15,6 +15,10 @@ from dotenv import load_dotenv
 
 # Import LEAGUE_IDS for league mapping
 from bot.config.leagues import LEAGUE_IDS
+from bot.services.api_response_cache_service import (
+    cache_api_response,
+    cache_api_response_with_invalidation,
+)
 
 # Load environment variables
 load_dotenv()
@@ -143,6 +147,7 @@ class APISportsFetcher:
         if self.session:
             await self.session.close()
 
+    @cache_api_response(ttl=300, provider="api-sports")
     async def fetch_data(
         self, sport: str, endpoint: str, params: Dict[str, Any]
     ) -> Dict:
@@ -420,6 +425,7 @@ class SportsAPI:
             logger.error(f"Live updates task failed: {str(e)}")
             self.live_updates_enabled = False
 
+    @cache_api_response(ttl=900, provider="api-sports")  # 15 minutes for game data
     async def fetch_games(
         self,
         sport: str,

@@ -27,16 +27,18 @@ import websockets
 from websockets.server import serve
 
 from data.db_manager import DatabaseManager
-from bot.data.cache_manager import cache_get, cache_set
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
+
 
 class GraphQLOperationType(Enum):
     """GraphQL operation types."""
     QUERY = "query"
     MUTATION = "mutation"
     SUBSCRIPTION = "subscription"
+
 
 @dataclass
 class GraphQLRequest:
@@ -49,6 +51,7 @@ class GraphQLRequest:
     tenant_id: Optional[int]
     timestamp: datetime
 
+
 @dataclass
 class GraphQLResponse:
     """GraphQL response data."""
@@ -56,6 +59,7 @@ class GraphQLResponse:
     errors: List[Dict[str, Any]]
     extensions: Dict[str, Any]
     execution_time_ms: float
+
 
 @dataclass
 class GraphQLSubscription:
@@ -69,11 +73,13 @@ class GraphQLSubscription:
     created_at: datetime
     last_activity: datetime
 
+
 class GraphQLService:
     """GraphQL API service for flexible data querying and real-time subscriptions."""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
+        self.cache_manager = EnhancedCacheManager()
         self.schema = None
         self.subscriptions = {}
         self.rate_limits = {}
@@ -86,6 +92,9 @@ class GraphQLService:
     async def start(self):
         """Start the GraphQL service."""
         logger.info("Starting GraphQLService...")
+
+        # Initialize cache manager
+        await self.cache_manager.connect()
 
         # Build GraphQL schema
         await self._build_schema()
@@ -114,8 +123,13 @@ class GraphQLService:
 
     @time_operation("graphql_execute_query")
     async def execute_query(self, query: str, variables: Optional[Dict[str, Any]] = None,
-                          operation_name: Optional[str] = None, user_id: Optional[int] = None,
-                          tenant_id: Optional[int] = None, api_version: str = "v1") -> GraphQLResponse:
+                            operation_name: Optional[str] = None, user_id: Optional[int] = None,
+                            tenant_id: Optional[int] = None, api_version: str = "v1") -> GraphQLResponse:
+        # Check cache first
+        cache_key = f"graphql_query:{hash(query)}:{hash(str(variables))}:{api_version}"
+        cached_result = await self.cache_manager.get("graphql_query", cache_key)
+        if cached_result:
+            return GraphQLResponse(**cached_result)
         """Execute a GraphQL query."""
         try:
             start_time = datetime.utcnow()
@@ -124,7 +138,8 @@ class GraphQLService:
             if api_version not in self.api_versions:
                 return GraphQLResponse(
                     data=None,
-                    errors=[{"message": f"Unsupported API version: {api_version}"}],
+                    errors=[
+                        {"message": f"Unsupported API version: {api_version}"}],
                     extensions={},
                     execution_time_ms=0
                 )
@@ -145,7 +160,8 @@ class GraphQLService:
                 if validation_errors:
                     return GraphQLResponse(
                         data=None,
-                        errors=[{"message": str(error)} for error in validation_errors],
+                        errors=[{"message": str(error)}
+                                for error in validation_errors],
                         extensions={},
                         execution_time_ms=0
                     )
@@ -171,7 +187,8 @@ class GraphQLService:
                 }
             )
 
-            execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+            execution_time = (datetime.utcnow() -
+                              start_time).total_seconds() * 1000
 
             # Log query execution
             await self._log_query_execution(
@@ -186,15 +203,20 @@ class GraphQLService:
 
             record_metric("graphql_queries_executed", 1)
 
-            return GraphQLResponse(
-                data=result.data,
-                errors=[{"message": str(error)} for error in result.errors] if result.errors else [],
-                extensions={
+            # Cache the result
+            response_data = {
+                "data": result.data,
+                "errors": [{"message": str(error)} for error in result.errors] if result.errors else [],
+                "extensions": {
                     "execution_time_ms": execution_time,
                     "api_version": api_version
                 },
-                execution_time_ms=execution_time
-            )
+                "execution_time_ms": execution_time
+            }
+            # 5 minutes
+            await self.cache_manager.set("graphql_query", cache_key, response_data, ttl=300)
+
+            return GraphQLResponse(**response_data)
 
         except Exception as e:
             logger.error(f"GraphQL query execution error: {e}")
@@ -208,8 +230,8 @@ class GraphQLService:
 
     @time_operation("graphql_execute_mutation")
     async def execute_mutation(self, mutation: str, variables: Optional[Dict[str, Any]] = None,
-                             operation_name: Optional[str] = None, user_id: Optional[int] = None,
-                             tenant_id: Optional[int] = None, api_version: str = "v1") -> GraphQLResponse:
+                               operation_name: Optional[str] = None, user_id: Optional[int] = None,
+                               tenant_id: Optional[int] = None, api_version: str = "v1") -> GraphQLResponse:
         """Execute a GraphQL mutation."""
         try:
             start_time = datetime.utcnow()
@@ -218,7 +240,8 @@ class GraphQLService:
             if api_version not in self.api_versions:
                 return GraphQLResponse(
                     data=None,
-                    errors=[{"message": f"Unsupported API version: {api_version}"}],
+                    errors=[
+                        {"message": f"Unsupported API version: {api_version}"}],
                     extensions={},
                     execution_time_ms=0
                 )
@@ -246,7 +269,8 @@ class GraphQLService:
                 }
             )
 
-            execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+            execution_time = (datetime.utcnow() -
+                              start_time).total_seconds() * 1000
 
             # Log mutation execution
             await self._log_query_execution(
@@ -263,7 +287,8 @@ class GraphQLService:
 
             return GraphQLResponse(
                 data=result.data,
-                errors=[{"message": str(error)} for error in result.errors] if result.errors else [],
+                errors=[{"message": str(error)}
+                        for error in result.errors] if result.errors else [],
                 extensions={
                     "execution_time_ms": execution_time,
                     "api_version": api_version
@@ -283,8 +308,8 @@ class GraphQLService:
 
     @time_operation("graphql_create_subscription")
     async def create_subscription(self, query: str, variables: Optional[Dict[str, Any]] = None,
-                                user_id: Optional[int] = None, tenant_id: Optional[int] = None,
-                                websocket: Any = None) -> str:
+                                  user_id: Optional[int] = None, tenant_id: Optional[int] = None,
+                                  websocket: Any = None) -> str:
         """Create a GraphQL subscription."""
         try:
             subscription_id = str(uuid.uuid4())
@@ -332,7 +357,8 @@ class GraphQLService:
                 try:
                     await subscription.websocket.close()
                 except Exception as e:
-                    logger.warning(f"Error closing WebSocket for subscription {subscription_id}: {e}")
+                    logger.warning(
+                        f"Error closing WebSocket for subscription {subscription_id}: {e}")
 
                 # Remove subscription
                 del self.subscriptions[subscription_id]
@@ -348,7 +374,7 @@ class GraphQLService:
 
     @time_operation("graphql_publish_event")
     async def publish_event(self, event_type: str, event_data: Dict[str, Any],
-                          filters: Optional[Dict[str, Any]] = None):
+                            filters: Optional[Dict[str, Any]] = None):
         """Publish an event to relevant subscriptions."""
         try:
             matching_subscriptions = []
@@ -375,11 +401,13 @@ class GraphQLService:
                     subscription.last_activity = datetime.utcnow()
 
                 except Exception as e:
-                    logger.warning(f"Error sending event to subscription {subscription.id}: {e}")
+                    logger.warning(
+                        f"Error sending event to subscription {subscription.id}: {e}")
                     # Mark subscription for cleanup
                     subscription.last_activity = datetime.utcnow() - timedelta(hours=1)
 
-            record_metric("graphql_events_published", len(matching_subscriptions))
+            record_metric("graphql_events_published",
+                          len(matching_subscriptions))
 
         except Exception as e:
             logger.error(f"Publish event error: {e}")
@@ -525,6 +553,28 @@ class GraphQLService:
             logger.error(f"Get API info error: {e}")
             return {}
 
+    async def clear_graphql_cache(self):
+        """Clear GraphQL cache."""
+        try:
+            await self.cache_manager.clear_prefix("graphql_query")
+            logger.info("GraphQL cache cleared successfully")
+        except Exception as e:
+            logger.error(f"Error clearing GraphQL cache: {e}")
+
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get GraphQL cache statistics."""
+        try:
+            stats = await self.cache_manager.get_stats()
+            return {
+                "cache_hits": stats.get("hits", 0),
+                "cache_misses": stats.get("misses", 0),
+                "cache_size": stats.get("size", 0),
+                "cache_ttl": stats.get("ttl", 0)
+            }
+        except Exception as e:
+            logger.error(f"Error getting GraphQL cache stats: {e}")
+            return {}
+
     # Private helper methods
 
     async def _build_schema(self):
@@ -535,7 +585,8 @@ class GraphQLService:
                 name='DateTime',
                 description='DateTime custom scalar type',
                 serialize=lambda value: value.isoformat() if value else None,
-                parse_value=lambda value: datetime.fromisoformat(value) if value else None
+                parse_value=lambda value: datetime.fromisoformat(
+                    value) if value else None
             )
 
             # Define enums
@@ -607,7 +658,8 @@ class GraphQLService:
                 fields={
                     'user': GraphQLField(
                         UserType,
-                        args={'id': GraphQLArgument(GraphQLNonNull(GraphQLInt))},
+                        args={'id': GraphQLArgument(
+                            GraphQLNonNull(GraphQLInt))},
                         resolver=self._resolve_user
                     ),
                     'users': GraphQLField(
@@ -620,7 +672,8 @@ class GraphQLService:
                     ),
                     'bet': GraphQLField(
                         BetType,
-                        args={'id': GraphQLArgument(GraphQLNonNull(GraphQLInt))},
+                        args={'id': GraphQLArgument(
+                            GraphQLNonNull(GraphQLInt))},
                         resolver=self._resolve_bet
                     ),
                     'bets': GraphQLField(
@@ -710,7 +763,8 @@ class GraphQLService:
                         await self.cancel_subscription(sub_id)
 
                     if inactive_subscriptions:
-                        logger.info(f"Cleaned up {len(inactive_subscriptions)} inactive subscriptions")
+                        logger.info(
+                            f"Cleaned up {len(inactive_subscriptions)} inactive subscriptions")
 
                     await asyncio.sleep(300)  # Run every 5 minutes
 
@@ -724,7 +778,7 @@ class GraphQLService:
             logger.error(f"Subscription cleanup worker error: {e}")
 
     async def _check_rate_limit(self, user_id: Optional[int], tenant_id: Optional[int],
-                              is_mutation: bool = False) -> bool:
+                                is_mutation: bool = False) -> bool:
         """Check rate limits for user/tenant."""
         try:
             current_time = datetime.utcnow()
@@ -742,10 +796,12 @@ class GraphQLService:
 
             # Check if reset time has passed
             for operation_type in ["queries", "mutations"]:
-                reset_time = datetime.fromisoformat(usage[operation_type]["reset_time"])
+                reset_time = datetime.fromisoformat(
+                    usage[operation_type]["reset_time"])
                 if current_time > reset_time:
                     usage[operation_type]["count"] = 0
-                    usage[operation_type]["reset_time"] = (current_time + timedelta(minutes=1)).isoformat()
+                    usage[operation_type]["reset_time"] = (
+                        current_time + timedelta(minutes=1)).isoformat()
 
             # Check limits
             operation_type = "mutations" if is_mutation else "queries"
@@ -758,7 +814,8 @@ class GraphQLService:
             usage[operation_type]["count"] += 1
 
             # Store updated usage
-            await cache_set(key, json.dumps(usage), expire=120)  # 2 minutes TTL
+            # 2 minutes TTL
+            await cache_set(key, json.dumps(usage), expire=120)
 
             return True
 
@@ -767,8 +824,8 @@ class GraphQLService:
             return True  # Allow if rate limiting fails
 
     async def _log_query_execution(self, operation_name: str, query: str, variables: Optional[Dict[str, Any]],
-                                 operation_type: GraphQLOperationType, user_id: Optional[int],
-                                 tenant_id: Optional[int], execution_time: float):
+                                   operation_type: GraphQLOperationType, user_id: Optional[int],
+                                   tenant_id: Optional[int], execution_time: float):
         """Log GraphQL query execution for analytics."""
         try:
             # This would log to a dedicated analytics table
@@ -794,7 +851,7 @@ class GraphQLService:
             logger.error(f"Log query execution error: {e}")
 
     async def _subscription_matches_event(self, subscription: GraphQLSubscription, event_type: str,
-                                        event_data: Dict[str, Any], filters: Optional[Dict[str, Any]]) -> bool:
+                                          event_data: Dict[str, Any], filters: Optional[Dict[str, Any]]) -> bool:
         """Check if a subscription matches an event."""
         try:
             # Simple matching logic - in production, this would be more sophisticated
@@ -880,7 +937,7 @@ class GraphQLService:
             return None
 
     async def _resolve_bets(self, info: GraphQLResolveInfo, filter: Optional[Dict] = None,
-                          limit: int = 10, offset: int = 0):
+                            limit: int = 10, offset: int = 0):
         """Resolve bets with filtering."""
         try:
             context = info.context
@@ -939,7 +996,8 @@ class GraphQLService:
             bet_query = "SELECT COUNT(*) as count, SUM(amount) as total FROM bets"
             bet_result = await db_manager.fetch_one(bet_query)
             total_bets = bet_result['count'] if bet_result else 0
-            total_amount = float(bet_result['total']) if bet_result and bet_result['total'] else 0.0
+            total_amount = float(
+                bet_result['total']) if bet_result and bet_result['total'] else 0.0
 
             return {
                 "total_users": total_users,
@@ -952,7 +1010,7 @@ class GraphQLService:
             return {"total_users": 0, "total_bets": 0, "total_amount": 0.0}
 
     async def _resolve_create_bet(self, info: GraphQLResolveInfo, user_id: int, guild_id: Optional[int],
-                                amount: float, odds: Optional[float]):
+                                  amount: float, odds: Optional[float]):
         """Resolve create bet mutation."""
         try:
             context = info.context
@@ -977,7 +1035,7 @@ class GraphQLService:
             return None
 
     async def _resolve_update_bet(self, info: GraphQLResolveInfo, id: int, status: Optional[str],
-                                amount: Optional[float], odds: Optional[float]):
+                                  amount: Optional[float], odds: Optional[float]):
         """Resolve update bet mutation."""
         try:
             context = info.context

@@ -1,788 +1,528 @@
 """
-Natural Language Processing Service for DBSBM System.
-Implements AI-powered chatbot, sentiment analysis, and language processing features.
+NLP Service for DBSBM System.
+Provides natural language processing capabilities for user interactions.
 """
 
 import asyncio
 import json
 import logging
 import re
-import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum
-import numpy as np
-from textblob import TextBlob
-import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-import spacy
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import torch
+import hashlib
 
 from data.db_manager import DatabaseManager
-from bot.data.cache_manager import cache_get, cache_set
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
+# NLP-specific cache TTLs
+NLP_CACHE_TTLS = {
+    'nlp_models': 3600,           # 1 hour
+    'nlp_intents': 1800,          # 30 minutes
+    'nlp_entities': 1800,          # 30 minutes
+    'nlp_sentiments': 900,         # 15 minutes
+    'nlp_responses': 1800,         # 30 minutes
+    'nlp_patterns': 7200,          # 2 hours
+    'nlp_training': 3600,          # 1 hour
+    'nlp_accuracy': 1800,          # 30 minutes
+    'nlp_usage': 600,              # 10 minutes
+    'nlp_analytics': 3600,         # 1 hour
+}
+
 class IntentType(Enum):
-    """Intent types for user interactions."""
-    BET_PLACE = "bet_place"
+    """NLP intent types."""
+    BET_PLACEMENT = "bet_placement"
     BET_QUERY = "bet_query"
-    ODDS_QUERY = "odds_query"
-    STATS_QUERY = "stats_query"
+    BALANCE_CHECK = "balance_check"
+    GAME_INFO = "game_info"
     HELP_REQUEST = "help_request"
-    ACCOUNT_QUERY = "account_query"
     SETTINGS_CHANGE = "settings_change"
+    STATISTICS_REQUEST = "statistics_request"
     GREETING = "greeting"
-    GOODBYE = "goodbye"
+    FAREWELL = "farewell"
     UNKNOWN = "unknown"
 
 class SentimentType(Enum):
-    """Sentiment classification types."""
+    """Sentiment analysis types."""
     POSITIVE = "positive"
     NEGATIVE = "negative"
     NEUTRAL = "neutral"
+    MIXED = "mixed"
 
-class LanguageType(Enum):
-    """Supported languages."""
-    ENGLISH = "en"
-    SPANISH = "es"
-    FRENCH = "fr"
-    GERMAN = "de"
-    ITALIAN = "it"
-    PORTUGUESE = "pt"
+class EntityType(Enum):
+    """Entity extraction types."""
+    TEAM_NAME = "team_name"
+    PLAYER_NAME = "player_name"
+    SPORT_TYPE = "sport_type"
+    LEAGUE_NAME = "league_name"
+    AMOUNT = "amount"
+    ODDS = "odds"
+    DATE_TIME = "date_time"
+    LOCATION = "location"
 
 @dataclass
-class NLPResult:
-    """NLP processing result."""
-    intent: IntentType
+class NLPIntent:
+    """NLP intent classification."""
+    id: int
+    intent_type: IntentType
     confidence: float
-    entities: Dict[str, Any]
-    sentiment: SentimentType
-    sentiment_score: float
-    language: LanguageType
-    processed_text: str
-    response: Optional[str] = None
-    suggestions: List[str] = field(default_factory=list)
-
-@dataclass
-class ConversationContext:
-    """Conversation context for maintaining state."""
-    conversation_id: str
+    text: str
     user_id: int
-    guild_id: Optional[int]
-    messages: List[Dict[str, Any]]
-    current_intent: Optional[IntentType]
-    entities: Dict[str, Any]
-    language: LanguageType
+    guild_id: int
     created_at: datetime
-    last_updated: datetime
 
 @dataclass
-class ChatbotResponse:
-    """Chatbot response with context."""
-    message: str
-    intent: IntentType
+class NLPSentiment:
+    """NLP sentiment analysis."""
+    id: int
+    sentiment_type: SentimentType
     confidence: float
-    entities: Dict[str, Any]
-    suggestions: List[str]
-    requires_action: bool
-    action_type: Optional[str] = None
-    action_data: Optional[Dict[str, Any]] = None
+    text: str
+    user_id: int
+    guild_id: int
+    created_at: datetime
+
+@dataclass
+class NLPEntity:
+    """NLP entity extraction."""
+    id: int
+    entity_type: EntityType
+    value: str
+    confidence: float
+    text: str
+    user_id: int
+    guild_id: int
+    created_at: datetime
+
+@dataclass
+class NLPResponse:
+    """NLP response template."""
+    id: int
+    intent_type: IntentType
+    response_text: str
+    response_type: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
 class NLPService:
-    """Natural Language Processing service for AI-powered interactions."""
+    """NLP service for natural language processing capabilities."""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
-        self.nlp_models = {}
+
+        # Initialize enhanced cache manager
+        self.cache_manager = EnhancedCacheManager()
+        self.cache_ttls = NLP_CACHE_TTLS
+
+        # NLP patterns and keywords
         self.intent_patterns = self._load_intent_patterns()
         self.entity_patterns = self._load_entity_patterns()
-        self.response_templates = self._load_response_templates()
-        self.conversation_contexts = {}
-        self.max_context_age = timedelta(hours=1)
+        self.sentiment_keywords = self._load_sentiment_keywords()
 
-        # Initialize NLP models
-        self._initialize_models()
+        # Background tasks
+        self.training_task = None
+        self.is_running = False
 
     async def start(self):
         """Start the NLP service."""
-        logger.info("Starting NLPService...")
-
-        # Download required NLTK data
         try:
-            nltk.download('punkt', quiet=True)
-            nltk.download('stopwords', quiet=True)
-            nltk.download('wordnet', quiet=True)
-            nltk.download('averaged_perceptron_tagger', quiet=True)
+            await self._load_nlp_models()
+            self.is_running = True
+            self.training_task = asyncio.create_task(self._periodic_model_training())
+            logger.info("NLP service started successfully")
         except Exception as e:
-            logger.warning(f"Could not download NLTK data: {e}")
-
-        # Initialize spaCy model
-        try:
-            self.spacy_model = spacy.load("en_core_web_sm")
-        except OSError:
-            logger.warning("spaCy model not found, downloading...")
-            try:
-                spacy.cli.download("en_core_web_sm")
-                self.spacy_model = spacy.load("en_core_web_sm")
-            except Exception as e:
-                logger.error(f"Could not load spaCy model: {e}")
-                self.spacy_model = None
-
-        logger.info("NLPService started successfully")
+            logger.error(f"Failed to start NLP service: {e}")
+            raise
 
     async def stop(self):
         """Stop the NLP service."""
-        logger.info("Stopping NLPService...")
-        # Clear conversation contexts
-        self.conversation_contexts.clear()
-        logger.info("NLPService stopped")
+        self.is_running = False
+        if self.training_task:
+            self.training_task.cancel()
+        logger.info("NLP service stopped")
 
-    @time_operation("nlp_process_message")
-    async def process_message(self, user_id: int, message: str, guild_id: Optional[int] = None,
-                            conversation_id: Optional[str] = None) -> NLPResult:
-        """Process a user message and return NLP analysis."""
+    @time_operation("nlp_classify_intent")
+    async def classify_intent(self, text: str, user_id: int, guild_id: int) -> Optional[NLPIntent]:
+        """Classify the intent of user input."""
         try:
-            # Generate conversation ID if not provided
-            if not conversation_id:
-                conversation_id = str(uuid.uuid4())
+            # Try to get from cache first
+            cache_key = f"nlp_intent:{hashlib.md5(text.encode()).hexdigest()}:{user_id}:{guild_id}"
+            cached_intent = await self.cache_manager.enhanced_cache_get(cache_key)
 
-            # Detect language
-            language = self._detect_language(message)
+            if cached_intent:
+                return NLPIntent(**cached_intent)
 
-            # Preprocess text
-            processed_text = self._preprocess_text(message, language)
+            # Perform intent classification
+            intent_type, confidence = self._classify_intent_pattern(text)
 
-            # Detect intent
-            intent, confidence = self._detect_intent(processed_text, language)
+            # Create intent record
+            query = """
+            INSERT INTO nlp_intents (intent_type, confidence, text, user_id, guild_id, created_at)
+            VALUES (:intent_type, :confidence, :text, :user_id, :guild_id, NOW())
+            """
 
-            # Extract entities
-            entities = self._extract_entities(processed_text, intent, language)
+            result = await self.db_manager.execute(query, {
+                'intent_type': intent_type.value,
+                'confidence': confidence,
+                'text': text,
+                'user_id': user_id,
+                'guild_id': guild_id
+            })
 
-            # Analyze sentiment
-            sentiment, sentiment_score = self._analyze_sentiment(processed_text, language)
+            intent_id = result.lastrowid
 
-            # Store conversation
-            await self._store_conversation(user_id, guild_id, conversation_id, message,
-                                         intent, entities, language)
-
-            # Update conversation context
-            self._update_conversation_context(user_id, guild_id, conversation_id,
-                                            intent, entities, language)
-
-            record_metric("nlp_messages_processed", 1)
-
-            return NLPResult(
-                intent=intent,
+            intent = NLPIntent(
+                id=intent_id,
+                intent_type=intent_type,
                 confidence=confidence,
-                entities=entities,
-                sentiment=sentiment,
-                sentiment_score=sentiment_score,
-                language=language,
-                processed_text=processed_text
+                text=text,
+                user_id=user_id,
+                guild_id=guild_id,
+                created_at=datetime.utcnow()
             )
+
+            # Cache intent
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                {
+                    'id': intent.id,
+                    'intent_type': intent.intent_type.value,
+                    'confidence': intent.confidence,
+                    'text': intent.text,
+                    'user_id': intent.user_id,
+                    'guild_id': intent.guild_id,
+                    'created_at': intent.created_at.isoformat()
+                },
+                ttl=self.cache_ttls['nlp_intents']
+            )
+
+            record_metric("nlp_intents_classified", 1)
+            return intent
 
         except Exception as e:
-            logger.error(f"NLP processing error: {e}")
-            record_metric("nlp_errors", 1)
-            return NLPResult(
-                intent=IntentType.UNKNOWN,
-                confidence=0.0,
-                entities={},
-                sentiment=SentimentType.NEUTRAL,
-                sentiment_score=0.0,
-                language=LanguageType.ENGLISH,
-                processed_text=message
-            )
-
-    @time_operation("nlp_generate_response")
-    async def generate_response(self, user_id: int, nlp_result: NLPResult,
-                              guild_id: Optional[int] = None) -> ChatbotResponse:
-        """Generate an appropriate response based on NLP analysis."""
-        try:
-            # Get conversation context
-            context = self._get_conversation_context(user_id, guild_id)
-
-            # Generate response based on intent
-            response = await self._generate_intent_response(nlp_result, context)
-
-            # Generate suggestions
-            suggestions = self._generate_suggestions(nlp_result.intent, nlp_result.entities)
-
-            # Determine if action is required
-            requires_action, action_type, action_data = self._determine_action_required(nlp_result)
-
-            record_metric("nlp_responses_generated", 1)
-
-            return ChatbotResponse(
-                message=response,
-                intent=nlp_result.intent,
-                confidence=nlp_result.confidence,
-                entities=nlp_result.entities,
-                suggestions=suggestions,
-                requires_action=requires_action,
-                action_type=action_type,
-                action_data=action_data
-            )
-
-        except Exception as e:
-            logger.error(f"Response generation error: {e}")
-            return ChatbotResponse(
-                message="I'm sorry, I didn't understand that. Could you please rephrase?",
-                intent=IntentType.UNKNOWN,
-                confidence=0.0,
-                entities={},
-                suggestions=["Try asking about placing a bet", "Ask about odds", "Request help"],
-                requires_action=False
-            )
+            logger.error(f"Failed to classify intent: {e}")
+            return None
 
     @time_operation("nlp_analyze_sentiment")
-    async def analyze_sentiment(self, text: str, language: LanguageType = LanguageType.ENGLISH) -> Tuple[SentimentType, float]:
-        """Analyze sentiment of text."""
+    async def analyze_sentiment(self, text: str, user_id: int, guild_id: int) -> Optional[NLPSentiment]:
+        """Analyze the sentiment of user input."""
         try:
-            sentiment, score = self._analyze_sentiment(text, language)
-            return sentiment, score
+            # Try to get from cache first
+            cache_key = f"nlp_sentiment:{hashlib.md5(text.encode()).hexdigest()}:{user_id}:{guild_id}"
+            cached_sentiment = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_sentiment:
+                return NLPSentiment(**cached_sentiment)
+
+            # Perform sentiment analysis
+            sentiment_type, confidence = self._analyze_sentiment_pattern(text)
+
+            # Create sentiment record
+            query = """
+            INSERT INTO nlp_sentiments (sentiment_type, confidence, text, user_id, guild_id, created_at)
+            VALUES (:sentiment_type, :confidence, :text, :user_id, :guild_id, NOW())
+            """
+
+            result = await self.db_manager.execute(query, {
+                'sentiment_type': sentiment_type.value,
+                'confidence': confidence,
+                'text': text,
+                'user_id': user_id,
+                'guild_id': guild_id
+            })
+
+            sentiment_id = result.lastrowid
+
+            sentiment = NLPSentiment(
+                id=sentiment_id,
+                sentiment_type=sentiment_type,
+                confidence=confidence,
+                text=text,
+                user_id=user_id,
+                guild_id=guild_id,
+                created_at=datetime.utcnow()
+            )
+
+            # Cache sentiment
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                {
+                    'id': sentiment.id,
+                    'sentiment_type': sentiment.sentiment_type.value,
+                    'confidence': sentiment.confidence,
+                    'text': sentiment.text,
+                    'user_id': sentiment.user_id,
+                    'guild_id': sentiment.guild_id,
+                    'created_at': sentiment.created_at.isoformat()
+                },
+                ttl=self.cache_ttls['nlp_sentiments']
+            )
+
+            record_metric("nlp_sentiments_analyzed", 1)
+            return sentiment
+
         except Exception as e:
-            logger.error(f"Sentiment analysis error: {e}")
-            return SentimentType.NEUTRAL, 0.0
+            logger.error(f"Failed to analyze sentiment: {e}")
+            return None
 
     @time_operation("nlp_extract_entities")
-    async def extract_entities(self, text: str, intent: IntentType,
-                             language: LanguageType = LanguageType.ENGLISH) -> Dict[str, Any]:
-        """Extract entities from text."""
+    async def extract_entities(self, text: str, user_id: int, guild_id: int) -> List[NLPEntity]:
+        """Extract entities from user input."""
         try:
-            processed_text = self._preprocess_text(text, language)
-            entities = self._extract_entities(processed_text, intent, language)
-            return entities
-        except Exception as e:
-            logger.error(f"Entity extraction error: {e}")
-            return {}
+            # Try to get from cache first
+            cache_key = f"nlp_entities:{hashlib.md5(text.encode()).hexdigest()}:{user_id}:{guild_id}"
+            cached_entities = await self.cache_manager.enhanced_cache_get(cache_key)
 
-    @time_operation("nlp_get_conversation_history")
-    async def get_conversation_history(self, user_id: int, guild_id: Optional[int] = None,
-                                     limit: int = 10) -> List[Dict[str, Any]]:
-        """Get conversation history for a user."""
-        try:
-            query = """
-                SELECT * FROM nlp_conversations
-                WHERE user_id = %s AND guild_id = %s
-                ORDER BY timestamp DESC
-                LIMIT %s
-            """
-            rows = await self.db_manager.fetch_all(query, (user_id, guild_id, limit))
+            if cached_entities:
+                return [NLPEntity(**entity) for entity in cached_entities]
 
-            conversations = []
-            for row in rows:
-                conversations.append({
-                    'conversation_id': row['conversation_id'],
-                    'message_content': row['message_content'],
-                    'intent_recognized': row['intent_recognized'],
-                    'entities_extracted': json.loads(row['entities_extracted']) if row['entities_extracted'] else {},
-                    'response_generated': row['response_generated'],
-                    'confidence_score': row['confidence_score'],
-                    'sentiment_score': row['sentiment_score'],
-                    'timestamp': row['timestamp']
+            # Extract entities
+            entities = self._extract_entities_pattern(text)
+
+            # Create entity records
+            created_entities = []
+            for entity_type, value, confidence in entities:
+                query = """
+                INSERT INTO nlp_entities (entity_type, value, confidence, text, user_id, guild_id, created_at)
+                VALUES (:entity_type, :value, :confidence, :text, :user_id, :guild_id, NOW())
+                """
+
+                result = await self.db_manager.execute(query, {
+                    'entity_type': entity_type.value,
+                    'value': value,
+                    'confidence': confidence,
+                    'text': text,
+                    'user_id': user_id,
+                    'guild_id': guild_id
                 })
 
-            return conversations
-        except Exception as e:
-            logger.error(f"Get conversation history error: {e}")
-            return []
+                entity_id = result.lastrowid
 
-    @time_operation("nlp_get_user_sentiment_trends")
-    async def get_user_sentiment_trends(self, user_id: int, days: int = 30) -> Dict[str, Any]:
-        """Get sentiment trends for a user over time."""
-        try:
-            query = """
-                SELECT
-                    DATE(timestamp) as date,
-                    AVG(sentiment_score) as avg_sentiment,
-                    COUNT(*) as message_count,
-                    AVG(confidence_score) as avg_confidence
-                FROM nlp_conversations
-                WHERE user_id = %s
-                AND timestamp >= DATE_SUB(NOW(), INTERVAL %s DAY)
-                GROUP BY DATE(timestamp)
-                ORDER BY date
-            """
-            rows = await self.db_manager.fetch_all(query, (user_id, days))
-
-            trends = {
-                'dates': [],
-                'sentiment_scores': [],
-                'message_counts': [],
-                'confidence_scores': [],
-                'overall_sentiment': 'neutral',
-                'total_messages': 0
-            }
-
-            total_sentiment = 0
-            total_messages = 0
-
-            for row in rows:
-                trends['dates'].append(row['date'].isoformat())
-                trends['sentiment_scores'].append(float(row['avg_sentiment']))
-                trends['message_counts'].append(row['message_count'])
-                trends['confidence_scores'].append(float(row['avg_confidence']))
-
-                total_sentiment += float(row['avg_sentiment']) * row['message_count']
-                total_messages += row['message_count']
-
-            if total_messages > 0:
-                overall_sentiment = total_sentiment / total_messages
-                if overall_sentiment > 0.1:
-                    trends['overall_sentiment'] = 'positive'
-                elif overall_sentiment < -0.1:
-                    trends['overall_sentiment'] = 'negative'
-                else:
-                    trends['overall_sentiment'] = 'neutral'
-
-            trends['total_messages'] = total_messages
-
-            return trends
-        except Exception as e:
-            logger.error(f"Get sentiment trends error: {e}")
-            return {}
-
-    # Private helper methods
-
-    def _initialize_models(self):
-        """Initialize NLP models."""
-        try:
-            # Initialize sentiment analysis model
-            self.sentiment_model = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-
-            # Initialize intent classification model (placeholder)
-            # In production, use a fine-tuned model for intent classification
-            self.intent_model = None
-
-        except Exception as e:
-            logger.warning(f"Could not initialize some NLP models: {e}")
-
-    def _load_intent_patterns(self) -> Dict[IntentType, List[str]]:
-        """Load intent recognition patterns."""
-        return {
-            IntentType.BET_PLACE: [
-                r'\b(bet|wager|place|put|make)\b.*\b(on|for)\b',
-                r'\b(betting|gambling)\b.*\b(odds|chances)\b',
-                r'\b(win|lose|earn|make money)\b.*\b(bet|wager)\b'
-            ],
-            IntentType.BET_QUERY: [
-                r'\b(my|current|active)\b.*\b(bets|wagers)\b',
-                r'\b(bet history|betting history|past bets)\b',
-                r'\b(how much|what)\b.*\b(bet|wager)\b'
-            ],
-            IntentType.ODDS_QUERY: [
-                r'\b(odds|chances|probability)\b.*\b(for|of)\b',
-                r'\b(what are|show me|get)\b.*\b(odds)\b',
-                r'\b(betting odds|game odds|match odds)\b'
-            ],
-            IntentType.STATS_QUERY: [
-                r'\b(stats|statistics|record|performance)\b',
-                r'\b(how good|how well)\b.*\b(team|player)\b',
-                r'\b(win rate|success rate|performance)\b'
-            ],
-            IntentType.HELP_REQUEST: [
-                r'\b(help|support|assist|guide)\b',
-                r'\b(how to|what is|explain)\b',
-                r'\b(problem|issue|trouble|error)\b'
-            ],
-            IntentType.ACCOUNT_QUERY: [
-                r'\b(account|profile|balance|money)\b',
-                r'\b(my|personal)\b.*\b(info|information|details)\b',
-                r'\b(settings|preferences|options)\b'
-            ],
-            IntentType.GREETING: [
-                r'\b(hello|hi|hey|greetings|good morning|good afternoon|good evening)\b',
-                r'\b(how are you|how\'s it going|what\'s up)\b'
-            ],
-            IntentType.GOODBYE: [
-                r'\b(goodbye|bye|see you|farewell|take care)\b',
-                r'\b(thanks|thank you|appreciate it)\b'
-            ]
-        }
-
-    def _load_entity_patterns(self) -> Dict[str, List[str]]:
-        """Load entity extraction patterns."""
-        return {
-            'team': [
-                r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b.*\b(team|club|squad)\b',
-                r'\b(team|club)\b.*\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b'
-            ],
-            'player': [
-                r'\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b.*\b(player|athlete|star)\b',
-                r'\b(player|athlete)\b.*\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b'
-            ],
-            'amount': [
-                r'\b(\$?\d+(?:\.\d{2})?)\b',
-                r'\b(\d+)\b.*\b(dollars|bucks|money)\b'
-            ],
-            'sport': [
-                r'\b(football|soccer|basketball|baseball|hockey|tennis|golf|racing)\b',
-                r'\b(NFL|NBA|MLB|NHL|MLS|EPL|La Liga|Bundesliga)\b'
-            ],
-            'game': [
-                r'\b(game|match|contest|fixture)\b.*\b(\d+|\w+)\b',
-                r'\b(\w+)\b.*\b(vs|versus|against)\b.*\b(\w+)\b'
-            ]
-        }
-
-    def _load_response_templates(self) -> Dict[IntentType, List[str]]:
-        """Load response templates for different intents."""
-        return {
-            IntentType.BET_PLACE: [
-                "I can help you place a bet! What team or player would you like to bet on?",
-                "Sure! To place a bet, I'll need to know what you want to bet on and how much.",
-                "Great! Let's place that bet. What are the details?"
-            ],
-            IntentType.BET_QUERY: [
-                "Let me check your current bets for you.",
-                "I'll look up your betting history right away.",
-                "Here's what I found about your bets:"
-            ],
-            IntentType.ODDS_QUERY: [
-                "I can help you find the latest odds. What game or event are you interested in?",
-                "Let me get the current odds for you. Which team or player?",
-                "Here are the current odds:"
-            ],
-            IntentType.STATS_QUERY: [
-                "I can provide you with detailed statistics. What would you like to know?",
-                "Let me get those stats for you. Which team or player?",
-                "Here are the statistics you requested:"
-            ],
-            IntentType.HELP_REQUEST: [
-                "I'm here to help! What can I assist you with?",
-                "Sure! I can help with betting, odds, statistics, and more. What do you need?",
-                "I'd be happy to help! What's your question?"
-            ],
-            IntentType.ACCOUNT_QUERY: [
-                "I can help you with your account information. What would you like to know?",
-                "Let me check your account details for you.",
-                "Here's your account information:"
-            ],
-            IntentType.GREETING: [
-                "Hello! How can I help you today?",
-                "Hi there! I'm here to assist with your betting needs.",
-                "Greetings! What can I do for you?"
-            ],
-            IntentType.GOODBYE: [
-                "Goodbye! Have a great day!",
-                "See you later! Feel free to ask if you need anything else.",
-                "Take care! Come back anytime for betting assistance."
-            ],
-            IntentType.UNKNOWN: [
-                "I'm not sure I understood that. Could you please rephrase?",
-                "I didn't quite catch that. Can you try asking in a different way?",
-                "I'm still learning! Could you be more specific?"
-            ]
-        }
-
-    def _detect_language(self, text: str) -> LanguageType:
-        """Detect the language of the text."""
-        try:
-            # Simple language detection based on common words
-            text_lower = text.lower()
-
-            # Spanish
-            if any(word in text_lower for word in ['hola', 'gracias', 'por favor', 'sí', 'no']):
-                return LanguageType.SPANISH
-
-            # French
-            if any(word in text_lower for word in ['bonjour', 'merci', 's\'il vous plaît', 'oui', 'non']):
-                return LanguageType.FRENCH
-
-            # German
-            if any(word in text_lower for word in ['hallo', 'danke', 'bitte', 'ja', 'nein']):
-                return LanguageType.GERMAN
-
-            # Default to English
-            return LanguageType.ENGLISH
-        except Exception:
-            return LanguageType.ENGLISH
-
-    def _preprocess_text(self, text: str, language: LanguageType) -> str:
-        """Preprocess text for NLP analysis."""
-        try:
-            # Convert to lowercase
-            text = text.lower()
-
-            # Remove extra whitespace
-            text = re.sub(r'\s+', ' ', text).strip()
-
-            # Remove special characters but keep important ones
-            text = re.sub(r'[^\w\s\$\.,!?]', '', text)
-
-            # Tokenize and lemmatize if spaCy is available
-            if self.spacy_model and language == LanguageType.ENGLISH:
-                doc = self.spacy_model(text)
-                tokens = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
-                text = ' '.join(tokens)
-
-            return text
-        except Exception as e:
-            logger.warning(f"Text preprocessing error: {e}")
-            return text.lower().strip()
-
-    def _detect_intent(self, text: str, language: LanguageType) -> Tuple[IntentType, float]:
-        """Detect intent from text."""
-        try:
-            best_intent = IntentType.UNKNOWN
-            best_confidence = 0.0
-
-            # Pattern matching
-            for intent, patterns in self.intent_patterns.items():
-                for pattern in patterns:
-                    matches = re.findall(pattern, text, re.IGNORECASE)
-                    if matches:
-                        confidence = len(matches) / len(text.split())
-                        if confidence > best_confidence:
-                            best_confidence = confidence
-                            best_intent = intent
-
-            # Use ML model if available
-            if self.intent_model:
-                # Placeholder for ML-based intent detection
-                pass
-
-            # Minimum confidence threshold
-            if best_confidence < 0.1:
-                best_intent = IntentType.UNKNOWN
-                best_confidence = 0.0
-
-            return best_intent, min(best_confidence, 1.0)
-
-        except Exception as e:
-            logger.error(f"Intent detection error: {e}")
-            return IntentType.UNKNOWN, 0.0
-
-    def _extract_entities(self, text: str, intent: IntentType, language: LanguageType) -> Dict[str, Any]:
-        """Extract entities from text."""
-        try:
-            entities = {}
-
-            # Pattern-based entity extraction
-            for entity_type, patterns in self.entity_patterns.items():
-                for pattern in patterns:
-                    matches = re.findall(pattern, text, re.IGNORECASE)
-                    if matches:
-                        entities[entity_type] = matches
-
-            # Use spaCy for named entity recognition if available
-            if self.spacy_model and language == LanguageType.ENGLISH:
-                doc = self.spacy_model(text)
-                for ent in doc.ents:
-                    if ent.label_ not in entities:
-                        entities[ent.label_.lower()] = []
-                    entities[ent.label_.lower()].append(ent.text)
-
-            return entities
-
-        except Exception as e:
-            logger.error(f"Entity extraction error: {e}")
-            return {}
-
-    def _analyze_sentiment(self, text: str, language: LanguageType) -> Tuple[SentimentType, float]:
-        """Analyze sentiment of text."""
-        try:
-            # Use TextBlob for basic sentiment analysis
-            blob = TextBlob(text)
-            sentiment_score = blob.sentiment.polarity
-
-            # Use ML model if available
-            if self.sentiment_model and language == LanguageType.ENGLISH:
-                result = self.sentiment_model(text)
-                if result:
-                    # Map model output to our sentiment types
-                    label = result[0]['label']
-                    score = result[0]['score']
-
-                    if label == 'POS':
-                        sentiment_score = score
-                    elif label == 'NEG':
-                        sentiment_score = -score
-                    else:
-                        sentiment_score = 0.0
-
-            # Classify sentiment
-            if sentiment_score > 0.1:
-                sentiment = SentimentType.POSITIVE
-            elif sentiment_score < -0.1:
-                sentiment = SentimentType.NEGATIVE
-            else:
-                sentiment = SentimentType.NEUTRAL
-
-            return sentiment, sentiment_score
-
-        except Exception as e:
-            logger.error(f"Sentiment analysis error: {e}")
-            return SentimentType.NEUTRAL, 0.0
-
-    async def _store_conversation(self, user_id: int, guild_id: Optional[int], conversation_id: str,
-                                message: str, intent: IntentType, entities: Dict[str, Any],
-                                language: LanguageType):
-        """Store conversation in database."""
-        try:
-            query = """
-                INSERT INTO nlp_conversations
-                (user_id, guild_id, conversation_id, message_type, message_content,
-                 intent_recognized, entities_extracted, language_detected, timestamp)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-            """
-            await self.db_manager.execute(query, (
-                user_id, guild_id, conversation_id, 'user_input', message,
-                intent.value, json.dumps(entities), language.value
-            ))
-        except Exception as e:
-            logger.error(f"Store conversation error: {e}")
-
-    def _update_conversation_context(self, user_id: int, guild_id: Optional[int],
-                                   conversation_id: str, intent: IntentType,
-                                   entities: Dict[str, Any], language: LanguageType):
-        """Update conversation context."""
-        try:
-            context_key = f"{user_id}:{guild_id or 'global'}"
-
-            if context_key not in self.conversation_contexts:
-                self.conversation_contexts[context_key] = ConversationContext(
-                    conversation_id=conversation_id,
+                entity = NLPEntity(
+                    id=entity_id,
+                    entity_type=entity_type,
+                    value=value,
+                    confidence=confidence,
+                    text=text,
                     user_id=user_id,
                     guild_id=guild_id,
-                    messages=[],
-                    current_intent=None,
-                    entities={},
-                    language=language,
-                    created_at=datetime.utcnow(),
-                    last_updated=datetime.utcnow()
+                    created_at=datetime.utcnow()
                 )
+                created_entities.append(entity)
 
-            context = self.conversation_contexts[context_key]
-            context.last_updated = datetime.utcnow()
-            context.current_intent = intent
-            context.entities.update(entities)
-            context.language = language
+            # Cache entities
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                [{
+                    'id': e.id,
+                    'entity_type': e.entity_type.value,
+                    'value': e.value,
+                    'confidence': e.confidence,
+                    'text': e.text,
+                    'user_id': e.user_id,
+                    'guild_id': e.guild_id,
+                    'created_at': e.created_at.isoformat()
+                } for e in created_entities],
+                ttl=self.cache_ttls['nlp_entities']
+            )
 
-            # Clean old contexts
-            self._cleanup_old_contexts()
+            record_metric("nlp_entities_extracted", len(created_entities))
+            return created_entities
 
         except Exception as e:
-            logger.error(f"Update conversation context error: {e}")
+            logger.error(f"Failed to extract entities: {e}")
+            return []
 
-    def _get_conversation_context(self, user_id: int, guild_id: Optional[int]) -> Optional[ConversationContext]:
-        """Get conversation context for a user."""
+    @time_operation("nlp_get_response")
+    async def get_response(self, intent_type: IntentType, user_id: int, guild_id: int) -> Optional[str]:
+        """Get appropriate response for an intent."""
         try:
-            context_key = f"{user_id}:{guild_id or 'global'}"
-            context = self.conversation_contexts.get(context_key)
+            # Try to get from cache first
+            cache_key = f"nlp_response:{intent_type.value}:{user_id}:{guild_id}"
+            cached_response = await self.cache_manager.enhanced_cache_get(cache_key)
 
-            if context and (datetime.utcnow() - context.last_updated) < self.max_context_age:
-                return context
+            if cached_response:
+                return cached_response
 
+            # Get response from database
+            query = """
+            SELECT response_text FROM nlp_responses
+            WHERE intent_type = :intent_type AND is_active = 1
+            ORDER BY RAND()
+            LIMIT 1
+            """
+
+            result = await self.db_manager.fetch_one(query, {'intent_type': intent_type.value})
+
+            if not result:
+                return None
+
+            response_text = result['response_text']
+
+            # Cache response
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                response_text,
+                ttl=self.cache_ttls['nlp_responses']
+            )
+
+            return response_text
+
+        except Exception as e:
+            logger.error(f"Failed to get response: {e}")
             return None
-        except Exception as e:
-            logger.error(f"Get conversation context error: {e}")
-            return None
 
-    def _cleanup_old_contexts(self):
-        """Clean up old conversation contexts."""
+    @time_operation("nlp_process_message")
+    async def process_message(self, text: str, user_id: int, guild_id: int) -> Dict[str, Any]:
+        """Process a complete message with intent, sentiment, and entities."""
         try:
-            current_time = datetime.utcnow()
-            keys_to_remove = []
+            # Try to get from cache first
+            cache_key = f"nlp_message:{hashlib.md5(text.encode()).hexdigest()}:{user_id}:{guild_id}"
+            cached_result = await self.cache_manager.enhanced_cache_get(cache_key)
 
-            for key, context in self.conversation_contexts.items():
-                if (current_time - context.last_updated) > self.max_context_age:
-                    keys_to_remove.append(key)
+            if cached_result:
+                return cached_result
 
-            for key in keys_to_remove:
-                del self.conversation_contexts[key]
+            # Process message components
+            intent = await self.classify_intent(text, user_id, guild_id)
+            sentiment = await self.analyze_sentiment(text, user_id, guild_id)
+            entities = await self.extract_entities(text, user_id, guild_id)
+            response = await self.get_response(intent.intent_type, user_id, guild_id) if intent else None
+
+            result = {
+                'intent': {
+                    'type': intent.intent_type.value if intent else None,
+                    'confidence': intent.confidence if intent else 0.0
+                },
+                'sentiment': {
+                    'type': sentiment.sentiment_type.value if sentiment else None,
+                    'confidence': sentiment.confidence if sentiment else 0.0
+                },
+                'entities': [{
+                    'type': e.entity_type.value,
+                    'value': e.value,
+                    'confidence': e.confidence
+                } for e in entities],
+                'response': response,
+                'processed_at': datetime.utcnow().isoformat()
+            }
+
+            # Cache result
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                result,
+                ttl=self.cache_ttls['nlp_responses']
+            )
+
+            record_metric("nlp_messages_processed", 1)
+            return result
 
         except Exception as e:
-            logger.error(f"Cleanup contexts error: {e}")
+            logger.error(f"Failed to process message: {e}")
+            return {}
 
-    async def _generate_intent_response(self, nlp_result: NLPResult,
-                                      context: Optional[ConversationContext]) -> str:
-        """Generate response based on intent."""
+    @time_operation("nlp_get_analytics")
+    async def get_analytics(self, guild_id: int, days: int = 30) -> Dict[str, Any]:
+        """Get NLP analytics for a guild."""
         try:
-            templates = self.response_templates.get(nlp_result.intent, [])
+            # Try to get from cache first
+            cache_key = f"nlp_analytics:{guild_id}:{days}"
+            cached_analytics = await self.cache_manager.enhanced_cache_get(cache_key)
 
-            if not templates:
-                return "I'm not sure how to respond to that."
+            if cached_analytics:
+                return cached_analytics
 
-            # Select template based on context and entities
-            template = templates[0]  # Simple selection for now
+            # Get intent statistics
+            intent_query = """
+            SELECT intent_type, COUNT(*) as count
+            FROM nlp_intents
+            WHERE guild_id = :guild_id
+            AND created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY intent_type
+            """
 
-            # Customize response based on entities
-            if nlp_result.entities:
-                if 'team' in nlp_result.entities:
-                    template = template.replace("What team or player", f"What about {nlp_result.entities['team'][0]}")
-                if 'amount' in nlp_result.entities:
-                    template = template.replace("how much", f"${nlp_result.entities['amount'][0]}")
+            intent_results = await self.db_manager.fetch_all(intent_query, {
+                'guild_id': guild_id,
+                'days': days
+            })
 
-            return template
+            # Get sentiment statistics
+            sentiment_query = """
+            SELECT sentiment_type, COUNT(*) as count
+            FROM nlp_sentiments
+            WHERE guild_id = :guild_id
+            AND created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY sentiment_type
+            """
+
+            sentiment_results = await self.db_manager.fetch_all(sentiment_query, {
+                'guild_id': guild_id,
+                'days': days
+            })
+
+            # Get entity statistics
+            entity_query = """
+            SELECT entity_type, COUNT(*) as count
+            FROM nlp_entities
+            WHERE guild_id = :guild_id
+            AND created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY entity_type
+            """
+
+            entity_results = await self.db_manager.fetch_all(entity_query, {
+                'guild_id': guild_id,
+                'days': days
+            })
+
+            analytics = {
+                'intent_distribution': {row['intent_type']: row['count'] for row in intent_results},
+                'sentiment_distribution': {row['sentiment_type']: row['count'] for row in sentiment_results},
+                'entity_distribution': {row['entity_type']: row['count'] for row in entity_results},
+                'total_messages': sum(row['count'] for row in intent_results),
+                'most_common_intent': max(intent_results, key=lambda x: x['count'])['intent_type'] if intent_results else None,
+                'most_common_sentiment': max(sentiment_results, key=lambda x: x['count'])['sentiment_type'] if sentiment_results else None,
+                'most_common_entity': max(entity_results, key=lambda x: x['count'])['entity_type'] if entity_results else None
+            }
+
+            # Cache analytics
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                analytics,
+                ttl=self.cache_ttls['nlp_analytics']
+            )
+
+            return analytics
 
         except Exception as e:
-            logger.error(f"Generate intent response error: {e}")
-            return "I'm sorry, I didn't understand that."
+            logger.error(f"Failed to get NLP analytics: {e}")
+            return {}
 
-    def _generate_suggestions(self, intent: IntentType, entities: Dict[str, Any]) -> List[str]:
-        """Generate suggestions based on intent and entities."""
+    async def clear_nlp_cache(self):
+        """Clear all NLP-related cache entries."""
         try:
-            suggestions = []
-
-            if intent == IntentType.BET_PLACE:
-                suggestions = [
-                    "What team would you like to bet on?",
-                    "How much would you like to bet?",
-                    "What type of bet would you prefer?"
-                ]
-            elif intent == IntentType.ODDS_QUERY:
-                suggestions = [
-                    "Which game are you interested in?",
-                    "What team's odds would you like to see?",
-                    "Would you like to see live odds?"
-                ]
-            elif intent == IntentType.STATS_QUERY:
-                suggestions = [
-                    "Which team's stats would you like to see?",
-                    "What type of statistics are you looking for?",
-                    "Would you like recent performance data?"
-                ]
-            elif intent == IntentType.HELP_REQUEST:
-                suggestions = [
-                    "I can help you place bets",
-                    "I can show you odds and statistics",
-                    "I can help with your account"
-                ]
-            else:
-                suggestions = [
-                    "Try asking about placing a bet",
-                    "Ask about current odds",
-                    "Request help or support"
-                ]
-
-            return suggestions[:3]  # Limit to 3 suggestions
-
+            await self.cache_manager.clear_cache_by_pattern("nlp_intents:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_sentiments:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_entities:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_responses:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_patterns:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_training:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_accuracy:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_usage:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_analytics:*")
+            await self.cache_manager.clear_cache_by_pattern("nlp_models:*")
+            logger.info("NLP cache cleared successfully")
         except Exception as e:
-            logger.error(f"Generate suggestions error: {e}")
-            return ["Try asking for help"]
+            logger.error(f"Failed to clear NLP cache: {e}")
 
-    def _determine_action_required(self, nlp_result: NLPResult) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
-        """Determine if an action is required based on NLP result."""
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get NLP service cache statistics."""
         try:
-            if nlp_result.intent == IntentType.BET_PLACE:
-                return True, "place_bet", nlp_result.entities
-            elif nlp_result.intent == IntentType.ODDS_QUERY:
-                return True, "get_odds", nlp_result.entities
-            elif nlp_result.intent == IntentType.STATS_QUERY:
-                return True, "get_stats", nlp_result.entities
-            elif nlp_result.intent == IntentType.BET_QUERY:
-                return True, "get_bets", nlp_result.entities
-            else:
-                return False, None, None
-
+            return await self.cache_manager.get_cache_stats()
         except Exception as e:
-            logger.error(f"Determine action required error: {e}")
-            return False, None, None
+            logger.error(f"Failed to get cache stats: {e}")
+            return {}

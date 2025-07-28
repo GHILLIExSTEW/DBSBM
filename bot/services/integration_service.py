@@ -32,9 +32,10 @@ import hmac
 
 from bot.services.performance_monitor import time_operation, record_metric
 from bot.data.db_manager import DatabaseManager
-from bot.data.cache_manager import cache_get, cache_set
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
+
 
 class IntegrationType(Enum):
     """Types of integrations available."""
@@ -47,6 +48,7 @@ class IntegrationType(Enum):
     STORAGE = "storage"
     CUSTOM = "custom"
 
+
 class IntegrationStatus(Enum):
     """Status of integrations."""
     ACTIVE = "active"
@@ -55,11 +57,13 @@ class IntegrationStatus(Enum):
     CONFIGURING = "configuring"
     TESTING = "testing"
 
+
 class SyncDirection(Enum):
     """Data synchronization direction."""
     INBOUND = "inbound"
     OUTBOUND = "outbound"
     BIDIRECTIONAL = "bidirectional"
+
 
 @dataclass
 class IntegrationConfig:
@@ -77,6 +81,7 @@ class IntegrationConfig:
     last_sync: Optional[datetime] = None
     health_status: str = "unknown"
 
+
 @dataclass
 class DataMapping:
     """Data mapping configuration."""
@@ -86,6 +91,7 @@ class DataMapping:
     target_field: str
     transformation_rules: Dict[str, Any]
     is_active: bool = True
+
 
 @dataclass
 class SyncJob:
@@ -102,11 +108,13 @@ class SyncJob:
     completed_at: Optional[datetime] = None
     error_details: Optional[str] = None
 
+
 class IntegrationService:
     """Enterprise integration and third-party connector service."""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
+        self.cache_manager = EnhancedCacheManager()
         self.integrations = {}
         self.connectors = {}
         self.session = None
@@ -172,6 +180,9 @@ class IntegrationService:
     async def initialize(self):
         """Initialize the integration service."""
         try:
+            # Initialize cache manager
+            await self.cache_manager.connect()
+
             # Initialize HTTP session
             self.session = aiohttp.ClientSession()
 
@@ -191,8 +202,8 @@ class IntegrationService:
 
     @time_operation("integration_creation")
     async def create_integration(self, integration_type: IntegrationType, name: str,
-                               provider: str, config_data: Dict[str, Any],
-                               credentials: Dict[str, Any], sync_settings: Dict[str, Any]) -> Optional[IntegrationConfig]:
+                                 provider: str, config_data: Dict[str, Any],
+                                 credentials: Dict[str, Any], sync_settings: Dict[str, Any]) -> Optional[IntegrationConfig]:
         """Create a new integration configuration."""
         try:
             integration_id = f"int_{uuid.uuid4().hex[:12]}"
@@ -231,7 +242,7 @@ class IntegrationService:
 
     @time_operation("data_synchronization")
     async def sync_data(self, integration_id: str, data_type: str,
-                       sync_direction: SyncDirection, data: Optional[Dict[str, Any]] = None) -> Optional[SyncJob]:
+                        sync_direction: SyncDirection, data: Optional[Dict[str, Any]] = None) -> Optional[SyncJob]:
         """Synchronize data with an external system."""
         try:
             integration = self.integrations.get(integration_id)
@@ -268,7 +279,8 @@ class IntegrationService:
             sync_job.records_processed = result.get('processed', 0)
             sync_job.records_successful = result.get('successful', 0)
             sync_job.records_failed = result.get('failed', 0)
-            sync_job.status = "completed" if result.get('success', False) else "failed"
+            sync_job.status = "completed" if result.get(
+                'success', False) else "failed"
             sync_job.completed_at = datetime.utcnow()
             sync_job.error_details = result.get('error', None)
 
@@ -331,7 +343,7 @@ class IntegrationService:
 
     @time_operation("data_mapping_creation")
     async def create_data_mapping(self, integration_id: str, source_field: str,
-                                target_field: str, transformation_rules: Dict[str, Any]) -> Optional[DataMapping]:
+                                  target_field: str, transformation_rules: Dict[str, Any]) -> Optional[DataMapping]:
         """Create a data mapping configuration."""
         try:
             mapping_id = f"map_{uuid.uuid4().hex[:12]}"
@@ -372,7 +384,8 @@ class IntegrationService:
             type_distribution = {}
             for integration in integrations:
                 int_type = integration.integration_type.value
-                type_distribution[int_type] = type_distribution.get(int_type, 0) + 1
+                type_distribution[int_type] = type_distribution.get(
+                    int_type, 0) + 1
 
             return {
                 'total_integrations': len(integrations),
@@ -389,7 +402,7 @@ class IntegrationService:
 
     @time_operation("bulk_data_sync")
     async def bulk_sync_data(self, integration_id: str, data_types: List[str],
-                           sync_direction: SyncDirection) -> Dict[str, Any]:
+                             sync_direction: SyncDirection) -> Dict[str, Any]:
         """Perform bulk data synchronization for multiple data types."""
         try:
             results = {
@@ -504,7 +517,8 @@ class IntegrationService:
         """Test connection to external system."""
         try:
             # Get connector for provider
-            connector = self.prebuilt_connectors.get(integration.provider.lower())
+            connector = self.prebuilt_connectors.get(
+                integration.provider.lower())
             if not connector:
                 return {'success': False, 'error': f'No connector available for {integration.provider}'}
 
@@ -524,7 +538,7 @@ class IntegrationService:
             return {'success': False, 'error': str(e)}
 
     async def _sync_outbound_data(self, integration: IntegrationConfig, data_type: str,
-                                data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+                                  data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Sync data outbound to external system."""
         try:
             # Get data mapping
@@ -586,7 +600,7 @@ class IntegrationService:
             return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
 
     async def _sync_bidirectional_data(self, integration: IntegrationConfig, data_type: str,
-                                     data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+                                       data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Sync data bidirectionally with external system."""
         try:
             # Sync outbound first
@@ -764,7 +778,8 @@ class IntegrationService:
     async def _get_health_summary(self) -> Dict[str, Any]:
         """Get health status summary."""
         try:
-            health_counts = {'healthy': 0, 'degraded': 0, 'unhealthy': 0, 'unknown': 0}
+            health_counts = {'healthy': 0, 'degraded': 0,
+                             'unhealthy': 0, 'unknown': 0}
 
             for integration in self.integrations.values():
                 health_counts[integration.health_status] += 1
@@ -987,16 +1002,20 @@ class IntegrationService:
             # Get integrations with scheduled syncs
             for integration in self.integrations.values():
                 if integration.status == IntegrationStatus.ACTIVE:
-                    sync_interval = integration.sync_settings.get('interval', 'daily')
+                    sync_interval = integration.sync_settings.get(
+                        'interval', 'daily')
                     last_sync = integration.last_sync
 
                     if last_sync:
-                        interval_minutes = self.sync_intervals.get(sync_interval, 1440)
-                        next_sync = last_sync + timedelta(minutes=interval_minutes)
+                        interval_minutes = self.sync_intervals.get(
+                            sync_interval, 1440)
+                        next_sync = last_sync + \
+                            timedelta(minutes=interval_minutes)
 
                         if datetime.utcnow() >= next_sync:
                             # Trigger sync
-                            data_types = integration.sync_settings.get('data_types', [])
+                            data_types = integration.sync_settings.get(
+                                'data_types', [])
                             for data_type in data_types:
                                 await self.sync_data(
                                     integration.integration_id,
@@ -1023,7 +1042,8 @@ class IntegrationService:
             results = await self.db_manager.fetch_all(query)
 
             for row in results:
-                logger.warning(f"Slow sync detected for integration {row['integration_id']}: {row['avg_duration']} minutes")
+                logger.warning(
+                    f"Slow sync detected for integration {row['integration_id']}: {row['avg_duration']} minutes")
 
         except Exception as e:
             logger.error(f"Failed to monitor sync performance: {e}")
@@ -1052,10 +1072,33 @@ class IntegrationService:
         except Exception as e:
             logger.error(f"Failed to retry failed syncs: {e}")
 
+    async def clear_integration_cache(self):
+        """Clear integration cache."""
+        try:
+            await self.cache_manager.clear_prefix("integration")
+            logger.info("Integration cache cleared successfully")
+        except Exception as e:
+            logger.error(f"Error clearing integration cache: {e}")
+
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get integration cache statistics."""
+        try:
+            stats = await self.cache_manager.get_stats()
+            return {
+                "cache_hits": stats.get("hits", 0),
+                "cache_misses": stats.get("misses", 0),
+                "cache_size": stats.get("size", 0),
+                "cache_ttl": stats.get("ttl", 0)
+            }
+        except Exception as e:
+            logger.error(f"Error getting integration cache stats: {e}")
+            return {}
+
     async def cleanup(self):
         """Cleanup integration service resources."""
         if self.session:
             await self.session.close()
+        await self.cache_manager.disconnect()
         self.integrations.clear()
         self.connectors.clear()
 

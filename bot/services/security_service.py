@@ -36,10 +36,24 @@ from scipy import stats
 
 from bot.services.performance_monitor import time_operation, record_metric
 from bot.data.db_manager import DatabaseManager
-from bot.data.cache_manager import cache_get, cache_set
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from bot.services.compliance_service import ComplianceService
 
 logger = logging.getLogger(__name__)
+
+# Security-specific cache TTLs
+SECURITY_CACHE_TTLS = {
+    'ip_reputation': 3600,  # 1 hour
+    'user_behavior': 1800,  # 30 minutes
+    'threat_alerts': 300,   # 5 minutes
+    'fraud_detection': 600,  # 10 minutes
+    'rate_limits': 300,      # 5 minutes
+    'ddos_protection': 60,   # 1 minute
+    'security_events': 1800, # 30 minutes
+    'user_history': 3600,    # 1 hour
+    'session_data': 1800,    # 30 minutes
+    'threat_intelligence': 7200,  # 2 hours
+}
 
 class SecurityEventType(Enum):
     """Types of security events that can be monitored."""
@@ -124,6 +138,10 @@ class SecurityService:
         self.compliance_service = compliance_service
         self.redis_client = None
         self.session = None
+
+        # Initialize enhanced cache manager
+        self.cache_manager = EnhancedCacheManager()
+        self.cache_ttls = SECURITY_CACHE_TTLS
 
         # Security configuration
         self.config = {
@@ -228,6 +246,12 @@ class SecurityService:
     async def detect_threats(self, user_id: int, guild_id: Optional[int] = None) -> List[ThreatAlert]:
         """Detect potential threats for a user or guild."""
         try:
+            # Try to get cached threats first
+            cache_key = f"threats:{user_id}:{guild_id or 'global'}"
+            cached_threats = await self.cache_manager.enhanced_cache_get(cache_key)
+            if cached_threats:
+                return [ThreatAlert(**threat) for threat in cached_threats]
+
             threats = []
 
             # Get recent events for the user/guild
@@ -253,6 +277,13 @@ class SecurityService:
             if rate_violations:
                 threats.extend(rate_violations)
 
+            # Cache threats
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                [asdict(threat) for threat in threats],
+                ttl=self.cache_ttls['threat_alerts']
+            )
+
             return threats
 
         except Exception as e:
@@ -263,6 +294,12 @@ class SecurityService:
     async def detect_fraud(self, user_id: int, guild_id: Optional[int] = None) -> Optional[FraudDetection]:
         """Detect potential fraud for a user."""
         try:
+            # Try to get cached fraud detection
+            cache_key = f"fraud_detection:{user_id}:{guild_id or 'global'}"
+            cached_fraud = await self.cache_manager.enhanced_cache_get(cache_key)
+            if cached_fraud:
+                return FraudDetection(**cached_fraud)
+
             # Get user behavior data
             user_behavior = await self._get_user_behavior_data(user_id, guild_id)
 
@@ -277,8 +314,9 @@ class SecurityService:
                 user_behavior, betting_analysis, collusion_indicators
             )
 
+            fraud_detection = None
             if fraud_confidence > self.threat_thresholds['fraud_detection']:
-                return FraudDetection(
+                fraud_detection = FraudDetection(
                     fraud_type=self._determine_fraud_type(user_behavior, betting_analysis),
                     confidence=fraud_confidence,
                     user_id=user_id,
@@ -292,7 +330,14 @@ class SecurityService:
                     timestamp=datetime.utcnow()
                 )
 
-            return None
+                # Cache fraud detection
+                await self.cache_manager.enhanced_cache_set(
+                    cache_key,
+                    asdict(fraud_detection),
+                    ttl=self.cache_ttls['fraud_detection']
+                )
+
+            return fraud_detection
 
         except Exception as e:
             logger.error(f"Failed to detect fraud: {e}")
@@ -311,8 +356,8 @@ class SecurityService:
             limit_config = self.rate_limits[action_type]
             key = f"rate_limit:{action_type}:{user_id}:{guild_id or 'global'}"
 
-            # Get current count from Redis
-            current_count = await cache_get(key, self.redis_client)
+            # Get current count from cache
+            current_count = await self.cache_manager.enhanced_cache_get(key)
             current_count = int(current_count) if current_count else 0
 
             if current_count >= limit_config['max']:
@@ -330,11 +375,10 @@ class SecurityService:
                 return False
 
             # Increment counter
-            await cache_set(
+            await self.cache_manager.enhanced_cache_set(
                 key,
                 current_count + 1,
-                expire=limit_config['window'],
-                redis_client=self.redis_client
+                ttl=limit_config['window']
             )
 
             return True
@@ -352,19 +396,18 @@ class SecurityService:
 
             # Check cache first
             cache_key = f"ip_reputation:{ip_address}"
-            cached_result = await cache_get(cache_key, self.redis_client)
+            cached_result = await self.cache_manager.enhanced_cache_get(cache_key)
             if cached_result:
-                return json.loads(cached_result)
+                return cached_result
 
             # Check multiple reputation sources
             reputation_data = await self._check_multiple_reputation_sources(ip_address)
 
-            # Cache result for 1 hour
-            await cache_set(
+            # Cache result
+            await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                json.dumps(reputation_data),
-                expire=3600,
-                redis_client=self.redis_client
+                reputation_data,
+                ttl=self.cache_ttls['ip_reputation']
             )
 
             return reputation_data
@@ -382,7 +425,7 @@ class SecurityService:
 
             # Get request count for this IP
             key = f"ddos_protection:{ip_address}"
-            request_count = await cache_get(key, self.redis_client)
+            request_count = await self.cache_manager.enhanced_cache_get(key)
             request_count = int(request_count) if request_count else 0
 
             if request_count > self.threat_thresholds['ddos_threshold']:
@@ -403,7 +446,11 @@ class SecurityService:
                 return False
 
             # Increment counter
-            await cache_set(key, request_count + 1, expire=60, redis_client=self.redis_client)
+            await self.cache_manager.enhanced_cache_set(
+                key,
+                request_count + 1,
+                ttl=self.cache_ttls['ddos_protection']
+            )
             return True
 
         except Exception as e:
@@ -413,6 +460,12 @@ class SecurityService:
     async def get_security_report(self, guild_id: int, days: int = 30) -> Dict[str, Any]:
         """Generate a comprehensive security report for a guild."""
         try:
+            # Try to get cached report
+            cache_key = f"security_report:{guild_id}:{days}"
+            cached_report = await self.cache_manager.enhanced_cache_get(cache_key)
+            if cached_report:
+                return cached_report
+
             end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=days)
 
@@ -428,7 +481,7 @@ class SecurityService:
             # Get fraud detections
             fraud_detections = await self._get_fraud_detections(guild_id, start_date, end_date)
 
-            return {
+            report = {
                 'period': {'start': start_date, 'end': end_date},
                 'summary': {
                     'total_events': len(events),
@@ -444,8 +497,39 @@ class SecurityService:
                 'recommendations': await self._generate_security_recommendations(analysis)
             }
 
+            # Cache report
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                report,
+                ttl=self.cache_ttls['security_events']
+            )
+
+            return report
+
         except Exception as e:
             logger.error(f"Failed to generate security report: {e}")
+            return {}
+
+    async def clear_security_cache(self):
+        """Clear all security-related cache entries."""
+        try:
+            await self.cache_manager.clear_cache_by_pattern("security:*")
+            await self.cache_manager.clear_cache_by_pattern("threats:*")
+            await self.cache_manager.clear_cache_by_pattern("fraud_detection:*")
+            await self.cache_manager.clear_cache_by_pattern("ip_reputation:*")
+            await self.cache_manager.clear_cache_by_pattern("rate_limit:*")
+            await self.cache_manager.clear_cache_by_pattern("ddos_protection:*")
+            await self.cache_manager.clear_cache_by_pattern("security_report:*")
+            logger.info("Security cache cleared successfully")
+        except Exception as e:
+            logger.error(f"Failed to clear security cache: {e}")
+
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get security service cache statistics."""
+        try:
+            return await self.cache_manager.get_cache_stats()
+        except Exception as e:
+            logger.error(f"Failed to get cache stats: {e}")
             return {}
 
     # Private helper methods
@@ -614,11 +698,10 @@ class SecurityService:
     async def _block_ip_temporarily(self, ip_address: str, duration: int = 3600):
         """Block an IP address temporarily."""
         self.blocked_ips.add(ip_address)
-        await cache_set(
+        await self.cache_manager.enhanced_cache_set(
             f"blocked_ip:{ip_address}",
             "blocked",
-            expire=duration,
-            redis_client=self.redis_client
+            ttl=duration
         )
 
     async def _check_multiple_reputation_sources(self, ip_address: str) -> Dict[str, Any]:

@@ -17,7 +17,7 @@ import os
 
 from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 from bot.data.game_utils import get_league_abbreviation, normalize_team_name
-from bot.data.cache_manager import cache_get, cache_set, cache_query
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from bot.services.performance_monitor import record_query, time_operation
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class DatabaseManager:
         """Initializes the DatabaseManager."""
         self._pool: Optional[aiomysql.Pool] = None
         self.db_name = MYSQL_DB
+        self.cache_manager = EnhancedCacheManager()
 
         # Configurable pool settings from environment variables
         self.pool_min_size = int(os.getenv("MYSQL_POOL_MIN_SIZE", "1"))
@@ -46,6 +47,19 @@ class DatabaseManager:
         self.pool_max_overflow = int(os.getenv("MYSQL_POOL_MAX_OVERFLOW", "5"))
         self.pool_timeout = int(os.getenv("MYSQL_POOL_TIMEOUT", "30"))
         self.connect_timeout = int(os.getenv("MYSQL_CONNECT_TIMEOUT", "30"))
+
+        # Query caching settings
+        self.default_cache_ttl = int(
+            os.getenv("DB_CACHE_TTL", "600"))  # 10 minutes
+        self.enable_query_cache = os.getenv(
+            "DB_ENABLE_QUERY_CACHE", "true").lower() == "true"
+        self.query_cache_prefix = "db_query"
+
+        # Performance monitoring settings
+        self.slow_query_threshold = float(
+            os.getenv("DB_SLOW_QUERY_THRESHOLD", "1.0"))  # 1 second
+        self.enable_query_logging = os.getenv(
+            "DB_ENABLE_QUERY_LOGGING", "true").lower() == "true"
 
         # Validate environment variables on initialization
         missing_vars = []
@@ -80,6 +94,9 @@ class DatabaseManager:
             f"Pool configuration: min_size={self.pool_min_size}, max_size={self.pool_max_size}, "
             f"max_overflow={self.pool_max_overflow}, timeout={self.pool_timeout}"
         )
+        logger.debug(
+            f"Cache configuration: enabled={self.enable_query_cache}, ttl={self.default_cache_ttl}s"
+        )
 
     async def connect(self) -> Optional[aiomysql.Pool]:
         """Create or return existing MySQL connection pool."""
@@ -88,6 +105,13 @@ class DatabaseManager:
             max_retries = 3
             retry_delay = 5  # seconds
             last_error = None
+
+            # Initialize cache manager
+            try:
+                await self.cache_manager.connect()
+                logger.info("Cache manager connected successfully.")
+            except Exception as e:
+                logger.warning(f"Failed to connect cache manager: {e}")
 
             for attempt in range(max_retries):
                 try:
@@ -100,46 +124,91 @@ class DatabaseManager:
                         minsize=self.pool_min_size,
                         maxsize=self.pool_max_size,
                         autocommit=True,
-                        connect_timeout=self.connect_timeout,
                         echo=False,
-                        charset="utf8mb4",
+                        pool_recycle=3600,  # Recycle connections every hour
+                        connect_timeout=self.connect_timeout,
                     )
-                    async with self._pool.acquire() as conn:
-                        async with conn.cursor() as cursor:
-                            await cursor.execute("SELECT 1")
-                    logger.info(
-                        "MySQL connection pool created and tested successfully."
-                    )
-                    await self.initialize_db()
-                    return self._pool
-                except aiomysql.OperationalError as op_err:
-                    last_error = op_err
-                    logger.warning(
-                        f"Attempt {attempt + 1}/{max_retries} failed to connect to MySQL: {op_err}"
-                    )
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(retry_delay)
+                    logger.info("MySQL connection pool created successfully.")
+                    break
                 except Exception as e:
                     last_error = e
-                    logger.error(
-                        f"Unexpected error during connection attempt {attempt + 1}: {e}"
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{max_retries} failed to create MySQL pool: {e}"
                     )
                     if attempt < max_retries - 1:
                         await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
 
-            logger.error(
-                f"Failed to create MySQL connection pool after {max_retries} attempts. Last error: {last_error}"
-            )
-            return None
+            if self._pool is None:
+                logger.error(
+                    f"Failed to create MySQL connection pool after {max_retries} attempts."
+                )
+                raise ConnectionError(
+                    f"Failed to create MySQL connection pool: {last_error}"
+                )
+
         return self._pool
 
     async def close(self):
-        """Close the database connection pool."""
+        """Close the MySQL connection pool."""
         if self._pool:
+            logger.info("Closing MySQL connection pool...")
             self._pool.close()
             await self._pool.wait_closed()
             self._pool = None
             logger.info("MySQL connection pool closed.")
+
+        # Disconnect cache manager
+        try:
+            await self.cache_manager.disconnect()
+            logger.info("Cache manager disconnected successfully.")
+        except Exception as e:
+            logger.warning(f"Error disconnecting cache manager: {e}")
+
+    def _generate_cache_key(self, query: str, args: Tuple) -> str:
+        """Generate a cache key for a query and its arguments."""
+        query_hash = hash(query + str(args))
+        return f"{self.query_cache_prefix}:{query_hash}"
+
+    def _should_cache_query(self, query: str) -> bool:
+        """Determine if a query should be cached based on its type."""
+        if not self.enable_query_cache:
+            return False
+
+        # Don't cache write operations
+        query_upper = query.strip().upper()
+        if any(keyword in query_upper for keyword in ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER']):
+            return False
+
+        # Don't cache queries with NOW() or similar time functions
+        if any(func in query_upper for func in ['NOW()', 'CURRENT_TIMESTAMP', 'RAND()']):
+            return False
+
+        return True
+
+    async def _get_cached_result(self, cache_key: str) -> Optional[Any]:
+        """Get cached result from the enhanced cache manager."""
+        try:
+            return await self.cache_manager.get("database", cache_key)
+        except Exception as e:
+            logger.warning(f"Error getting cached result: {e}")
+            return None
+
+    async def _set_cached_result(self, cache_key: str, result: Any, ttl: int = None) -> None:
+        """Set cached result in the enhanced cache manager."""
+        try:
+            ttl = ttl or self.default_cache_ttl
+            await self.cache_manager.set("database", cache_key, result, ttl=ttl)
+        except Exception as e:
+            logger.warning(f"Error setting cached result: {e}")
+
+    async def _invalidate_cache_pattern(self, pattern: str) -> None:
+        """Invalidate cache entries matching a pattern."""
+        try:
+            await self.cache_manager.clear_prefix("database", pattern)
+            logger.debug(f"Invalidated cache pattern: {pattern}")
+        except Exception as e:
+            logger.warning(f"Error invalidating cache pattern {pattern}: {e}")
 
     @time_operation("db_execute")
     async def execute(self, query: str, *args) -> Tuple[Optional[int], Optional[int]]:
@@ -152,7 +221,9 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        logger.debug("Executing DB Query: %s Args: %s", query, args)
+        if self.enable_query_logging:
+            logger.debug("Executing DB Query: %s Args: %s", query, args)
+
         start_time = time.time()
 
         try:
@@ -165,6 +236,17 @@ class DatabaseManager:
                     execution_time = time.time() - start_time
                     record_query(query, execution_time,
                                  success=True, rows_affected=affected_rows)
+
+                    # Invalidate cache for write operations
+                    if self.enable_query_cache and any(keyword in query.strip().upper()
+                                                       for keyword in ['INSERT', 'UPDATE', 'DELETE']):
+                        await self._invalidate_cache_pattern("db_query")
+
+                    # Log slow queries
+                    if execution_time > self.slow_query_threshold:
+                        logger.warning(
+                            f"Slow query detected: {query[:100]}... (took {execution_time:.3f}s)"
+                        )
 
                     return affected_rows, last_insert_id
         except Exception as e:
@@ -189,8 +271,10 @@ class DatabaseManager:
             logger.error("Cannot executemany: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
-        logger.debug("Executing Many DB Query: %s Batch size: %s",
-                     query, len(args_list))
+        if self.enable_query_logging:
+            logger.debug("Executing Many DB Query: %s Batch size: %s",
+                         query, len(args_list))
+
         start_time = time.time()
 
         try:
@@ -202,6 +286,17 @@ class DatabaseManager:
                     execution_time = time.time() - start_time
                     record_query(query, execution_time,
                                  success=True, rows_affected=affected_rows)
+
+                    # Invalidate cache for write operations
+                    if self.enable_query_cache and any(keyword in query.strip().upper()
+                                                       for keyword in ['INSERT', 'UPDATE', 'DELETE']):
+                        await self._invalidate_cache_pattern("db_query")
+
+                    # Log slow queries
+                    if execution_time > self.slow_query_threshold:
+                        logger.warning(
+                            f"Slow batch query detected: {query[:100]}... (took {execution_time:.3f}s, {len(args_list)} items)"
+                        )
 
                     return affected_rows
         except Exception as e:
@@ -220,8 +315,8 @@ class DatabaseManager:
             return None
 
     @time_operation("db_fetch_one")
-    async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
-        """Fetch one row as a dictionary with caching support."""
+    async def fetch_one(self, query: str, *args, cache_ttl: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        """Fetch one row as a dictionary with enhanced caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetch_one: DB pool unavailable.")
@@ -230,16 +325,22 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        # Generate cache key
-        cache_key = f"fetch_one:{hash(query + str(args))}"
+        # Generate cache key and check cache
+        cache_key = self._generate_cache_key(query, args)
+        cache_hit = False
 
-        # Try to get from cache first
-        cached_result = await cache_get("db_query", cache_key)
-        if cached_result is not None:
-            logger.debug(f"Cache HIT for fetch_one: {query[:50]}...")
-            return cached_result
+        if self._should_cache_query(query):
+            cached_result = await self._get_cached_result(cache_key)
+            if cached_result is not None:
+                if self.enable_query_logging:
+                    logger.debug(f"Cache HIT for fetch_one: {query[:50]}...")
+                cache_hit = True
+                record_query(query, 0.0, success=True, cache_hit=True)
+                return cached_result
 
-        logger.debug("Fetching One DB Query: %s Args: %s", query, args)
+        if self.enable_query_logging:
+            logger.debug("Fetching One DB Query: %s Args: %s", query, args)
+
         start_time = time.time()
 
         try:
@@ -250,11 +351,17 @@ class DatabaseManager:
 
                     execution_time = time.time() - start_time
                     record_query(query, execution_time,
-                                 success=True, cache_hit=False)
+                                 success=True, cache_hit=cache_hit)
 
-                    # Cache the result for 10 minutes
-                    if result is not None:
-                        await cache_set("db_query", cache_key, result, ttl=600)
+                    # Cache the result if appropriate
+                    if self._should_cache_query(query) and result is not None:
+                        await self._set_cached_result(cache_key, result, cache_ttl)
+
+                    # Log slow queries
+                    if execution_time > self.slow_query_threshold:
+                        logger.warning(
+                            f"Slow fetch_one query detected: {query[:100]}... (took {execution_time:.3f}s)"
+                        )
 
                     return result
         except Exception as e:
@@ -272,8 +379,8 @@ class DatabaseManager:
             return None
 
     @time_operation("db_fetch_all")
-    async def fetch_all(self, query: str, *args) -> List[Dict[str, Any]]:
-        """Fetch all rows as a list of dictionaries with caching support."""
+    async def fetch_all(self, query: str, *args, cache_ttl: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Fetch all rows as a list of dictionaries with enhanced caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetch_all: DB pool unavailable.")
@@ -282,16 +389,22 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        # Generate cache key
-        cache_key = f"fetch_all:{hash(query + str(args))}"
+        # Generate cache key and check cache
+        cache_key = self._generate_cache_key(query, args)
+        cache_hit = False
 
-        # Try to get from cache first
-        cached_result = await cache_get("db_query", cache_key)
-        if cached_result is not None:
-            logger.debug(f"Cache HIT for fetch_all: {query[:50]}...")
-            return cached_result
+        if self._should_cache_query(query):
+            cached_result = await self._get_cached_result(cache_key)
+            if cached_result is not None:
+                if self.enable_query_logging:
+                    logger.debug(f"Cache HIT for fetch_all: {query[:50]}...")
+                cache_hit = True
+                record_query(query, 0.0, success=True, cache_hit=True)
+                return cached_result
 
-        logger.debug("Fetching All DB Query: %s Args: %s", query, args)
+        if self.enable_query_logging:
+            logger.debug("Fetching All DB Query: %s Args: %s", query, args)
+
         start_time = time.time()
 
         try:
@@ -302,11 +415,17 @@ class DatabaseManager:
 
                     execution_time = time.time() - start_time
                     record_query(query, execution_time,
-                                 success=True, cache_hit=False)
+                                 success=True, cache_hit=cache_hit)
 
-                    # Cache the result for 10 minutes
-                    if result:
-                        await cache_set("db_query", cache_key, result, ttl=600)
+                    # Cache the result if appropriate
+                    if self._should_cache_query(query) and result:
+                        await self._set_cached_result(cache_key, result, cache_ttl)
+
+                    # Log slow queries
+                    if execution_time > self.slow_query_threshold:
+                        logger.warning(
+                            f"Slow fetch_all query detected: {query[:100]}... (took {execution_time:.3f}s, {len(result)} rows)"
+                        )
 
                     return result
         except Exception as e:
@@ -324,8 +443,8 @@ class DatabaseManager:
             return []
 
     @time_operation("db_fetchval")
-    async def fetchval(self, query: str, *args) -> Optional[Any]:
-        """Fetch a single value from the first row with caching support."""
+    async def fetchval(self, query: str, *args, cache_ttl: Optional[int] = None) -> Optional[Any]:
+        """Fetch a single value from the first row with enhanced caching support."""
         pool = await self.connect()
         if not pool:
             logger.error("Cannot fetchval: DB pool unavailable.")
@@ -334,16 +453,22 @@ class DatabaseManager:
         if len(args) == 1 and isinstance(args[0], (tuple, list)):
             args = tuple(args[0])
 
-        # Generate cache key
-        cache_key = f"fetchval:{hash(query + str(args))}"
+        # Generate cache key and check cache
+        cache_key = self._generate_cache_key(query, args)
+        cache_hit = False
 
-        # Try to get from cache first
-        cached_result = await cache_get("db_query", cache_key)
-        if cached_result is not None:
-            logger.debug(f"Cache HIT for fetchval: {query[:50]}...")
-            return cached_result
+        if self._should_cache_query(query):
+            cached_result = await self._get_cached_result(cache_key)
+            if cached_result is not None:
+                if self.enable_query_logging:
+                    logger.debug(f"Cache HIT for fetchval: {query[:50]}...")
+                cache_hit = True
+                record_query(query, 0.0, success=True, cache_hit=True)
+                return cached_result
 
-        logger.debug("Fetching Value DB Query: %s Args: %s", query, args)
+        if self.enable_query_logging:
+            logger.debug("Fetching Value DB Query: %s Args: %s", query, args)
+
         start_time = time.time()
 
         try:
@@ -355,11 +480,17 @@ class DatabaseManager:
 
                     execution_time = time.time() - start_time
                     record_query(query, execution_time,
-                                 success=True, cache_hit=False)
+                                 success=True, cache_hit=cache_hit)
 
-                    # Cache the result for 10 minutes
-                    if result is not None:
-                        await cache_set("db_query", cache_key, result, ttl=600)
+                    # Cache the result if appropriate
+                    if self._should_cache_query(query) and result is not None:
+                        await self._set_cached_result(cache_key, result, cache_ttl)
+
+                    # Log slow queries
+                    if execution_time > self.slow_query_threshold:
+                        logger.warning(
+                            f"Slow fetchval query detected: {query[:100]}... (took {execution_time:.3f}s)"
+                        )
 
                     return result
         except Exception as e:
@@ -375,6 +506,49 @@ class DatabaseManager:
                 exc_info=True,
             )
             return None
+
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get database cache statistics."""
+        try:
+            stats = await self.cache_manager.get_stats()
+            return {
+                "cache_hits": stats.get("hits", 0),
+                "cache_misses": stats.get("misses", 0),
+                "cache_size": stats.get("size", 0),
+                "cache_ttl": stats.get("ttl", 0),
+                "query_cache_enabled": self.enable_query_cache,
+                "default_cache_ttl": self.default_cache_ttl
+            }
+        except Exception as e:
+            logger.error(f"Error getting database cache stats: {e}")
+            return {}
+
+    async def clear_query_cache(self) -> None:
+        """Clear all database query cache."""
+        try:
+            await self.cache_manager.clear_prefix("database", "db_query")
+            logger.info("Database query cache cleared successfully")
+        except Exception as e:
+            logger.error(f"Error clearing database query cache: {e}")
+
+    async def get_pool_stats(self) -> Dict[str, Any]:
+        """Get database connection pool statistics."""
+        if not self._pool:
+            return {"pool_status": "not_initialized"}
+
+        try:
+            return {
+                "pool_status": "active",
+                "pool_size": self._pool.size,
+                "pool_free_size": self._pool.freesize,
+                "pool_min_size": self.pool_min_size,
+                "pool_max_size": self.pool_max_size,
+                "pool_max_overflow": self.pool_max_overflow,
+                "pool_timeout": self.pool_timeout
+            }
+        except Exception as e:
+            logger.error(f"Error getting pool stats: {e}")
+            return {"pool_status": "error", "error": str(e)}
 
     async def table_exists(self, conn, table_name: str) -> bool:
         """Check if a table exists in the database."""

@@ -1,0 +1,136 @@
+version: "3.8"
+
+services:
+  # Main DBSBM Bot Service
+  dbsbm-bot:
+    build: .
+    container_name: dbsbm-bot
+    environment:
+      # Discord Configuration
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - TEST_GUILD_ID=${TEST_GUILD_ID}
+
+      # API Configuration
+      - API_KEY=${API_KEY}
+      - API_SPORTS_KEY=${API_SPORTS_KEY}
+
+      # Database Configuration
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER:-dbsbm}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DB=${MYSQL_DB:-dbsbm}
+      - MYSQL_PORT=3306
+
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      # Webapp Configuration
+      - WEBAPP_PORT=25594
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+
+      # Logging Configuration
+      - LOG_LEVEL=INFO
+
+      # Environment
+      - NODE_ENV=production
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./bot/static:/app/bot/static
+    networks:
+      - dbsbm-network
+    ports:
+      - "25594:25594" # Webapp port
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:25594/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: dbsbm-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB:-dbsbm}
+      - MYSQL_USER=${MYSQL_USER:-dbsbm}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./bot/migrations:/docker-entrypoint-initdb.d
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - dbsbm-network
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: dbsbm-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - dbsbm-network
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Nginx Load Balancer (for production)
+  nginx:
+    image: nginx:alpine
+    container_name: dbsbm-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - dbsbm-bot
+    restart: unless-stopped
+    networks:
+      - dbsbm-network
+    profiles:
+      - production
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  dbsbm-network:
+    driver: bridge

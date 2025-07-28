@@ -72,32 +72,20 @@ except ImportError:
     from utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
 
 # --- Logging Setup ---
-# Use centralized configuration for logging
+# Use new centralized logging configuration
 try:
-    settings = get_settings()
-    log_config = get_logging_config()
-    log_level_str = log_config['level']
-    log_format = log_config['format']
-    log_file_path = log_config['file']
-except Exception:
-    # Fallback to old logging setup
-    log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
-    log_format = os.getenv(
-        "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    )
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    log_file_name = "bot_activity.log"
-    log_file_path = (
-        os.path.join(BASE_DIR, "logs", log_file_name)
-        if not os.path.isabs(os.getenv("LOG_FILE", ""))
-        else os.getenv("LOG_FILE", os.path.join(BASE_DIR, "logs", log_file_name))
-    )
-
-log_level = getattr(logging, log_level_str, logging.INFO)
-
-# Ensure log directory exists
-if log_file_path:
-    log_dir = os.path.dirname(log_file_path)
+    from bot.utils.logging_config import auto_configure_logging
+    auto_configure_logging()
+except ImportError:
+    try:
+        from utils.logging_config import auto_configure_logging
+        auto_configure_logging()
+    except ImportError:
+        # Fallback to basic logging setup
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        )
     if log_dir and not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
 
@@ -374,6 +362,8 @@ class BettingBot(commands.Bot):
         # Community engagement services will be initialized in setup_hook
         self.community_events_service = None
         self.community_analytics_service = None
+        # System integration services will be initialized in setup_hook
+        self.system_integration_service = None
 
     async def get_bet_slip_generator(
         self, guild_id: int, bet_type: str = "game_line"
@@ -877,6 +867,18 @@ class BettingBot(commands.Bot):
             service_starts.append(self.community_events_service.start())
         if self.community_analytics_service:
             service_starts.append(self.community_analytics_service.start())
+
+        # Initialize system integration service
+        try:
+            from bot.services.system_integration_service import SystemIntegrationService
+            self.system_integration_service = SystemIntegrationService(
+                self.db_manager)
+            service_starts.append(self.system_integration_service.start())
+            logger.info("System integration service initialized")
+        except Exception as e:
+            logger.error(
+                f"Failed to initialize system integration service: {e}")
+            self.system_integration_service = None
 
         # Initialize rate limiter
         try:

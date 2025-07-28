@@ -1,0 +1,450 @@
+"""
+Health check utilities for DBSBM system.
+
+This module provides comprehensive health checking for all system
+components including database, cache, APIs, and services.
+"""
+
+import asyncio
+import logging
+import time
+from typing import Dict, List, Any, Optional, Callable
+from datetime import datetime, timedelta
+from dataclasses import dataclass, asdict
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class HealthCheckResult:
+    """Result of a health check."""
+    service_name: str
+    status: str  # 'healthy', 'degraded', 'unhealthy'
+    response_time: float
+    error_message: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+    timestamp: Optional[datetime] = None
+
+    def __post_init__(self):
+        if self.timestamp is None:
+            self.timestamp = datetime.utcnow()
+
+
+class HealthChecker:
+    """Comprehensive health checker for DBSBM system."""
+
+    def __init__(self):
+        self.health_checks = {}
+        self.last_results = {}
+        self.check_intervals = {}
+        self.dependencies = {}
+
+    def register_health_check(
+        self,
+        service_name: str,
+        check_function: Callable,
+        interval: int = 60,
+        dependencies: Optional[List[str]] = None
+    ):
+        """Register a health check function."""
+        self.health_checks[service_name] = check_function
+        self.check_intervals[service_name] = interval
+        self.dependencies[service_name] = dependencies or []
+
+    async def run_health_check(self, service_name: str) -> HealthCheckResult:
+        """Run a specific health check."""
+        if service_name not in self.health_checks:
+            return HealthCheckResult(
+                service_name=service_name,
+                status="unhealthy",
+                response_time=0.0,
+                error_message=f"Health check not registered for {service_name}"
+            )
+
+        start_time = time.time()
+
+        try:
+            # Check dependencies first
+            for dep in self.dependencies[service_name]:
+                if dep in self.last_results:
+                    dep_result = self.last_results[dep]
+                    if dep_result.status == "unhealthy":
+                        return HealthCheckResult(
+                            service_name=service_name,
+                            status="unhealthy",
+                            response_time=time.time() - start_time,
+                            error_message=f"Dependency {dep} is unhealthy"
+                        )
+
+            # Run the health check
+            check_function = self.health_checks[service_name]
+            if asyncio.iscoroutinefunction(check_function):
+                result = await check_function()
+            else:
+                result = check_function()
+
+            response_time = time.time() - start_time
+
+            if isinstance(result, dict):
+                status = result.get('status', 'healthy')
+                error_message = result.get('error_message')
+                details = result.get('details')
+            else:
+                status = 'healthy' if result else 'unhealthy'
+                error_message = None
+                details = None
+
+            health_result = HealthCheckResult(
+                service_name=service_name,
+                status=status,
+                response_time=response_time,
+                error_message=error_message,
+                details=details
+            )
+
+        except Exception as e:
+            response_time = time.time() - start_time
+            health_result = HealthCheckResult(
+                service_name=service_name,
+                status="unhealthy",
+                response_time=response_time,
+                error_message=str(e)
+            )
+
+        self.last_results[service_name] = health_result
+        return health_result
+
+    async def run_all_health_checks(self) -> Dict[str, HealthCheckResult]:
+        """Run all registered health checks."""
+        results = {}
+
+        for service_name in self.health_checks:
+            result = await self.run_health_check(service_name)
+            results[service_name] = result
+
+        return results
+
+    def get_overall_status(self, results: Dict[str, HealthCheckResult]) -> str:
+        """Determine overall system status."""
+        if not results:
+            return "unknown"
+
+        statuses = [result.status for result in results.values()]
+
+        if "unhealthy" in statuses:
+            return "unhealthy"
+        elif "degraded" in statuses:
+            return "degraded"
+        else:
+            return "healthy"
+
+    def generate_health_report(self, results: Dict[str, HealthCheckResult]) -> Dict[str, Any]:
+        """Generate a comprehensive health report."""
+        overall_status = self.get_overall_status(results)
+
+        # Calculate statistics
+        total_checks = len(results)
+        healthy_checks = len(
+            [r for r in results.values() if r.status == "healthy"])
+        degraded_checks = len(
+            [r for r in results.values() if r.status == "degraded"])
+        unhealthy_checks = len(
+            [r for r in results.values() if r.status == "unhealthy"])
+
+        # Calculate average response time
+        response_times = [r.response_time for r in results.values()]
+        avg_response_time = sum(response_times) / \
+            len(response_times) if response_times else 0
+
+        report = {
+            "overall_status": overall_status,
+            "timestamp": datetime.utcnow().isoformat(),
+            "statistics": {
+                "total_checks": total_checks,
+                "healthy": healthy_checks,
+                "degraded": degraded_checks,
+                "unhealthy": unhealthy_checks,
+                "health_percentage": (healthy_checks / total_checks * 100) if total_checks > 0 else 0
+            },
+            "average_response_time": avg_response_time,
+            "services": {
+                service_name: asdict(result) for service_name, result in results.items()
+            }
+        }
+
+        return report
+
+
+# Predefined health check functions
+async def check_database_health() -> Dict[str, Any]:
+    """Check database connectivity and performance."""
+    try:
+        # Import here to avoid circular imports
+        from bot.data.db_manager import get_db_manager
+
+        db_manager = get_db_manager()
+
+        # Test connection
+        start_time = time.time()
+        connection = await db_manager.get_connection()
+        response_time = time.time() - start_time
+
+        if not connection:
+            return {
+                "status": "unhealthy",
+                "error_message": "Database connection failed",
+                "response_time": response_time
+            }
+
+        # Test simple query
+        start_time = time.time()
+        cursor = await connection.cursor()
+        await cursor.execute("SELECT 1")
+        result = await cursor.fetchone()
+        await cursor.close()
+        response_time = time.time() - start_time
+
+        if result and result[0] == 1:
+            return {
+                "status": "healthy",
+                "response_time": response_time,
+                "details": {
+                    "connection_pool_size": getattr(db_manager, 'pool_size', 'unknown'),
+                    "active_connections": getattr(db_manager, 'active_connections', 'unknown')
+                }
+            }
+        else:
+            return {
+                "status": "unhealthy",
+                "error_message": "Database query test failed",
+                "response_time": response_time
+            }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"Database health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
+async def check_cache_health() -> Dict[str, Any]:
+    """Check cache connectivity and performance."""
+    try:
+        # Import here to avoid circular imports
+        from bot.utils.enhanced_cache_manager import enhanced_cache_manager
+
+        # Test cache connection
+        start_time = time.time()
+        is_healthy = await enhanced_cache_manager.health_check()
+        response_time = time.time() - start_time
+
+        if not is_healthy:
+            return {
+                "status": "unhealthy",
+                "error_message": "Cache connection failed",
+                "response_time": response_time
+            }
+
+        # Test cache operations
+        test_key = "_health_check_test"
+        test_value = "health_check_value"
+
+        # Test set operation
+        start_time = time.time()
+        set_success = await enhanced_cache_manager.set("test", test_key, test_value, ttl=10)
+        set_time = time.time() - start_time
+
+        # Test get operation
+        start_time = time.time()
+        retrieved_value = await enhanced_cache_manager.get("test", test_key)
+        get_time = time.time() - start_time
+
+        # Test delete operation
+        start_time = time.time()
+        delete_success = await enhanced_cache_manager.delete("test", test_key)
+        delete_time = time.time() - start_time
+
+        if set_success and retrieved_value == test_value and delete_success:
+            return {
+                "status": "healthy",
+                "response_time": (set_time + get_time + delete_time) / 3,
+                "details": {
+                    "set_time": set_time,
+                    "get_time": get_time,
+                    "delete_time": delete_time,
+                    "circuit_breaker_state": enhanced_cache_manager._circuit_breaker.state
+                }
+            }
+        else:
+            return {
+                "status": "degraded",
+                "error_message": "Cache operations partially failed",
+                "response_time": (set_time + get_time + delete_time) / 3
+            }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"Cache health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
+async def check_api_health() -> Dict[str, Any]:
+    """Check external API connectivity."""
+    try:
+        # Import here to avoid circular imports
+        from bot.api.sports_api import SportsAPI
+
+        sports_api = SportsAPI()
+
+        # Test API connectivity
+        start_time = time.time()
+        try:
+            # Test a simple API call
+            leagues = await sports_api.get_leagues("soccer")
+            response_time = time.time() - start_time
+
+            if leagues and len(leagues) > 0:
+                return {
+                    "status": "healthy",
+                    "response_time": response_time,
+                    "details": {
+                        "leagues_found": len(leagues),
+                        "api_endpoint": "sports-api"
+                    }
+                }
+            else:
+                return {
+                    "status": "degraded",
+                    "error_message": "API returned empty response",
+                    "response_time": response_time
+                }
+
+        except Exception as api_error:
+            return {
+                "status": "unhealthy",
+                "error_message": f"API call failed: {str(api_error)}",
+                "response_time": time.time() - start_time
+            }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"API health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
+async def check_discord_health() -> Dict[str, Any]:
+    """Check Discord bot connectivity."""
+    try:
+        # This would need to be called from the main bot instance
+        # For now, we'll check if the bot is running
+        import psutil
+
+        # Look for Python processes that might be running the bot
+        bot_processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if proc.info['name'] == 'python' and any('main.py' in cmd for cmd in proc.info['cmdline'] or []):
+                    bot_processes.append(proc.info)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
+        if bot_processes:
+            return {
+                "status": "healthy",
+                "response_time": 0.0,
+                "details": {
+                    "bot_processes": len(bot_processes),
+                    "process_ids": [p['pid'] for p in bot_processes]
+                }
+            }
+        else:
+            return {
+                "status": "unhealthy",
+                "error_message": "Discord bot process not found",
+                "response_time": 0.0
+            }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"Discord health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
+async def check_memory_health() -> Dict[str, Any]:
+    """Check system memory usage."""
+    try:
+        import psutil
+
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+
+        # Determine status based on usage
+        memory_percent = memory.percent
+        disk_percent = disk.percent
+
+        if memory_percent > 90 or disk_percent > 90:
+            status = "unhealthy"
+        elif memory_percent > 80 or disk_percent > 80:
+            status = "degraded"
+        else:
+            status = "healthy"
+
+        return {
+            "status": status,
+            "response_time": 0.0,
+            "details": {
+                "memory_usage_percent": memory_percent,
+                "memory_available_gb": memory.available / (1024**3),
+                "disk_usage_percent": disk_percent,
+                "disk_free_gb": disk.free / (1024**3)
+            }
+        }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"Memory health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
+# Global health checker instance
+health_checker = HealthChecker()
+
+# Register default health checks
+
+
+def register_default_health_checks():
+    """Register default health checks."""
+    health_checker.register_health_check(
+        "database", check_database_health, interval=30)
+    health_checker.register_health_check(
+        "cache", check_cache_health, interval=30)
+    health_checker.register_health_check("api", check_api_health, interval=60)
+    health_checker.register_health_check(
+        "discord", check_discord_health, interval=30)
+    health_checker.register_health_check(
+        "memory", check_memory_health, interval=60)
+
+
+async def run_system_health_check() -> Dict[str, Any]:
+    """Run a comprehensive system health check."""
+    if not health_checker.health_checks:
+        register_default_health_checks()
+
+    results = await health_checker.run_all_health_checks()
+    report = health_checker.generate_health_report(results)
+
+    return report
+
+
+# Auto-register health checks when module is imported
+register_default_health_checks()

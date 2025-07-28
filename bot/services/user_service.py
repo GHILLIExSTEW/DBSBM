@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from bot.data.cache_manager import CacheManager
+from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
 from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
 USER_CACHE_TTL = 3600  # Default TTL (1 hour)
@@ -20,7 +20,7 @@ class UserService:
     def __init__(self, bot, db_manager):
         self.bot = bot
         self.db = db_manager
-        self.cache = CacheManager()
+        self.cache = enhanced_cache_manager
 
     async def start(self):
         """Initialize async components if needed."""
@@ -39,7 +39,7 @@ class UserService:
         """Get user data by ID (from cache or DB)."""
         cache_key = f"user:{user_id}"
         try:
-            cached_user = self.cache.get(cache_key)
+            cached_user = await enhanced_cache_get("user_data", str(user_id))
             if cached_user:
                 logger.debug(f"Cache hit for user {user_id}")
                 if "balance" in cached_user and cached_user["balance"] is not None:
@@ -59,7 +59,7 @@ class UserService:
             if user_data:
                 if "balance" in user_data and user_data["balance"] is not None:
                     user_data["balance"] = float(user_data["balance"])
-                self.cache.set(cache_key, user_data, ttl=USER_CACHE_TTL)
+                await enhanced_cache_set("user_data", str(user_id), user_data, ttl=USER_CACHE_TTL)
                 return user_data
             else:
                 return None
@@ -84,7 +84,7 @@ class UserService:
                     user_id,
                 )
                 user["username"] = username
-                self.cache.delete(f"user:{user_id}")
+                await enhanced_cache_delete("user_data", str(user_id))
             return user
         else:
             logger.info(f"User {user_id} not found, attempting to create.")
@@ -156,8 +156,7 @@ class UserService:
             )
 
             user["balance"] = new_balance
-            cache_key = f"user:{user_id}"
-            self.cache.set(cache_key, user, ttl=USER_CACHE_TTL)
+            await enhanced_cache_set("user_data", str(user_id), user, ttl=USER_CACHE_TTL)
 
             return user
 
@@ -166,11 +165,61 @@ class UserService:
             raise
         except Exception as e:
             logger.exception(f"Error updating balance for user {user_id}: {e}")
-            raise UserServiceError(
-                "An internal error occurred while updating balance.")
+            raise UserServiceError(f"Failed to update balance: {e}")
+
+    async def get_user_stats(self, user_id: int, guild_id: int) -> Dict[str, Any]:
+        """Get comprehensive user statistics."""
+        try:
+            # Get user's betting history
+            bets = await self.db.fetch_all(
+                """
+                SELECT
+                    bet_id, game_id, selection, odds, units,
+                    status, created_at, result, payout
+                FROM bets
+                WHERE user_id = %s AND guild_id = %s
+                ORDER BY created_at DESC
+                LIMIT 100
+                """,
+                user_id, guild_id
+            )
+
+            if not bets:
+                return {
+                    "total_bets": 0,
+                    "win_rate": 0.0,
+                    "total_volume": 0.0,
+                    "avg_bet_size": 0.0,
+                    "total_winnings": 0.0,
+                    "roi": 0.0
+                }
+
+            # Calculate statistics
+            total_bets = len(bets)
+            completed_bets = [bet for bet in bets if bet["status"] in ["won", "lost"]]
+            won_bets = [bet for bet in completed_bets if bet["status"] == "won"]
+
+            win_rate = len(won_bets) / len(completed_bets) if completed_bets else 0.0
+            total_volume = sum(bet["units"] for bet in bets)
+            avg_bet_size = total_volume / total_bets if total_bets > 0 else 0.0
+            total_winnings = sum(bet.get("payout", 0) for bet in won_bets)
+            roi = (total_winnings - total_volume) / total_volume if total_volume > 0 else 0.0
+
+            return {
+                "total_bets": total_bets,
+                "win_rate": win_rate,
+                "total_volume": total_volume,
+                "avg_bet_size": avg_bet_size,
+                "total_winnings": total_winnings,
+                "roi": roi
+            }
+
+        except Exception as e:
+            logger.exception(f"Error getting user stats for {user_id}: {e}")
+            return {}
 
     async def get_user_balance(self, user_id: int) -> float:
-        """Get a user's current balance directly."""
+        """Get user's current balance."""
         try:
             user = await self.get_user(user_id)
             return float(user.get("balance", 0.0) or 0.0) if user else 0.0
@@ -178,47 +227,47 @@ class UserService:
             logger.exception(f"Error getting balance for user {user_id}: {e}")
             return 0.0
 
-    async def get_leaderboard_data(
-        self, timeframe: str = "weekly", limit: int = 10, guild_id: Optional[int] = None
-    ) -> List[Dict]:
-        """Get leaderboard data (profit/loss) based on transactions."""
-        logger.warning(
-            "get_leaderboard_data relies on a 'transactions' table, "
-            "which might not exist in the defined schema."
-        )
-
+    async def add_units(self, user_id: int, amount: float) -> bool:
+        """Add units to user's balance."""
         try:
-            now = datetime.now(timezone.utc)
-            start_date = None
-            if timeframe == "daily":
-                start_date = now - timedelta(days=1)
-            elif timeframe == "weekly":
-                start_date = now - timedelta(weeks=1)
-            elif timeframe == "monthly":
-                start_date = now - timedelta(days=30)
-            elif timeframe == "yearly":
-                start_date = datetime(now.year, 1, 1, tzinfo=timezone.utc)
-
-            query = """
-                SELECT
-                    t.user_id,
-                    COALESCE(u.username, 'Unknown User') as username,
-                    SUM(t.amount) as total_profit_loss
-                FROM transactions t
-                LEFT JOIN users u ON t.user_id = u.user_id
-                WHERE 1=1
-            """
-            params: List[Any] = []
-
-            if start_date:
-                query += " AND t.created_at >= %s"
-                params.append(start_date)
-
-            query += " GROUP BY t.user_id, u.username ORDER BY total_profit_loss DESC LIMIT %s"
-            params.append(limit)
-
-            return await self.db.fetch_all(query, *params)
-
+            await self.update_user_balance(user_id, amount, "deposit")
+            return True
         except Exception as e:
-            logger.exception(f"Error getting leaderboard data: {e}")
+            logger.exception(f"Error adding units for user {user_id}: {e}")
+            return False
+
+    async def subtract_units(self, user_id: int, amount: float) -> bool:
+        """Subtract units from user's balance."""
+        try:
+            await self.update_user_balance(user_id, -amount, "withdrawal")
+            return True
+        except Exception as e:
+            logger.exception(f"Error subtracting units for user {user_id}: {e}")
+            return False
+
+    async def get_top_users(self, guild_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get top users by balance."""
+        try:
+            users = await self.db.fetch_all(
+                """
+                SELECT user_id, username, balance
+                FROM users
+                WHERE balance > 0
+                ORDER BY balance DESC
+                LIMIT %s
+                """,
+                limit
+            )
+            return users
+        except Exception as e:
+            logger.exception(f"Error getting top users: {e}")
             return []
+
+    async def clear_user_cache(self, user_id: int) -> bool:
+        """Clear user data from cache."""
+        try:
+            await enhanced_cache_delete("user_data", str(user_id))
+            return True
+        except Exception as e:
+            logger.exception(f"Error clearing cache for user {user_id}: {e}")
+            return False

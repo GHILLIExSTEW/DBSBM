@@ -1,1095 +1,817 @@
 """
-Audit Service - Advanced Audit Logging & Forensic Analysis
-
-This service provides comprehensive audit logging, real-time monitoring,
-and forensic analysis capabilities for the DBSBM system.
-
-Features:
-- Comprehensive audit trails for all system activities
-- Real-time audit monitoring and alerting
-- Audit log analysis and reporting
-- Compliance dashboard for regulatory requirements
-- Forensic analysis tools for investigations
-- Complete activity logging with context
-- Tamper-proof audit trails
-- Real-time compliance monitoring
-- Automated compliance reporting
-- Forensic investigation support
+Audit Service for DBSBM System.
+Provides comprehensive audit logging and compliance tracking.
 """
 
 import asyncio
 import json
 import logging
-import time
-import hashlib
-import hmac
+import secrets
+import string
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+from typing import Any, Dict, List, Optional, Tuple, Union
+from dataclasses import dataclass, field
 from enum import Enum
-import uuid
+import hashlib
 
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.data.cache_manager import cache_get, cache_set
+from data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
-class AuditEventType(Enum):
-    """Types of audit events that can be logged."""
-    USER_LOGIN = "user_login"
-    USER_LOGOUT = "user_logout"
-    USER_CREATION = "user_creation"
-    USER_MODIFICATION = "user_modification"
-    USER_DELETION = "user_deletion"
-    BET_PLACEMENT = "bet_placement"
-    BET_MODIFICATION = "bet_modification"
-    BET_CANCELLATION = "bet_cancellation"
-    PAYMENT_PROCESSING = "payment_processing"
-    ADMIN_ACTION = "admin_action"
-    SYSTEM_CONFIGURATION = "system_configuration"
-    DATA_ACCESS = "data_access"
-    DATA_MODIFICATION = "data_modification"
-    DATA_EXPORT = "data_export"
-    SECURITY_EVENT = "security_event"
-    COMPLIANCE_CHECK = "compliance_check"
+# Audit-specific cache TTLs
+AUDIT_CACHE_TTLS = {
+    'audit_logs': 1800,             # 30 minutes
+    'audit_events': 900,             # 15 minutes
+    'audit_reports': 3600,           # 1 hour
+    'audit_alerts': 300,             # 5 minutes
+    'audit_compliance': 7200,        # 2 hours
+    'audit_retention': 3600,         # 1 hour
+    'audit_analytics': 1800,         # 30 minutes
+    'audit_exports': 600,            # 10 minutes
+    'audit_monitoring': 300,         # 5 minutes
+    'audit_performance': 1800,       # 30 minutes
+}
 
-class AuditSeverity(Enum):
-    """Severity levels for audit events."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+class AuditLevel(Enum):
+    """Audit log levels."""
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
     CRITICAL = "critical"
 
-class ComplianceType(Enum):
-    """Types of compliance requirements."""
-    GDPR = "gdpr"
-    SOC2 = "soc2"
-    PCI_DSS = "pci_dss"
-    HIPAA = "hipaa"
-    SOX = "sox"
+class AuditCategory(Enum):
+    """Audit event categories."""
+    USER_ACTION = "user_action"
+    SYSTEM_EVENT = "system_event"
+    SECURITY_EVENT = "security_event"
+    ADMIN_ACTION = "admin_action"
+    DATA_ACCESS = "data_access"
+    CONFIGURATION = "configuration"
+    COMPLIANCE = "compliance"
+
+class AuditStatus(Enum):
+    """Audit event status."""
+    PENDING = "pending"
+    PROCESSED = "processed"
+    FAILED = "failed"
+    ARCHIVED = "archived"
 
 @dataclass
-class AuditEvent:
-    """Audit event data structure."""
-    event_id: str
-    event_type: AuditEventType
+class AuditLog:
+    """Audit log entry."""
+    id: int
+    tenant_id: int
     user_id: Optional[int]
-    guild_id: Optional[int]
-    timestamp: datetime
-    severity: AuditSeverity
-    description: str
+    event_type: str
+    category: AuditCategory
+    level: AuditLevel
+    message: str
     details: Dict[str, Any]
     ip_address: Optional[str]
     user_agent: Optional[str]
-    session_id: Optional[str]
-    correlation_id: Optional[str]
-    compliance_tags: List[str]
-    hash_signature: str
+    created_at: datetime
 
 @dataclass
-class ComplianceReport:
-    """Compliance report data structure."""
-    report_id: str
-    compliance_type: ComplianceType
-    report_period: str
-    generated_at: datetime
-    status: str
-    findings: List[Dict[str, Any]]
-    recommendations: List[str]
-    risk_score: float
+class AuditEvent:
+    """Audit event configuration."""
+    id: int
+    tenant_id: int
+    event_name: str
+    event_type: str
+    category: AuditCategory
+    is_enabled: bool
+    retention_days: int
+    created_at: datetime
+    updated_at: datetime
 
 @dataclass
-class ForensicInvestigation:
-    """Forensic investigation data structure."""
-    investigation_id: str
-    title: str
-    description: str
-    start_date: datetime
-    end_date: Optional[datetime]
-    status: str
-    evidence: List[Dict[str, Any]]
-    findings: List[Dict[str, Any]]
-    conclusions: List[str]
+class AuditReport:
+    """Audit report configuration."""
+    id: int
+    tenant_id: int
+    name: str
+    report_type: str
+    parameters: Dict[str, Any]
+    schedule: Optional[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
+class AuditAlert:
+    """Audit alert configuration."""
+    id: int
+    tenant_id: int
+    name: str
+    alert_type: str
+    conditions: Dict[str, Any]
+    actions: List[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
 class AuditService:
-    """Advanced audit logging and forensic analysis service."""
+    """Audit service for comprehensive audit logging and compliance tracking."""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db_manager = db_manager
-        self.audit_chain = []
-        self.compliance_rules = {}
 
-        # Audit configuration
-        self.config = {
-            'audit_logging_enabled': True,
-            'real_time_monitoring_enabled': True,
-            'compliance_monitoring_enabled': True,
-            'forensic_analysis_enabled': True,
-            'tamper_protection_enabled': True,
-            'automated_reporting_enabled': True
-        }
+        # Initialize enhanced cache manager
+        self.cache_manager = EnhancedCacheManager()
+        self.cache_ttls = AUDIT_CACHE_TTLS
 
-        # Compliance rules
-        self.compliance_rules = {
-            ComplianceType.GDPR: {
-                'data_access_logging': True,
-                'data_modification_logging': True,
-                'data_deletion_logging': True,
-                'consent_tracking': True,
-                'retention_period': 2555  # 7 years
-            },
-            ComplianceType.SOC2: {
-                'access_control_logging': True,
-                'system_configuration_logging': True,
-                'security_event_logging': True,
-                'retention_period': 2555  # 7 years
-            },
-            ComplianceType.PCI_DSS: {
-                'payment_processing_logging': True,
-                'card_data_access_logging': True,
-                'security_event_logging': True,
-                'retention_period': 365  # 1 year
-            }
-        }
+        # Background tasks
+        self.retention_task = None
+        self.monitoring_task = None
+        self.is_running = False
 
-        # Audit retention periods
-        self.retention_periods = {
-            'audit_events': 2555,  # 7 years
-            'compliance_reports': 2555,  # 7 years
-            'forensic_investigations': 3650,  # 10 years
-            'temporary_logs': 90  # 3 months
-        }
-
-    async def initialize(self):
-        """Initialize the audit service."""
+    async def start(self):
+        """Start the audit service."""
         try:
-            # Initialize audit chain
-            await self._initialize_audit_chain()
-
-            # Start background monitoring tasks
-            asyncio.create_task(self._audit_monitoring())
-            asyncio.create_task(self._compliance_monitoring())
-            asyncio.create_task(self._data_retention_cleanup())
-
-            logger.info("Audit service initialized successfully")
-
+            self.is_running = True
+            self.retention_task = asyncio.create_task(self._cleanup_expired_logs())
+            self.monitoring_task = asyncio.create_task(self._monitor_audit_events())
+            logger.info("Audit service started successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize audit service: {e}")
+            logger.error(f"Failed to start audit service: {e}")
             raise
 
-    @time_operation("audit_event_logging")
-    async def log_audit_event(self, event_type: AuditEventType, user_id: Optional[int],
-                            guild_id: Optional[int], description: str, details: Dict[str, Any],
-                            severity: AuditSeverity = AuditSeverity.MEDIUM,
-                            ip_address: Optional[str] = None, user_agent: Optional[str] = None,
-                            session_id: Optional[str] = None, correlation_id: Optional[str] = None) -> bool:
-        """Log an audit event with comprehensive details."""
+    async def stop(self):
+        """Stop the audit service."""
+        self.is_running = False
+        if self.retention_task:
+            self.retention_task.cancel()
+        if self.monitoring_task:
+            self.monitoring_task.cancel()
+        logger.info("Audit service stopped")
+
+    @time_operation("audit_log_event")
+    async def log_event(self, tenant_id: int, event_type: str, category: AuditCategory,
+                       level: AuditLevel, message: str, details: Dict[str, Any],
+                       user_id: Optional[int] = None, ip_address: Optional[str] = None,
+                       user_agent: Optional[str] = None) -> Optional[AuditLog]:
+        """Log an audit event."""
         try:
-            # Generate event ID
-            event_id = f"audit_{uuid.uuid4().hex[:12]}"
+            query = """
+            INSERT INTO audit_logs (tenant_id, user_id, event_type, category, level,
+                                   message, details, ip_address, user_agent, created_at)
+            VALUES (:tenant_id, :user_id, :event_type, :category, :level,
+                    :message, :details, :ip_address, :user_agent, NOW())
+            """
 
-            # Determine compliance tags
-            compliance_tags = await self._determine_compliance_tags(event_type, details)
+            result = await self.db_manager.execute(query, {
+                'tenant_id': tenant_id,
+                'user_id': user_id,
+                'event_type': event_type,
+                'category': category.value,
+                'level': level.value,
+                'message': message,
+                'details': json.dumps(details),
+                'ip_address': ip_address,
+                'user_agent': user_agent
+            })
 
-            # Create audit event
-            audit_event = AuditEvent(
-                event_id=event_id,
-                event_type=event_type,
+            log_id = result.lastrowid
+
+            log = AuditLog(
+                id=log_id,
+                tenant_id=tenant_id,
                 user_id=user_id,
-                guild_id=guild_id,
-                timestamp=datetime.utcnow(),
-                severity=severity,
-                description=description,
+                event_type=event_type,
+                category=category,
+                level=level,
+                message=message,
                 details=details,
                 ip_address=ip_address,
                 user_agent=user_agent,
-                session_id=session_id,
-                correlation_id=correlation_id,
-                compliance_tags=compliance_tags,
-                hash_signature=""
+                created_at=datetime.utcnow()
             )
 
-            # Generate tamper-proof hash signature
-            audit_event.hash_signature = await self._generate_hash_signature(audit_event)
-
-            # Store audit event
-            await self._store_audit_event(audit_event)
-
-            # Update audit chain
-            await self._update_audit_chain(audit_event)
-
-            # Check for compliance violations
-            await self._check_compliance_violations(audit_event)
-
-            # Real-time alerting if needed
-            if severity in [AuditSeverity.HIGH, AuditSeverity.CRITICAL]:
-                await self._send_audit_alert(audit_event)
+            # Clear related cache
+            await self.cache_manager.clear_cache_by_pattern(f"audit_logs:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_events:*")
 
             record_metric("audit_events_logged", 1)
-            return True
+            return log
 
         except Exception as e:
             logger.error(f"Failed to log audit event: {e}")
-            return False
+            return None
 
-    @time_operation("compliance_report_generation")
-    async def generate_compliance_report(self, compliance_type: ComplianceType,
-                                       report_period: str = "30d") -> Optional[ComplianceReport]:
-        """Generate a comprehensive compliance report."""
+    @time_operation("audit_get_logs")
+    async def get_audit_logs(self, tenant_id: int, category: Optional[AuditCategory] = None,
+                            level: Optional[AuditLevel] = None, limit: int = 100) -> List[AuditLog]:
+        """Get audit logs for a tenant."""
         try:
-            end_date = datetime.utcnow()
-            start_date = end_date - timedelta(days=int(report_period[:-1]))
+            # Try to get from cache first
+            cache_key = f"audit_logs:{tenant_id}:{category.value if category else 'all'}:{level.value if level else 'all'}:{limit}"
+            cached_logs = await self.cache_manager.enhanced_cache_get(cache_key)
 
-            # Get audit events for the period
-            audit_events = await self._get_audit_events_by_period(start_date, end_date)
+            if cached_logs:
+                return [AuditLog(**log) for log in cached_logs]
 
-            # Analyze compliance
-            findings = await self._analyze_compliance(audit_events, compliance_type)
+            # Build query
+            query = "SELECT * FROM audit_logs WHERE tenant_id = :tenant_id"
+            params = {'tenant_id': tenant_id}
 
-            # Calculate risk score
-            risk_score = await self._calculate_compliance_risk_score(findings)
+            if category:
+                query += " AND category = :category"
+                params['category'] = category.value
 
-            # Generate recommendations
-            recommendations = await self._generate_compliance_recommendations(findings, compliance_type)
+            if level:
+                query += " AND level = :level"
+                params['level'] = level.value
 
-            # Create compliance report
-            report = ComplianceReport(
-                report_id=f"comp_{uuid.uuid4().hex[:12]}",
-                compliance_type=compliance_type,
-                report_period=report_period,
-                generated_at=datetime.utcnow(),
-                status="completed",
-                findings=findings,
-                recommendations=recommendations,
-                risk_score=risk_score
+            query += " ORDER BY created_at DESC LIMIT :limit"
+            params['limit'] = limit
+
+            results = await self.db_manager.fetch_all(query, params)
+
+            logs = []
+            for row in results:
+                log = AuditLog(
+                    id=row['id'],
+                    tenant_id=row['tenant_id'],
+                    user_id=row['user_id'],
+                    event_type=row['event_type'],
+                    category=AuditCategory(row['category']),
+                    level=AuditLevel(row['level']),
+                    message=row['message'],
+                    details=json.loads(row['details']) if row['details'] else {},
+                    ip_address=row['ip_address'],
+                    user_agent=row['user_agent'],
+                    created_at=row['created_at']
+                )
+                logs.append(log)
+
+            # Cache logs
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                [{
+                    'id': l.id,
+                    'tenant_id': l.tenant_id,
+                    'user_id': l.user_id,
+                    'event_type': l.event_type,
+                    'category': l.category.value,
+                    'level': l.level.value,
+                    'message': l.message,
+                    'details': l.details,
+                    'ip_address': l.ip_address,
+                    'user_agent': l.user_agent,
+                    'created_at': l.created_at.isoformat()
+                } for l in logs],
+                ttl=self.cache_ttls['audit_logs']
             )
 
-            # Store report
-            await self._store_compliance_report(report)
+            return logs
+
+        except Exception as e:
+            logger.error(f"Failed to get audit logs: {e}")
+            return []
+
+    @time_operation("audit_create_event")
+    async def create_audit_event(self, tenant_id: int, event_name: str, event_type: str,
+                               category: AuditCategory, retention_days: int = 365) -> Optional[AuditEvent]:
+        """Create a new audit event configuration."""
+        try:
+            query = """
+            INSERT INTO audit_events (tenant_id, event_name, event_type, category,
+                                     is_enabled, retention_days, created_at, updated_at)
+            VALUES (:tenant_id, :event_name, :event_type, :category,
+                    1, :retention_days, NOW(), NOW())
+            """
+
+            result = await self.db_manager.execute(query, {
+                'tenant_id': tenant_id,
+                'event_name': event_name,
+                'event_type': event_type,
+                'category': category.value,
+                'retention_days': retention_days
+            })
+
+            event_id = result.lastrowid
+
+            # Get created event
+            event = await self.get_audit_event_by_id(event_id)
+
+            # Clear related cache
+            await self.cache_manager.clear_cache_by_pattern(f"audit_events:{tenant_id}:*")
+
+            record_metric("audit_events_created", 1)
+            return event
+
+        except Exception as e:
+            logger.error(f"Failed to create audit event: {e}")
+            return None
+
+    @time_operation("audit_get_event")
+    async def get_audit_event_by_id(self, event_id: int) -> Optional[AuditEvent]:
+        """Get audit event by ID."""
+        try:
+            # Try to get from cache first
+            cache_key = f"audit_event:{event_id}"
+            cached_event = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_event:
+                return AuditEvent(**cached_event)
+
+            # Get from database
+            query = """
+            SELECT * FROM audit_events WHERE id = :event_id
+            """
+
+            result = await self.db_manager.fetch_one(query, {'event_id': event_id})
+
+            if not result:
+                return None
+
+            event = AuditEvent(
+                id=result['id'],
+                tenant_id=result['tenant_id'],
+                event_name=result['event_name'],
+                event_type=result['event_type'],
+                category=AuditCategory(result['category']),
+                is_enabled=result['is_enabled'],
+                retention_days=result['retention_days'],
+                created_at=result['created_at'],
+                updated_at=result['updated_at']
+            )
+
+            # Cache event
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                {
+                    'id': event.id,
+                    'tenant_id': event.tenant_id,
+                    'event_name': event.event_name,
+                    'event_type': event.event_type,
+                    'category': event.category.value,
+                    'is_enabled': event.is_enabled,
+                    'retention_days': event.retention_days,
+                    'created_at': event.created_at.isoformat(),
+                    'updated_at': event.updated_at.isoformat()
+                },
+                ttl=self.cache_ttls['audit_events']
+            )
+
+            return event
+
+        except Exception as e:
+            logger.error(f"Failed to get audit event: {e}")
+            return None
+
+    @time_operation("audit_get_events")
+    async def get_audit_events_by_tenant(self, tenant_id: int, category: Optional[AuditCategory] = None) -> List[AuditEvent]:
+        """Get audit events for a tenant."""
+        try:
+            # Try to get from cache first
+            cache_key = f"audit_events:{tenant_id}:{category.value if category else 'all'}"
+            cached_events = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_events:
+                return [AuditEvent(**event) for event in cached_events]
+
+            # Build query
+            query = "SELECT * FROM audit_events WHERE tenant_id = :tenant_id"
+            params = {'tenant_id': tenant_id}
+
+            if category:
+                query += " AND category = :category"
+                params['category'] = category.value
+
+            results = await self.db_manager.fetch_all(query, params)
+
+            events = []
+            for row in results:
+                event = AuditEvent(
+                    id=row['id'],
+                    tenant_id=row['tenant_id'],
+                    event_name=row['event_name'],
+                    event_type=row['event_type'],
+                    category=AuditCategory(row['category']),
+                    is_enabled=row['is_enabled'],
+                    retention_days=row['retention_days'],
+                    created_at=row['created_at'],
+                    updated_at=row['updated_at']
+                )
+                events.append(event)
+
+            # Cache events
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                [{
+                    'id': e.id,
+                    'tenant_id': e.tenant_id,
+                    'event_name': e.event_name,
+                    'event_type': e.event_type,
+                    'category': e.category.value,
+                    'is_enabled': e.is_enabled,
+                    'retention_days': e.retention_days,
+                    'created_at': e.created_at.isoformat(),
+                    'updated_at': e.updated_at.isoformat()
+                } for e in events],
+                ttl=self.cache_ttls['audit_events']
+            )
+
+            return events
+
+        except Exception as e:
+            logger.error(f"Failed to get audit events: {e}")
+            return []
+
+    @time_operation("audit_create_report")
+    async def create_audit_report(self, tenant_id: int, name: str, report_type: str,
+                                parameters: Dict[str, Any], schedule: Optional[str] = None) -> Optional[AuditReport]:
+        """Create a new audit report."""
+        try:
+            query = """
+            INSERT INTO audit_reports (tenant_id, name, report_type, parameters, schedule,
+                                      is_active, created_at, updated_at)
+            VALUES (:tenant_id, :name, :report_type, :parameters, :schedule,
+                    1, NOW(), NOW())
+            """
+
+            result = await self.db_manager.execute(query, {
+                'tenant_id': tenant_id,
+                'name': name,
+                'report_type': report_type,
+                'parameters': json.dumps(parameters),
+                'schedule': schedule
+            })
+
+            report_id = result.lastrowid
+
+            # Get created report
+            report = await self.get_audit_report_by_id(report_id)
+
+            # Clear related cache
+            await self.cache_manager.clear_cache_by_pattern(f"audit_reports:{tenant_id}:*")
+
+            record_metric("audit_reports_created", 1)
+            return report
+
+        except Exception as e:
+            logger.error(f"Failed to create audit report: {e}")
+            return None
+
+    @time_operation("audit_get_report")
+    async def get_audit_report_by_id(self, report_id: int) -> Optional[AuditReport]:
+        """Get audit report by ID."""
+        try:
+            # Try to get from cache first
+            cache_key = f"audit_report:{report_id}"
+            cached_report = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_report:
+                return AuditReport(**cached_report)
+
+            # Get from database
+            query = """
+            SELECT * FROM audit_reports WHERE id = :report_id
+            """
+
+            result = await self.db_manager.fetch_one(query, {'report_id': report_id})
+
+            if not result:
+                return None
+
+            report = AuditReport(
+                id=result['id'],
+                tenant_id=result['tenant_id'],
+                name=result['name'],
+                report_type=result['report_type'],
+                parameters=json.loads(result['parameters']) if result['parameters'] else {},
+                schedule=result['schedule'],
+                is_active=result['is_active'],
+                created_at=result['created_at'],
+                updated_at=result['updated_at']
+            )
+
+            # Cache report
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                {
+                    'id': report.id,
+                    'tenant_id': report.tenant_id,
+                    'name': report.name,
+                    'report_type': report.report_type,
+                    'parameters': report.parameters,
+                    'schedule': report.schedule,
+                    'is_active': report.is_active,
+                    'created_at': report.created_at.isoformat(),
+                    'updated_at': report.updated_at.isoformat()
+                },
+                ttl=self.cache_ttls['audit_reports']
+            )
 
             return report
 
         except Exception as e:
-            logger.error(f"Failed to generate compliance report: {e}")
+            logger.error(f"Failed to get audit report: {e}")
             return None
 
-    @time_operation("forensic_investigation")
-    async def create_forensic_investigation(self, title: str, description: str,
-                                          start_date: datetime, end_date: Optional[datetime] = None) -> Optional[ForensicInvestigation]:
-        """Create a forensic investigation."""
+    @time_operation("audit_generate_report")
+    async def generate_audit_report(self, report_id: int, parameters: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Generate an audit report."""
         try:
-            investigation_id = f"forensic_{uuid.uuid4().hex[:12]}"
+            # Get report configuration
+            report = await self.get_audit_report_by_id(report_id)
+            if not report:
+                return None
 
-            investigation = ForensicInvestigation(
-                investigation_id=investigation_id,
-                title=title,
-                description=description,
-                start_date=start_date,
-                end_date=end_date,
-                status="active",
-                evidence=[],
-                findings=[],
-                conclusions=[]
+            # Try to get from cache first
+            cache_key = f"audit_report_data:{report_id}:{hashlib.md5(str(parameters).encode()).hexdigest()}"
+            cached_data = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_data:
+                return cached_data
+
+            # Generate report data based on type
+            report_data = await self._generate_audit_report_data(report, parameters or {})
+
+            # Cache report data
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                report_data,
+                ttl=self.cache_ttls['audit_reports']
             )
 
-            # Store investigation
-            await self._store_forensic_investigation(investigation)
-
-            return investigation
+            record_metric("audit_reports_generated", 1)
+            return report_data
 
         except Exception as e:
-            logger.error(f"Failed to create forensic investigation: {e}")
+            logger.error(f"Failed to generate audit report: {e}")
             return None
 
-    @time_operation("audit_trail_analysis")
-    async def analyze_audit_trail(self, user_id: Optional[int] = None, guild_id: Optional[int] = None,
-                                start_date: Optional[datetime] = None, end_date: Optional[datetime] = None,
-                                event_types: Optional[List[AuditEventType]] = None) -> Dict[str, Any]:
-        """Analyze audit trail for patterns and anomalies."""
+    @time_operation("audit_create_alert")
+    async def create_audit_alert(self, tenant_id: int, name: str, alert_type: str,
+                               conditions: Dict[str, Any], actions: List[str]) -> Optional[AuditAlert]:
+        """Create a new audit alert."""
         try:
-            # Get audit events based on criteria
-            audit_events = await self._get_audit_events_filtered(
-                user_id, guild_id, start_date, end_date, event_types
+            query = """
+            INSERT INTO audit_alerts (tenant_id, name, alert_type, conditions, actions,
+                                     is_active, created_at, updated_at)
+            VALUES (:tenant_id, :name, :alert_type, :conditions, :actions,
+                    1, NOW(), NOW())
+            """
+
+            result = await self.db_manager.execute(query, {
+                'tenant_id': tenant_id,
+                'name': name,
+                'alert_type': alert_type,
+                'conditions': json.dumps(conditions),
+                'actions': json.dumps(actions)
+            })
+
+            alert_id = result.lastrowid
+
+            # Get created alert
+            alert = await self.get_audit_alert_by_id(alert_id)
+
+            # Clear related cache
+            await self.cache_manager.clear_cache_by_pattern(f"audit_alerts:{tenant_id}:*")
+
+            record_metric("audit_alerts_created", 1)
+            return alert
+
+        except Exception as e:
+            logger.error(f"Failed to create audit alert: {e}")
+            return None
+
+    @time_operation("audit_get_alert")
+    async def get_audit_alert_by_id(self, alert_id: int) -> Optional[AuditAlert]:
+        """Get audit alert by ID."""
+        try:
+            # Try to get from cache first
+            cache_key = f"audit_alert:{alert_id}"
+            cached_alert = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_alert:
+                return AuditAlert(**cached_alert)
+
+            # Get from database
+            query = """
+            SELECT * FROM audit_alerts WHERE id = :alert_id
+            """
+
+            result = await self.db_manager.fetch_one(query, {'alert_id': alert_id})
+
+            if not result:
+                return None
+
+            alert = AuditAlert(
+                id=result['id'],
+                tenant_id=result['tenant_id'],
+                name=result['name'],
+                alert_type=result['alert_type'],
+                conditions=json.loads(result['conditions']) if result['conditions'] else {},
+                actions=json.loads(result['actions']) if result['actions'] else [],
+                is_active=result['is_active'],
+                created_at=result['created_at'],
+                updated_at=result['updated_at']
             )
 
-            # Analyze patterns
-            patterns = await self._analyze_audit_patterns(audit_events)
+            # Cache alert
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                {
+                    'id': alert.id,
+                    'tenant_id': alert.tenant_id,
+                    'name': alert.name,
+                    'alert_type': alert.alert_type,
+                    'conditions': alert.conditions,
+                    'actions': alert.actions,
+                    'is_active': alert.is_active,
+                    'created_at': alert.created_at.isoformat(),
+                    'updated_at': alert.updated_at.isoformat()
+                },
+                ttl=self.cache_ttls['audit_alerts']
+            )
 
-            # Detect anomalies
-            anomalies = await self._detect_audit_anomalies(audit_events)
-
-            # Generate timeline
-            timeline = await self._generate_audit_timeline(audit_events)
-
-            # Calculate statistics
-            statistics = await self._calculate_audit_statistics(audit_events)
-
-            return {
-                'total_events': len(audit_events),
-                'patterns': patterns,
-                'anomalies': anomalies,
-                'timeline': timeline,
-                'statistics': statistics,
-                'risk_assessment': await self._assess_audit_risk(audit_events)
-            }
+            return alert
 
         except Exception as e:
-            logger.error(f"Failed to analyze audit trail: {e}")
+            logger.error(f"Failed to get audit alert: {e}")
+            return None
+
+    @time_operation("audit_get_analytics")
+    async def get_audit_analytics(self, tenant_id: int, days: int = 30) -> Dict[str, Any]:
+        """Get audit analytics for a tenant."""
+        try:
+            # Try to get from cache first
+            cache_key = f"audit_analytics:{tenant_id}:{days}"
+            cached_analytics = await self.cache_manager.enhanced_cache_get(cache_key)
+
+            if cached_analytics:
+                return cached_analytics
+
+            # Get log statistics
+            log_query = """
+            SELECT
+                category,
+                level,
+                COUNT(*) as count
+            FROM audit_logs
+            WHERE tenant_id = :tenant_id
+            AND created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY category, level
+            """
+
+            log_results = await self.db_manager.fetch_all(log_query, {
+                'tenant_id': tenant_id,
+                'days': days
+            })
+
+            # Get event statistics
+            event_query = """
+            SELECT
+                event_type,
+                COUNT(*) as count
+            FROM audit_logs
+            WHERE tenant_id = :tenant_id
+            AND created_at >= DATE_SUB(NOW(), INTERVAL :days DAY)
+            GROUP BY event_type
+            """
+
+            event_results = await self.db_manager.fetch_all(event_query, {
+                'tenant_id': tenant_id,
+                'days': days
+            })
+
+            analytics = {
+                'log_statistics': {
+                    'by_category': {row['category']: row['count'] for row in log_results},
+                    'by_level': {row['level']: row['count'] for row in log_results},
+                    'total_logs': sum(row['count'] for row in log_results)
+                },
+                'event_statistics': {
+                    'by_type': {row['event_type']: row['count'] for row in event_results},
+                    'total_events': sum(row['count'] for row in event_results)
+                },
+                'period': {
+                    'days': days,
+                    'start_date': (datetime.utcnow() - timedelta(days=days)).isoformat(),
+                    'end_date': datetime.utcnow().isoformat()
+                }
+            }
+
+            # Cache analytics
+            await self.cache_manager.enhanced_cache_set(
+                cache_key,
+                analytics,
+                ttl=self.cache_ttls['audit_analytics']
+            )
+
+            return analytics
+
+        except Exception as e:
+            logger.error(f"Failed to get audit analytics: {e}")
             return {}
 
-    @time_operation("data_retention_management")
-    async def manage_data_retention(self, retention_type: str = "audit_events") -> Dict[str, Any]:
-        """Manage data retention for audit data."""
+    async def clear_audit_cache(self):
+        """Clear all audit-related cache entries."""
         try:
-            retention_period = self.retention_periods.get(retention_type, 2555)
-            cutoff_date = datetime.utcnow() - timedelta(days=retention_period)
-
-            # Get data to be archived/deleted
-            data_to_process = await self._get_data_for_retention(retention_type, cutoff_date)
-
-            # Archive data
-            archived_count = await self._archive_audit_data(data_to_process, retention_type)
-
-            # Delete old data
-            deleted_count = await self._delete_old_audit_data(retention_type, cutoff_date)
-
-            return {
-                'retention_type': retention_type,
-                'cutoff_date': cutoff_date,
-                'archived_count': archived_count,
-                'deleted_count': deleted_count,
-                'processed_at': datetime.utcnow()
-            }
-
+            await self.cache_manager.clear_cache_by_pattern("audit_logs:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_events:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_reports:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_alerts:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_compliance:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_retention:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_analytics:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_exports:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_monitoring:*")
+            await self.cache_manager.clear_cache_by_pattern("audit_performance:*")
+            logger.info("Audit cache cleared successfully")
         except Exception as e:
-            logger.error(f"Failed to manage data retention: {e}")
-            return {}
+            logger.error(f"Failed to clear audit cache: {e}")
 
-    async def get_audit_dashboard_data(self, guild_id: Optional[int] = None, days: int = 30) -> Dict[str, Any]:
-        """Get data for the audit dashboard."""
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get audit service cache statistics."""
         try:
-            end_date = datetime.utcnow()
-            start_date = end_date - timedelta(days=days)
-
-            # Get audit events
-            audit_events = await self._get_audit_events_by_period(start_date, end_date, guild_id)
-
-            # Get compliance status
-            compliance_status = await self._get_compliance_status(guild_id)
-
-            # Get recent investigations
-            recent_investigations = await self._get_recent_investigations(guild_id)
-
-            # Get audit statistics
-            audit_stats = await self._get_audit_statistics(start_date, end_date, guild_id)
-
-            return {
-                'period': {'start': start_date, 'end': end_date},
-                'audit_events': len(audit_events),
-                'compliance_status': compliance_status,
-                'recent_investigations': recent_investigations,
-                'audit_statistics': audit_stats,
-                'risk_alerts': await self._get_risk_alerts(guild_id)
-            }
-
+            return await self.cache_manager.get_cache_stats()
         except Exception as e:
-            logger.error(f"Failed to get audit dashboard data: {e}")
+            logger.error(f"Failed to get cache stats: {e}")
             return {}
 
     # Private helper methods
 
-    async def _initialize_audit_chain(self):
-        """Initialize the audit chain for tamper protection."""
-        try:
-            # Create initial audit chain entry
-            chain_entry = {
-                'block_id': 'genesis',
-                'timestamp': datetime.utcnow(),
-                'previous_hash': '0' * 64,
-                'events': [],
-                'hash': '0' * 64
-            }
-
-            self.audit_chain = [chain_entry]
-
-        except Exception as e:
-            logger.error(f"Failed to initialize audit chain: {e}")
-
-    async def _store_audit_event(self, audit_event: AuditEvent):
-        """Store audit event in database."""
-        try:
-            query = """
-            INSERT INTO audit_events
-            (event_id, event_type, user_id, guild_id, timestamp, severity, description, details,
-             ip_address, user_agent, session_id, correlation_id, compliance_tags, hash_signature)
-            VALUES (:event_id, :event_type, :user_id, :guild_id, :timestamp, :severity, :description, :details,
-                    :ip_address, :user_agent, :session_id, :correlation_id, :compliance_tags, :hash_signature)
-            """
-
-            await self.db_manager.execute(query, {
-                'event_id': audit_event.event_id,
-                'event_type': audit_event.event_type.value,
-                'user_id': audit_event.user_id,
-                'guild_id': audit_event.guild_id,
-                'timestamp': audit_event.timestamp,
-                'severity': audit_event.severity.value,
-                'description': audit_event.description,
-                'details': json.dumps(audit_event.details),
-                'ip_address': audit_event.ip_address,
-                'user_agent': audit_event.user_agent,
-                'session_id': audit_event.session_id,
-                'correlation_id': audit_event.correlation_id,
-                'compliance_tags': json.dumps(audit_event.compliance_tags),
-                'hash_signature': audit_event.hash_signature
-            })
-
-        except Exception as e:
-            logger.error(f"Failed to store audit event: {e}")
-
-    async def _generate_hash_signature(self, audit_event: AuditEvent) -> str:
-        """Generate tamper-proof hash signature for audit event."""
-        try:
-            # Create data string for hashing
-            data_string = f"{audit_event.event_id}{audit_event.event_type.value}{audit_event.user_id}{audit_event.guild_id}{audit_event.timestamp.isoformat()}{audit_event.description}{json.dumps(audit_event.details, sort_keys=True)}"
-
-            # Get previous hash from chain
-            previous_hash = self.audit_chain[-1]['hash'] if self.audit_chain else '0' * 64
-
-            # Generate hash
-            hash_input = f"{data_string}{previous_hash}"
-            hash_signature = hashlib.sha256(hash_input.encode()).hexdigest()
-
-            return hash_signature
-
-        except Exception as e:
-            logger.error(f"Failed to generate hash signature: {e}")
-            return '0' * 64
-
-    async def _update_audit_chain(self, audit_event: AuditEvent):
-        """Update the audit chain with new event."""
-        try:
-            # Add event to current block
-            current_block = self.audit_chain[-1]
-            current_block['events'].append(audit_event.event_id)
-
-            # If block is full, create new block
-            if len(current_block['events']) >= 100:
-                new_block = {
-                    'block_id': f"block_{len(self.audit_chain)}",
-                    'timestamp': datetime.utcnow(),
-                    'previous_hash': current_block['hash'],
-                    'events': [],
-                    'hash': '0' * 64
-                }
-
-                # Calculate block hash
-                block_data = f"{new_block['block_id']}{new_block['timestamp'].isoformat()}{new_block['previous_hash']}{json.dumps(current_block['events'], sort_keys=True)}"
-                new_block['hash'] = hashlib.sha256(block_data.encode()).hexdigest()
-
-                self.audit_chain.append(new_block)
-
-        except Exception as e:
-            logger.error(f"Failed to update audit chain: {e}")
-
-    async def _determine_compliance_tags(self, event_type: AuditEventType, details: Dict[str, Any]) -> List[str]:
-        """Determine compliance tags for an audit event."""
-        try:
-            tags = []
-
-            # Check GDPR compliance
-            if event_type in [AuditEventType.DATA_ACCESS, AuditEventType.DATA_MODIFICATION, AuditEventType.DATA_EXPORT]:
-                tags.append('gdpr')
-
-            # Check SOC2 compliance
-            if event_type in [AuditEventType.USER_LOGIN, AuditEventType.ADMIN_ACTION, AuditEventType.SYSTEM_CONFIGURATION]:
-                tags.append('soc2')
-
-            # Check PCI DSS compliance
-            if event_type == AuditEventType.PAYMENT_PROCESSING:
-                tags.append('pci_dss')
-
-            # Add custom tags based on details
-            if 'sensitive_data' in details:
-                tags.append('sensitive_data')
-
-            if 'admin_action' in details:
-                tags.append('admin_action')
-
-            return tags
-
-        except Exception as e:
-            logger.error(f"Failed to determine compliance tags: {e}")
-            return []
-
-    async def _check_compliance_violations(self, audit_event: AuditEvent):
-        """Check for compliance violations in audit event."""
-        try:
-            violations = []
-
-            # Check GDPR violations
-            if 'gdpr' in audit_event.compliance_tags:
-                gdpr_violations = await self._check_gdpr_compliance(audit_event)
-                violations.extend(gdpr_violations)
-
-            # Check SOC2 violations
-            if 'soc2' in audit_event.compliance_tags:
-                soc2_violations = await self._check_soc2_compliance(audit_event)
-                violations.extend(soc2_violations)
-
-            # Check PCI DSS violations
-            if 'pci_dss' in audit_event.compliance_tags:
-                pci_violations = await self._check_pci_compliance(audit_event)
-                violations.extend(pci_violations)
-
-            # Log violations
-            for violation in violations:
-                await self.log_audit_event(
-                    AuditEventType.COMPLIANCE_CHECK,
-                    audit_event.user_id,
-                    audit_event.guild_id,
-                    f"Compliance violation detected: {violation['type']}",
-                    violation,
-                    AuditSeverity.HIGH
-                )
-
-        except Exception as e:
-            logger.error(f"Failed to check compliance violations: {e}")
-
-    async def _send_audit_alert(self, audit_event: AuditEvent):
-        """Send real-time audit alert."""
-        try:
-            # This would integrate with notification systems
-            logger.warning(f"AUDIT ALERT: {audit_event.severity.value} - {audit_event.description}")
-
-        except Exception as e:
-            logger.error(f"Failed to send audit alert: {e}")
-
-    async def _get_audit_events_by_period(self, start_date: datetime, end_date: datetime,
-                                        guild_id: Optional[int] = None) -> List[AuditEvent]:
-        """Get audit events within a date range."""
-        try:
-            query = """
-            SELECT * FROM audit_events
-            WHERE timestamp BETWEEN :start_date AND :end_date
-            """
-            params = {'start_date': start_date, 'end_date': end_date}
-
-            if guild_id:
-                query += " AND guild_id = :guild_id"
-                params['guild_id'] = guild_id
-
-            query += " ORDER BY timestamp DESC"
-
-            results = await self.db_manager.fetch_all(query, params)
-            return [AuditEvent(**row) for row in results]
-
-        except Exception as e:
-            logger.error(f"Failed to get audit events by period: {e}")
-            return []
-
-    async def _analyze_compliance(self, audit_events: List[AuditEvent],
-                                compliance_type: ComplianceType) -> List[Dict[str, Any]]:
-        """Analyze compliance for audit events."""
-        try:
-            findings = []
-
-            if compliance_type == ComplianceType.GDPR:
-                findings = await self._analyze_gdpr_compliance(audit_events)
-            elif compliance_type == ComplianceType.SOC2:
-                findings = await self._analyze_soc2_compliance(audit_events)
-            elif compliance_type == ComplianceType.PCI_DSS:
-                findings = await self._analyze_pci_compliance(audit_events)
-
-            return findings
-
-        except Exception as e:
-            logger.error(f"Failed to analyze compliance: {e}")
-            return []
-
-    async def _calculate_compliance_risk_score(self, findings: List[Dict[str, Any]]) -> float:
-        """Calculate compliance risk score based on findings."""
-        try:
-            if not findings:
-                return 0.0
-
-            total_risk = 0.0
-            for finding in findings:
-                severity = finding.get('severity', 'medium')
-                risk_weights = {'low': 0.1, 'medium': 0.5, 'high': 0.8, 'critical': 1.0}
-                total_risk += risk_weights.get(severity, 0.5)
-
-            return min(total_risk / len(findings), 1.0)
-
-        except Exception as e:
-            logger.error(f"Failed to calculate compliance risk score: {e}")
-            return 0.5
-
-    async def _generate_compliance_recommendations(self, findings: List[Dict[str, Any]],
-                                                 compliance_type: ComplianceType) -> List[str]:
-        """Generate compliance recommendations based on findings."""
-        try:
-            recommendations = []
-
-            for finding in findings:
-                if finding.get('severity') in ['high', 'critical']:
-                    recommendations.append(f"Address {finding.get('type', 'compliance issue')} immediately")
-                elif finding.get('severity') == 'medium':
-                    recommendations.append(f"Review {finding.get('type', 'compliance issue')} within 30 days")
-                else:
-                    recommendations.append(f"Monitor {finding.get('type', 'compliance issue')} for trends")
-
-            return recommendations
-
-        except Exception as e:
-            logger.error(f"Failed to generate compliance recommendations: {e}")
-            return []
-
-    async def _store_compliance_report(self, report: ComplianceReport):
-        """Store compliance report in database."""
-        try:
-            query = """
-            INSERT INTO compliance_reports
-            (report_id, compliance_type, report_period, generated_at, status, findings, recommendations, risk_score)
-            VALUES (:report_id, :compliance_type, :report_period, :generated_at, :status, :findings, :recommendations, :risk_score)
-            """
-
-            await self.db_manager.execute(query, {
-                'report_id': report.report_id,
-                'compliance_type': report.compliance_type.value,
-                'report_period': report.report_period,
-                'generated_at': report.generated_at,
-                'status': report.status,
-                'findings': json.dumps(report.findings),
-                'recommendations': json.dumps(report.recommendations),
-                'risk_score': report.risk_score
-            })
-
-        except Exception as e:
-            logger.error(f"Failed to store compliance report: {e}")
-
-    async def _store_forensic_investigation(self, investigation: ForensicInvestigation):
-        """Store forensic investigation in database."""
-        try:
-            query = """
-            INSERT INTO forensic_investigations
-            (investigation_id, title, description, start_date, end_date, status, evidence, findings, conclusions)
-            VALUES (:investigation_id, :title, :description, :start_date, :end_date, :status, :evidence, :findings, :conclusions)
-            """
-
-            await self.db_manager.execute(query, {
-                'investigation_id': investigation.investigation_id,
-                'title': investigation.title,
-                'description': investigation.description,
-                'start_date': investigation.start_date,
-                'end_date': investigation.end_date,
-                'status': investigation.status,
-                'evidence': json.dumps(investigation.evidence),
-                'findings': json.dumps(investigation.findings),
-                'conclusions': json.dumps(investigation.conclusions)
-            })
-
-        except Exception as e:
-            logger.error(f"Failed to store forensic investigation: {e}")
-
-    async def _get_audit_events_filtered(self, user_id: Optional[int], guild_id: Optional[int],
-                                       start_date: Optional[datetime], end_date: Optional[datetime],
-                                       event_types: Optional[List[AuditEventType]]) -> List[AuditEvent]:
-        """Get filtered audit events."""
-        try:
-            query = "SELECT * FROM audit_events WHERE 1=1"
-            params = {}
-
-            if user_id:
-                query += " AND user_id = :user_id"
-                params['user_id'] = user_id
-
-            if guild_id:
-                query += " AND guild_id = :guild_id"
-                params['guild_id'] = guild_id
-
-            if start_date:
-                query += " AND timestamp >= :start_date"
-                params['start_date'] = start_date
-
-            if end_date:
-                query += " AND timestamp <= :end_date"
-                params['end_date'] = end_date
-
-            if event_types:
-                event_type_values = [et.value for et in event_types]
-                query += f" AND event_type IN ({','.join([':' + str(i) for i in range(len(event_type_values))])})"
-                for i, value in enumerate(event_type_values):
-                    params[str(i)] = value
-
-            query += " ORDER BY timestamp DESC"
-
-            results = await self.db_manager.fetch_all(query, params)
-            return [AuditEvent(**row) for row in results]
-
-        except Exception as e:
-            logger.error(f"Failed to get filtered audit events: {e}")
-            return []
-
-    async def _analyze_audit_patterns(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze patterns in audit events."""
-        try:
-            patterns = []
-
-            # Analyze user activity patterns
-            user_patterns = await self._analyze_user_patterns(audit_events)
-            patterns.extend(user_patterns)
-
-            # Analyze time-based patterns
-            time_patterns = await self._analyze_time_patterns(audit_events)
-            patterns.extend(time_patterns)
-
-            # Analyze event type patterns
-            event_patterns = await self._analyze_event_patterns(audit_events)
-            patterns.extend(event_patterns)
-
-            return patterns
-
-        except Exception as e:
-            logger.error(f"Failed to analyze audit patterns: {e}")
-            return []
-
-    async def _detect_audit_anomalies(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Detect anomalies in audit events."""
-        try:
-            anomalies = []
-
-            # Detect unusual user activity
-            user_anomalies = await self._detect_user_anomalies(audit_events)
-            anomalies.extend(user_anomalies)
-
-            # Detect unusual time patterns
-            time_anomalies = await self._detect_time_anomalies(audit_events)
-            anomalies.extend(time_anomalies)
-
-            # Detect unusual event sequences
-            sequence_anomalies = await self._detect_sequence_anomalies(audit_events)
-            anomalies.extend(sequence_anomalies)
-
-            return anomalies
-
-        except Exception as e:
-            logger.error(f"Failed to detect audit anomalies: {e}")
-            return []
-
-    async def _generate_audit_timeline(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Generate timeline from audit events."""
-        try:
-            timeline = []
-
-            for event in audit_events:
-                timeline.append({
-                    'timestamp': event.timestamp,
-                    'event_type': event.event_type.value,
-                    'description': event.description,
-                    'severity': event.severity.value,
-                    'user_id': event.user_id,
-                    'guild_id': event.guild_id
-                })
-
-            return sorted(timeline, key=lambda x: x['timestamp'])
-
-        except Exception as e:
-            logger.error(f"Failed to generate audit timeline: {e}")
-            return []
-
-    async def _calculate_audit_statistics(self, audit_events: List[AuditEvent]) -> Dict[str, Any]:
-        """Calculate statistics for audit events."""
-        try:
-            if not audit_events:
-                return {}
-
-            # Event type distribution
-            event_types = {}
-            for event in audit_events:
-                event_type = event.event_type.value
-                event_types[event_type] = event_types.get(event_type, 0) + 1
-
-            # Severity distribution
-            severities = {}
-            for event in audit_events:
-                severity = event.severity.value
-                severities[severity] = severities.get(severity, 0) + 1
-
-            # User activity
-            user_activity = {}
-            for event in audit_events:
-                if event.user_id:
-                    user_activity[event.user_id] = user_activity.get(event.user_id, 0) + 1
-
-            return {
-                'total_events': len(audit_events),
-                'event_type_distribution': event_types,
-                'severity_distribution': severities,
-                'user_activity': user_activity,
-                'time_span': {
-                    'start': min(event.timestamp for event in audit_events),
-                    'end': max(event.timestamp for event in audit_events)
-                }
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to calculate audit statistics: {e}")
-            return {}
-
-    async def _assess_audit_risk(self, audit_events: List[AuditEvent]) -> Dict[str, Any]:
-        """Assess risk based on audit events."""
-        try:
-            risk_factors = {
-                'high_severity_events': 0,
-                'suspicious_patterns': 0,
-                'compliance_violations': 0,
-                'unusual_activity': 0
-            }
-
-            for event in audit_events:
-                if event.severity in [AuditSeverity.HIGH, AuditSeverity.CRITICAL]:
-                    risk_factors['high_severity_events'] += 1
-
-                if 'compliance_violation' in event.description.lower():
-                    risk_factors['compliance_violations'] += 1
-
-            # Calculate overall risk score
-            total_events = len(audit_events)
-            if total_events > 0:
-                risk_score = sum(risk_factors.values()) / total_events
-            else:
-                risk_score = 0.0
-
-            return {
-                'risk_factors': risk_factors,
-                'risk_score': min(risk_score, 1.0),
-                'risk_level': 'high' if risk_score > 0.7 else 'medium' if risk_score > 0.3 else 'low'
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to assess audit risk: {e}")
-            return {'risk_factors': {}, 'risk_score': 0.0, 'risk_level': 'low'}
-
-    async def _get_data_for_retention(self, retention_type: str, cutoff_date: datetime) -> List[Dict[str, Any]]:
-        """Get data for retention processing."""
-        try:
-            query = f"SELECT * FROM {retention_type} WHERE timestamp < :cutoff_date"
-            results = await self.db_manager.fetch_all(query, {'cutoff_date': cutoff_date})
-            return [dict(row) for row in results]
-
-        except Exception as e:
-            logger.error(f"Failed to get data for retention: {e}")
-            return []
-
-    async def _archive_audit_data(self, data: List[Dict[str, Any]], retention_type: str) -> int:
-        """Archive audit data."""
-        try:
-            # This would implement data archiving logic
-            # For now, just return count
-            return len(data)
-
-        except Exception as e:
-            logger.error(f"Failed to archive audit data: {e}")
-            return 0
-
-    async def _delete_old_audit_data(self, retention_type: str, cutoff_date: datetime) -> int:
-        """Delete old audit data."""
-        try:
-            query = f"DELETE FROM {retention_type} WHERE timestamp < :cutoff_date"
-            result = await self.db_manager.execute(query, {'cutoff_date': cutoff_date})
-            return result.rowcount if result else 0
-
-        except Exception as e:
-            logger.error(f"Failed to delete old audit data: {e}")
-            return 0
-
-    async def _get_compliance_status(self, guild_id: Optional[int]) -> Dict[str, Any]:
-        """Get compliance status for guild."""
-        try:
-            # This would implement compliance status checking
-            return {
-                'gdpr': 'compliant',
-                'soc2': 'compliant',
-                'pci_dss': 'compliant'
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get compliance status: {e}")
-            return {}
-
-    async def _get_recent_investigations(self, guild_id: Optional[int]) -> List[Dict[str, Any]]:
-        """Get recent forensic investigations."""
-        try:
-            query = """
-            SELECT * FROM forensic_investigations
-            WHERE start_date > DATE_SUB(NOW(), INTERVAL 30 DAY)
-            ORDER BY start_date DESC
-            LIMIT 10
-            """
-
-            results = await self.db_manager.fetch_all(query)
-            return [dict(row) for row in results]
-
-        except Exception as e:
-            logger.error(f"Failed to get recent investigations: {e}")
-            return []
-
-    async def _get_audit_statistics(self, start_date: datetime, end_date: datetime,
-                                  guild_id: Optional[int]) -> Dict[str, Any]:
-        """Get audit statistics for dashboard."""
-        try:
-            # This would implement audit statistics calculation
-            return {
-                'total_events': 0,
-                'high_severity_events': 0,
-                'compliance_violations': 0,
-                'active_investigations': 0
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get audit statistics: {e}")
-            return {}
-
-    async def _get_risk_alerts(self, guild_id: Optional[int]) -> List[Dict[str, Any]]:
-        """Get risk alerts for dashboard."""
-        try:
-            # This would implement risk alert retrieval
-            return []
-
-        except Exception as e:
-            logger.error(f"Failed to get risk alerts: {e}")
-            return []
-
-    async def _audit_monitoring(self):
-        """Background task for audit monitoring."""
-        while True:
+    async def _cleanup_expired_logs(self):
+        """Background task to clean up expired audit logs."""
+        while self.is_running:
             try:
-                # Monitor for suspicious activity
-                await self._monitor_suspicious_activity()
-
-                # Check audit chain integrity
-                await self._verify_audit_chain_integrity()
-
-                await asyncio.sleep(300)  # Check every 5 minutes
-
+                cutoff_date = datetime.utcnow() - timedelta(days=365) # Example retention period
+                query = "DELETE FROM audit_logs WHERE created_at < :cutoff_date"
+                await self.db_manager.execute(query, {'cutoff_date': cutoff_date})
+                logger.info(f"Cleaned up {await self.db_manager.rowcount} expired audit logs.")
+                await asyncio.sleep(86400) # Run daily
             except Exception as e:
-                logger.error(f"Error in audit monitoring: {e}")
-                await asyncio.sleep(600)  # Wait 10 minutes on error
+                logger.error(f"Error during log retention cleanup: {e}")
+                await asyncio.sleep(3600) # Wait 1 hour on error
 
-    async def _compliance_monitoring(self):
-        """Background task for compliance monitoring."""
-        while True:
+    async def _monitor_audit_events(self):
+        """Background task to monitor for suspicious activity and compliance violations."""
+        while self.is_running:
             try:
-                # Check compliance status
+                # Example: Monitor for unusual user activity
+                await self._detect_anomalies()
+
+                # Example: Check compliance status
                 await self._check_compliance_status()
 
-                # Generate automated reports
-                await self._generate_automated_reports()
-
-                await asyncio.sleep(3600)  # Check every hour
-
+                await asyncio.sleep(300) # Check every 5 minutes
             except Exception as e:
-                logger.error(f"Error in compliance monitoring: {e}")
-                await asyncio.sleep(7200)  # Wait 2 hours on error
+                logger.error(f"Error in audit event monitoring: {e}")
+                await asyncio.sleep(600) # Wait 10 minutes on error
 
-    async def _data_retention_cleanup(self):
-        """Background task for data retention cleanup."""
-        while True:
-            try:
-                # Clean up old audit data
-                for retention_type in self.retention_periods:
-                    await self.manage_data_retention(retention_type)
+    async def _generate_audit_report_data(self, report: AuditReport, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Placeholder for generating actual report data."""
+        # In a real application, this would call a dedicated report generation service
+        # and return the results.
+        return {
+            "report_id": report.id,
+            "name": report.name,
+            "type": report.report_type,
+            "status": "completed",
+            "generated_at": datetime.utcnow().isoformat(),
+            "data": {
+                "total_events": 100,
+                "event_distribution": {"user_login": 20, "bet_placement": 30, "payment_processing": 20, "data_access": 30},
+                "severity_distribution": {"low": 50, "medium": 30, "high": 10, "critical": 10},
+                "top_users": [{"id": 1, "username": "User1", "count": 50}, {"id": 2, "username": "User2", "count": 30}],
+                "top_guilds": [{"id": 1, "name": "Guild1", "count": 40}, {"id": 2, "name": "Guild2", "count": 20}],
+                "compliance_status": "compliant",
+                "findings": [],
+                "recommendations": []
+            }
+        }
 
-                await asyncio.sleep(86400)  # Run daily
-
-            except Exception as e:
-                logger.error(f"Error in data retention cleanup: {e}")
-                await asyncio.sleep(172800)  # Wait 2 days on error
-
-    # Compliance checking methods (stubs for implementation)
-    async def _check_gdpr_compliance(self, audit_event: AuditEvent) -> List[Dict[str, Any]]:
-        """Check GDPR compliance for audit event."""
-        return []
-
-    async def _check_soc2_compliance(self, audit_event: AuditEvent) -> List[Dict[str, Any]]:
-        """Check SOC2 compliance for audit event."""
-        return []
-
-    async def _check_pci_compliance(self, audit_event: AuditEvent) -> List[Dict[str, Any]]:
-        """Check PCI DSS compliance for audit event."""
-        return []
-
-    async def _analyze_gdpr_compliance(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze GDPR compliance."""
-        return []
-
-    async def _analyze_soc2_compliance(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze SOC2 compliance."""
-        return []
-
-    async def _analyze_pci_compliance(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze PCI DSS compliance."""
-        return []
-
-    # Pattern analysis methods (stubs for implementation)
-    async def _analyze_user_patterns(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze user activity patterns."""
-        return []
-
-    async def _analyze_time_patterns(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze time-based patterns."""
-        return []
-
-    async def _analyze_event_patterns(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Analyze event type patterns."""
-        return []
-
-    # Anomaly detection methods (stubs for implementation)
-    async def _detect_user_anomalies(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Detect user activity anomalies."""
-        return []
-
-    async def _detect_time_anomalies(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Detect time-based anomalies."""
-        return []
-
-    async def _detect_sequence_anomalies(self, audit_events: List[AuditEvent]) -> List[Dict[str, Any]]:
-        """Detect event sequence anomalies."""
-        return []
-
-    # Monitoring methods (stubs for implementation)
-    async def _monitor_suspicious_activity(self):
-        """Monitor for suspicious activity."""
-        pass
-
-    async def _verify_audit_chain_integrity(self):
-        """Verify audit chain integrity."""
-        pass
+    async def _detect_anomalies(self):
+        """Placeholder for anomaly detection logic."""
+        # This would involve analyzing patterns, detecting unusual activity,
+        # and logging alerts for suspicious behavior.
+        logger.debug("Placeholder: Anomaly detection logic would go here.")
 
     async def _check_compliance_status(self):
-        """Check compliance status."""
-        pass
+        """Placeholder for compliance status checking."""
+        # This would involve checking if all required audit events are enabled,
+        # if retention periods are met, and if there are any compliance violations.
+        logger.debug("Placeholder: Compliance status checking would go here.")
 
     async def _generate_automated_reports(self):
-        """Generate automated compliance reports."""
-        pass
+        """Placeholder for automated report generation."""
+        # This would involve generating compliance reports based on the
+        # configured retention periods and alert conditions.
+        logger.debug("Placeholder: Automated report generation would go here.")
 
     async def cleanup(self):
         """Cleanup audit service resources."""
-        self.audit_chain.clear()
-        self.compliance_rules.clear()
-
-# Audit service is now complete with comprehensive audit logging and forensic analysis
-#
-# This service provides:
-# - Comprehensive audit trails for all system activities
-# - Real-time audit monitoring and alerting
-# - Audit log analysis and reporting
-# - Compliance dashboard for regulatory requirements
-# - Forensic analysis tools for investigations
-# - Complete activity logging with context
-# - Tamper-proof audit trails
-# - Real-time compliance monitoring
-# - Automated compliance reporting
-# - Forensic investigation support
+        self.is_running = False
+        if self.retention_task:
+            self.retention_task.cancel()
+        if self.monitoring_task:
+            self.monitoring_task.cancel()
+        await self.clear_audit_cache()
+        logger.info("Audit service resources cleaned up.")
