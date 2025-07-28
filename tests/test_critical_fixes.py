@@ -32,13 +32,11 @@ try:
         validate_settings,
     )
 except ImportError:
-    # Fallback imports for testing
-    from bot.config.settings import (
-        get_api_config,
-        get_database_config,
-        get_settings,
-        validate_settings,
-    )
+    # Fallback - try to import from parent directory
+    import os
+    import sys
+
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from bot.data.db_manager import DatabaseManager
     from bot.utils.environment_validator import EnvironmentValidator
     from bot.utils.error_handler import (
@@ -46,6 +44,12 @@ except ImportError:
         initialize_default_recovery_strategies,
     )
     from bot.utils.rate_limiter import RateLimiter, RateLimitExceededError, rate_limit
+    from config.settings import (
+        get_api_config,
+        get_database_config,
+        get_settings,
+        validate_settings,
+    )
 
 
 class TestRateLimiterFixes:

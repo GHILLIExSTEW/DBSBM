@@ -16,24 +16,11 @@ from datetime import datetime
 try:
     from config.settings import get_settings, validate_settings, get_database_config, get_api_config, get_discord_config
 except ImportError:
-    # Fallback to old configuration if new one is not available
-    from bot.config.settings import get_config
-    # Create fallback functions for compatibility
-
-    def get_settings():
-        return get_config()
-
-    def validate_settings():
-        return []
-
-    def get_database_config():
-        return {}
-
-    def get_api_config():
-        return {}
-
-    def get_discord_config():
-        return {}
+    # Fallback - try to import from parent directory
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from config.settings import get_settings, validate_settings, get_database_config, get_api_config, get_discord_config
 
 logger = logging.getLogger(__name__)
 

@@ -8,15 +8,10 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-try:
-    from bot.config.settings import USER_CACHE_TTL
-    from bot.data.cache_manager import CacheManager
-    from bot.utils.errors import InsufficientUnitsError, UserServiceError
-except ImportError:
-    from bot.data.cache_manager import CacheManager
-    from bot.utils.errors import InsufficientUnitsError, UserServiceError
+from bot.data.cache_manager import CacheManager
+from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
-    USER_CACHE_TTL = 3600  # Default TTL (1 hour)
+USER_CACHE_TTL = 3600  # Default TTL (1 hour)
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +166,8 @@ class UserService:
             raise
         except Exception as e:
             logger.exception(f"Error updating balance for user {user_id}: {e}")
-            raise UserServiceError("An internal error occurred while updating balance.")
+            raise UserServiceError(
+                "An internal error occurred while updating balance.")
 
     async def get_user_balance(self, user_id: int) -> float:
         """Get a user's current balance directly."""

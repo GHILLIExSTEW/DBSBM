@@ -18,7 +18,15 @@ try:
     from config.settings import get_settings, validate_settings, get_logging_config
 except ImportError:
     # Fallback to old configuration if new one is not available
-    from bot.config.settings import get_settings, validate_settings, get_logging_config
+    try:
+        from bot.config.settings import get_settings, validate_settings, get_logging_config
+    except ImportError:
+        # Final fallback - try to import from parent directory
+        import sys
+        import os
+        sys.path.append(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))
+        from config.settings import get_settings, validate_settings, get_logging_config
 
 # Try to import with bot prefix first, then without
 try:
