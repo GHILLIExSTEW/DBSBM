@@ -14,11 +14,14 @@ from discord.ext import commands
 from bot.services.weather_service import WeatherService
 
 # Import GameService with fallback for missing API_KEY
+GAME_SERVICE_AVAILABLE = False
+GameService = None
+
 try:
     from bot.services.game_service import GameService
 
     GAME_SERVICE_AVAILABLE = True
-except ValueError:
+except (ValueError, ImportError):
     # GameService requires API_KEY, so we'll handle this gracefully
     GAME_SERVICE_AVAILABLE = False
     GameService = None
@@ -32,7 +35,8 @@ class WeatherCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.weather_service = WeatherService()
-        self.game_service = bot.game_service
+        # Handle case where game_service might not be available
+        self.game_service = getattr(bot, "game_service", None)
 
     @app_commands.command(
         name="weather",
