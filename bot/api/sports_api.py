@@ -104,7 +104,8 @@ LEAGUE_CONFIG = {
 
 
 class APISportsRateLimiter:
-    def __init__(self, calls_per_minute: int = 30):
+    # Increased from 30 to 60 for hourly operation
+    def __init__(self, calls_per_minute: int = 60):
         self.calls_per_minute = calls_per_minute
         self.calls = []
         self.lock = asyncio.Lock()

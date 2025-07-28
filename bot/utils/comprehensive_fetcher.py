@@ -3,11 +3,13 @@ Comprehensive Fetcher for ALL API-Sports Leagues
 Automatically fetches data for every single league available from the API.
 """
 
+from bot.utils.league_discovery import SPORT_ENDPOINTS, LeagueDiscovery
 import asyncio
 import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Set
+from zoneinfo import ZoneInfo
 
 import aiohttp
 import aiomysql
@@ -20,7 +22,10 @@ API_KEY = os.getenv("API_KEY")
 logger = logging.getLogger(__name__)
 
 # Import the league discovery utility
-from bot.utils.league_discovery import SPORT_ENDPOINTS, LeagueDiscovery
+
+# Timezone constants
+EST = ZoneInfo("America/New_York")
+UTC = ZoneInfo("UTC")
 
 
 class ComprehensiveFetcher:
@@ -106,15 +111,16 @@ class ComprehensiveFetcher:
                                 f"Fetched {games_fetched} games for {league['name']} on {fetch_date}"
                             )
 
-                        # Rate limiting between requests
-                        await asyncio.sleep(1.5)
+                        # Rate limiting between requests - reduced for hourly operation
+                        await asyncio.sleep(0.5)  # Reduced from 1.5s to 0.5s
 
                     results["successful_fetches"] += 1
 
                 except Exception as e:
                     results["failed_fetches"] += 1
                     self.failed_leagues.add(league["name"])
-                    logger.error(f"Failed to fetch data for {league['name']}: {e}")
+                    logger.error(
+                        f"Failed to fetch data for {league['name']}: {e}")
                     continue
 
         logger.info(f"Comprehensive fetch completed: {results}")
@@ -185,7 +191,8 @@ class ComprehensiveFetcher:
                 data = await response.json()
 
                 if "errors" in data and data["errors"]:
-                    logger.warning(f"API errors for {league['name']}: {data['errors']}")
+                    logger.warning(
+                        f"API errors for {league['name']}: {data['errors']}")
                     return 0
 
                 games = data.get("response", [])
@@ -198,7 +205,8 @@ class ComprehensiveFetcher:
                             await self._save_game_to_db(mapped_game)
                             games_saved += 1
                     except Exception as e:
-                        logger.error(f"Error processing game for {league['name']}: {e}")
+                        logger.error(
+                            f"Error processing game for {league['name']}: {e}")
                         continue
 
                 return games_saved
@@ -210,8 +218,35 @@ class ComprehensiveFetcher:
             logger.error(f"Unexpected error fetching {league['name']}: {e}")
             return 0
 
+    def _convert_utc_to_est(self, utc_time_str: str) -> str:
+        """Convert UTC time string to EST time string."""
+        try:
+            if not utc_time_str:
+                return None
+
+            # Parse the UTC time string
+            if "T" in utc_time_str and "Z" in utc_time_str:
+                # ISO format with Z suffix
+                dt = datetime.fromisoformat(
+                    utc_time_str.replace("Z", "+00:00"))
+            elif "T" in utc_time_str:
+                # ISO format without Z
+                dt = datetime.fromisoformat(utc_time_str)
+            else:
+                # Try standard format
+                dt = datetime.strptime(utc_time_str, "%Y-%m-%d %H:%M:%S")
+                dt = dt.replace(tzinfo=UTC)
+
+            # Convert to EST
+            est_time = dt.astimezone(EST)
+            return est_time.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            logger.warning(
+                f"Failed to convert time '{utc_time_str}' to EST: {e}")
+            return utc_time_str
+
     def _map_game_data(self, game: Dict, sport: str, league: Dict) -> Optional[Dict]:
-        """Map API game data to our standard format."""
+        """Map API game data to our standard format with EST time conversion."""
         try:
             if sport == "football":
                 # Force league_name for Brazil Serie A and Italian Serie A
@@ -223,6 +258,10 @@ class ComprehensiveFetcher:
                 else:
                     league_name_final = league["name"]
 
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(
+                    game["fixture"]["date"])
+
                 return {
                     "api_game_id": str(game["fixture"]["id"]),
                     "sport": "Football",
@@ -230,7 +269,7 @@ class ComprehensiveFetcher:
                     "league_name": league_name_final,
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
-                    "start_time": game["fixture"]["date"],
+                    "start_time": start_time_est,
                     "status": game["fixture"]["status"]["long"],
                     "score": (
                         {
@@ -247,6 +286,9 @@ class ComprehensiveFetcher:
                     ),
                 }
             elif sport == "basketball":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
                 return {
                     "api_game_id": str(game["id"]),
                     "sport": "Basketball",
@@ -254,7 +296,7 @@ class ComprehensiveFetcher:
                     "league_name": league["name"],
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
-                    "start_time": game["date"],
+                    "start_time": start_time_est,
                     "status": game["status"]["long"],
                     "score": (
                         {
@@ -267,6 +309,9 @@ class ComprehensiveFetcher:
                     "venue": game["venue"]["name"] if "venue" in game else None,
                 }
             elif sport == "baseball":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
                 return {
                     "api_game_id": str(game["id"]),
                     "sport": "Baseball",
@@ -274,7 +319,7 @@ class ComprehensiveFetcher:
                     "league_name": league["name"],
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
-                    "start_time": game["date"],
+                    "start_time": start_time_est,
                     "status": game["status"]["long"],
                     "score": (
                         {
@@ -287,6 +332,9 @@ class ComprehensiveFetcher:
                     "venue": game["venue"]["name"] if "venue" in game else None,
                 }
             elif sport == "hockey":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
                 return {
                     "api_game_id": str(game["id"]),
                     "sport": "Ice Hockey",
@@ -294,7 +342,7 @@ class ComprehensiveFetcher:
                     "league_name": league["name"],
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
-                    "start_time": game["date"],
+                    "start_time": start_time_est,
                     "status": game["status"]["long"],
                     "score": (
                         {
@@ -307,6 +355,9 @@ class ComprehensiveFetcher:
                     "venue": game["venue"]["name"] if "venue" in game else None,
                 }
             elif sport == "american-football":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
                 return {
                     "api_game_id": str(game["id"]),
                     "sport": "American Football",
@@ -314,7 +365,7 @@ class ComprehensiveFetcher:
                     "league_name": league["name"],
                     "home_team_name": game["teams"]["home"]["name"],
                     "away_team_name": game["teams"]["away"]["name"],
-                    "start_time": game["date"],
+                    "start_time": start_time_est,
                     "status": game["status"]["long"],
                     "score": (
                         {
@@ -326,62 +377,213 @@ class ComprehensiveFetcher:
                     ),
                     "venue": game["venue"]["name"] if "venue" in game else None,
                 }
-            elif sport in [
-                "tennis",
-                "golf",
-                "darts",
-                "cricket",
-                "boxing",
-                "cycling",
-                "esports",
-                "snooker",
-                "squash",
-            ]:
-                # Individual sports with matches
+            elif sport == "rugby":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
                 return {
-                    "api_game_id": str(game.get("id", "")),
-                    "sport": sport.title(),
+                    "api_game_id": str(game["id"]),
+                    "sport": "Rugby",
                     "league_id": str(league["id"]),
                     "league_name": league["name"],
-                    "home_team_name": game.get("home", {}).get("name", ""),
-                    "away_team_name": game.get("away", {}).get("name", ""),
-                    "start_time": game.get("date", ""),
-                    "status": game.get("status", {}).get("long", ""),
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
                     "score": (
                         {
-                            "home": game.get("scores", {}).get("home", {}).get("total"),
-                            "away": game.get("scores", {}).get("away", {}).get("total"),
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
                         }
                         if "scores" in game
                         else None
                     ),
-                    "venue": game.get("venue", {}).get("name", ""),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "volleyball":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Volleyball",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": (
+                        {
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
+                        }
+                        if "scores" in game
+                        else None
+                    ),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "handball":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Handball",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": (
+                        {
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
+                        }
+                        if "scores" in game
+                        else None
+                    ),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "afl":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Australian Football",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": (
+                        {
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
+                        }
+                        if "scores" in game
+                        else None
+                    ),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "formula-1":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Formula 1",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": None,  # F1 doesn't have traditional scores
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "mma":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "MMA",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": None,  # MMA doesn't have traditional scores
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "tennis":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Tennis",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": (
+                        {
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
+                        }
+                        if "scores" in game
+                        else None
+                    ),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "golf":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Golf",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": None,  # Golf doesn't have traditional scores
+                    "venue": game["venue"]["name"] if "venue" in game else None,
+                }
+            elif sport == "darts":
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(game["date"])
+
+                return {
+                    "api_game_id": str(game["id"]),
+                    "sport": "Darts",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game["teams"]["home"]["name"],
+                    "away_team_name": game["teams"]["away"]["name"],
+                    "start_time": start_time_est,
+                    "status": game["status"]["long"],
+                    "score": (
+                        {
+                            "home": game["scores"]["home"]["total"],
+                            "away": game["scores"]["away"]["total"],
+                        }
+                        if "scores" in game
+                        else None
+                    ),
+                    "venue": game["venue"]["name"] if "venue" in game else None,
                 }
             else:
                 # Generic mapping for other sports
+                # Convert UTC time to EST
+                start_time_est = self._convert_utc_to_est(
+                    game.get("date", game.get("fixture", {}).get("date")))
+
                 return {
-                    "api_game_id": str(
-                        game.get("id", game.get("fixture", {}).get("id", ""))
-                    ),
+                    "api_game_id": str(game.get("id", game.get("fixture", {}).get("id", ""))),
                     "sport": sport.title(),
                     "league_id": str(league["id"]),
                     "league_name": league["name"],
-                    "home_team_name": game.get("teams", {})
-                    .get("home", {})
-                    .get("name", ""),
-                    "away_team_name": game.get("teams", {})
-                    .get("away", {})
-                    .get("name", ""),
-                    "start_time": game.get(
-                        "date", game.get("fixture", {}).get("date", "")
-                    ),
-                    "status": game.get("status", {}).get("long", ""),
-                    "score": None,  # Generic sports might not have standardized scoring
-                    "venue": game.get("venue", {}).get("name", ""),
+                    "home_team_name": game.get("teams", {}).get("home", {}).get("name", ""),
+                    "away_team_name": game.get("teams", {}).get("away", {}).get("name", ""),
+                    "start_time": start_time_est,
+                    "status": game.get("status", {}).get("long", "Unknown"),
+                    "score": None,
+                    "venue": game.get("venue", {}).get("name") if "venue" in game else None,
                 }
 
         except Exception as e:
-            logger.error(f"Error mapping game data: {e}")
+            logger.error(f"Error mapping game data for {sport}: {e}")
             return None
 
     async def _save_game_to_db(self, game_data: Dict) -> bool:
@@ -414,7 +616,8 @@ class ComprehensiveFetcher:
                                 game_data["away_team_name"],
                                 game_data["start_time"],
                                 game_data["status"],
-                                str(game_data["score"]) if game_data["score"] else None,
+                                str(game_data["score"]
+                                    ) if game_data["score"] else None,
                                 game_data["venue"],
                                 game_data["api_game_id"],
                             ),
@@ -438,7 +641,8 @@ class ComprehensiveFetcher:
                                 game_data["away_team_name"],
                                 game_data["start_time"],
                                 game_data["status"],
-                                str(game_data["score"]) if game_data["score"] else None,
+                                str(game_data["score"]
+                                    ) if game_data["score"] else None,
                                 game_data["venue"],
                             ),
                         )
@@ -540,7 +744,8 @@ async def run_comprehensive_hourly_fetch(db_pool: aiomysql.Pool):
             )
             await asyncio.sleep(wait_seconds)
 
-            logger.info("Running comprehensive hourly fetch for ALL leagues...")
+            logger.info(
+                "Running comprehensive hourly fetch for ALL leagues...")
 
             async with ComprehensiveFetcher(db_pool) as fetcher:
                 # Clear past games before fetching new data
@@ -558,8 +763,10 @@ async def run_comprehensive_hourly_fetch(db_pool: aiomysql.Pool):
 
                 logger.info(f"Comprehensive hourly fetch completed:")
                 logger.info(f"  - Total games: {stats.get('total_games', 0)}")
-                logger.info(f"  - Unique leagues: {stats.get('unique_leagues', 0)}")
-                logger.info(f"  - Unique sports: {stats.get('unique_sports', 0)}")
+                logger.info(
+                    f"  - Unique leagues: {stats.get('unique_leagues', 0)}")
+                logger.info(
+                    f"  - Unique sports: {stats.get('unique_sports', 0)}")
                 logger.info(
                     f"  - Failed leagues: {len(stats.get('failed_leagues', []))}"
                 )
