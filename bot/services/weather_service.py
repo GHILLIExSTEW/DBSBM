@@ -299,6 +299,68 @@ class WeatherService:
             logger.error(f"Error formatting weather message: {e}")
             return "❌ Error formatting weather data."
 
+    def format_forecast_message(self, weather_data: Dict, venue_name: str = None) -> str:
+        """Format forecast weather data into a readable Discord message."""
+        if not weather_data:
+            return "❌ Unable to fetch forecast data."
+
+        try:
+            location = weather_data.get("location", {})
+            forecast = weather_data.get("forecast", {})
+
+            location_name = location.get("name", "Unknown Location")
+            if venue_name and venue_name not in location_name:
+                location_name = f"{venue_name} ({location_name})"
+
+            message = f"📅 **3-Day Forecast for {location_name}**\n\n"
+
+            # Add location info
+            message += f"📍 **Location:** {location.get('region', '')}, {location.get('country', '')}\n\n"
+
+            # Format each day's forecast
+            for i, day in enumerate(forecast.get("forecastday", [])[:3]):  # Limit to 3 days
+                date = day.get("date", "Unknown")
+                day_info = day.get("day", {})
+
+                # Format date
+                try:
+                    from datetime import datetime
+                    dt = datetime.strptime(date, "%Y-%m-%d")
+                    formatted_date = dt.strftime("%A, %B %d")
+                except:
+                    formatted_date = date
+
+                condition = day_info.get("condition", {}).get("text", "Unknown")
+                max_temp_c = day_info.get("maxtemp_c", 0)
+                max_temp_f = day_info.get("maxtemp_f", 0)
+                min_temp_c = day_info.get("mintemp_c", 0)
+                min_temp_f = day_info.get("mintemp_f", 0)
+                avg_humidity = day_info.get("avghumidity", 0)
+                total_precip_mm = day_info.get("totalprecip_mm", 0)
+                max_wind_mph = day_info.get("maxwind_mph", 0)
+
+                # Get weather emoji
+                weather_emoji = self._get_weather_emoji(condition)
+
+                message += f"**{formatted_date}**\n"
+                message += f"{weather_emoji} **{condition}**\n"
+                message += f"🌡️ **High:** {max_temp_c}°C ({max_temp_f}°F) | **Low:** {min_temp_c}°C ({min_temp_f}°F)\n"
+                message += f"💧 **Humidity:** {avg_humidity}%\n"
+
+                if total_precip_mm > 0:
+                    message += f"🌧️ **Precipitation:** {total_precip_mm} mm\n"
+
+                if max_wind_mph > 0:
+                    message += f"💨 **Max Wind:** {max_wind_mph} mph\n"
+
+                message += "\n"
+
+            return message
+
+        except Exception as e:
+            logger.error(f"Error formatting forecast message: {e}")
+            return "❌ Error formatting forecast data."
+
     def _get_weather_emoji(self, condition: str) -> str:
         """Get appropriate emoji for weather condition."""
         condition_lower = condition.lower()
