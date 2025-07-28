@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 CACHE_PREFIXES = {
     "api_response": "api:",
     "db_query": "db:",
+    "database": "db:",  # Alias for database queries
     "user_data": "user:",
     "guild_data": "guild:",
     "game_data": "game:",
@@ -69,6 +70,7 @@ CACHE_PREFIXES = {
 DEFAULT_TTLS = {
     "api_response": 300,  # 5 minutes
     "db_query": 600,  # 10 minutes
+    "database": 600,  # 10 minutes (alias for db_query)
     "user_data": 1800,  # 30 minutes
     "guild_data": 3600,  # 1 hour
     "game_data": 900,  # 15 minutes

@@ -123,22 +123,26 @@ class DataSyncService:
     async def sync_games(self) -> int:
         """Synchronize game data from external APIs."""
         try:
-            # Get upcoming games from API
-            upcoming_games = await self.game_service.get_upcoming_games(limit=self.config['max_games_per_sync'])
+            # Get upcoming games from database instead of API
+            # The games are already being synced by other services
+            query = """
+                SELECT id, api_game_id, sport, league_id, league_name,
+                       home_team_name, away_team_name, start_time, status, score
+                FROM api_games
+                WHERE start_time > NOW()
+                AND start_time < DATE_ADD(NOW(), INTERVAL 72 HOUR)
+                ORDER BY start_time ASC
+                LIMIT %s
+            """
+
+            upcoming_games = await self.db_manager.fetch_all(query, (self.config['max_games_per_sync'],))
 
             if not upcoming_games:
                 logger.info("No upcoming games to sync")
                 return 0
 
-            synced_count = 0
-            for game in upcoming_games:
-                try:
-                    # Store game data in database
-                    await self._store_game_data(game)
-                    synced_count += 1
-                except Exception as e:
-                    logger.error(
-                        f"Error syncing game {game.get('id', 'unknown')}: {e}")
+            synced_count = len(upcoming_games)
+            logger.info(f"Found {synced_count} upcoming games in database")
 
             # Clear game cache after sync
             await enhanced_cache_delete("game_data", "upcoming_games")
@@ -153,22 +157,28 @@ class DataSyncService:
     async def sync_teams(self) -> int:
         """Synchronize team data from external APIs."""
         try:
-            # Get teams from API
-            teams = await self.game_service.get_teams()
+            # Get teams from database instead of API
+            # Teams are already being synced by other services
+            query = """
+                SELECT DISTINCT home_team_name as team_name, sport, league_id
+                FROM api_games
+                WHERE home_team_name IS NOT NULL
+                UNION
+                SELECT DISTINCT away_team_name as team_name, sport, league_id
+                FROM api_games
+                WHERE away_team_name IS NOT NULL
+                ORDER BY team_name
+                LIMIT %s
+            """
+
+            teams = await self.db_manager.fetch_all(query, (self.config.get('max_teams_per_sync', 100),))
 
             if not teams:
                 logger.info("No teams to sync")
                 return 0
 
-            synced_count = 0
-            for team in teams:
-                try:
-                    # Store team data in database
-                    await self._store_team_data(team)
-                    synced_count += 1
-                except Exception as e:
-                    logger.error(
-                        f"Error syncing team {team.get('id', 'unknown')}: {e}")
+            synced_count = len(teams)
+            logger.info(f"Found {synced_count} teams in database")
 
             # Clear team cache after sync
             await enhanced_cache_delete("team_data", "all_teams")
@@ -183,22 +193,24 @@ class DataSyncService:
     async def sync_leagues(self) -> int:
         """Synchronize league data from external APIs."""
         try:
-            # Get leagues from API
-            leagues = await self.game_service.get_leagues()
+            # Get leagues from database instead of API
+            # Leagues are already being synced by other services
+            query = """
+                SELECT DISTINCT sport, league_id, league_name
+                FROM api_games
+                WHERE sport IS NOT NULL AND league_id IS NOT NULL
+                ORDER BY sport, league_name
+                LIMIT %s
+            """
+
+            leagues = await self.db_manager.fetch_all(query, (self.config.get('max_leagues_per_sync', 50),))
 
             if not leagues:
                 logger.info("No leagues to sync")
                 return 0
 
-            synced_count = 0
-            for league in leagues:
-                try:
-                    # Store league data in database
-                    await self._store_league_data(league)
-                    synced_count += 1
-                except Exception as e:
-                    logger.error(
-                        f"Error syncing league {league.get('id', 'unknown')}: {e}")
+            synced_count = len(leagues)
+            logger.info(f"Found {synced_count} leagues in database")
 
             # Clear league cache after sync
             await enhanced_cache_delete("league_data", "all_leagues")

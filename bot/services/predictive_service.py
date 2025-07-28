@@ -457,7 +457,7 @@ class PredictiveService:
         """Get upcoming games for prediction."""
         try:
             query = """
-                SELECT id, home_team, away_team, sport, league, start_time
+                SELECT id, home_team_name, away_team_name, sport, league_id, start_time
                 FROM api_games
                 WHERE start_time > NOW()
                 AND start_time < DATE_ADD(NOW(), INTERVAL %s HOUR)
@@ -474,7 +474,7 @@ class PredictiveService:
         """Get detailed game data."""
         try:
             query = """
-                SELECT id, home_team, away_team, sport, league, start_time, venue
+                SELECT id, home_team_name, away_team_name, sport, league_id, start_time, venue
                 FROM api_games
                 WHERE id = %s
             """
@@ -496,10 +496,10 @@ class PredictiveService:
 
             # Get team's recent games
             query = """
-                SELECT home_team, away_team, home_score, away_score, status
+                SELECT home_team_name, away_team_name, score, status
                 FROM api_games
-                WHERE (home_team = %s OR away_team = %s)
-                AND sport = %s AND league = %s
+                WHERE (home_team_name = %s OR away_team_name = %s)
+                AND sport = %s AND league_id = %s
                 AND status = 'finished'
                 ORDER BY start_time DESC
                 LIMIT 20
@@ -530,10 +530,24 @@ class PredictiveService:
             games_played = len(games)
 
             for game in games:
-                home_team = game.get('home_team')
-                away_team = game.get('away_team')
-                home_score = game.get('home_score', 0)
-                away_score = game.get('away_score', 0)
+                home_team = game.get('home_team_name')
+                away_team = game.get('away_team_name')
+                score = game.get('score', '0-0')
+
+                # Parse score from JSON or string format
+                try:
+                    if isinstance(score, str):
+                        if '-' in score:
+                            home_score, away_score = map(int, score.split('-'))
+                        else:
+                            home_score = away_score = 0
+                    elif isinstance(score, dict):
+                        home_score = score.get('home', 0)
+                        away_score = score.get('away', 0)
+                    else:
+                        home_score = away_score = 0
+                except (ValueError, TypeError):
+                    home_score = away_score = 0
 
                 if home_team == team_name:
                     goals_for += home_score
@@ -554,10 +568,24 @@ class PredictiveService:
             recent_games = games[:5]
             recent_wins = 0
             for game in recent_games:
-                home_team = game.get('home_team')
-                away_team = game.get('away_team')
-                home_score = game.get('home_score', 0)
-                away_score = game.get('away_score', 0)
+                home_team = game.get('home_team_name')
+                away_team = game.get('away_team_name')
+                score = game.get('score', '0-0')
+
+                # Parse score from JSON or string format
+                try:
+                    if isinstance(score, str):
+                        if '-' in score:
+                            home_score, away_score = map(int, score.split('-'))
+                        else:
+                            home_score = away_score = 0
+                    elif isinstance(score, dict):
+                        home_score = score.get('home', 0)
+                        away_score = score.get('away', 0)
+                    else:
+                        home_score = away_score = 0
+                except (ValueError, TypeError):
+                    home_score = away_score = 0
 
                 if home_team == team_name and home_score > away_score:
                     recent_wins += 1
