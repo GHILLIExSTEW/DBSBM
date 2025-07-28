@@ -1203,17 +1203,10 @@ class ManualSyncCog(commands.Cog):
             )
             await self.close()
             sys.exit("Database connection failed.")
-        await self.db_manager.execute(
-            """
-            CREATE TABLE IF NOT EXISTS guild_settings (
-                guild_id INTEGER PRIMARY KEY,
-                live_game_updates INTEGER DEFAULT 0,
-                is_paid INTEGER DEFAULT 0,
-                subscription_level VARCHAR(20) DEFAULT 'initial'
-            )
-            """
-        )
-        logger.info("Ensured guild_settings table exists.")
+
+            # Note: Database schema initialization is handled by DatabaseManager.initialize_db()
+        # No need to create tables here as they already exist
+
         if not os.getenv("SCHEDULER_MODE"):
             await self.load_extensions()
             commands_list = [cmd.name for cmd in self.tree.get_commands()]

@@ -70,35 +70,15 @@ class PlayerCacheUpdater:
         print(f"✅ Loaded {len(self.players_data)} players from CSV")
         return True
 
-    async def create_cache_table(self):
-        """Create the player_search_cache table if it doesn't exist"""
-        create_table_sql = """
-        CREATE TABLE IF NOT EXISTS player_search_cache (
-            id BIGINT AUTO_INCREMENT PRIMARY KEY,
-            player_name VARCHAR(100) NOT NULL,
-            team_name VARCHAR(100) NOT NULL,
-            league VARCHAR(50) NOT NULL,
-            sport VARCHAR(50) NOT NULL,
-            search_keywords TEXT NOT NULL COMMENT 'Normalized search terms',
-            last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            usage_count INT DEFAULT 1,
-            is_active BOOLEAN DEFAULT TRUE,
-            UNIQUE KEY unique_player_team_league (player_name, team_name, league),
-            INDEX idx_search_keywords (search_keywords(255)),
-            INDEX idx_last_used (last_used),
-            INDEX idx_usage_count (usage_count),
-            INDEX idx_is_active (is_active)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        """
-
+    async def verify_cache_table(self):
+        """Verify the player_search_cache table exists"""
         try:
-            await self.db_manager.execute(create_table_sql)
-            print("✅ Player search cache table created/verified")
+            await self.db_manager.execute("SELECT 1 FROM player_search_cache LIMIT 1")
+            print("✅ Player search cache table exists")
+            return True
         except Exception as e:
-            print(f"❌ Error creating table: {e}")
+            print(f"❌ Player search cache table does not exist: {e}")
             return False
-
-        return True
 
     async def clear_existing_cache(self):
         """Clear existing cache data"""
@@ -247,8 +227,8 @@ async def main():
         if not updater.load_csv_data():
             return
 
-        # Create/verify table
-        if not await updater.create_cache_table():
+        # Verify table exists
+        if not await updater.verify_cache_table():
             return
 
         # Clear existing cache

@@ -33,37 +33,8 @@ class AdminService:
         """Start the AdminService and perform any necessary setup."""
         logger.info("Starting AdminService")
         try:
-            # Ensure guild_settings table exists with correct schema
-            await self.db_manager.execute(
-                """
-                CREATE TABLE IF NOT EXISTS guild_settings (
-                    guild_id INTEGER PRIMARY KEY,
-                    is_paid INTEGER DEFAULT 0,
-                    subscription_level VARCHAR(20) DEFAULT 'initial',
-                    live_game_updates INTEGER DEFAULT 0,
-                    embed_channel_1 BIGINT,
-                    embed_channel_2 BIGINT,
-                    command_channel_1 BIGINT,
-                    command_channel_2 BIGINT,
-                    admin_channel_1 BIGINT,
-                    admin_role BIGINT,
-                    authorized_role BIGINT,
-                    member_role BIGINT,
-                    voice_channel_id BIGINT,
-                    yearly_channel_id BIGINT,
-                    daily_report_time VARCHAR(5),
-                    bot_name_mask VARCHAR(100),
-                    bot_image_mask VARCHAR(100),
-                    guild_background VARCHAR(100),
-                    guild_default_image VARCHAR(100),
-                    default_parlay_image VARCHAR(100),
-                    min_units DECIMAL(10,2),
-                    max_units DECIMAL(10,2),
-                    units_display_mode VARCHAR(20),
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
-                """
-            )
+            # Note: Database schema initialization is handled by DatabaseManager.initialize_db()
+            # No need to create tables here as they're already created during bot startup
             logger.info("AdminService started successfully")
         except Exception as e:
             logger.error(f"Failed to start AdminService: {e}", exc_info=True)
@@ -124,7 +95,8 @@ class AdminService:
             return result.get("subscription_level", "initial")
 
         except Exception as e:
-            logger.error(f"Error getting guild subscription level for {guild_id}: {e}")
+            logger.error(
+                f"Error getting guild subscription level for {guild_id}: {e}")
             return "initial"  # Default to initial on error
 
     async def check_guild_subscription(self, guild_id: int) -> bool:
@@ -135,7 +107,8 @@ class AdminService:
             )
             return bool(result and result.get("is_paid", False))
         except Exception as e:
-            logger.error(f"Error checking guild subscription for {guild_id}: {e}")
+            logger.error(
+                f"Error checking guild subscription for {guild_id}: {e}")
             return False
 
     async def setup_guild(self, guild_id: int, settings: Dict[str, any]) -> bool:
@@ -332,7 +305,8 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message(
                 "Guild settings initialized successfully!", ephemeral=True
             )
-            logger.debug(f"Guild settings set up for guild {interaction.guild_id}")
+            logger.debug(
+                f"Guild settings set up for guild {interaction.guild_id}")
         except Exception as e:
             logger.error(
                 f"Failed to set up guild settings for guild {interaction.guild_id}: {e}",

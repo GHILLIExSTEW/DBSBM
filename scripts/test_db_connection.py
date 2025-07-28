@@ -59,61 +59,25 @@ async def test_database_connection():
                     print("Basic query failed")
                     return False
 
-        # Test table creation
+        # Test table verification
         async with pool.acquire() as conn:
             async with conn.cursor(aiomysql.Cursor) as cursor:
                 # Check if guild_settings table exists
                 await cursor.execute("SHOW TABLES LIKE 'guild_settings'")
                 table_exists = await cursor.fetchone() is not None
 
-                if not table_exists:
-                    print("Creating guild_settings table...")
-                    await cursor.execute("""
-                        CREATE TABLE guild_settings (
-                            guild_id BIGINT PRIMARY KEY,
-                            is_active BOOLEAN DEFAULT TRUE,
-                            subscription_level INTEGER DEFAULT 0,
-                            is_paid BOOLEAN DEFAULT FALSE,
-                            embed_channel_1 BIGINT NULL,
-                            embed_channel_2 BIGINT NULL,
-                            command_channel_1 BIGINT NULL,
-                            command_channel_2 BIGINT NULL,
-                            admin_channel_1 BIGINT NULL,
-                            admin_role BIGINT NULL,
-                            authorized_role BIGINT NULL,
-                            voice_channel_id BIGINT NULL COMMENT 'Monthly VC',
-                            yearly_channel_id BIGINT NULL COMMENT 'Yearly VC',
-                            total_units_channel_id BIGINT NULL,
-                            daily_report_time TEXT NULL,
-                            member_role BIGINT NULL,
-                            bot_name_mask TEXT NULL,
-                            bot_image_mask TEXT NULL,
-                            guild_default_image TEXT NULL,
-                            default_parlay_thumbnail TEXT NULL,
-                            total_result_value DECIMAL(15, 2) DEFAULT 0.0,
-                            min_units DECIMAL(15, 2) DEFAULT 0.1,
-                            max_units DECIMAL(15, 2) DEFAULT 10.0,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-                    """)
-                    print("guild_settings table created successfully")
+                if table_exists:
+                    print("guild_settings table exists")
                 else:
-                    print("guild_settings table already exists")
+                    print("guild_settings table does not exist")
 
-                # Test adding a column
+                # Test basic query on existing table
                 try:
-                    await cursor.execute("SHOW COLUMNS FROM guild_settings LIKE 'test_column'")
-                    column_exists = await cursor.fetchone() is not None
-
-                    if not column_exists:
-                        print("Adding test column...")
-                        await cursor.execute("ALTER TABLE guild_settings ADD COLUMN test_column VARCHAR(50) NULL")
-                        print("Test column added successfully")
-                    else:
-                        print("Test column already exists")
+                    await cursor.execute("SELECT COUNT(*) as count FROM guild_settings")
+                    result = await cursor.fetchone()
+                    print(f"guild_settings table has {result[0] if result else 0} rows")
                 except Exception as e:
-                    print(f"Warning: Could not add test column: {e}")
+                    print(f"Warning: Could not query guild_settings table: {e}")
 
         # Close pool
         pool.close()
