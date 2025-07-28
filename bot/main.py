@@ -156,6 +156,10 @@ REQUIRED_ENV_VARS = {
     "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
 }
 
+# TEMPORARY FIX: Disable Redis to prevent freezing
+os.environ["REDIS_DISABLED"] = "true"
+logger.info("TEMPORARY FIX: Redis disabled to prevent startup freezing")
+
 try:
     try:
         from bot.utils.environment_validator import validate_environment
@@ -780,9 +784,25 @@ class BettingBot(commands.Bot):
     async def setup_hook(self):
         """Initialize the bot and load extensions."""
         logger.info("Starting setup_hook...")
+
+        # Add timeout wrapper to prevent hanging
+        try:
+            await asyncio.wait_for(self._setup_hook_internal(), timeout=60.0)
+        except asyncio.TimeoutError:
+            logger.error("Bot setup_hook timed out after 60 seconds")
+            raise RuntimeError("Bot initialization timed out")
+        except Exception as e:
+            logger.error(f"Bot setup_hook failed: {e}")
+            raise
+
+    async def _setup_hook_internal(self):
+        """Internal setup_hook implementation."""
+        logger.info("Step 1: Starting one-time downloads...")
         await run_one_time_logo_download()
         await run_one_time_player_data_download()
+        logger.info("Step 1: One-time downloads completed")
 
+        logger.info("Step 2: Connecting to database...")
         await self.db_manager.connect()
         if not self.db_manager._pool:
             logger.critical(
@@ -790,9 +810,11 @@ class BettingBot(commands.Bot):
             )
             await self.close()
             sys.exit("Database connection failed.")
+        logger.info("Step 2: Database connection successful")
 
         # Initialize database schema
         try:
+            logger.info("Step 3: Initializing database schema...")
             await self.db_manager.initialize_db()
             logger.info("Database schema initialized successfully.")
         except Exception as e:
@@ -802,14 +824,18 @@ class BettingBot(commands.Bot):
 
         # Only load extensions if we're not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
+            logger.info("Step 4: Loading extensions...")
             await self.load_extensions()
             commands_list = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Registered commands: %s", commands_list)
+        else:
+            logger.info("Step 4: Skipping extension loading (scheduler mode)")
 
-        logger.info("Starting services...")
+        logger.info("Step 5: Starting services...")
 
         # Initialize community engagement services
         try:
+            logger.info("Step 5a: Initializing community services...")
             from bot.services.community_analytics import CommunityAnalyticsService
             from bot.services.community_events import CommunityEventsService
 
@@ -826,6 +852,7 @@ class BettingBot(commands.Bot):
             self.community_events_service = None
             self.community_analytics_service = None
 
+        logger.info("Step 5b: Starting core services...")
         service_starts = [
             self.admin_service.start(),
             self.analytics_service.start(),
@@ -841,6 +868,7 @@ class BettingBot(commands.Bot):
 
         # Initialize real ML service
         try:
+            logger.info("Step 5c: Initializing ML service...")
             from bot.services.real_ml_service import RealMLService
             self.real_ml_service = RealMLService(
                 self.db_manager, self.sports_api, self.predictive_service)
@@ -857,6 +885,7 @@ class BettingBot(commands.Bot):
 
         # Initialize system integration service
         try:
+            logger.info("Step 5d: Initializing system integration service...")
             from bot.services.system_integration_service import SystemIntegrationService
             self.system_integration_service = SystemIntegrationService(
                 self.db_manager)
@@ -869,6 +898,7 @@ class BettingBot(commands.Bot):
 
         # Initialize rate limiter
         try:
+            logger.info("Step 5e: Initializing rate limiter...")
             self.rate_limiter = get_rate_limiter()
             logger.info("Rate limiter initialized")
         except Exception as e:
@@ -877,6 +907,7 @@ class BettingBot(commands.Bot):
 
         # Initialize performance monitor
         try:
+            logger.info("Step 5f: Initializing performance monitor...")
             self.performance_monitor = get_performance_monitor()
             logger.info("Performance monitor initialized")
         except Exception as e:
@@ -885,12 +916,15 @@ class BettingBot(commands.Bot):
 
         # Initialize error handler
         try:
+            logger.info("Step 5g: Initializing error handler...")
             self.error_handler = get_error_handler()
             initialize_default_recovery_strategies()
             logger.info("Error handler initialized")
         except Exception as e:
             logger.error(f"Failed to initialize error handler: {e}")
             raise
+
+        logger.info("Step 5h: Starting all services...")
         results = await asyncio.gather(*service_starts, return_exceptions=True)
         for i, result in enumerate(results):
             if isinstance(result, Exception):
@@ -907,6 +941,7 @@ class BettingBot(commands.Bot):
 
         # Only start webapp and fetcher if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
+            logger.info("Step 6: Starting webapp and fetcher...")
             self.start_flask_webapp()
             self.start_fetcher()
             logger.info(
@@ -1256,9 +1291,23 @@ async def run_bot():
     retry_delay = 5  # seconds
     while retry_count < max_retries:
         try:
+            logger.info("Attempting to start bot...")
             bot = BettingBot()
-            await bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"])
-            break
+
+            # Add timeout to bot startup
+            try:
+                await asyncio.wait_for(bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]), timeout=120.0)
+                logger.info("Bot started successfully")
+                break
+            except asyncio.TimeoutError:
+                logger.error("Bot startup timed out after 120 seconds")
+                await bot.close()
+                raise RuntimeError("Bot startup timed out")
+            except Exception as e:
+                logger.error(f"Bot startup failed: {e}")
+                await bot.close()
+                raise
+
         except discord.LoginFailure:
             logger.critical(
                 "Login failed: Invalid Discord token provided in .env file."

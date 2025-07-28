@@ -112,45 +112,60 @@ class DatabaseManager:
                 await asyncio.wait_for(self.cache_manager.connect(), timeout=10.0)
                 logger.info("Cache manager connected successfully.")
             except asyncio.TimeoutError:
-                logger.warning("Cache manager connection timed out - continuing without Redis cache")
+                logger.warning(
+                    "Cache manager connection timed out - continuing without Redis cache")
             except Exception as e:
                 logger.warning(f"Failed to connect cache manager: {e}")
 
-            for attempt in range(max_retries):
-                try:
-                    self._pool = await aiomysql.create_pool(
-                        host=MYSQL_HOST,
-                        port=MYSQL_PORT,
-                        user=MYSQL_USER,
-                        password=MYSQL_PASSWORD,
-                        db=self.db_name,
-                        minsize=self.pool_min_size,
-                        maxsize=self.pool_max_size,
-                        autocommit=True,
-                        echo=False,
-                        pool_recycle=3600,  # Recycle connections every hour
-                        connect_timeout=self.connect_timeout,
-                    )
-                    logger.info("MySQL connection pool created successfully.")
-                    break
-                except Exception as e:
-                    last_error = e
-                    logger.warning(
-                        f"Attempt {attempt + 1}/{max_retries} failed to create MySQL pool: {e}"
-                    )
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(retry_delay)
-                        retry_delay *= 2  # Exponential backoff
-
-            if self._pool is None:
-                logger.error(
-                    f"Failed to create MySQL connection pool after {max_retries} attempts."
-                )
-                raise ConnectionError(
-                    f"Failed to create MySQL connection pool: {last_error}"
-                )
+            # Add timeout wrapper around the entire connection process
+            try:
+                await asyncio.wait_for(self._create_pool_with_retries(max_retries, retry_delay), timeout=30.0)
+            except asyncio.TimeoutError:
+                logger.error("Database connection timed out after 30 seconds")
+                raise ConnectionError("Database connection timed out")
+            except Exception as e:
+                logger.error(f"Database connection failed: {e}")
+                raise
 
         return self._pool
+
+    async def _create_pool_with_retries(self, max_retries: int, retry_delay: int) -> None:
+        """Create connection pool with retry logic."""
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                self._pool = await aiomysql.create_pool(
+                    host=MYSQL_HOST,
+                    port=MYSQL_PORT,
+                    user=MYSQL_USER,
+                    password=MYSQL_PASSWORD,
+                    db=self.db_name,
+                    minsize=self.pool_min_size,
+                    maxsize=self.pool_max_size,
+                    autocommit=True,
+                    echo=False,
+                    pool_recycle=3600,  # Recycle connections every hour
+                    connect_timeout=self.connect_timeout,
+                )
+                logger.info("MySQL connection pool created successfully.")
+                return
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Attempt {attempt + 1}/{max_retries} failed to create MySQL pool: {e}"
+                )
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+
+        if self._pool is None:
+            logger.error(
+                f"Failed to create MySQL connection pool after {max_retries} attempts."
+            )
+            raise ConnectionError(
+                f"Failed to create MySQL connection pool: {last_error}"
+            )
 
     async def close(self):
         """Close the MySQL connection pool."""
