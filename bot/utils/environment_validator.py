@@ -85,6 +85,14 @@ class EnvironmentValidator:
         """Validate all environment configurations."""
         errors = []
 
+        # Check if we're in a production environment
+        is_production = any([
+            os.getenv("SCHEDULER_MODE"),
+            os.getenv("FLASK_ENV") == "production",
+            "container" in os.getenv("HOSTNAME", "").lower(),
+            "/home/container" in os.getcwd()
+        ])
+
         # Validate centralized configuration
         try:
             from config.settings import validate_settings
@@ -153,8 +161,20 @@ class EnvironmentValidator:
             for error in errors:
                 logger.error(f"  - {error}")
             logger.error("Environment validation failed!")
-            logger.error(
-                "Please check your .env file and ensure all required variables are set.")
+
+            # Provide helpful error messages for production
+            if is_production:
+                logger.error("Production environment detected. Please check:")
+                logger.error("1. All required environment variables are set")
+                logger.error(
+                    "2. Database and Redis connections are accessible")
+                logger.error(
+                    "3. API keys are valid and have proper permissions")
+                logger.error(
+                    "4. Discord token is valid and bot has proper permissions")
+            else:
+                logger.error(
+                    "Please check your .env file and ensure all required variables are set.")
 
         return is_valid, errors
 
