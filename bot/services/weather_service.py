@@ -9,7 +9,28 @@ import aiohttp
 from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 
-from config.settings import get_settings
+# Import centralized configuration with fallback
+try:
+    from config.settings import get_settings
+except ImportError:
+    # Fallback - try to import from parent directory
+    import sys
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Add multiple possible paths for different execution contexts
+    possible_paths = [
+        os.path.dirname(os.path.dirname(current_dir)),  # From bot/services/
+        os.path.dirname(current_dir),  # From services/
+    ]
+    for path in possible_paths:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    try:
+        from config.settings import get_settings
+    except ImportError:
+        # Final fallback - create mock function for testing
+        def get_settings():
+            return None
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +41,17 @@ class WeatherService:
     def __init__(self):
         self.settings = get_settings()
         self.base_url = "http://api.weatherapi.com/v1"
-        self.api_key = self.settings.api.weather_key.get_secret_value(
-        ) if self.settings.api.weather_key else None
-        self.timeout = self.settings.api.timeout
+
+        # Handle case where settings might be None
+        if self.settings and hasattr(self.settings, 'api'):
+            self.api_key = self.settings.api.weather_key.get_secret_value(
+            ) if self.settings.api.weather_key else None
+            self.timeout = self.settings.api.timeout
+        else:
+            # Fallback to environment variables
+            import os
+            self.api_key = os.getenv("WEATHER_API_KEY")
+            self.timeout = int(os.getenv("API_TIMEOUT", "30"))
 
     async def get_current_weather(self, location: str) -> Optional[Dict]:
         """
