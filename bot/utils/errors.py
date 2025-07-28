@@ -77,6 +77,10 @@ class VoiceError(Exception):
     """Raised when there's an error in voice operations."""
 
 
+class VoiceServiceError(VoiceError):
+    """Raised when there's an error in the voice service."""
+
+
 class GameNotFoundError(GameServiceError):  # Changed inheritance to GameServiceError
     """Exception raised when a game is not found."""
 
