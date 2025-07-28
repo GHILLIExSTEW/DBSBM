@@ -86,18 +86,6 @@ except ImportError:
             level=logging.INFO,
             format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
         )
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
-
-logging.basicConfig(
-    level=log_level,
-    format=log_format,
-    handlers=[
-        logging.FileHandler(
-            log_file_path, encoding="utf-8") if log_file_path else logging.NullHandler(),
-        logging.StreamHandler(sys.stdout),
-    ],
-)
 discord_logger = logging.getLogger("discord")
 discord_logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
