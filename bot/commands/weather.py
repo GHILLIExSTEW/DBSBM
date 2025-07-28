@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import discord
 from discord import ButtonStyle, Interaction, SelectOption, app_commands
 from discord.ext import commands
-from discord.ui import Button, Select, View
+from discord.ui import Button, Modal, Select, TextInput, View
 
 from bot.services.weather_service import WeatherService
 
@@ -77,6 +77,93 @@ def get_leagues_by_sport(sport: str) -> List[str]:
     return sport_leagues.get(sport, [])
 
 
+class ManualSearchModal(Modal):
+    """Modal for manual city/state search."""
+
+    def __init__(self, parent_view: "WeatherWorkflowView"):
+        super().__init__(title="Manual Weather Search")
+        self.parent_view = parent_view
+
+        self.city_input = TextInput(
+            label="City",
+            placeholder="Enter city name (e.g., New York, Los Angeles)",
+            required=True,
+            max_length=100,
+            custom_id="weather_city_input",
+        )
+
+        self.state_input = TextInput(
+            label="State/Country",
+            placeholder="Enter state or country (e.g., NY, CA, UK)",
+            required=False,
+            max_length=100,
+            custom_id="weather_state_input",
+        )
+
+        self.add_item(self.city_input)
+        self.add_item(self.state_input)
+
+    async def on_submit(self, interaction: Interaction):
+        """Handle modal submission."""
+        try:
+            city = self.city_input.value.strip()
+            state = self.state_input.value.strip() if self.state_input.value else ""
+
+            # Combine city and state for location
+            location = f"{city}, {state}" if state else city
+
+            # Get weather service
+            weather_service = WeatherService()
+
+            # Get weather for the location
+            weather_data = await weather_service.get_current_weather(location)
+
+            if weather_data:
+                # Format the weather message
+                weather_message = weather_service.format_weather_message(
+                    weather_data, location
+                )
+                await interaction.response.send_message(weather_message, ephemeral=True)
+            else:
+                await interaction.response.send_message(
+                    f"❌ Could not find weather information for **{location}**. "
+                    "Please check the spelling and try again.",
+                    ephemeral=True,
+                )
+
+        except Exception as e:
+            logger.error(f"Error in manual search: {e}")
+            await interaction.response.send_message(
+                "❌ An error occurred while fetching weather information. Please try again later.",
+                ephemeral=True,
+            )
+
+
+class ManualSearchButton(Button):
+    """Button to trigger manual search modal."""
+
+    def __init__(self, parent_view: "WeatherWorkflowView"):
+        super().__init__(
+            label="Manual Search",
+            style=ButtonStyle.secondary,
+            emoji="🔍",
+            custom_id=f"weather_manual_search_{parent_view.original_interaction.id}",
+        )
+        self.parent_view = parent_view
+
+    async def callback(self, interaction: Interaction):
+        """Handle manual search button click."""
+        try:
+            modal = ManualSearchModal(self.parent_view)
+            await interaction.response.send_modal(modal)
+        except Exception as e:
+            logger.error(f"Error showing manual search modal: {e}")
+            await interaction.response.send_message(
+                "❌ An error occurred while opening the search form. Please try again.",
+                ephemeral=True,
+            )
+
+
 class SportSelect(Select):
     """Sport category selection dropdown."""
 
@@ -129,23 +216,26 @@ class GameSelect(Select):
         self.parent_view = parent_view
         options = []
 
-        for game in games:
-            home_team = game.get("home_team_name", "Unknown")
-            away_team = game.get("away_team_name", "Unknown")
-            start_time = game.get("start_time", "Unknown")
-            venue = game.get("venue", "Unknown Venue")
+        for game in games[:25]:  # Limit to 25 games (Discord limit)
+            home_team = game.get("home_team", "Unknown")
+            away_team = game.get("away_team", "Unknown")
+            game_time = game.get("game_time", "Unknown")
 
-            label = f"{away_team} @ {home_team}"
+            # Format the label to fit Discord's 100 character limit
+            label = f"{home_team} vs {away_team}"
             if len(label) > 100:
-                label = label[:97] + "..."
+                label = f"{home_team[:45]} vs {away_team[:45]}"
 
-            description = f"{start_time} - {venue}"
-            if len(description) > 100:
-                description = description[:97] + "..."
+            value = str(game.get("id", ""))
+            description = (
+                f"Game Time: {game_time}" if game_time != "Unknown" else "Time TBD"
+            )
 
             options.append(
                 SelectOption(
-                    label=label, value=str(game.get("id", "")), description=description
+                    label=label,
+                    value=value,
+                    description=description[:100],  # Discord description limit
                 )
             )
 
@@ -158,30 +248,36 @@ class GameSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        game_id = self.values[0]
+        selected_game_id = self.values[0]
+        self.parent_view.weather_details["game_id"] = selected_game_id
+
         # Find the selected game
         selected_game = None
         for game in self.parent_view.games:
-            if str(game.get("id", "")) == game_id:
+            if str(game.get("id", "")) == selected_game_id:
                 selected_game = game
                 break
 
         if selected_game:
-            self.parent_view.weather_details["game"] = selected_game
+            self.parent_view.weather_details["selected_game"] = selected_game
             self.disabled = True
             await interaction.response.defer()
-            await self.parent_view.go_next(interaction)
+            await self.parent_view.show_weather_info(interaction)
         else:
             await interaction.response.send_message(
-                "❌ Error: Selected game not found. Please try again.", ephemeral=True
+                "❌ Selected game not found. Please try again.", ephemeral=True
             )
 
 
 class CancelButton(Button):
-    """Cancel button for the weather workflow."""
+    """Cancel button for the workflow."""
 
     def __init__(self, parent_view: "WeatherWorkflowView"):
-        super().__init__(label="Cancel", style=ButtonStyle.danger)
+        super().__init__(
+            label="Cancel",
+            style=ButtonStyle.danger,
+            custom_id=f"weather_cancel_{parent_view.original_interaction.id}",
+        )
         self.parent_view = parent_view
 
     async def callback(self, interaction: Interaction):
@@ -192,98 +288,108 @@ class CancelButton(Button):
 
 
 class WeatherWorkflowView(View):
-    """Workflow view for weather lookup with dropdowns."""
+    """View for managing the weather workflow."""
 
     def __init__(self, original_interaction: Interaction, bot: commands.Bot):
-        super().__init__(timeout=1800)  # 30 minutes timeout
+        super().__init__(timeout=300)  # 5 minute timeout
         self.original_interaction = original_interaction
         self.bot = bot
-        self.current_step = 0
-        self.weather_details: Dict[str, Any] = {}
-        self.games: List[Dict] = []
-        self.weather_service = WeatherService()
-        self.game_service = getattr(bot, "game_service", None)
+        self.current_step = 1
+        self.weather_details = {}
+        self.games = []
+
+        # Add components
+        self.add_item(SportSelect(self))
+        self.add_item(ManualSearchButton(self))
+        self.add_item(CancelButton(self))
 
     async def start_flow(self, interaction: Interaction):
         """Start the weather workflow."""
         try:
-            self.current_step = 0
-            await self.go_next(interaction)
+            content = self.get_content()
+            await interaction.response.send_message(content, view=self, ephemeral=True)
         except Exception as e:
-            logger.error(f"Error starting weather workflow: {e}")
-            await interaction.followup.send(
-                "❌ Error starting weather workflow. Please try again.", ephemeral=True
+            logger.error(f"Error starting weather flow: {e}")
+            await interaction.response.send_message(
+                "❌ An error occurred while starting the weather lookup. Please try again.",
+                ephemeral=True,
             )
 
     async def go_next(self, interaction: Interaction):
-        """Advance to the next step in the weather workflow."""
-        self.current_step += 1
-        logger.info(f"[WEATHER WORKFLOW] Step {self.current_step}")
+        """Progress to the next step in the workflow."""
+        try:
+            if self.current_step == 1:
+                # Step 1: Sport selected, show leagues
+                sport = self.weather_details.get("sport")
+                leagues = get_leagues_by_sport(sport)
 
-        if self.current_step == 1:
-            # Step 1: Sport category selection
-            self.clear_items()
-            self.add_item(SportSelect(self))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
+                if not leagues:
+                    await interaction.followup.send(
+                        f"❌ No leagues found for {sport}. Please try a different sport.",
+                        ephemeral=True,
+                    )
+                    return
 
-        elif self.current_step == 2:
-            # Step 2: League selection
-            sport = self.weather_details.get("sport")
-            leagues = get_leagues_by_sport(sport)
-            self.clear_items()
-            self.add_item(LeagueSelect(self, leagues))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
+                # Clear previous components and add new ones
+                self.clear_items()
+                self.add_item(LeagueSelect(self, leagues))
+                self.add_item(ManualSearchButton(self))
+                self.add_item(CancelButton(self))
 
-        elif self.current_step == 3:
-            # Step 3: Game selection
-            sport = self.weather_details.get("sport")
-            league = self.weather_details.get("league")
+                self.current_step = 2
+                content = self.get_content()
+                await self.edit_message(content, self)
 
-            # Get games from database
-            games = await self._get_upcoming_games(sport, league)
+            elif self.current_step == 2:
+                # Step 2: League selected, show games
+                sport = self.weather_details.get("sport")
+                league = self.weather_details.get("league")
 
-            if not games:
-                await interaction.followup.send(
-                    f"❌ No upcoming games found for {sport} - {league}.\n"
-                    f"Please try a different sport or league.",
-                    ephemeral=True,
-                )
-                return
+                # Get upcoming games
+                self.games = await self._get_upcoming_games(sport, league)
 
-            self.games = games
-            self.clear_items()
-            self.add_item(GameSelect(self, games))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
+                if not self.games:
+                    await interaction.followup.send(
+                        f"❌ No upcoming games found for {sport} - {league}. "
+                        "Please try a different league or use Manual Search.",
+                        ephemeral=True,
+                    )
+                    return
 
-        elif self.current_step == 4:
-            # Step 4: Show weather information
-            await self.show_weather_info(interaction)
-            return
+                # Clear previous components and add new ones
+                self.clear_items()
+                self.add_item(GameSelect(self, self.games))
+                self.add_item(ManualSearchButton(self))
+                self.add_item(CancelButton(self))
+
+                self.current_step = 3
+                content = self.get_content()
+                await self.edit_message(content, self)
+
+        except Exception as e:
+            logger.error(f"Error in go_next: {e}")
+            await interaction.followup.send(
+                "❌ An error occurred while processing your selection. Please try again.",
+                ephemeral=True,
+            )
 
     async def _get_upcoming_games(self, sport: str, league: str) -> List[Dict]:
-        """Get upcoming games for the specified sport and league."""
+        """Get upcoming games for the selected sport and league."""
         try:
-            if not self.game_service:
-                logger.error("Game service not available")
+            if not GAME_SERVICE_AVAILABLE or not GameService:
                 return []
 
-            # Map sport names to API sport keys
+            # Map sport names to API keys
             sport_mapping = {
-                "Football": "football",
+                "Football": "american-football",
                 "Basketball": "basketball",
                 "Baseball": "baseball",
-                "Hockey": "hockey",
+                "Hockey": "ice-hockey",
                 "Soccer": "football",
-                "UFC": "ufc",
+                "UFC": "mma",
                 "Tennis": "tennis",
                 "Golf": "golf",
-                "Racing": "racing",
+                "Racing": "formula-1",
                 "Darts": "darts",
                 "Rugby": "rugby",
                 "Handball": "handball",
@@ -293,62 +399,70 @@ class WeatherWorkflowView(View):
             api_sport = sport_mapping.get(sport, sport.lower())
 
             # Get games from the database
-            games = await self.game_service.get_upcoming_games_by_league(
-                sport=api_sport, league_name=league, limit=25  # Get next 25 games
-            )
+            game_service = getattr(self.bot, "game_service", None)
+            if game_service and hasattr(game_service, "get_upcoming_games_by_league"):
+                games = await game_service.get_upcoming_games_by_league(
+                    league, limit=25
+                )
+                return games or []
 
-            return games
+            return []
 
         except Exception as e:
             logger.error(f"Error getting upcoming games: {e}")
             return []
 
     async def show_weather_info(self, interaction: Interaction):
-        """Display weather information for the selected game."""
+        """Show weather information for the selected game."""
         try:
-            game = self.weather_details.get("game")
-            if not game:
+            selected_game = self.weather_details.get("selected_game")
+            if not selected_game:
                 await interaction.followup.send(
-                    "❌ Error: No game selected. Please try again.", ephemeral=True
+                    "❌ No game selected. Please try again.", ephemeral=True
                 )
                 return
 
-            venue_name = game.get("venue")
-            home_team = game.get("home_team_name", "Unknown")
-            away_team = game.get("away_team_name", "Unknown")
-            start_time = game.get("start_time", "Unknown")
+            # Get venue information
+            venue = selected_game.get("venue", "")
+            home_team = selected_game.get("home_team", "")
+            away_team = selected_game.get("away_team", "")
+            game_time = selected_game.get("game_time", "")
 
-            if not venue_name:
-                await interaction.followup.send(
-                    f"🌤️ **Weather Information**\n\n"
-                    f"❌ No venue information available for this game.\n\n"
-                    f"🏈 **Game:** {away_team} @ {home_team}\n"
-                    f"🕐 **Start Time:** {start_time}",
-                    ephemeral=True,
-                )
-                return
+            # Try to get weather for the venue
+            weather_service = WeatherService()
+            weather_data = None
 
-            # Get weather data
-            weather_data = await self.weather_service.get_weather_for_venue(venue_name)
+            if venue:
+                weather_data = await weather_service.get_weather_for_venue(venue)
+
+            # If no venue or weather data, try using home team location
+            if not weather_data and home_team:
+                # You could implement team location mapping here
+                weather_data = await weather_service.get_current_weather(home_team)
 
             if weather_data:
-                weather_message = self.weather_service.format_weather_message(
-                    weather_data, venue_name
+                # Format weather message
+                weather_message = weather_service.format_weather_message(
+                    weather_data, venue or home_team
                 )
 
-                # Add game info to the weather message
-                game_info = f"\n\n🏈 **Game:** {away_team} @ {home_team}"
-                game_info += f"\n🕐 **Start Time:** {start_time}"
+                # Add game information
+                game_info = (
+                    f"🏈 **Game Information**\n"
+                    f"**{home_team}** vs **{away_team}**\n"
+                    f"🕐 **Start Time:** {game_time}\n\n"
+                )
 
-                full_message = weather_message + game_info
+                full_message = game_info + weather_message
                 await interaction.followup.send(full_message, ephemeral=True)
             else:
-                # Fallback message if weather data unavailable
+                # Fallback message
                 fallback_msg = (
-                    f"🌤️ **Weather for {venue_name}**\n\n"
-                    f"❌ Weather data unavailable for this venue.\n\n"
-                    f"🏈 **Game:** {away_team} @ {home_team}\n"
-                    f"🕐 **Start Time:** {start_time}"
+                    f"🏈 **Game Information**\n"
+                    f"**{home_team}** vs **{away_team}**\n"
+                    f"🕐 **Start Time:** {game_time}\n\n"
+                    f"❌ Weather information not available for this venue. "
+                    f"Try using Manual Search for the specific location."
                 )
                 await interaction.followup.send(fallback_msg, ephemeral=True)
 
@@ -376,16 +490,14 @@ class WeatherWorkflowView(View):
     def get_content(self) -> str:
         """Get content for the current step."""
         if self.current_step == 1:
-            return "🌤️ **Weather Lookup**\n\nPlease select a sport category:"
+            return "🌤️ **Weather Lookup**\n\nPlease select a sport category or use Manual Search:"
         elif self.current_step == 2:
             sport = self.weather_details.get("sport", "Unknown")
-            return (
-                f"🌤️ **Weather Lookup**\n\nSport: **{sport}**\n\nPlease select a league:"
-            )
+            return f"🌤️ **Weather Lookup**\n\nSport: **{sport}**\n\nPlease select a league or use Manual Search:"
         elif self.current_step == 3:
             sport = self.weather_details.get("sport", "Unknown")
             league = self.weather_details.get("league", "Unknown")
-            return f"🌤️ **Weather Lookup**\n\nSport: **{sport}**\nLeague: **{league}**\n\nPlease select a game:"
+            return f"🌤️ **Weather Lookup**\n\nSport: **{sport}**\nLeague: **{league}**\n\nPlease select a game or use Manual Search:"
         else:
             return "🌤️ **Weather Lookup**\n\nProcessing..."
 
@@ -402,19 +514,11 @@ class WeatherCog(commands.Cog):
 
     @app_commands.command(
         name="weather",
-        description="Get weather information for game venues with easy dropdown selection",
+        description="Get weather information for game venues with easy dropdown selection or manual search",
     )
     async def weather_command(self, interaction: Interaction):
-        """Get weather information for game venues using dropdown selection."""
+        """Get weather information for game venues using dropdown selection or manual search."""
         try:
-            # Check if weather service is available
-            if not GAME_SERVICE_AVAILABLE:
-                await interaction.response.send_message(
-                    "❌ Weather service is currently unavailable. Please try again later.",
-                    ephemeral=True,
-                )
-                return
-
             # Create and start the weather workflow
             view = WeatherWorkflowView(interaction, self.bot)
             await view.start_flow(interaction)
