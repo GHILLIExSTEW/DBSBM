@@ -106,10 +106,13 @@ class DatabaseManager:
             retry_delay = 5  # seconds
             last_error = None
 
-            # Initialize cache manager
+            # Initialize cache manager with timeout to prevent hanging
             try:
-                await self.cache_manager.connect()
+                # Use asyncio.wait_for to prevent hanging on Redis connection
+                await asyncio.wait_for(self.cache_manager.connect(), timeout=10.0)
                 logger.info("Cache manager connected successfully.")
+            except asyncio.TimeoutError:
+                logger.warning("Cache manager connection timed out - continuing without Redis cache")
             except Exception as e:
                 logger.warning(f"Failed to connect cache manager: {e}")
 

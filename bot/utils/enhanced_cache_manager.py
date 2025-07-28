@@ -171,11 +171,17 @@ class EnhancedCacheManager:
                 "REDIS_HOST not configured, caching will be disabled")
             self._enabled = False
         else:
-            self._enabled = True
-            logger.info(
-                f"Enhanced cache manager initialized with Redis Cloud: {self._redis_host}:{self._redis_port}")
-            if self._redis_username:
-                logger.info(f"Redis username: {self._redis_username}")
+            # Check if Redis is explicitly disabled via environment variable
+            redis_disabled = os.getenv("REDIS_DISABLED", "false").lower() == "true"
+            if redis_disabled:
+                logger.info("Redis is explicitly disabled via REDIS_DISABLED environment variable")
+                self._enabled = False
+            else:
+                self._enabled = True
+                logger.info(
+                    f"Enhanced cache manager initialized with Redis Cloud: {self._redis_host}:{self._redis_port}")
+                if self._redis_username:
+                    logger.info(f"Redis username: {self._redis_username}")
 
     async def connect(self) -> bool:
         """Connect to Redis Cloud server with connection pooling and authentication."""
@@ -192,6 +198,7 @@ class EnhancedCacheManager:
                 "Circuit breaker is OPEN, skipping connection attempt")
             return False
 
+        # Use a shorter timeout to prevent hanging
         for attempt in range(self._connection_retries):
             try:
                 # Create connection pool with Redis Cloud configuration
@@ -200,8 +207,8 @@ class EnhancedCacheManager:
                     'port': self._redis_port,
                     'db': self._redis_db,
                     'decode_responses': False,  # Keep as bytes for pickle compatibility
-                    'socket_connect_timeout': 10,  # Increased for cloud connections
-                    'socket_timeout': 10,
+                    'socket_connect_timeout': 5,  # Reduced timeout to prevent hanging
+                    'socket_timeout': 5,  # Reduced timeout to prevent hanging
                     'retry_on_timeout': True,
                     'health_check_interval': 30,
                     'max_connections': 20,
@@ -221,13 +228,20 @@ class EnhancedCacheManager:
                 self._redis_client = redis.Redis(
                     connection_pool=self._connection_pool)
 
-                # Test connection with authentication
-                await self._redis_client.ping()
-                self._is_connected = True
-                self._circuit_breaker.on_success()
-                logger.info(
-                    f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}")
-                return True
+                # Test connection with authentication using asyncio.wait_for to prevent hanging
+                try:
+                    await asyncio.wait_for(self._redis_client.ping(), timeout=5.0)
+                    self._is_connected = True
+                    self._circuit_breaker.on_success()
+                    logger.info(
+                        f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}")
+                    return True
+                except asyncio.TimeoutError:
+                    logger.warning(f"Redis ping timeout on attempt {attempt + 1}")
+                    self._circuit_breaker.on_failure()
+                    if attempt < self._connection_retries - 1:
+                        await asyncio.sleep(self._retry_delay)
+                    continue
 
             except redis.AuthenticationError as e:
                 logger.error(f"Redis authentication failed: {e}")
@@ -240,7 +254,7 @@ class EnhancedCacheManager:
                 if attempt < self._connection_retries - 1:
                     await asyncio.sleep(self._retry_delay)
 
-        logger.error("Failed to connect to Redis Cloud after all retries")
+        logger.warning("Failed to connect to Redis Cloud after all retries - continuing with local cache only")
         self._enabled = False
         return False
 
