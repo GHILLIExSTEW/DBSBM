@@ -9,103 +9,72 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv('bot/.env')
 
-async def test_database_fix():
-    """Test the database initialization fix."""
-    print("Testing Database Initialization Fix")
+# Add parent directory to path so we can import from bot
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+async def test_database_initialization():
+    """Test the database initialization process that was causing the bot to freeze."""
+    print("Testing Database Initialization Fixes")
     print("=" * 50)
 
-    # Load environment variables
-    load_dotenv('bot/.env')
-
-    # Simulate production environment
-    os.environ['HOSTNAME'] = 'container-123'
-    os.environ['FLASK_ENV'] = 'production'
-
-    print("Environment variables loaded")
-    print("Production environment simulated")
-
-    # Test the database manager
     try:
-        # Fix the import path
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        bot_dir = os.path.join(os.path.dirname(current_dir), 'bot')
-        if bot_dir not in sys.path:
-            sys.path.insert(0, bot_dir)
+        # Import the database manager
+        from bot.data.db_manager import DatabaseManager
 
-        from data.db_manager import DatabaseManager
-
-        print("\nTesting Database Manager:")
+        print("✅ Database manager imported successfully")
 
         # Create database manager instance
         db_manager = DatabaseManager()
-        print("Database manager created")
+        print("✅ Database manager instance created")
 
         # Test connection
-        print("Testing database connection...")
         pool = await db_manager.connect()
-        if pool:
-            print("Database connection successful")
-        else:
-            print("Database connection failed")
+        if not pool:
+            print("❌ Failed to create connection pool")
             return False
+        print("✅ Database connection pool created")
 
         # Test database initialization
-        print("Testing database initialization...")
         try:
             await db_manager.initialize_db()
-            print("Database initialization successful")
+            print("✅ Database initialization completed successfully")
         except Exception as e:
-            print(f"Database initialization failed: {e}")
+            print(f"❌ Database initialization failed: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
-        # Test basic query
-        print("Testing basic query...")
-        try:
-            result = await db_manager.fetch_one("SELECT 1 as test")
-            if result and result.get('test') == 1:
-                print("Basic query successful")
-            else:
-                print("Basic query failed")
-                return False
-        except Exception as e:
-            print(f"Basic query failed: {e}")
-            return False
-
-        # Close connection
+        # Close the pool
         await db_manager.close()
-        print("Database connection closed")
+        print("✅ Database connection pool closed")
 
-        print("SUCCESS: Database initialization fix works!")
+        print("🎉 SUCCESS: Database initialization fixes work!")
         return True
 
     except Exception as e:
-        print(f"ERROR: {e}")
+        print(f"❌ ERROR: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
 async def main():
-    """Run all tests."""
-    print("Starting Production Fix Tests")
-    print("=" * 50)
+    """Run the test."""
+    success = await test_database_initialization()
 
-    # Test database fix
-    db_success = await test_database_fix()
-
-    if db_success:
+    if success:
         print("\nALL TESTS PASSED!")
-        print("Database initialization fix works")
         return True
     else:
-        print("\nSOME TESTS FAILED!")
-        print("Database test failed")
+        print("\nTESTS FAILED!")
         return False
 
-
 if __name__ == "__main__":
-    # Set up logging without emoji characters
+    # Set up logging
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'

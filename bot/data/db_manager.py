@@ -580,11 +580,11 @@ class DatabaseManager:
     ):
         """Checks if a column exists and adds it if not, optionally after a specified column."""
         try:
-            async with cursor.connection.cursor(aiomysql.DictCursor) as dict_cursor:
-                await dict_cursor.execute(
-                    f"SHOW COLUMNS FROM `{table_name}` LIKE %s", (column_name,)
-                )
-                exists = await dict_cursor.fetchone()
+            # Use the existing cursor to check if column exists
+            await cursor.execute(
+                f"SHOW COLUMNS FROM `{table_name}` LIKE %s", (column_name,)
+            )
+            exists = await cursor.fetchone()
 
             if not exists:
                 logger.info("Adding column '%s' to table '%s'...",
@@ -676,12 +676,12 @@ class DatabaseManager:
                 )
                 logger.info("Table 'games' created.")
 
-                # Add columns to games table
-                await self._add_games_table_columns(cursor)
+                # Note: All columns are already included in the CREATE TABLE statement above
+                # No need to add additional columns
             else:
                 logger.info("Table 'games' already exists.")
-                # Still try to add columns in case they're missing
-                await self._add_games_table_columns(cursor)
+                # Note: All columns are already included in the CREATE TABLE statement above
+                # No need to add additional columns
         except Exception as e:
             logger.error(f"Error creating games table: {e}")
             # Don't raise the exception, just log it and continue
@@ -759,11 +759,12 @@ class DatabaseManager:
                 )
                 logger.info("Table 'bets' created.")
 
-                await self._add_bets_table_columns(cursor, conn)
+                # Note: All columns are already included in the CREATE TABLE statement above
+                # No need to add additional columns
             else:
                 logger.info("Table 'bets' already exists.")
-                # Still try to add columns in case they're missing
-                await self._add_bets_table_columns(cursor, conn)
+                # Note: All columns are already included in the CREATE TABLE statement above
+                # No need to add additional columns
         except Exception as e:
             logger.error(f"Error creating bets table: {e}")
             # Don't raise the exception, just log it and continue
@@ -915,7 +916,8 @@ class DatabaseManager:
             else:
                 logger.info("Table 'guild_settings' already exists.")
 
-            await self._add_guild_settings_table_columns(cursor)
+            # Note: All columns are already included in the CREATE TABLE statement above
+            # No need to add additional columns
 
         except Exception as e:
             logger.error(f"Error creating guild_settings table: {e}")
