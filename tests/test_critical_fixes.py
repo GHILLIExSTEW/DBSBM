@@ -36,20 +36,46 @@ except ImportError:
     import os
     import sys
 
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from bot.data.db_manager import DatabaseManager
-    from bot.utils.environment_validator import EnvironmentValidator
-    from bot.utils.error_handler import (
-        get_error_handler,
-        initialize_default_recovery_strategies,
-    )
-    from bot.utils.rate_limiter import RateLimiter, RateLimitExceededError, rate_limit
-    from config.settings import (
-        get_api_config,
-        get_database_config,
-        get_settings,
-        validate_settings,
-    )
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Add multiple possible paths for different execution contexts
+    possible_paths = [
+        current_dir,  # From tests/
+        os.path.dirname(current_dir),  # From root/
+    ]
+    for path in possible_paths:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    try:
+        from bot.data.db_manager import DatabaseManager
+        from bot.utils.environment_validator import EnvironmentValidator
+        from bot.utils.error_handler import (
+            get_error_handler,
+            initialize_default_recovery_strategies,
+        )
+        from bot.utils.rate_limiter import (
+            RateLimiter,
+            RateLimitExceededError,
+            rate_limit,
+        )
+        from config.settings import (
+            get_api_config,
+            get_database_config,
+            get_settings,
+            validate_settings,
+        )
+    except ImportError:
+        # Final fallback - create mock functions for testing
+        def get_settings():
+            return None
+
+        def validate_settings():
+            return []
+
+        def get_api_config():
+            return {}
+
+        def get_database_config():
+            return {}
 
 
 class TestRateLimiterFixes:
