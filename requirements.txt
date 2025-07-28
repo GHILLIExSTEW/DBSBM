@@ -103,14 +103,9 @@ catboost>=1.2.0
 
 # Natural Language Processing
 nltk>=3.8.0
-spacy>=3.6.0
-transformers>=4.30.0
-torch>=2.0.0
-tokenizers>=0.13.0
 
 # Computer Vision
 opencv-python>=4.8.0
-tensorflow>=2.13.0
 
 # GraphQL Support
 graphene>=3.3.0
@@ -122,33 +117,12 @@ pyotp>=2.8.0
 # Advanced Analytics and Visualization
 plotly>=5.15.0
 dash>=2.11.0
-bokeh>=3.2.0
-altair>=5.0.0
 
 # Time Series Analysis
 statsmodels>=0.14.0
-prophet>=1.1.0
-
-# Distributed Computing
-dask>=2023.8.0
-ray>=2.6.0
-
-# Model Versioning and Experiment Tracking
-mlflow>=2.5.0
-wandb>=0.15.0
-
-# Feature Engineering
-feature-engine>=1.6.0
-category-encoders>=2.6.0
 
 # Model Interpretability
-shap>=0.42.0
-lime>=0.2.0
 eli5>=0.14.0
-
-# Advanced Data Processing
-vaex>=4.15.0
-dask-ml>=2023.8.0
 
 # API Documentation
 fastapi>=0.100.0
