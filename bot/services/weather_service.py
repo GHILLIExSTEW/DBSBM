@@ -203,6 +203,7 @@ class WeatherService:
                         "chance_of_rain": day_data.get("daily_chance_of_rain", 0),
                         "chance_of_snow": day_data.get("daily_chance_of_snow", 0)
                     },
+                    "humidity": day_data.get("avghumidity", 0),
                     "astro": {
                         "sunrise": astro.get("sunrise", ""),
                         "sunset": astro.get("sunset", ""),
@@ -306,21 +307,56 @@ class WeatherService:
 
         try:
             location = weather_data.get("location", {})
-            forecast = weather_data.get("forecast", {})
+            forecast = weather_data.get("forecast", [])
 
             location_name = location.get("name", "Unknown Location")
             if venue_name and venue_name not in location_name:
                 location_name = f"{venue_name} ({location_name})"
 
             message = f"📅 **3-Day Forecast for {location_name}**\n\n"
-
-            # Add location info
             message += f"📍 **Location:** {location.get('region', '')}, {location.get('country', '')}\n\n"
 
-            # Format each day's forecast
-            for i, day in enumerate(forecast.get("forecastday", [])[:3]):  # Limit to 3 days
-                date = day.get("date", "Unknown")
-                day_info = day.get("day", {})
+            # Handle both list format (from _format_forecast_data) and dict format (from API)
+            forecast_days = []
+            if isinstance(forecast, list):
+                forecast_days = forecast[:3]  # Limit to 3 days
+            elif isinstance(forecast, dict):
+                forecast_days = forecast.get("forecastday", [])[
+                    :3]  # Limit to 3 days
+
+            for i, day in enumerate(forecast_days):
+                # Handle different data structures
+                if isinstance(day, dict):
+                    if "date" in day and "temp" in day:
+                        # Formatted structure from _format_forecast_data
+                        date = day.get("date", "Unknown")
+                        condition = day.get("condition", {}).get(
+                            "text", "Unknown")
+                        temp_data = day.get("temp", {})
+                        max_temp_c = temp_data.get("max_c", 0)
+                        max_temp_f = temp_data.get("max_f", 0)
+                        min_temp_c = temp_data.get("min_c", 0)
+                        min_temp_f = temp_data.get("min_f", 0)
+                        wind_data = day.get("wind", {})
+                        max_wind_mph = wind_data.get("max_mph", 0)
+                        precip_data = day.get("precipitation", {})
+                        total_precip_mm = precip_data.get("total_mm", 0)
+                        avg_humidity = day.get("humidity", 0)
+                    else:
+                        # Raw API structure
+                        date = day.get("date", "Unknown")
+                        day_info = day.get("day", {})
+                        condition = day_info.get(
+                            "condition", {}).get("text", "Unknown")
+                        max_temp_c = day_info.get("maxtemp_c", 0)
+                        max_temp_f = day_info.get("maxtemp_f", 0)
+                        min_temp_c = day_info.get("mintemp_c", 0)
+                        min_temp_f = day_info.get("mintemp_f", 0)
+                        avg_humidity = day_info.get("avghumidity", 0)
+                        total_precip_mm = day_info.get("totalprecip_mm", 0)
+                        max_wind_mph = day_info.get("maxwind_mph", 0)
+                else:
+                    continue
 
                 # Format date
                 try:
@@ -330,22 +366,15 @@ class WeatherService:
                 except:
                     formatted_date = date
 
-                condition = day_info.get("condition", {}).get("text", "Unknown")
-                max_temp_c = day_info.get("maxtemp_c", 0)
-                max_temp_f = day_info.get("maxtemp_f", 0)
-                min_temp_c = day_info.get("mintemp_c", 0)
-                min_temp_f = day_info.get("mintemp_f", 0)
-                avg_humidity = day_info.get("avghumidity", 0)
-                total_precip_mm = day_info.get("totalprecip_mm", 0)
-                max_wind_mph = day_info.get("maxwind_mph", 0)
-
                 # Get weather emoji
                 weather_emoji = self._get_weather_emoji(condition)
 
                 message += f"**{formatted_date}**\n"
                 message += f"{weather_emoji} **{condition}**\n"
                 message += f"🌡️ **High:** {max_temp_c}°C ({max_temp_f}°F) | **Low:** {min_temp_c}°C ({min_temp_f}°F)\n"
-                message += f"💧 **Humidity:** {avg_humidity}%\n"
+
+                if avg_humidity > 0:
+                    message += f"💧 **Humidity:** {avg_humidity}%\n"
 
                 if total_precip_mm > 0:
                     message += f"🌧️ **Precipitation:** {total_precip_mm} mm\n"
