@@ -25,7 +25,7 @@ class DataSyncService:
     """Service for synchronizing game and team data with external APIs."""
 
     def __init__(self, game_service: GameService, db_manager: DatabaseManager):
-        self.game_service = game_service
+        self.game_service = game_service  # Can be None initially
         self.db_manager = db_manager
         self.cache = enhanced_cache_manager
         self._sync_task = None
@@ -137,7 +137,8 @@ class DataSyncService:
                     await self._store_game_data(game)
                     synced_count += 1
                 except Exception as e:
-                    logger.error(f"Error syncing game {game.get('id', 'unknown')}: {e}")
+                    logger.error(
+                        f"Error syncing game {game.get('id', 'unknown')}: {e}")
 
             # Clear game cache after sync
             await enhanced_cache_delete("game_data", "upcoming_games")
@@ -166,7 +167,8 @@ class DataSyncService:
                     await self._store_team_data(team)
                     synced_count += 1
                 except Exception as e:
-                    logger.error(f"Error syncing team {team.get('id', 'unknown')}: {e}")
+                    logger.error(
+                        f"Error syncing team {team.get('id', 'unknown')}: {e}")
 
             # Clear team cache after sync
             await enhanced_cache_delete("team_data", "all_teams")
@@ -195,7 +197,8 @@ class DataSyncService:
                     await self._store_league_data(league)
                     synced_count += 1
                 except Exception as e:
-                    logger.error(f"Error syncing league {league.get('id', 'unknown')}: {e}")
+                    logger.error(
+                        f"Error syncing league {league.get('id', 'unknown')}: {e}")
 
             # Clear league cache after sync
             await enhanced_cache_delete("league_data", "all_leagues")

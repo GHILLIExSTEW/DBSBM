@@ -15,10 +15,6 @@ API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     raise ValueError("API_KEY not found in .env file")
 
-
-# Absolute imports
-from bot.services.data_sync_service import DataSyncService
-
 # Load environment variables for RUN_API_FETCH_ON_START
 RUN_API_FETCH_ON_START = os.getenv("RUN_API_FETCH_ON_START", "false").lower() == "true"
 
@@ -29,7 +25,8 @@ class GameService:
     def __init__(self, sports_api, db_manager):
         self.sports_api = sports_api
         self.db = db_manager
-        self.data_sync = DataSyncService(self, db_manager)
+        # Remove the circular import - DataSyncService will be injected later
+        self.data_sync = None
         self.logger = logging.getLogger(__name__)
         self.sync_interval = 300  # 5 minutes
         self._sync_task = None
@@ -38,6 +35,10 @@ class GameService:
         # Verify API key is available
         if not API_KEY:
             raise ValueError("API_KEY not found in .env file")
+
+    def set_data_sync_service(self, data_sync_service):
+        """Set the data sync service after initialization to avoid circular imports."""
+        self.data_sync = data_sync_service
 
     async def start(self):
         """Start the game service."""

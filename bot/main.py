@@ -334,8 +334,11 @@ class BettingBot(commands.Bot):
         self.game_service = GameService(self.sports_api, self.db_manager)
         self.user_service = UserService(self, self.db_manager)
         self.voice_service = VoiceService(self, self.db_manager)
-        self.data_sync_service = DataSyncService(
-            self.game_service, self.db_manager)
+        # Initialize data_sync_service without the circular dependency
+        self.data_sync_service = DataSyncService(None, self.db_manager)
+        # Set up the circular dependency after initialization
+        self.game_service.set_data_sync_service(self.data_sync_service)
+        self.data_sync_service.game_service = self.game_service
         self.bet_slip_generators = {}
         self.webapp_process = None
         self.fetcher_process = None
