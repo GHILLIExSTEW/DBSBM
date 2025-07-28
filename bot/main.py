@@ -144,8 +144,12 @@ except ImportError:
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
 
+# TEMPORARY FIX: Disable Redis to prevent freezing
+os.environ["REDIS_DISABLED"] = "true"
+logger.info("TEMPORARY FIX: Redis disabled to prevent startup freezing")
+
 # --- Environment Variable Validation ---
-# Define required environment variables
+# Define required environment variables (after .env is loaded)
 REQUIRED_ENV_VARS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "API_KEY": os.getenv("API_KEY"),
@@ -155,10 +159,6 @@ REQUIRED_ENV_VARS = {
     "MYSQL_DB": os.getenv("MYSQL_DB"),
     "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
 }
-
-# TEMPORARY FIX: Disable Redis to prevent freezing
-os.environ["REDIS_DISABLED"] = "true"
-logger.info("TEMPORARY FIX: Redis disabled to prevent startup freezing")
 
 try:
     try:
