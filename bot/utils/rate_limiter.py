@@ -104,9 +104,52 @@ class RateLimiter:
 
     async def is_allowed(
         self, user_id: int, action: str
-    ) -> Tuple[bool, Optional[float]]:
+    ) -> bool:
         """
         Check if a user action is allowed.
+
+        Args:
+            user_id: Discord user ID
+            action: Action being performed
+
+        Returns:
+            bool: True if allowed, False if rate limited
+        """
+        if action not in self.limits:
+            logger.warning(f"Unknown action '{action}' - allowing by default")
+            return True
+
+        config = self.limits[action]
+        key = (user_id, action)
+
+        async with self.lock:
+            # Clean up old entries
+            await self._cleanup_old_entries(key, config.window_seconds)
+
+            # Check if user has exceeded the limit
+            current_requests = len(self.user_requests[key])
+
+            if current_requests >= config.max_requests:
+                self.stats["rate_limited_requests"] += 1
+                logger.warning(
+                    f"Rate limit exceeded for user {user_id}, action '{action}'."
+                )
+                return False
+
+            # Add current request
+            self.user_requests[key].append(
+                RateLimitEntry(timestamp=time.time(),
+                               user_id=user_id, action=action)
+            )
+
+            self.stats["total_requests"] += 1
+            return True
+
+    async def is_allowed_with_retry(
+        self, user_id: int, action: str
+    ) -> Tuple[bool, Optional[float]]:
+        """
+        Check if a user action is allowed with retry information.
 
         Args:
             user_id: Discord user ID
@@ -146,7 +189,8 @@ class RateLimiter:
 
             # Add current request
             self.user_requests[key].append(
-                RateLimitEntry(timestamp=time.time(), user_id=user_id, action=action)
+                RateLimitEntry(timestamp=time.time(),
+                               user_id=user_id, action=action)
             )
 
             self.stats["total_requests"] += 1
@@ -234,7 +278,8 @@ class RateLimiter:
             key = (user_id, action)
             if key in self.user_requests:
                 del self.user_requests[key]
-                logger.info(f"Reset rate limit for user {user_id}, action '{action}'")
+                logger.info(
+                    f"Reset rate limit for user {user_id}, action '{action}'")
         else:
             # Reset all actions for the user
             keys_to_remove = [
@@ -283,14 +328,11 @@ class RateLimitDecorator:
                 return await func(*args, **kwargs)
 
             # Check rate limit
-            is_allowed, retry_after = await self.rate_limiter.is_allowed(
-                user_id, self.action
-            )
+            is_allowed = await self.rate_limiter.is_allowed(user_id, self.action)
 
             if not is_allowed:
                 raise RateLimitExceededError(
-                    f"Rate limit exceeded for action '{self.action}'. "
-                    f"Retry after {retry_after:.1f} seconds"
+                    f"Rate limit exceeded for action '{self.action}'."
                 )
 
             return await func(*args, **kwargs)
@@ -358,11 +400,12 @@ if __name__ == "__main__":
 
         # Should allow first 5 requests
         for i in range(5):
-            allowed, retry_after = await limiter.is_allowed(user_id, "bet_placement")
-            print(f"Request {i+1}: Allowed={allowed}, Retry after={retry_after}")
+            allowed, retry_after = await limiter.is_allowed_with_retry(user_id, "bet_placement")
+            print(
+                f"Request {i+1}: Allowed={allowed}, Retry after={retry_after}")
 
         # 6th request should be rate limited
-        allowed, retry_after = await limiter.is_allowed(user_id, "bet_placement")
+        allowed, retry_after = await limiter.is_allowed_with_retry(user_id, "bet_placement")
         print(f"Request 6: Allowed={allowed}, Retry after={retry_after}")
 
         # Test user stats

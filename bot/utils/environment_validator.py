@@ -1,18 +1,45 @@
 """
-Environment validation utility for DBSBM.
-Validates all required environment variables and provides helpful error messages.
+Enhanced Environment validation utility for DBSBM.
+Validates all required environment variables and provides comprehensive connectivity testing.
 """
 
+import asyncio
 import logging
 import os
 import sys
-from typing import Dict, List, Optional, Tuple
+import aiohttp
+import aiomysql
+from typing import Dict, List, Optional, Tuple, Any
+from datetime import datetime
+
+# Import the new centralized configuration
+try:
+    from config.settings import get_settings, validate_settings, get_database_config, get_api_config, get_discord_config
+except ImportError:
+    # Fallback to old configuration if new one is not available
+    from bot.config.settings import get_config
+    # Create fallback functions for compatibility
+
+    def get_settings():
+        return get_config()
+
+    def validate_settings():
+        return []
+
+    def get_database_config():
+        return {}
+
+    def get_api_config():
+        return {}
+
+    def get_discord_config():
+        return {}
 
 logger = logging.getLogger(__name__)
 
 
 class EnvironmentValidator:
-    """Validates environment variables and configuration."""
+    """Enhanced environment validator with connectivity testing."""
 
     # Required environment variables
     REQUIRED_VARS = {
@@ -42,22 +69,29 @@ class EnvironmentValidator:
     @classmethod
     def validate_all(cls) -> Tuple[bool, List[str]]:
         """
-        Validate all environment variables.
+        Validate all environment variables using centralized configuration.
 
         Returns:
             Tuple[bool, List[str]]: (is_valid, list_of_errors)
         """
         errors = []
 
-        # Check required variables
-        missing_required = cls._check_required_vars()
-        if missing_required:
-            errors.extend(missing_required)
+        try:
+            # Use centralized configuration validation
+            settings = get_settings()
+            validation_errors = settings.validate_required_settings()
+            if validation_errors:
+                errors.extend(validation_errors)
+                logger.error("❌ Centralized configuration validation failed")
+                for error in validation_errors:
+                    logger.error(f"  - {error}")
+            else:
+                logger.info("✅ Centralized configuration validation passed")
 
-        # Check optional variables and set defaults
-        optional_errors = cls._check_optional_vars()
-        if optional_errors:
-            errors.extend(optional_errors)
+        except Exception as e:
+            logger.warning(f"Could not use centralized configuration: {e}")
+            # Fallback to old validation method
+            errors.extend(cls._legacy_validate_all())
 
         # Validate specific values
         validation_errors = cls._validate_values()
@@ -74,6 +108,148 @@ class EnvironmentValidator:
                 logger.error(f"  - {error}")
 
         return is_valid, errors
+
+    @classmethod
+    async def validate_database_connection(cls) -> Tuple[bool, str]:
+        """
+        Validate database connectivity.
+
+        Returns:
+            Tuple[bool, str]: (is_connected, error_message)
+        """
+        try:
+            db_config = get_database_config()
+
+            # Test connection
+            conn = await aiomysql.connect(
+                host=db_config['host'],
+                port=db_config['port'],
+                user=db_config['user'],
+                password=db_config['password'],
+                db=db_config['database'],
+                connect_timeout=10
+            )
+
+            # Test a simple query
+            async with conn.cursor() as cursor:
+                await cursor.execute("SELECT 1")
+                result = await cursor.fetchone()
+                if result and result[0] == 1:
+                    await conn.close()
+                    return True, "Database connection successful"
+
+            await conn.close()
+            return False, "Database query test failed"
+
+        except Exception as e:
+            return False, f"Database connection failed: {str(e)}"
+
+    @classmethod
+    async def validate_api_connection(cls) -> Tuple[bool, str]:
+        """
+        Validate API connectivity.
+
+        Returns:
+            Tuple[bool, str]: (is_connected, error_message)
+        """
+        try:
+            api_config = get_api_config()
+
+            if not api_config['key']:
+                return False, "API key not configured"
+
+            # Test API connection with a simple request
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    'x-rapidapi-host': 'v3.football.api-sports.io',
+                    'x-rapidapi-key': api_config['key']
+                }
+
+                # Test with a simple endpoint
+                url = "https://v3.football.api-sports.io/status"
+                async with session.get(url, headers=headers, timeout=10) as response:
+                    if response.status == 200:
+                        return True, "API connection successful"
+                    else:
+                        return False, f"API request failed with status {response.status}"
+
+        except Exception as e:
+            return False, f"API connection failed: {str(e)}"
+
+    @classmethod
+    async def validate_discord_token(cls) -> Tuple[bool, str]:
+        """
+        Validate Discord token.
+
+        Returns:
+            Tuple[bool, str]: (is_valid, error_message)
+        """
+        try:
+            discord_config = get_discord_config()
+
+            if not discord_config['token']:
+                return False, "Discord token not configured"
+
+            # Test Discord API connection
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    'Authorization': f'Bot {discord_config["token"]}'
+                }
+
+                url = "https://discord.com/api/v10/users/@me"
+                async with session.get(url, headers=headers, timeout=10) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return True, f"Discord token valid for bot: {data.get('username', 'Unknown')}"
+                    else:
+                        return False, f"Discord token validation failed with status {response.status}"
+
+        except Exception as e:
+            return False, f"Discord token validation failed: {str(e)}"
+
+    @classmethod
+    async def validate_all_connections(cls) -> Dict[str, Tuple[bool, str]]:
+        """
+        Validate all external connections.
+
+        Returns:
+            Dict[str, Tuple[bool, str]]: Results for each connection type
+        """
+        results = {}
+
+        # Validate database connection
+        logger.info("🔍 Testing database connection...")
+        db_result = await cls.validate_database_connection()
+        results['database'] = db_result
+
+        # Validate API connection
+        logger.info("🔍 Testing API connection...")
+        api_result = await cls.validate_api_connection()
+        results['api'] = api_result
+
+        # Validate Discord token
+        logger.info("🔍 Testing Discord token...")
+        discord_result = await cls.validate_discord_token()
+        results['discord'] = discord_result
+
+        return results
+
+    @classmethod
+    def _legacy_validate_all(cls) -> List[str]:
+        """Legacy validation method as fallback."""
+        errors = []
+
+        # Check required variables
+        missing_required = cls._check_required_vars()
+        if missing_required:
+            errors.extend(missing_required)
+
+        # Check optional variables and set defaults
+        optional_errors = cls._check_optional_vars()
+        if optional_errors:
+            errors.extend(optional_errors)
+
+        return errors
 
     @classmethod
     def _check_required_vars(cls) -> List[str]:

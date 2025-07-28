@@ -508,11 +508,35 @@ async def database_recovery_strategy(
     guild_id: Optional[int],
     command: Optional[str],
 ) -> bool:
-    """Default recovery strategy for database errors."""
+    """Enhanced recovery strategy for database errors."""
     if isinstance(error, DatabaseError):
         logger.info("Attempting database recovery...")
-        # Could implement connection retry, query optimization, etc.
-        return False  # For now, return False to indicate no recovery
+
+        try:
+            # Get database manager from context or global
+            db_manager = context.get('db_manager')
+            if not db_manager:
+                logger.warning("No database manager available for recovery")
+                return False
+
+            # Attempt to reconnect
+            logger.info("Attempting database reconnection...")
+            await db_manager.close()  # Close existing connections
+            await asyncio.sleep(1)  # Brief delay
+
+            # Try to reconnect
+            pool = await db_manager.connect()
+            if pool:
+                logger.info("Database recovery successful")
+                return True
+            else:
+                logger.error("Database recovery failed - could not reconnect")
+                return False
+
+        except Exception as recovery_error:
+            logger.error(f"Database recovery failed: {recovery_error}")
+            return False
+
     return False
 
 
@@ -523,12 +547,114 @@ async def api_recovery_strategy(
     guild_id: Optional[int],
     command: Optional[str],
 ) -> bool:
-    """Default recovery strategy for API errors."""
+    """Enhanced recovery strategy for API errors."""
     if isinstance(error, APIError):
         logger.info(f"Attempting API recovery for {error.api_name}...")
-        # Could implement retry logic, fallback APIs, etc.
-        return False  # For now, return False to indicate no recovery
+
+        try:
+            # Implement exponential backoff
+            retry_count = context.get('retry_count', 0)
+            max_retries = context.get('max_retries', 3)
+
+            if retry_count >= max_retries:
+                logger.warning(f"Max retries ({max_retries}) exceeded for API recovery")
+                return False
+
+            # Calculate backoff delay
+            backoff_delay = min(2 ** retry_count, 60)  # Cap at 60 seconds
+            logger.info(f"Waiting {backoff_delay} seconds before retry {retry_count + 1}")
+
+            await asyncio.sleep(backoff_delay)
+
+            # Update retry count in context
+            context['retry_count'] = retry_count + 1
+
+            logger.info(f"API recovery attempt {retry_count + 1} completed")
+            return True  # Allow retry
+
+        except Exception as recovery_error:
+            logger.error(f"API recovery failed: {recovery_error}")
+            return False
+
     return False
+
+
+async def memory_cleanup_strategy(
+    error: Exception,
+    context: Dict[str, Any],
+    user_id: Optional[int],
+    guild_id: Optional[int],
+    command: Optional[str],
+) -> bool:
+    """Recovery strategy for memory-related errors."""
+    try:
+        import gc
+        import psutil
+
+        logger.info("Attempting memory cleanup...")
+
+        # Force garbage collection
+        collected = gc.collect()
+        logger.info(f"Garbage collection freed {collected} objects")
+
+        # Get memory usage info
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        memory_mb = memory_info.rss / 1024 / 1024
+
+        logger.info(f"Current memory usage: {memory_mb:.1f} MB")
+
+        # If memory usage is high, try to clear caches
+        if memory_mb > 500:  # 500MB threshold
+            logger.warning("High memory usage detected, clearing caches...")
+
+            # Clear any caches in context
+            if 'cache_manager' in context:
+                cache_manager = context['cache_manager']
+                if hasattr(cache_manager, 'clear_all'):
+                    await cache_manager.clear_all()
+                    logger.info("Cache cleared")
+
+        return True
+
+    except Exception as cleanup_error:
+        logger.error(f"Memory cleanup failed: {cleanup_error}")
+        return False
+
+
+async def connection_recovery_strategy(
+    error: Exception,
+    context: Dict[str, Any],
+    user_id: Optional[int],
+    guild_id: Optional[int],
+    command: Optional[str],
+) -> bool:
+    """Recovery strategy for connection-related errors."""
+    try:
+        logger.info("Attempting connection recovery...")
+
+        # Check if it's a connection error
+        if "connection" in str(error).lower() or "timeout" in str(error).lower():
+            logger.info("Connection error detected, attempting recovery...")
+
+            # Wait before retry
+            await asyncio.sleep(2)
+
+            # Try to reinitialize connections
+            if 'db_manager' in context:
+                db_manager = context['db_manager']
+                await db_manager.close()
+                await asyncio.sleep(1)
+                await db_manager.connect()
+
+            logger.info("Connection recovery completed")
+            return True
+
+        return False
+
+    except Exception as recovery_error:
+        logger.error(f"Connection recovery failed: {recovery_error}")
+        return False
 
 
 # Initialize default recovery strategies
@@ -537,6 +663,9 @@ def initialize_default_recovery_strategies():
     error_handler = get_error_handler()
     error_handler.add_recovery_strategy(DatabaseError, database_recovery_strategy)
     error_handler.add_recovery_strategy(APIError, api_recovery_strategy)
+    error_handler.add_recovery_strategy(MemoryError, memory_cleanup_strategy)
+    error_handler.add_recovery_strategy(ConnectionError, connection_recovery_strategy)
+    error_handler.add_recovery_strategy(TimeoutError, connection_recovery_strategy)
 
 
 if __name__ == "__main__":

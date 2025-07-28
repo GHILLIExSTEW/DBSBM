@@ -13,6 +13,13 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
+# Import the new centralized configuration
+try:
+    from config.settings import get_settings, validate_settings, get_logging_config
+except ImportError:
+    # Fallback to old configuration if new one is not available
+    from bot.config.settings import get_settings, validate_settings, get_logging_config
+
 # Try to import with bot prefix first, then without
 try:
     from bot.api.sports_api import SportsAPI
@@ -43,28 +50,41 @@ except ImportError:
     from utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
 
 # --- Logging Setup ---
-log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
-log_level = getattr(logging, log_level_str, logging.INFO)
-log_format = os.getenv(
-    "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # This is betting-bot/
-log_file_name = "bot_activity.log"
-log_file_path = (
-    os.path.join(BASE_DIR, "logs", log_file_name)
-    if not os.path.isabs(os.getenv("LOG_FILE", ""))
-    else os.getenv("LOG_FILE", os.path.join(BASE_DIR, "logs", log_file_name))
-)
+# Use centralized configuration for logging
+try:
+    settings = get_settings()
+    log_config = get_logging_config()
+    log_level_str = log_config['level']
+    log_format = log_config['format']
+    log_file_path = log_config['file']
+except Exception:
+    # Fallback to old logging setup
+    log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_format = os.getenv(
+        "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    log_file_name = "bot_activity.log"
+    log_file_path = (
+        os.path.join(BASE_DIR, "logs", log_file_name)
+        if not os.path.isabs(os.getenv("LOG_FILE", ""))
+        else os.getenv("LOG_FILE", os.path.join(BASE_DIR, "logs", log_file_name))
+    )
 
-log_dir = os.path.dirname(log_file_path)
-if log_dir and not os.path.exists(log_dir):
-    os.makedirs(log_dir, exist_ok=True)
+log_level = getattr(logging, log_level_str, logging.INFO)
+
+# Ensure log directory exists
+if log_file_path:
+    log_dir = os.path.dirname(log_file_path)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
 
 logging.basicConfig(
     level=log_level,
     format=log_format,
     handlers=[
-        logging.FileHandler(log_file_path, encoding="utf-8"),
+        logging.FileHandler(
+            log_file_path, encoding="utf-8") if log_file_path else logging.NullHandler(),
         logging.StreamHandler(sys.stdout),
     ],
 )
@@ -73,6 +93,7 @@ discord_logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # --- Path Setup ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOTENV_PATH = os.path.join(BASE_DIR, ".env")
 
 if os.path.exists(DOTENV_PATH):
@@ -84,7 +105,20 @@ else:
         load_dotenv(dotenv_path=PARENT_DOTENV_PATH)
         print(f"Loaded environment variables from: {PARENT_DOTENV_PATH}")
     else:
-        print(f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
+        print(
+            f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
+
+# Validate configuration
+try:
+    validation_errors = validate_settings()
+    if validation_errors:
+        logger.warning(f"Configuration validation errors: {validation_errors}")
+        logger.warning(
+            "Some features may not work correctly without proper configuration")
+    else:
+        logger.info("Configuration validation passed")
+except Exception as e:
+    logger.warning(f"Could not validate configuration: {e}")
 
 # Try to import with bot prefix first, then without
 try:
@@ -131,14 +165,17 @@ try:
         from utils.environment_validator import validate_environment
 
     if not validate_environment():
-        logger.critical("Environment validation failed. Please check your .env file.")
+        logger.critical(
+            "Environment validation failed. Please check your .env file.")
         sys.exit("Environment validation failed")
 except ImportError:
     # Fallback to basic validation if environment validator is not available
-    missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
+    missing_vars = [key for key,
+                    value in REQUIRED_ENV_VARS.items() if not value]
     if missing_vars:
         logger.critical(
-            "Missing required environment variables: %s", ", ".join(missing_vars)
+            "Missing required environment variables: %s", ", ".join(
+                missing_vars)
         )
         sys.exit("Missing required environment variables")
 
@@ -148,11 +185,14 @@ TEST_GUILD_ID = (
     if REQUIRED_ENV_VARS["TEST_GUILD_ID"]
     else None
 )
-logger.info(f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
+logger.info(
+    f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
 
 # --- Path for the logo download script and flag file ---
-LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_team_logos.py")
-LOGO_DOWNLOAD_FLAG_FILE = os.path.join(BASE_DIR, "data", ".logos_downloaded_flag")
+LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(
+    BASE_DIR, "utils", "download_team_logos.py")
+LOGO_DOWNLOAD_FLAG_FILE = os.path.join(
+    BASE_DIR, "data", ".logos_downloaded_flag")
 
 
 async def run_one_time_logo_download():
@@ -168,7 +208,8 @@ async def run_one_time_logo_download():
             return
 
         try:
-            logger.info("Executing %s to download logos...", LOGO_DOWNLOAD_SCRIPT_PATH)
+            logger.info("Executing %s to download logos...",
+                        LOGO_DOWNLOAD_SCRIPT_PATH)
             process = await asyncio.create_subprocess_exec(
                 sys.executable,
                 LOGO_DOWNLOAD_SCRIPT_PATH,
@@ -181,11 +222,13 @@ async def run_one_time_logo_download():
             if stdout:
                 logger.info("Logo Script STDOUT:\n%s", stdout.decode().strip())
             if stderr:
-                logger.warning("Logo Script STDERR:\n%s", stderr.decode().strip())
+                logger.warning("Logo Script STDERR:\n%s",
+                               stderr.decode().strip())
 
             if process.returncode == 0:
                 logger.info("Logo download script finished (Return Code: 0).")
-                os.makedirs(os.path.dirname(LOGO_DOWNLOAD_FLAG_FILE), exist_ok=True)
+                os.makedirs(os.path.dirname(
+                    LOGO_DOWNLOAD_FLAG_FILE), exist_ok=True)
                 with open(LOGO_DOWNLOAD_FLAG_FILE, "w") as f:
                     f.write(datetime.now(timezone.utc).isoformat())
                 logger.info("Created flag file: %s", LOGO_DOWNLOAD_FLAG_FILE)
@@ -241,20 +284,23 @@ async def run_one_time_player_data_download():
             stdout, stderr = await process.communicate()
 
             if stdout:
-                logger.info("Player Data Script STDOUT:\n%s", stdout.decode().strip())
+                logger.info("Player Data Script STDOUT:\n%s",
+                            stdout.decode().strip())
             if stderr:
                 logger.warning(
                     "Player Data Script STDERR:\n%s", stderr.decode().strip()
                 )
 
             if process.returncode == 0:
-                logger.info("Player data download script finished (Return Code: 0).")
+                logger.info(
+                    "Player data download script finished (Return Code: 0).")
                 os.makedirs(
                     os.path.dirname(PLAYER_DATA_DOWNLOAD_FLAG_FILE), exist_ok=True
                 )
                 with open(PLAYER_DATA_DOWNLOAD_FLAG_FILE, "w") as f:
                     f.write(datetime.now(timezone.utc).isoformat())
-                logger.info("Created flag file: %s", PLAYER_DATA_DOWNLOAD_FLAG_FILE)
+                logger.info("Created flag file: %s",
+                            PLAYER_DATA_DOWNLOAD_FLAG_FILE)
             else:
                 logger.error(
                     "Player data download script failed. Return code: %d",
@@ -290,11 +336,13 @@ class BettingBot(commands.Bot):
         self.game_service = GameService(self.sports_api, self.db_manager)
         self.user_service = UserService(self, self.db_manager)
         self.voice_service = VoiceService(self, self.db_manager)
-        self.data_sync_service = DataSyncService(self.game_service, self.db_manager)
+        self.data_sync_service = DataSyncService(
+            self.game_service, self.db_manager)
         self.bet_slip_generators = {}
         self.webapp_process = None
         self.fetcher_process = None
-        self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
+        self.live_game_channel_service = LiveGameChannelService(
+            self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
         self.predictive_service = PredictiveService(self.db_manager)
         self.real_ml_service = None  # Will be initialized in setup_hook
@@ -345,6 +393,7 @@ class BettingBot(commands.Bot):
             "community_leaderboard.py",  # Community leaderboard commands
             "predictive.py",  # Predictive analytics commands
             "real_ml_commands.py",  # Real ML commands (Platinum only)
+            "weather.py",  # Weather command for game venues
         ]
         loaded_commands = []
         for filename in cog_files:
@@ -496,7 +545,8 @@ class BettingBot(commands.Bot):
                     )
 
                 # Log all available commands
-                global_commands = [cmd.name for cmd in self.tree.get_commands()]
+                global_commands = [
+                    cmd.name for cmd in self.tree.get_commands()]
                 logger.info("Final global commands: %s", global_commands)
 
                 return True
@@ -528,7 +578,8 @@ class BettingBot(commands.Bot):
             try:
                 with open(webapp_log_path, "a") as log_file:
                     # Get the correct path to webapp.py (it's in the root directory)
-                    webapp_path = os.path.join(os.path.dirname(BASE_DIR), "webapp.py")
+                    webapp_path = os.path.join(
+                        os.path.dirname(BASE_DIR), "webapp.py")
 
                     if not os.path.exists(webapp_path):
                         logger.error(f"webapp.py not found at {webapp_path}")
@@ -544,7 +595,8 @@ class BettingBot(commands.Bot):
                         text=True,
                         bufsize=1,
                         env=env,
-                        cwd=os.path.dirname(BASE_DIR),  # Set working directory to project root where webapp.py is located
+                        # Set working directory to project root where webapp.py is located
+                        cwd=os.path.dirname(BASE_DIR),
                     )
                 logger.info(
                     "Started Flask web server (webapp.py) as a subprocess with PID %d, logging to %s",
@@ -560,7 +612,8 @@ class BettingBot(commands.Bot):
                     logger.info("Created webapp monitoring task")
 
             except Exception as e:
-                logger.error("Failed to start Flask webapp: %s", e, exc_info=True)
+                logger.error("Failed to start Flask webapp: %s",
+                             e, exc_info=True)
                 self.webapp_process = None
 
     async def _monitor_webapp(self, log_path: str):
@@ -568,7 +621,8 @@ class BettingBot(commands.Bot):
         while True:
             try:
                 if self.webapp_process is None:
-                    logger.warning("Webapp process is None, attempting to restart...")
+                    logger.warning(
+                        "Webapp process is None, attempting to restart...")
                     self.start_flask_webapp()
                     await asyncio.sleep(10)  # Wait before checking again
                     continue
@@ -588,7 +642,8 @@ class BettingBot(commands.Bot):
                     await asyncio.sleep(30)
 
             except Exception as e:
-                logger.error("Error in webapp monitoring: %s", e, exc_info=True)
+                logger.error("Error in webapp monitoring: %s",
+                             e, exc_info=True)
                 await asyncio.sleep(10)  # Wait before retrying
 
     def start_fetcher(self):
@@ -596,7 +651,8 @@ class BettingBot(commands.Bot):
         if self.fetcher_process is None or self.fetcher_process.poll() is not None:
             fetcher_log_path = os.path.join(BASE_DIR, "logs", "fetcher.log")
             os.makedirs(os.path.dirname(fetcher_log_path), exist_ok=True)
-            logger.info("Setting up fetcher process with log at: %s", fetcher_log_path)
+            logger.info(
+                "Setting up fetcher process with log at: %s", fetcher_log_path)
 
             with open(fetcher_log_path, "a") as log_file:
                 # Prepare environment variables
@@ -640,7 +696,8 @@ class BettingBot(commands.Bot):
                     # Start the fetcher process with the validated environment
                     logger.info("Starting fetcher process...")
                     self.fetcher_process = subprocess.Popen(
-                        [sys.executable, os.path.join(BASE_DIR, "utils", "fetcher.py")],
+                        [sys.executable, os.path.join(
+                            BASE_DIR, "utils", "fetcher.py")],
                         stdout=log_file,
                         stderr=log_file,
                         text=True,
@@ -701,7 +758,8 @@ class BettingBot(commands.Bot):
                     try:
                         with open(log_path, "r") as f:
                             lines = f.readlines()
-                            last_lines = lines[-20:] if len(lines) > 20 else lines
+                            last_lines = lines[-20:] if len(
+                                lines) > 20 else lines
                             logger.error(
                                 "Last few lines from fetcher.log:\n%s",
                                 "".join(last_lines),
@@ -764,7 +822,8 @@ class BettingBot(commands.Bot):
             )
             logger.info("Community engagement services initialized")
         except Exception as e:
-            logger.error(f"Failed to initialize community engagement services: {e}")
+            logger.error(
+                f"Failed to initialize community engagement services: {e}")
             self.community_events_service = None
             self.community_analytics_service = None
 
@@ -784,7 +843,8 @@ class BettingBot(commands.Bot):
         # Initialize real ML service
         try:
             from bot.services.real_ml_service import RealMLService
-            self.real_ml_service = RealMLService(self.db_manager, self.sports_api, self.predictive_service)
+            self.real_ml_service = RealMLService(
+                self.db_manager, self.sports_api, self.predictive_service)
             logger.info("Real ML service initialized")
         except Exception as e:
             logger.error(f"Failed to initialize real ML service: {e}")
@@ -831,7 +891,8 @@ class BettingBot(commands.Bot):
                 logger.error(
                     "Error starting %s: %s", service_name, result, exc_info=True
                 )
-        logger.info("Services startup initiated, including LiveGameChannelService.")
+        logger.info(
+            "Services startup initiated, including LiveGameChannelService.")
 
         # Only start webapp and fetcher if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
@@ -841,7 +902,8 @@ class BettingBot(commands.Bot):
                 "Bot setup_hook completed successfully - commands will be synced in on_ready"
             )
         else:
-            logger.info("Bot setup_hook completed successfully in scheduler mode")
+            logger.info(
+                "Bot setup_hook completed successfully in scheduler mode")
 
     async def on_ready(self):
         logger.info("Logged in as %s (%s)", self.user.name, self.user.id)
@@ -860,10 +922,12 @@ class BettingBot(commands.Bot):
                 if not success:
                     logger.error("Failed to sync commands after retries")
                     return
-                global_commands = [cmd.name for cmd in self.tree.get_commands()]
+                global_commands = [
+                    cmd.name for cmd in self.tree.get_commands()]
                 logger.info("Final global commands: %s", global_commands)
             except Exception as e:
-                logger.error("Failed to sync command tree: %s", e, exc_info=True)
+                logger.error("Failed to sync command tree: %s",
+                             e, exc_info=True)
         logger.info("------ Bot is Ready ------")
 
     async def on_guild_join(self, guild: discord.Guild):
@@ -881,7 +945,8 @@ class BettingBot(commands.Bot):
             self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
             await self.tree.sync(guild=guild_obj)
-            logger.info(f"Successfully synced setup command to new guild {guild.id}")
+            logger.info(
+                f"Successfully synced setup command to new guild {guild.id}")
         except Exception as e:
             logger.error(
                 f"Failed to sync setup command to new guild {guild.id}: {e}",
@@ -932,7 +997,8 @@ class BettingBot(commands.Bot):
                 payload.user_id,
                 payload.message_id,
             )
-            asyncio.create_task(self.bet_service.on_raw_reaction_remove(payload))
+            asyncio.create_task(
+                self.bet_service.on_raw_reaction_remove(payload))
 
     async def on_interaction(self, interaction: discord.Interaction):
         command_name = interaction.command.name if interaction.command else "N/A"
@@ -977,7 +1043,8 @@ class BettingBot(commands.Bot):
             except asyncio.TimeoutError:
                 logger.warning("Timeout while waiting for services to stop")
             except Exception as e:
-                logger.error("Error during service shutdown: %s", e, exc_info=True)
+                logger.error("Error during service shutdown: %s",
+                             e, exc_info=True)
             logger.info("Services stopped.")
 
             if self.db_manager:
@@ -986,7 +1053,8 @@ class BettingBot(commands.Bot):
                     await asyncio.wait_for(self.db_manager.close(), timeout=5.0)
                     logger.info("Database connection pool closed.")
                 except asyncio.TimeoutError:
-                    logger.warning("Timeout while closing database connection pool")
+                    logger.warning(
+                        "Timeout while closing database connection pool")
                 except Exception as e:
                     logger.error(
                         "Error closing database connection pool: %s", e, exc_info=True
@@ -1013,7 +1081,8 @@ class BettingBot(commands.Bot):
                         self.webapp_process.terminate()
                         self.webapp_process.wait(timeout=3)
                     except Exception as e2:
-                        logger.error("Error terminating webapp process: %s", e2)
+                        logger.error(
+                            "Error terminating webapp process: %s", e2)
 
             # Stop fetcher monitoring task
             if hasattr(self, "_fetcher_monitor_task") and not self._fetcher_monitor_task.done():
@@ -1036,7 +1105,8 @@ class BettingBot(commands.Bot):
                         self.fetcher_process.terminate()
                         self.fetcher_process.wait(timeout=3)
                     except Exception as e2:
-                        logger.error("Error terminating fetcher process: %s", e2)
+                        logger.error(
+                            "Error terminating fetcher process: %s", e2)
         except Exception as e:
             logger.exception("Error during shutdown: %s", e)
         finally:
@@ -1044,7 +1114,8 @@ class BettingBot(commands.Bot):
             try:
                 await super().close()
             except Exception as e:
-                logger.error("Error closing Discord client: %s", e, exc_info=True)
+                logger.error("Error closing Discord client: %s",
+                             e, exc_info=True)
             logger.info("Bot shutdown complete.")
 
 
@@ -1089,7 +1160,6 @@ async def setup_sync_cog(bot: BettingBot):
 
 
 # Add a manual sync command to AdminService or a new AdminCog
-from discord.ext import commands
 
 
 class ManualSyncCog(commands.Cog):
@@ -1101,7 +1171,8 @@ class ManualSyncCog(commands.Cog):
     async def synccommands(self, ctx):
         """Manually sync commands to the test guild."""
         test_guild_id = (
-            int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+            int(os.getenv("TEST_GUILD_ID")) if os.getenv(
+                "TEST_GUILD_ID") else None
         )
         if test_guild_id:
             await ctx.bot.tree.sync(guild=discord.Object(id=test_guild_id))
@@ -1158,7 +1229,8 @@ class ManualSyncCog(commands.Cog):
                 logger.error(
                     "Error starting %s: %s", service_name, result, exc_info=True
                 )
-        logger.info("Services startup initiated, including LiveGameChannelService.")
+        logger.info(
+            "Services startup initiated, including LiveGameChannelService.")
         # Register the manual sync cog
         self.add_cog(ManualSyncCog(self))
         if not os.getenv("SCHEDULER_MODE"):
@@ -1168,7 +1240,8 @@ class ManualSyncCog(commands.Cog):
                 "Bot setup_hook completed successfully - commands will be synced in on_ready"
             )
         else:
-            logger.info("Bot setup_hook completed successfully in scheduler mode")
+            logger.info(
+                "Bot setup_hook completed successfully in scheduler mode")
 
 
 # --- Main Execution ---

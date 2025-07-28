@@ -98,6 +98,51 @@ class GameService:
             logger.error(f"Error getting league standings: {str(e)}")
             return []
 
+    async def get_upcoming_games_by_league(self, sport: str, league_name: str, limit: int = 10) -> List[Dict]:
+        """Get upcoming games for a specific sport and league."""
+        try:
+            # Map sport names to database sport values
+            sport_mapping = {
+                "football": "Football",
+                "soccer": "Football",
+                "basketball": "Basketball",
+                "baseball": "Baseball",
+                "hockey": "Hockey",
+                "ice hockey": "Hockey",
+                "ufc": "UFC",
+                "mma": "UFC"
+            }
+
+            db_sport = sport_mapping.get(sport.lower(), sport.title())
+
+            # Query the database for upcoming games
+            query = """
+                SELECT
+                    id, api_game_id, sport, league_id, league_name,
+                    home_team_name, away_team_name, start_time, status, venue,
+                    home_team_id, away_team_id, score
+                FROM api_games
+                WHERE sport = %s
+                AND UPPER(league_name) = UPPER(%s)
+                AND start_time > NOW()
+                AND status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended', 'Game Finished', 'Final')
+                ORDER BY start_time ASC
+                LIMIT %s
+            """
+
+            games = await self.db.fetch_all(query, (db_sport, league_name, limit))
+
+            if not games:
+                logger.info(f"No upcoming games found for {sport} - {league_name}")
+                return []
+
+            logger.info(f"Found {len(games)} upcoming games for {sport} - {league_name}")
+            return games
+
+        except Exception as e:
+            logger.error(f"Error getting upcoming games for {sport} - {league_name}: {e}")
+            return []
+
     async def get_teams(self, league: str) -> List[str]:
         """Get teams for a league."""
         try:
