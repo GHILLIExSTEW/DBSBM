@@ -1,13 +1,14 @@
 import logging
 import os
 from io import BytesIO
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from PIL import Image, ImageDraw, ImageFont
+from matplotlib.backends.backend_agg import FigureCanvas
 
 logger = logging.getLogger(__name__)
 
@@ -265,6 +266,173 @@ class StatsImageGenerator:
             logger.error(f"Error generating guild stats image: {str(e)}")
             return self._generate_fallback_guild_image(stats)
 
+    def _load_profile_image(self, profile_image_url: str, stats: Dict) -> Optional[Image.Image]:
+        """Load profile image from various sources with fallbacks."""
+        import os
+        from io import BytesIO
+        import requests
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        # Try to load from provided URL/path
+        if profile_image_url:
+            try:
+                local_path = profile_image_url
+                if profile_image_url.startswith("/static/"):
+                    local_path = os.path.join(
+                        base_dir, *profile_image_url.lstrip("/").split("/")
+                    )
+                elif not os.path.isabs(local_path):
+                    local_path = os.path.join(base_dir, local_path)
+
+                if os.path.exists(local_path):
+                    profile_img = Image.open(local_path).convert("RGBA")
+                    profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                    logger.info(f"Loaded profile image from local path: {local_path}")
+                    return profile_img
+                elif profile_image_url.startswith("http://") or profile_image_url.startswith("https://"):
+                    response = requests.get(profile_image_url, timeout=10)
+                    if response.status_code == 200:
+                        profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
+                        profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                        logger.info(f"Loaded profile image from URL: {profile_image_url}")
+                        return profile_img
+            except Exception as e:
+                logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
+
+        # Fallback: Try guild default image
+        if stats.get("guild_id"):
+            try:
+                guild_id = str(stats["guild_id"])
+                default_path = os.path.join(
+                    base_dir, "static", "guilds", guild_id, "default_image.webp"
+                )
+                if os.path.exists(default_path):
+                    profile_img = Image.open(default_path).convert("RGBA")
+                    profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                    logger.info(f"Loaded guild default image from: {default_path}")
+                    return profile_img
+                else:
+                    # Try alternative default image names
+                    alt_names = ["default_logo.webp", "logo.webp", "guild_logo.webp"]
+                    for alt_name in alt_names:
+                        alt_path = os.path.join(
+                            base_dir, "static", "guilds", guild_id, alt_name
+                        )
+                        if os.path.exists(alt_path):
+                            profile_img = Image.open(alt_path).convert("RGBA")
+                            profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                            logger.info(f"Loaded guild default image from: {alt_path}")
+                            return profile_img
+            except Exception as e:
+                logger.warning(f"Failed to load guild default image: {e}")
+
+        # Final fallback: Try generic default images
+        try:
+            generic_paths = [
+                os.path.join(base_dir, "static", "images", "default_user.webp"),
+                os.path.join(base_dir, "static", "images", "default_avatar.webp"),
+                os.path.join(base_dir, "static", "default_logo.webp"),
+                os.path.join(base_dir, "static", "images", "default_image.webp"),
+            ]
+
+            for generic_path in generic_paths:
+                if os.path.exists(generic_path):
+                    profile_img = Image.open(generic_path).convert("RGBA")
+                    profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                    logger.info(f"Loaded generic default image from: {generic_path}")
+                    return profile_img
+        except Exception as e:
+            logger.warning(f"Failed to load generic default image: {e}")
+
+        return None
+
+    def _create_stats_charts(self, fig, ax1, ax2, ax3, ax4, stats: Dict):
+        """Create the statistical charts for the stats image."""
+        # Chart 1: Win/Loss Ratio
+        wins = stats.get("wins", 0)
+        losses = stats.get("losses", 0)
+        total_bets = wins + losses
+
+        if total_bets > 0:
+            win_rate = (wins / total_bets) * 100
+            ax1.pie([wins, losses], labels=['Wins', 'Losses'],
+                    colors=['#00ff00', '#ff0000'], autopct='%1.1f%%')
+            ax1.set_title('Win/Loss Ratio', color='white', fontsize=14, fontweight='bold')
+        else:
+            ax1.text(0.5, 0.5, 'No bets yet', ha='center', va='center',
+                    transform=ax1.transAxes, color='white', fontsize=12)
+            ax1.set_title('Win/Loss Ratio', color='white', fontsize=14, fontweight='bold')
+
+        # Chart 2: Monthly Performance
+        monthly_stats = stats.get("monthly_stats", {})
+        if monthly_stats:
+            months = list(monthly_stats.keys())
+            profits = [monthly_stats[month].get("profit", 0) for month in months]
+
+            colors = ['#00ff00' if p >= 0 else '#ff0000' for p in profits]
+            ax2.bar(months, profits, color=colors)
+            ax2.set_title('Monthly Performance', color='white', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('Profit/Loss', color='white')
+            ax2.tick_params(colors='white')
+        else:
+            ax2.text(0.5, 0.5, 'No monthly data', ha='center', va='center',
+                    transform=ax2.transAxes, color='white', fontsize=12)
+            ax2.set_title('Monthly Performance', color='white', fontsize=14, fontweight='bold')
+
+        # Chart 3: Bet Type Distribution
+        bet_types = stats.get("bet_types", {})
+        if bet_types:
+            types = list(bet_types.keys())
+            counts = list(bet_types.values())
+            ax3.pie(counts, labels=types, autopct='%1.1f%%')
+            ax3.set_title('Bet Type Distribution', color='white', fontsize=14, fontweight='bold')
+        else:
+            ax3.text(0.5, 0.5, 'No bet type data', ha='center', va='center',
+                    transform=ax3.transAxes, color='white', fontsize=12)
+            ax3.set_title('Bet Type Distribution', color='white', fontsize=14, fontweight='bold')
+
+        # Chart 4: Profit Trend
+        profit_history = stats.get("profit_history", [])
+        if profit_history:
+            ax4.plot(range(len(profit_history)), profit_history, color='#00ff00', linewidth=2)
+            ax4.set_title('Profit Trend', color='white', fontsize=14, fontweight='bold')
+            ax4.set_ylabel('Profit', color='white')
+            ax4.tick_params(colors='white')
+        else:
+            ax4.text(0.5, 0.5, 'No trend data', ha='center', va='center',
+                    transform=ax4.transAxes, color='white', fontsize=12)
+            ax4.set_title('Profit Trend', color='white', fontsize=14, fontweight='bold')
+
+    def _add_profile_image_to_figure(self, fig, profile_img: Image.Image):
+        """Add profile image to the figure."""
+        if profile_img:
+            # Convert PIL image to matplotlib format
+            profile_array = np.array(profile_img)
+
+            # Create a new axes for the profile image (top left)
+            ax_profile = fig.add_axes([0.02, 0.85, 0.15, 0.15])
+            ax_profile.imshow(profile_array)
+            ax_profile.axis('off')
+
+    def _add_stats_text(self, fig, stats: Dict, username: str):
+        """Add statistical text information to the figure."""
+        # Create text box for stats
+        stats_text = f"""
+Username: {username}
+Total Bets: {stats.get('total_bets', 0)}
+Wins: {stats.get('wins', 0)}
+Losses: {stats.get('losses', 0)}
+Win Rate: {(stats.get('wins', 0) / max(stats.get('total_bets', 1), 1) * 100):.1f}%
+Total Profit: ${stats.get('total_profit', 0):.2f}
+Average Bet Size: ${stats.get('avg_bet_size', 0):.2f}
+Best Month: {stats.get('best_month', 'N/A')}
+        """.strip()
+
+        # Add text box
+        fig.text(0.02, 0.02, stats_text, fontsize=12, color='white',
+                bbox=dict(boxstyle="round,pad=0.5", facecolor='#333333', alpha=0.8))
+
     async def generate_capper_stats_image(
         self, stats: Dict, username: str, profile_image_url: str = None
     ) -> Image.Image:
@@ -274,319 +442,38 @@ class StatsImageGenerator:
             fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 14))
             fig.patch.set_facecolor("#1a1a1a")
 
-            # Load profile image if available (make it large for top left)
-            profile_img = None
-            if profile_image_url:
-                try:
-                    import os
+            # Load profile image
+            profile_img = self._load_profile_image(profile_image_url, stats)
 
-                    local_path = profile_image_url
-                    base_dir = os.path.dirname(
-                        os.path.dirname(os.path.abspath(__file__))
-                    )
-                    if profile_image_url.startswith("/static/"):
-                        local_path = os.path.join(
-                            base_dir, *profile_image_url.lstrip("/").split("/")
-                        )
-                    elif not os.path.isabs(local_path):
-                        local_path = os.path.join(base_dir, local_path)
-                    print(f"[DEBUG] Trying profile image local_path: {local_path}")
-                    print(f"[DEBUG] File exists: {os.path.exists(local_path)}")
-                    if os.path.exists(local_path):
-                        profile_img = Image.open(local_path).convert("RGBA")
-                        profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                        logger.info(
-                            f"Loaded profile image from local path: {local_path}"
-                        )
-                    elif profile_image_url.startswith(
-                        "http://"
-                    ) or profile_image_url.startswith("https://"):
-                        import requests
+            # Create charts
+            self._create_stats_charts(fig, ax1, ax2, ax3, ax4, stats)
 
-                        response = requests.get(profile_image_url, timeout=10)
-                        if response.status_code == 200:
-                            profile_img = Image.open(BytesIO(response.content)).convert(
-                                "RGBA"
-                            )
-                            profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                            logger.info(
-                                f"Loaded profile image from URL: {profile_image_url}"
-                            )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to load profile image from {profile_image_url}: {e}"
-                    )
+            # Add profile image if available
+            if profile_img:
+                self._add_profile_image_to_figure(fig, profile_img)
 
-            # Fallback: If no user profile image, try server's default image
-            if profile_img is None and stats.get("guild_id"):
-                try:
-                    guild_id = str(stats["guild_id"])
-                    default_path = os.path.join(
-                        base_dir, "static", "guilds", guild_id, "default_image.webp"
-                    )
-                    print(f"[DEBUG] Trying guild default image: {default_path}")
-                    print(
-                        f"[DEBUG] Guild default exists: {os.path.exists(default_path)}"
-                    )
-                    if os.path.exists(default_path):
-                        profile_img = Image.open(default_path).convert("RGBA")
-                        profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                        logger.info(f"Loaded guild default image from: {default_path}")
-                    else:
-                        # Try alternative default image names
-                        alt_names = [
-                            "default_logo.webp",
-                            "logo.webp",
-                            "guild_logo.webp",
-                        ]
-                        for alt_name in alt_names:
-                            alt_path = os.path.join(
-                                base_dir, "static", "guilds", guild_id, alt_name
-                            )
-                            if os.path.exists(alt_path):
-                                profile_img = Image.open(alt_path).convert("RGBA")
-                                profile_img.thumbnail(
-                                    (500, 500), Image.Resampling.LANCZOS
-                                )
-                                logger.info(
-                                    f"Loaded guild default image from: {alt_path}"
-                                )
-                                break
-                except Exception as e:
-                    logger.warning(f"Failed to load guild default image: {e}")
+            # Add stats text
+            self._add_stats_text(fig, stats, username)
 
-            # Final fallback: If still no image, try a generic default
-            if profile_img is None:
-                try:
-                    # Try to find a generic default image in the static directory
-                    generic_paths = [
-                        os.path.join(base_dir, "static", "images", "default_user.webp"),
-                        os.path.join(
-                            base_dir, "static", "images", "default_avatar.webp"
-                        ),
-                        os.path.join(base_dir, "static", "default_logo.webp"),
-                        os.path.join(base_dir, "static", "images", "default_logo.webp"),
-                    ]
-                    for generic_path in generic_paths:
-                        if os.path.exists(generic_path):
-                            profile_img = Image.open(generic_path).convert("RGBA")
-                            profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                            logger.info(
-                                f"Loaded generic default image from: {generic_path}"
-                            )
-                            break
-                except Exception as e:
-                    logger.warning(f"Failed to load generic default image: {e}")
+            # Convert matplotlib figure to PIL image
+            canvas = FigureCanvas(fig)
+            canvas.draw()
 
-            # Extract stats (must be before any chart code that uses them)
-            total_bets = int(stats.get("total_bets", 0) or 0)
-            wins = int(stats.get("wins", 0) or 0)
-            losses = int(stats.get("losses", 0) or 0)
-            pushes = int(stats.get("pushes", 0) or 0)
-            win_rate = float(stats.get("win_rate", 0) or 0.0)
-            net_units = float(stats.get("net_units", 0) or 0.0)
-            roi = float(stats.get("roi", 0) or 0.0)
+            # Get the RGBA buffer from the figure
+            w, h = canvas.get_width_height()
+            buf = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
+            buf.shape = (h, w, 3)
 
-            # --- Make profile image rounded and feathered ---
-            if profile_img is not None:
-                min_side = min(profile_img.size)
-                profile_img = profile_img.crop(
-                    (
-                        (profile_img.width - min_side) // 2,
-                        (profile_img.height - min_side) // 2,
-                        (profile_img.width + min_side) // 2,
-                        (profile_img.height + min_side) // 2,
-                    )
-                )
-                profile_img_circle = make_rounded_feathered(profile_img)
-                logger.info(
-                    f"Using profile image for {username} (size: {profile_img.size})"
-                )
-            else:
-                logger.info(
-                    f"No profile image available for {username}, will use text-only display"
-                )
-
-            # --- Flashy Background ---
-            # Create a gradient background for the figure
-            gradient = np.linspace(0, 1, 256)
-            gradient = np.vstack((gradient, gradient))
-            cmap = LinearSegmentedColormap.from_list(
-                "custom", ["#232526", "#414345", "#232526"]
-            )
-            fig.figimage(cmap(gradient), xo=0, yo=0, alpha=0.5, zorder=0)
-
-            # 1. Profile Image (top left)
-            ax1.axis("off")
-            if profile_img is not None:
-                ax1.imshow(profile_img_circle, extent=[0.1, 0.9, 0.1, 0.9], zorder=2)
-                ax1.set_title(
-                    f"{username}",
-                    color="#00ffe7",
-                    fontsize=36,
-                    fontweight="bold",
-                    pad=30,
-                )
-            else:
-                ax1.text(
-                    0.5,
-                    0.5,
-                    f"{username}\n(No Profile Image)",
-                    ha="center",
-                    va="center",
-                    color="#00ffe7",
-                    fontsize=28,
-                    fontweight="bold",
-                    transform=ax1.transAxes,
-                )
-                ax1.set_title(
-                    f"{username}",
-                    color="#00ffe7",
-                    fontsize=36,
-                    fontweight="bold",
-                    pad=30,
-                )
-
-            # 2. Performance Metrics (top right)
-            metrics = ["Win Rate", "ROI", "Net Units"]
-            values = [win_rate, roi, net_units]
-            colors_metrics = ["#00ff88" if v >= 0 else "#ff4444" for v in values]
-            bars = ax2.bar(
-                metrics,
-                values,
-                color=colors_metrics,
-                alpha=0.9,
-                edgecolor="white",
-                linewidth=3,
-                zorder=3,
-            )
-            ax2.set_title(
-                "Performance Metrics", color="#00ffe7", fontsize=22, fontweight="bold"
-            )
-            ax2.set_ylabel("Value", color="white", fontsize=14)
-            ax2.tick_params(colors="white", labelsize=12)
-            for bar, value in zip(bars, values):
-                height = bar.get_height()
-                ax2.text(
-                    bar.get_x() + bar.get_width() / 2.0,
-                    height + (0.01 * max(values)),
-                    f"{value:.1f}",
-                    ha="center",
-                    va="bottom",
-                    color="white",
-                    fontweight="bold",
-                    fontsize=16,
-                )
-            ax2.grid(axis="y", alpha=0.2)
-
-            # 3. Bet Distribution Pie Chart (bottom left)
-            if total_bets > 0:
-                labels = (
-                    ["Wins", "Losses", "Pushes"] if pushes > 0 else ["Wins", "Losses"]
-                )
-                sizes = [wins, losses, pushes] if pushes > 0 else [wins, losses]
-                colors = (
-                    ["#00ff88", "#ff4444", "#ffaa00"]
-                    if pushes > 0
-                    else ["#00ff88", "#ff4444"]
-                )
-                wedges, texts, autotexts = ax3.pie(
-                    sizes,
-                    labels=labels,
-                    colors=colors,
-                    autopct="%1.1f%%",
-                    startangle=90,
-                    textprops={"color": "white", "fontsize": 16},
-                    wedgeprops={"linewidth": 2, "edgecolor": "white"},
-                )
-                ax3.set_title(
-                    "Bet Distribution", color="#00ffe7", fontsize=22, fontweight="bold"
-                )
-            else:
-                ax3.text(
-                    0.5,
-                    0.5,
-                    "No bets yet",
-                    ha="center",
-                    va="center",
-                    transform=ax3.transAxes,
-                    color="#00ffe7",
-                    fontsize=18,
-                )
-                ax3.set_title(
-                    "Bet Distribution", color="#00ffe7", fontsize=22, fontweight="bold"
-                )
-
-            # 4. Summary Stats (bottom right)
-            ax4.axis("off")
-            summary_lines = [
-                f"{username}'s Stats Summary",
-                "",
-                f"Total Bets: {total_bets}",
-                f"Wins: {wins}",
-                f"Losses: {losses}",
-                f"Pushes: {pushes}",
-                "",
-                f"Win Rate: {win_rate:.1f}%",
-                f"Net Units: {net_units:.2f}",
-                f"ROI: {roi:.1f}%",
-            ]
-            summary_text = "\n".join(summary_lines)
-            bbox_props = dict(
-                boxstyle="round,pad=1.0",
-                facecolor="#111",
-                alpha=0.95,
-                edgecolor="#00ffe7",
-                linewidth=3,
-            )
-            ax4.text(
-                0.5,
-                0.5,
-                summary_text,
-                ha="center",
-                va="center",
-                fontsize=24,
-                color="#ffffff",
-                fontweight="bold",
-                bbox=bbox_props,
-                transform=ax4.transAxes,
-            )
-
-            # Adjust layout
-            plt.tight_layout(pad=3.0)
-
-            # Convert matplotlib figure to PIL Image
-            buf = BytesIO()
-            plt.savefig(
-                buf,
-                format="png",
-                dpi=150,
-                bbox_inches="tight",
-                facecolor="#1a1a1a",
-                edgecolor="none",
-            )
-            buf.seek(0)
-
-            # Convert to PIL Image
-            img = Image.open(buf)
-            img = img.convert("RGB")
-
-            plt.close()  # Close the matplotlib figure to free memory
+            # Convert to PIL image
+            img = Image.fromarray(buf)
+            plt.close(fig)
 
             return img
+
         except Exception as e:
-            logger.error(f"Error generating capper stats image: {str(e)}")
-            try:
-                return self._generate_fallback_image(stats, username)
-            except Exception as fallback_e:
-                logger.error(f"Error in fallback image: {fallback_e}")
-                # Final fallback: return a blank error image
-                img = Image.new("RGB", (800, 600), color="red")
-                draw = ImageDraw.Draw(img)
-                draw.text(
-                    (400, 300), "Image Generation Failed", fill="white", anchor="mm"
-                )
-                return img
+            logger.error(f"Error generating capper stats image: {e}")
+            # Return a fallback image
+            return self._generate_fallback_image(stats, username)
 
     def generate_top_cappers_image(self, cappers: List[Dict]) -> Image.Image:
         """Generate a flashy top cappers leaderboard image."""

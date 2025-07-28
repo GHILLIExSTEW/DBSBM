@@ -3,7 +3,7 @@
 import io
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import discord
 from discord.ui import Modal, TextInput
@@ -14,7 +14,8 @@ from bot.config.asset_paths import BASE_DIR
 # Adjust these paths if your config/utils structure is different
 # relative to the 'bot' root when this module is imported.
 from bot.config.leagues import LEAGUE_CONFIG
-from bot.utils.errors import BetServiceError  # Example, if used directly in modal
+# Example, if used directly in modal
+from bot.utils.errors import BetServiceError
 
 # Import the correct version of the image generator
 
@@ -40,7 +41,8 @@ logger = logging.getLogger(__name__)
 
 class PlayerPropModal(Modal):
     def __init__(self, bet_details_from_view: Dict[str, Any]):
-        league_key = bet_details_from_view.get("selected_league_key", "DEFAULT")
+        league_key = bet_details_from_view.get(
+            "selected_league_key", "DEFAULT")
         league_conf = LEAGUE_CONFIG.get(league_key, {})
         super().__init__(
             title=f"{league_conf.get('player_label', 'Player')} Prop Bet Details"
@@ -54,7 +56,8 @@ class PlayerPropModal(Modal):
             label=league_conf.get("player_label", "Player"),
             required=True,
             max_length=100,
-            placeholder=league_conf.get("player_placeholder", "e.g., John Smith"),
+            placeholder=league_conf.get(
+                "player_placeholder", "e.g., John Smith"),
             default=bet_details_from_view.get("player_name", ""),
         )
         self.add_item(self.player_input)
@@ -88,7 +91,8 @@ class PlayerPropModal(Modal):
             label="Odds",
             required=True,
             max_length=10,
-            placeholder=league_conf.get("odds_placeholder", "e.g., -110 or +200"),
+            placeholder=league_conf.get(
+                "odds_placeholder", "e.g., -110 or +200"),
             default=bet_details_from_view.get("odds_str", ""),
         )
         self.add_item(self.odds_input)
@@ -186,7 +190,8 @@ class PlayerPropModal(Modal):
                 import io
 
                 self.view_ref.preview_image_bytes = io.BytesIO()
-                bet_slip_image.save(self.view_ref.preview_image_bytes, format="PNG")
+                bet_slip_image.save(
+                    self.view_ref.preview_image_bytes, format="PNG")
                 self.view_ref.preview_image_bytes.seek(0)
             elif hasattr(self.view_ref, "preview_image_bytes"):
                 self.view_ref.preview_image_bytes = None
@@ -214,17 +219,9 @@ class StraightBetDetailsModal(Modal):
         is_manual: bool = False,
     ):
         league_conf = LEAGUE_CONFIG.get(selected_league_key, {})
-        # Get league-specific title
-        if line_type == "player_prop":
-            title = league_conf.get(
-                "player_prop_modal_title",
-                f"{league_conf.get('name', 'Game')} Player Prop",
-            )
-        else:
-            title = league_conf.get(
-                "game_line_modal_title",
-                f"{league_conf.get('name', 'Game')} Bet Details",
-            )
+
+        # Get modal title
+        title = self._get_modal_title(line_type, league_conf)
         super().__init__(title=title)
 
         self.line_type = line_type
@@ -233,289 +230,238 @@ class StraightBetDetailsModal(Modal):
         self.view_ref = bet_details_from_view.get("view_ref")
         self.league_config = league_conf
 
-        # Check if this is an individual sport
-        sport_type = league_conf.get("sport_type", "Team Sport")
-        is_individual_sport = sport_type == "Individual Player"
-
-        # For manual entries, determine fields based on sport type
+        # Create fields based on type and manual entry
         if self.is_manual:
-            if is_individual_sport:
-                # For individual sports (darts, tennis, golf, MMA, etc.), show player and opponent
-                player_label = league_conf.get("participant_label", "Player")
-                player_placeholder = league_conf.get(
-                    "team_placeholder", "e.g., Player Name"
-                )
-
-                # League-specific player suggestions
-                if selected_league_key in [
-                    "PDC",
-                    "BDO",
-                    "WDF",
-                    "PremierLeagueDarts",
-                    "WorldMatchplay",
-                    "WorldGrandPrix",
-                    "UKOpen",
-                    "GrandSlam",
-                    "PlayersChampionship",
-                    "EuropeanChampionship",
-                    "Masters",
-                ]:
-                    player_placeholder = "e.g., Michael van Gerwen, Peter Wright"
-                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
-                    player_placeholder = "e.g., Novak Djokovic, Iga Swiatek"
-                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
-                    player_placeholder = "e.g., Scottie Scheffler, Nelly Korda"
-                elif selected_league_key in ["MMA", "Bellator"]:
-                    player_placeholder = "e.g., Jon Jones, Patricio Pitbull"
-                elif selected_league_key == "Formula-1":
-                    player_placeholder = "e.g., Max Verstappen, Lewis Hamilton"
-
-                self.player_input = TextInput(
-                    label=player_label,
-                    required=True,
-                    max_length=100,
-                    placeholder=player_placeholder,
-                    default=bet_details_from_view.get(
-                        "player_name", bet_details_from_view.get("team", "")
-                    ),
-                )
-                self.add_item(self.player_input)
-
-                opponent_label = league_conf.get("opponent_label", "Opponent")
-                opponent_placeholder = league_conf.get(
-                    "opponent_placeholder", "e.g., Opponent Name"
-                )
-
-                # League-specific opponent suggestions
-                if selected_league_key in [
-                    "PDC",
-                    "BDO",
-                    "WDF",
-                    "PremierLeagueDarts",
-                    "WorldMatchplay",
-                    "WorldGrandPrix",
-                    "UKOpen",
-                    "GrandSlam",
-                    "PlayersChampionship",
-                    "EuropeanChampionship",
-                    "Masters",
-                ]:
-                    opponent_placeholder = "e.g., Peter Wright, Gerwyn Price"
-                elif selected_league_key in ["ATP", "WTA", "Tennis"]:
-                    opponent_placeholder = "e.g., Rafael Nadal, Aryna Sabalenka"
-                elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
-                    opponent_placeholder = "e.g., Rory McIlroy, Lydia Ko"
-                elif selected_league_key in ["MMA", "Bellator"]:
-                    opponent_placeholder = "e.g., Francis Ngannou, Cris Cyborg"
-                elif selected_league_key == "Formula-1":
-                    opponent_placeholder = "e.g., Lewis Hamilton, Charles Leclerc"
-
-                self.opponent_input = TextInput(
-                    label=opponent_label,
-                    required=True,
-                    max_length=100,
-                    placeholder=opponent_placeholder,
-                    default=bet_details_from_view.get("opponent", ""),
-                )
-                self.add_item(self.opponent_input)
-            else:
-                # For team sports, show team and opponent (existing logic)
-                team_label = league_conf.get("participant_label", "Team")
-                team_placeholder = league_conf.get("team_placeholder", "e.g., Team A")
-                if selected_league_key == "NBA":
-                    team_placeholder = "e.g., Los Angeles Lakers"
-                elif selected_league_key == "MLB":
-                    team_placeholder = "e.g., New York Yankees"
-                elif selected_league_key == "NHL":
-                    team_placeholder = "e.g., Toronto Maple Leafs"
-                elif selected_league_key == "NFL":
-                    team_placeholder = "e.g., Kansas City Chiefs"
-
-                self.team_input = TextInput(
-                    label=team_label,
-                    required=True,
-                    max_length=100,
-                    placeholder=team_placeholder,
-                    default=bet_details_from_view.get("team", ""),
-                )
-                self.add_item(self.team_input)
-
-                opponent_label = league_conf.get("opponent_label", "Opponent")
-                opponent_placeholder = league_conf.get(
-                    "opponent_placeholder", "e.g., Opponent Team"
-                )
-                if selected_league_key == "NBA":
-                    opponent_placeholder = "e.g., Boston Celtics"
-                elif selected_league_key == "MLB":
-                    opponent_placeholder = "e.g., Boston Red Sox"
-                elif selected_league_key == "NHL":
-                    opponent_placeholder = "e.g., Montreal Canadiens"
-                elif selected_league_key == "NFL":
-                    opponent_placeholder = "e.g., San Francisco 49ers"
-
-                self.opponent_input = TextInput(
-                    label=opponent_label,
-                    required=True,
-                    max_length=100,
-                    placeholder=opponent_placeholder,
-                    default=bet_details_from_view.get("opponent", ""),
-                )
-                self.add_item(self.opponent_input)
-
-        # For player props, add player name field with league-specific suggestions
-        if self.line_type == "player_prop":
-            player_label = league_conf.get("player_label", "Player Name")
-            player_placeholder = league_conf.get(
-                "player_placeholder", "e.g., John Smith"
-            )
-
-            # League-specific player suggestions
-            if selected_league_key == "NBA":
-                player_placeholder = "e.g., LeBron James, Stephen Curry"
-            elif selected_league_key == "MLB":
-                player_placeholder = "e.g., Aaron Judge, Shohei Ohtani"
-            elif selected_league_key == "NHL":
-                player_placeholder = "e.g., Connor McDavid, Nathan MacKinnon"
-            elif selected_league_key == "NFL":
-                player_placeholder = "e.g., Patrick Mahomes, Travis Kelce"
-
-            self.player_name_input = TextInput(
-                label=player_label,
-                required=True,
-                max_length=100,
-                placeholder=player_placeholder,
-                default=bet_details_from_view.get("player_name", ""),
-            )
-            self.add_item(self.player_name_input)
-
-        # Line/market field with league-specific suggestions
-        if self.line_type == "player_prop":
-            line_label = league_conf.get("prop_line_label", "Player Prop / Line")
-            line_placeholder = league_conf.get(
-                "prop_line_placeholder", "e.g., Over 25.5 Points"
-            )
-
-            # League-specific prop suggestions
-            if selected_league_key == "NBA":
-                line_placeholder = "e.g., Over 25.5 Points, Over 7.5 Assists"
-            elif selected_league_key == "MLB":
-                line_placeholder = "e.g., Over 1.5 Hits, Over 0.5 Home Runs"
-            elif selected_league_key == "NHL":
-                line_placeholder = "e.g., Over 2.5 Shots, Over 0.5 Goals"
-            elif selected_league_key == "NFL":
-                line_placeholder = "e.g., Over 250.5 Passing Yards, Over 0.5 Touchdowns"
+            self._create_manual_entry_fields(
+                selected_league_key, bet_details_from_view)
         else:
-            line_label = league_conf.get("line_label_game", "Game Line / Match Outcome")
-            line_placeholder = league_conf.get(
-                "line_placeholder_game", "e.g., Moneyline, Spread -7.5"
+            self._create_game_line_fields(bet_details_from_view)
+
+    def _get_modal_title(self, line_type: str, league_conf: Dict) -> str:
+        """Get the modal title based on line type and league configuration."""
+        if line_type == "player_prop":
+            return league_conf.get(
+                "player_prop_modal_title",
+                f"{league_conf.get('name', 'Game')} Player Prop",
+            )
+        else:
+            return league_conf.get(
+                "game_line_modal_title",
+                f"{league_conf.get('name', 'Game')} Bet Details",
             )
 
-            # League-specific game line suggestions
-            if selected_league_key == "NBA":
-                line_placeholder = "e.g., Moneyline, Spread -5.5, Over/Under 220.5"
-            elif selected_league_key == "MLB":
-                line_placeholder = "e.g., Moneyline, Run Line -1.5, Over/Under 8.5"
-            elif selected_league_key == "NHL":
-                line_placeholder = "e.g., Moneyline, Puck Line -1.5, Over/Under 5.5"
-            elif selected_league_key == "NFL":
-                line_placeholder = "e.g., Moneyline, Spread -3.5, Over/Under 45.5"
-            elif selected_league_key in [
-                "PDC",
-                "BDO",
-                "WDF",
-                "PremierLeagueDarts",
-                "WorldMatchplay",
-                "WorldGrandPrix",
-                "UKOpen",
-                "GrandSlam",
-                "PlayersChampionship",
-                "EuropeanChampionship",
-                "Masters",
-            ]:
-                line_placeholder = (
-                    "e.g., To Win Match, Over/Under 180s, Checkout Percentage"
-                )
-            elif selected_league_key in ["ATP", "WTA", "Tennis"]:
-                line_placeholder = (
-                    "e.g., To Win Match, Set Handicap -1.5, Total Games Over/Under 22.5"
-                )
-            elif selected_league_key in ["PGA", "LPGA", "EuropeanTour", "LIVGolf"]:
-                line_placeholder = (
-                    "e.g., To Win Tournament, Top 5 Finish, Round Score Under 68.5"
-                )
-            elif selected_league_key in ["MMA", "Bellator"]:
-                line_placeholder = (
-                    "e.g., To Win Fight, Method of Victory (KO/Sub/Decision)"
-                )
-            elif selected_league_key == "Formula-1":
-                line_placeholder = "e.g., To Win Race, Podium Finish, Fastest Lap"
+    def _get_player_placeholder(self, selected_league_key: str) -> str:
+        """Get player placeholder text based on league."""
+        league_placeholders = {
+            "PDC": "e.g., Michael van Gerwen, Peter Wright",
+            "BDO": "e.g., Michael van Gerwen, Peter Wright",
+            "WDF": "e.g., Michael van Gerwen, Peter Wright",
+            "PremierLeagueDarts": "e.g., Michael van Gerwen, Peter Wright",
+            "WorldMatchplay": "e.g., Michael van Gerwen, Peter Wright",
+            "WorldGrandPrix": "e.g., Michael van Gerwen, Peter Wright",
+            "UKOpen": "e.g., Michael van Gerwen, Peter Wright",
+            "GrandSlam": "e.g., Michael van Gerwen, Peter Wright",
+            "PlayersChampionship": "e.g., Michael van Gerwen, Peter Wright",
+            "EuropeanChampionship": "e.g., Michael van Gerwen, Peter Wright",
+            "Masters": "e.g., Michael van Gerwen, Peter Wright",
+            "ATP": "e.g., Novak Djokovic, Iga Swiatek",
+            "WTA": "e.g., Novak Djokovic, Iga Swiatek",
+            "Tennis": "e.g., Novak Djokovic, Iga Swiatek",
+            "PGA": "e.g., Scottie Scheffler, Nelly Korda",
+            "LPGA": "e.g., Scottie Scheffler, Nelly Korda",
+            "EuropeanTour": "e.g., Scottie Scheffler, Nelly Korda",
+            "LIVGolf": "e.g., Scottie Scheffler, Nelly Korda",
+            "MMA": "e.g., Jon Jones, Patricio Pitbull",
+            "Bellator": "e.g., Jon Jones, Patricio Pitbull",
+            "Formula-1": "e.g., Max Verstappen, Lewis Hamilton",
+        }
+        return league_placeholders.get(selected_league_key, "e.g., Player Name")
 
-        self.line_input = TextInput(
-            label=line_label,
+    def _get_opponent_placeholder(self, selected_league_key: str) -> str:
+        """Get opponent placeholder text based on league."""
+        league_placeholders = {
+            "PDC": "e.g., Peter Wright, Gerwyn Price",
+            "BDO": "e.g., Peter Wright, Gerwyn Price",
+            "WDF": "e.g., Peter Wright, Gerwyn Price",
+            "PremierLeagueDarts": "e.g., Peter Wright, Gerwyn Price",
+            "WorldMatchplay": "e.g., Peter Wright, Gerwyn Price",
+            "WorldGrandPrix": "e.g., Peter Wright, Gerwyn Price",
+            "UKOpen": "e.g., Peter Wright, Gerwyn Price",
+            "GrandSlam": "e.g., Peter Wright, Gerwyn Price",
+            "PlayersChampionship": "e.g., Peter Wright, Gerwyn Price",
+            "EuropeanChampionship": "e.g., Peter Wright, Gerwyn Price",
+            "Masters": "e.g., Peter Wright, Gerwyn Price",
+            "ATP": "e.g., Rafael Nadal, Aryna Sabalenka",
+            "WTA": "e.g., Rafael Nadal, Aryna Sabalenka",
+            "Tennis": "e.g., Rafael Nadal, Aryna Sabalenka",
+            "PGA": "e.g., Rory McIlroy, Lydia Ko",
+            "LPGA": "e.g., Rory McIlroy, Lydia Ko",
+            "EuropeanTour": "e.g., Rory McIlroy, Lydia Ko",
+            "LIVGolf": "e.g., Rory McIlroy, Lydia Ko",
+            "MMA": "e.g., Jon Jones, Patricio Pitbull",
+            "Bellator": "e.g., Jon Jones, Patricio Pitbull",
+            "Formula-1": "e.g., Max Verstappen, Lewis Hamilton",
+        }
+        return league_placeholders.get(selected_league_key, "e.g., Opponent Name")
+
+    def _create_individual_sport_fields(self, selected_league_key: str, bet_details_from_view: Dict[str, Any]):
+        """Create fields for individual sports (darts, tennis, golf, MMA, etc.)."""
+        league_conf = self.league_config
+        player_label = league_conf.get("participant_label", "Player")
+        player_placeholder = self._get_player_placeholder(selected_league_key)
+
+        self.player_input = TextInput(
+            label=player_label,
             required=True,
             max_length=100,
-            placeholder=line_placeholder,
+            placeholder=player_placeholder,
+            default=bet_details_from_view.get(
+                "player_name", bet_details_from_view.get("team", "")
+            ),
+        )
+        self.add_item(self.player_input)
+
+        opponent_label = league_conf.get("opponent_label", "Opponent")
+        opponent_placeholder = self._get_opponent_placeholder(
+            selected_league_key)
+
+        self.opponent_input = TextInput(
+            label=opponent_label,
+            required=True,
+            max_length=100,
+            placeholder=opponent_placeholder,
+            default=bet_details_from_view.get("opponent", ""),
+        )
+        self.add_item(self.opponent_input)
+
+    def _create_team_sport_fields(self, bet_details_from_view: Dict[str, Any]):
+        """Create fields for team sports."""
+        # Team name field
+        self.team_input = TextInput(
+            label="Team Name",
+            required=True,
+            max_length=100,
+            placeholder="e.g., Los Angeles Lakers",
+            default=bet_details_from_view.get("team", ""),
+        )
+        self.add_item(self.team_input)
+
+        # Opponent field
+        self.opponent_input = TextInput(
+            label="Opponent",
+            required=True,
+            max_length=100,
+            placeholder="e.g., Golden State Warriors",
+            default=bet_details_from_view.get("opponent", ""),
+        )
+        self.add_item(self.opponent_input)
+
+    def _create_common_fields(self, bet_details_from_view: Dict[str, Any]):
+        """Create common fields for all bet types."""
+        # Line field
+        self.line_input = TextInput(
+            label="Line",
+            required=True,
+            max_length=50,
+            placeholder="e.g., -7.5, +110, Over 220.5",
             default=bet_details_from_view.get("line", ""),
         )
         self.add_item(self.line_input)
 
-        # Odds field with league-specific suggestions
-        odds_placeholder = league_conf.get("odds_placeholder", "e.g., -110 or +200")
-        if selected_league_key == "NBA":
-            odds_placeholder = "e.g., -110 (favorite) or +150 (underdog)"
-        elif selected_league_key == "MLB":
-            odds_placeholder = "e.g., -150 (favorite) or +130 (underdog)"
-        elif selected_league_key == "NHL":
-            odds_placeholder = "e.g., -120 (favorite) or +100 (underdog)"
-        elif selected_league_key == "NFL":
-            odds_placeholder = "e.g., -110 (favorite) or +110 (underdog)"
-
+        # Odds field
         self.odds_input = TextInput(
             label="Odds",
             required=True,
-            max_length=10,
-            placeholder=odds_placeholder,
-            default=bet_details_from_view.get("odds_str", ""),
+            max_length=20,
+            placeholder="e.g., -110, +150",
+            default=str(bet_details_from_view.get("odds", "")),
         )
         self.add_item(self.odds_input)
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        """Handle submission of game line/prop details to generate preview and advance to units selection."""
-        # Collect inputs
-        line = self.line_input.value.strip()
-        odds_str = self.odds_input.value.strip()
+    def _create_manual_entry_fields(self, selected_league_key: str, bet_details_from_view: Dict[str, Any]):
+        """Create fields for manual entry based on sport type."""
+        sport_type = self.league_config.get("sport_type", "Team Sport")
+        is_individual_sport = sport_type == "Individual Player"
 
-        # Update view_ref bet_details
-        if self.view_ref and hasattr(self.view_ref, "bet_details"):
-            self.view_ref.bet_details["line"] = line
-            self.view_ref.bet_details["odds_str"] = odds_str
-            try:
-                self.view_ref.bet_details["odds"] = float(odds_str.replace("+", ""))
-            except Exception:
-                self.view_ref.bet_details["odds"] = odds_str
-            # Default units for preview
-            self.view_ref.bet_details["units"] = 1.0
-            self.view_ref.bet_details["units_str"] = "1.0"
+        if is_individual_sport:
+            self._create_individual_sport_fields(
+                selected_league_key, bet_details_from_view)
+        else:
+            self._create_team_sport_fields(bet_details_from_view)
 
-            # Update other fields if they exist
-            if hasattr(self, "team_input"):
-                self.view_ref.bet_details["team"] = self.team_input.value.strip()
-            if hasattr(self, "opponent_input"):
-                self.view_ref.bet_details["opponent"] = (
-                    self.opponent_input.value.strip()
-                )
-            if hasattr(self, "player_input"):
-                self.view_ref.bet_details["player_name"] = (
-                    self.player_input.value.strip()
-                )
-                # For individual sports, set team to player name for consistency
-                self.view_ref.bet_details["team"] = self.player_input.value.strip()
-            if hasattr(self, "player_name_input"):
-                self.view_ref.bet_details["player_name"] = (
-                    self.player_name_input.value.strip()
-                )
+        self._create_common_fields(bet_details_from_view)
 
-        # Generate preview image
+    def _create_game_line_fields(self, bet_details_from_view: Dict[str, Any]):
+        """Create fields for game line bets."""
+        # Line field
+        self.line_input = TextInput(
+            label="Line",
+            required=True,
+            max_length=50,
+            placeholder="e.g., -7.5, +110, Over 220.5",
+            default=bet_details_from_view.get("line", ""),
+        )
+        self.add_item(self.line_input)
+
+        # Odds field
+        self.odds_input = TextInput(
+            label="Odds",
+            required=True,
+            max_length=20,
+            placeholder="e.g., -110, +150",
+            default=str(bet_details_from_view.get("odds", "")),
+        )
+        self.add_item(self.odds_input)
+
+    def _collect_input_values(self) -> Dict[str, str]:
+        """Collect and return input values from the modal."""
+        inputs = {
+            "line": self.line_input.value.strip(),
+            "odds_str": self.odds_input.value.strip(),
+        }
+
+        # Collect optional fields if they exist
+        if hasattr(self, "team_input"):
+            inputs["team"] = self.team_input.value.strip()
+        if hasattr(self, "opponent_input"):
+            inputs["opponent"] = self.opponent_input.value.strip()
+        if hasattr(self, "player_input"):
+            inputs["player_name"] = self.player_input.value.strip()
+        if hasattr(self, "player_name_input"):
+            inputs["player_name"] = self.player_name_input.value.strip()
+
+        return inputs
+
+    def _update_bet_details(self, inputs: Dict[str, str]):
+        """Update the view reference bet details with collected inputs."""
+        if not self.view_ref or not hasattr(self.view_ref, "bet_details"):
+            return
+
+        self.view_ref.bet_details["line"] = inputs["line"]
+        self.view_ref.bet_details["odds_str"] = inputs["odds_str"]
+
+        try:
+            self.view_ref.bet_details["odds"] = float(
+                inputs["odds_str"].replace("+", ""))
+        except Exception:
+            self.view_ref.bet_details["odds"] = inputs["odds_str"]
+
+        # Default units for preview
+        self.view_ref.bet_details["units"] = 1.0
+        self.view_ref.bet_details["units_str"] = "1.0"
+
+        # Update other fields
+        if "team" in inputs:
+            self.view_ref.bet_details["team"] = inputs["team"]
+        if "opponent" in inputs:
+            self.view_ref.bet_details["opponent"] = inputs["opponent"]
+        if "player_name" in inputs:
+            self.view_ref.bet_details["player_name"] = inputs["player_name"]
+            # For individual sports, set team to player name for consistency
+            self.view_ref.bet_details["team"] = inputs["player_name"]
+
+    async def _generate_preview_image(self) -> bool:
+        """Generate preview image for the bet. Returns True if successful."""
         try:
             gen = await self.view_ref.get_bet_slip_generator()
             # Use game line slip for preview
@@ -526,7 +472,7 @@ class StraightBetDetailsModal(Modal):
                 odds=self.view_ref.bet_details.get("odds", 0.0),
                 units=1.0,
                 selected_team=self.view_ref.bet_details.get("team", ""),
-                line=line,
+                line=self.view_ref.bet_details.get("line", ""),
                 bet_id=str(self.view_ref.bet_details.get("bet_serial", "")),
                 timestamp=datetime.now(timezone.utc),
             )
@@ -535,17 +481,20 @@ class StraightBetDetailsModal(Modal):
                 image.save(buf, format="PNG")
                 buf.seek(0)
                 self.view_ref.preview_image_bytes = buf
+                return True
             else:
                 self.view_ref.preview_image_bytes = None
+                return False
         except Exception as e:
             logger.error(f"Error generating preview image: {e}")
             self.view_ref.preview_image_bytes = None
+            return False
 
-        # Advance workflow to units selection
+    async def _advance_workflow(self, interaction: discord.Interaction):
+        """Advance the workflow to the next step."""
         if hasattr(self.view_ref, "current_step"):
-            self.view_ref.current_step = (
-                4  # Set to step 4 (units selection with preview)
-            )
+            # Set to step 4 (units selection with preview)
+            self.view_ref.current_step = 4
             logger.info(f"[MODAL SUBMIT] Calling go_next for step 4.")
             await self.view_ref.go_next(interaction)
         else:
@@ -554,10 +503,25 @@ class StraightBetDetailsModal(Modal):
                 "Error: Could not advance workflow", ephemeral=True
             )
 
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        """Handle submission of game line/prop details to generate preview and advance to units selection."""
+        # Collect inputs
+        inputs = self._collect_input_values()
+
+        # Update bet details
+        self._update_bet_details(inputs)
+
+        # Generate preview image
+        await self._generate_preview_image()
+
+        # Advance workflow to units selection
+        await self._advance_workflow(interaction)
+
     async def on_error(
         self, interaction: discord.Interaction, error: Exception
     ) -> None:
-        logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
+        logger.error(
+            f"Error in StraightBetDetailsModal: {error}", exc_info=True)
         try:
             # Always try to edit the original ephemeral message instead of sending new ones
             await interaction.response.defer()
@@ -567,7 +531,8 @@ class StraightBetDetailsModal(Modal):
             )
             self.view_ref.stop()
         except Exception as edit_error:
-            logger.error(f"Failed to edit message after modal error: {edit_error}")
+            logger.error(
+                f"Failed to edit message after modal error: {edit_error}")
             # Only as last resort, try to send a followup
             try:
                 if interaction.response.is_done():
@@ -612,19 +577,23 @@ def get_player_image(
             BASE_DIR, "static", "logos", "players", sport_id, team_dir_name
         )
         if not os.path.exists(team_dir):
-            logger.warning(f"[Player Image] Team directory not found: {team_dir}")
+            logger.warning(
+                f"[Player Image] Team directory not found: {team_dir}")
             return None, player_name
         # Get all image files in team directory
         image_files = [f for f in os.listdir(team_dir) if f.endswith(".webp")]
         if not image_files:
-            logger.warning(f"[Player Image] No player images found in: {team_dir}")
+            logger.warning(
+                f"[Player Image] No player images found in: {team_dir}")
             return None, player_name
         # Get full paths
-        candidates = [os.path.splitext(os.path.basename(f))[0] for f in image_files]
+        candidates = [os.path.splitext(os.path.basename(f))[
+            0] for f in image_files]
         # Normalize search name
         search_name = player_name.lower().replace(" ", "_")
         # Fuzzy match
-        matches = difflib.get_close_matches(search_name, candidates, n=1, cutoff=0.6)
+        matches = difflib.get_close_matches(
+            search_name, candidates, n=1, cutoff=0.6)
         if matches:
             best_name = matches[0]
             image_path = os.path.join(team_dir, best_name + ".webp")
@@ -632,7 +601,8 @@ def get_player_image(
             logger.info(f"[Player Image] Using fuzzy match: {best_name}")
             return image_path, display_name
         else:
-            logger.warning(f"[Player Image] No fuzzy match found for '{search_name}'")
+            logger.warning(
+                f"[Player Image] No fuzzy match found for '{search_name}'")
             return None, player_name
     except Exception as e:
         logger.error(f"[Player Image] Error getting player image: {str(e)}")
@@ -646,7 +616,8 @@ class BasePlayerPropModal(Modal):
     def __init__(self, league_key: str, bet_details_from_view: Dict[str, Any]):
         league_conf = LEAGUE_CONFIG.get(league_key, {})
         super().__init__(
-            title=league_conf.get("player_prop_modal_title", "Player Prop Bet Details")
+            title=league_conf.get("player_prop_modal_title",
+                                  "Player Prop Bet Details")
         )
         self.league_key = league_key
         self.league_conf = league_conf
@@ -657,7 +628,8 @@ class BasePlayerPropModal(Modal):
             label=league_conf.get("player_prop_label", "Player Name"),
             required=True,
             max_length=100,
-            placeholder=league_conf.get("player_prop_placeholder", "e.g., John Smith"),
+            placeholder=league_conf.get(
+                "player_prop_placeholder", "e.g., John Smith"),
             default=bet_details_from_view.get("player_name", ""),
         )
         self.add_item(self.player_name_input)
@@ -679,7 +651,8 @@ class BasePlayerPropModal(Modal):
             label=league_conf.get("odds_label", "Odds"),
             required=True,
             max_length=10,
-            placeholder=league_conf.get("odds_placeholder", "e.g., -110 or +200"),
+            placeholder=league_conf.get(
+                "odds_placeholder", "e.g., -110 or +200"),
             default=bet_details_from_view.get("odds_str", ""),
         )
         self.add_item(self.odds_input)
@@ -759,91 +732,113 @@ class ParlayBetDetailsModal(Modal):
         )
         self.add_item(self.units_input)
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
+    def _validate_total_odds(self, total_odds_str: str) -> Tuple[bool, Optional[float], Optional[str]]:
+        """Validate total odds input. Returns (is_valid, odds_value, error_message)."""
         try:
-            # Validate and store total odds
+            total_odds = float(total_odds_str)
+            return True, total_odds, None
+        except ValueError:
+            return False, None, "❌ Invalid total odds format. Please use numbers like +500 or -150."
+
+    def _validate_units(self, units_str: str) -> Tuple[bool, Optional[float], Optional[str]]:
+        """Validate units input. Returns (is_valid, units_value, error_message)."""
+        try:
+            units = float(units_str)
+            if units <= 0:
+                return False, None, "❌ Units must be greater than 0."
+            return True, units, None
+        except ValueError:
+            return False, None, "❌ Invalid units format. Please use numbers like 1.0 or 2.5."
+
+    def _update_bet_details(self, total_odds: float, total_odds_str: str, units: float, units_str: str):
+        """Update bet details with validated values."""
+        self.view_ref.bet_details["total_odds"] = total_odds
+        self.view_ref.bet_details["total_odds_str"] = total_odds_str
+        self.view_ref.bet_details["units"] = units
+        self.view_ref.bet_details["units_str"] = units_str
+
+    async def _generate_parlay_preview_image(self, total_odds: float, units: float) -> bool:
+        """Generate parlay preview image. Returns True if successful."""
+        try:
+            from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
+
+            generator = ParlayBetImageGenerator(
+                guild_id=self.view_ref.original_interaction.guild_id
+            )
+
+            # Get legs from bet details
+            legs = self.view_ref.bet_details.get("legs", [])
+
+            # Generate the parlay image
+            image_bytes = generator.generate_image(
+                legs=legs,
+                output_path=None,
+                total_odds=total_odds,
+                units=units,
+                bet_id=str(self.view_ref.bet_details.get("bet_serial", "")),
+                timestamp=datetime.now(timezone.utc),
+            )
+
+            if image_bytes:
+                self.view_ref.preview_image_bytes = io.BytesIO(image_bytes)
+                self.view_ref.preview_image_bytes.seek(0)
+                return True
+            else:
+                self.view_ref.preview_image_bytes = None
+                return False
+        except Exception as e:
+            logger.error(f"Error generating parlay preview image: {e}")
+            self.view_ref.preview_image_bytes = None
+            return False
+
+    async def _advance_parlay_workflow(self, interaction: discord.Interaction):
+        """Advance the parlay workflow to the next step."""
+        if hasattr(self.view_ref, "current_step"):
+            # Set to step 4 (units selection with preview)
+            self.view_ref.current_step = 4
+            logger.info(f"[PARLAY MODAL SUBMIT] Calling go_next for step 4.")
+            await self.view_ref.go_next(interaction)
+        else:
+            logger.error("View reference missing current_step attribute")
+            await interaction.response.send_message(
+                "Error: Could not advance workflow", ephemeral=True
+            )
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        """Handle submission of parlay bet details."""
+        try:
+            # Validate total odds
             total_odds_str = self.total_odds_input.value.strip()
-            try:
-                total_odds = float(total_odds_str)
-                self.view_ref.bet_details["total_odds"] = total_odds
-                self.view_ref.bet_details["total_odds_str"] = total_odds_str
-            except ValueError:
-                await interaction.response.send_message(
-                    "❌ Invalid total odds format. Please use numbers like +500 or -150.",
-                    ephemeral=True,
-                )
+            is_valid_odds, total_odds, odds_error = self._validate_total_odds(
+                total_odds_str)
+            if not is_valid_odds:
+                await interaction.response.send_message(odds_error, ephemeral=True)
                 return
 
-            # Validate and store units
+            # Validate units
             units_str = self.units_input.value.strip()
-            try:
-                units = float(units_str)
-                if units <= 0:
-                    await interaction.response.send_message(
-                        "❌ Units must be greater than 0.", ephemeral=True
-                    )
-                    return
-                self.view_ref.bet_details["units"] = units
-                self.view_ref.bet_details["units_str"] = units_str
-            except ValueError:
-                await interaction.response.send_message(
-                    "❌ Invalid units format. Please use numbers like 1.0 or 2.5.",
-                    ephemeral=True,
-                )
+            is_valid_units, units, units_error = self._validate_units(
+                units_str)
+            if not is_valid_units:
+                await interaction.response.send_message(units_error, ephemeral=True)
                 return
+
+            # Update bet details
+            self._update_bet_details(
+                total_odds, total_odds_str, units, units_str)
 
             # Generate preview image
-            try:
-                from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
-
-                generator = ParlayBetImageGenerator(
-                    guild_id=self.view_ref.original_interaction.guild_id
-                )
-
-                # Get legs from bet details
-                legs = self.view_ref.bet_details.get("legs", [])
-
-                # Generate the parlay image
-                image_bytes = generator.generate_image(
-                    legs=legs,
-                    output_path=None,
-                    total_odds=total_odds,
-                    units=units,
-                    bet_id=str(self.view_ref.bet_details.get("bet_serial", "")),
-                    bet_datetime=datetime.now(timezone.utc),
-                    finalized=True,
-                    units_display_mode=self.view_ref.bet_details.get(
-                        "units_display_mode", "auto"
-                    ),
-                    display_as_risk=self.view_ref.bet_details.get("display_as_risk"),
-                )
-
-                if image_bytes:
-                    self.view_ref.preview_image_bytes = image_bytes
-                else:
-                    self.view_ref.preview_image_bytes = None
-
-            except Exception as e:
-                logger.error(f"Error generating parlay preview image: {e}")
-                self.view_ref.preview_image_bytes = None
+            await self._generate_parlay_preview_image(total_odds, units)
 
             # Advance workflow
-            if hasattr(self.view_ref, "current_step"):
-                self.view_ref.current_step += 1
-                logger.info(
-                    f"[PARLAY MODAL] Advancing to step {self.view_ref.current_step}"
-                )
-                await self.view_ref.go_next(interaction)
-            else:
-                logger.error("View reference missing current_step attribute")
-                await interaction.response.send_message(
-                    "Error: Could not advance workflow", ephemeral=True
-                )
+            await self._advance_parlay_workflow(interaction)
 
         except Exception as e:
-            logger.error(f"Error in ParlayBetDetailsModal: {e}", exc_info=True)
+            logger.error(
+                f"Error in ParlayBetDetailsModal on_submit: {e}", exc_info=True)
             await interaction.response.send_message(
-                "❌ Error processing parlay details. Please try again.", ephemeral=True
+                "❌ Error processing parlay bet details. Please try again.",
+                ephemeral=True,
             )
 
     async def on_error(

@@ -170,26 +170,10 @@ class PlayerPropImageGenerator:
         return asset_loader.load_player_image(player_name, team_name, league, guild_id)
 
     @staticmethod
-    def generate_player_prop_bet_image(
-        player_name,
-        team_name,
-        league,
-        line,
-        prop_type,
-        units,
-        output_path=None,
-        bet_id=None,
-        timestamp=None,
-        guild_id=None,
-        odds=None,
-        units_display_mode="auto",
-        display_as_risk=None,
-    ):
-        """Generates a player prop bet slip image. Layout matches game line bet slip, except right side is player image and team/player names are white."""
+    def _setup_player_prop_image_parameters():
+        """Setup image parameters and fonts for player prop images."""
+        from PIL import ImageFont
 
-        from PIL import Image, ImageDraw, ImageFont
-
-        # Layout and font sizes match game line bet slip
         image_width, image_height = 600, 400
         bg_color = "#232733"
         padding = 24
@@ -201,52 +185,57 @@ class PlayerPropImageGenerator:
         odds_font_size = 28
         risk_font_size = 24
         footer_font_size = 18
-        lock_icon_path = "bot/static/lock_icon.webp"
+
         font_dir = "bot/assets/fonts"
-        font_bold = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size)
-        font_bold_team = ImageFont.truetype(
-            f"{font_dir}/Roboto-Bold.ttf", team_font_size
-        )
-        font_bold_player = ImageFont.truetype(
-            f"{font_dir}/Roboto-Bold.ttf", player_font_size
-        )
-        font_line = ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", line_font_size)
-        font_odds = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size)
-        font_risk = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size)
-        font_footer = ImageFont.truetype(
-            f"{font_dir}/Roboto-Regular.ttf", footer_font_size
-        )
+        fonts = {
+            'bold': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
+            'bold_team': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", team_font_size),
+            'bold_player': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", player_font_size),
+            'line': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", line_font_size),
+            'odds': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
+            'risk': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
+            'footer': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", footer_font_size)
+        }
 
-        # Use default background color
-        bg_color = "#232733"  # Default background
+        return {
+            'image_width': image_width,
+            'image_height': image_height,
+            'bg_color': bg_color,
+            'padding': padding,
+            'logo_size': logo_size,
+            'fonts': fonts
+        }
 
-        image = Image.new("RGB", (image_width, image_height), bg_color)
-        draw = ImageDraw.Draw(image)
-
-        # Header (league logo + text)
-        logo_display_size = (45, 45)
-        league_upper = league.upper()
-        league_lower = league.lower()
+    @staticmethod
+    def _find_league_logo_for_player_prop(league):
+        """Find the appropriate league logo file for player prop images."""
         from bot.config.asset_paths import get_sport_category_for_path
 
+        league_upper = league.upper()
+        league_lower = league.lower()
         sport_category = get_sport_category_for_path(league_upper)
+
         league_logo_path = f"bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.webp"
+
         try:
+            from PIL import Image
             league_logo_original = Image.open(league_logo_path).convert("RGBA")
-            # Maintain aspect ratio when resizing
-            league_logo_original.thumbnail(logo_display_size, Image.Resampling.LANCZOS)
-            league_logo = league_logo_original
+            league_logo_original.thumbnail((45, 45), Image.Resampling.LANCZOS)
+            return league_logo_original
         except Exception:
-            league_logo = None
+            return None
+
+    @staticmethod
+    def _create_player_prop_header_section(image, draw, params, league, league_logo):
+        """Create the header section for player prop images."""
+        logo_display_size = (45, 45)
+
         # Get proper league display name
         from bot.config.leagues import LEAGUE_CONFIG
-
-        league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league_upper)
+        league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league.upper())
 
         # Dynamic header text sizing
-        def create_header_text_with_fallback(
-            league_name, font, max_width, logo_width=0
-        ):
+        def create_header_text_with_fallback(league_name, font, max_width, logo_width=0):
             """Create header text that fits within the available width."""
             # Start with full text
             full_text = f"{league_name} - Player Prop"
@@ -270,273 +259,150 @@ class PlayerPropImageGenerator:
 
             # If still too long, truncate the league name
             available_width = max_width - font.getbbox(" - PP")[2] - 10  # 10px buffer
-            truncated_name = league_name
-            while (
-                truncated_name and font.getbbox(f"{truncated_name} - PP")[2] > max_width
-            ):
-                truncated_name = truncated_name[:-1]
-
-            if truncated_name:
-                return f"{truncated_name} - PP"
+            truncated = league_name
+            while truncated and font.getbbox(f"{truncated} - PP")[2] > max_width:
+                truncated = truncated[:-1]
+            if truncated:
+                return f"{truncated} - PP"
             else:
-                return "Player Prop"  # Fallback
+                return " - PP"
 
-        # Calculate available width for text (accounting for logo and padding)
-        logo_space = logo_display_size[0] + 12 if league_logo else 0
-        available_text_width = (
-            image_width - 48 - logo_space
-        )  # 48px total padding (24px each side)
+        # Calculate available width for text
+        logo_space = logo_display_size[0] + 15 if league_logo else 0
+        available_text_width = params['image_width'] - 48 - logo_space
 
         header_text = create_header_text_with_fallback(
-            league_display_name, font_bold, available_text_width, logo_space
+            league_display_name, params['fonts']['bold'], available_text_width, logo_space
         )
 
-        header_bbox = font_bold.getbbox(header_text)
-        header_w = header_bbox[2] - header_bbox[0]
-        header_h = header_bbox[3] - header_bbox[1]
-        logo_w = league_logo.size[0] if league_logo else 0
-        logo_h = league_logo.size[1] if league_logo else 0
-        gap = 12 if league_logo else 0
-        total_header_w = logo_w + gap + header_w
-        block_h = max(logo_h, header_h)
-        block_x = (image_width - total_header_w) // 2
+        # Calculate text position
+        header_w, header_h = params['fonts']['bold'].getbbox(header_text)[2:]
+        block_h = max(logo_display_size[1], header_h)
+        block_w = logo_display_size[0] + 15 + header_w if league_logo else header_w
+        block_x = (params['image_width'] - block_w) // 2
         block_y = 25
+
         if league_logo:
-            logo_y = block_y + (block_h - logo_h) // 2
+            logo_y = block_y + (block_h - logo_display_size[1]) // 2
             text_y = block_y + (block_h - header_h) // 2
-            # Use RGBA image as mask for proper transparency
-            if league_logo.mode == 'RGBA':
+            if league_logo.mode == "RGBA":
                 image.paste(league_logo, (block_x, logo_y), league_logo)
             else:
                 image.paste(league_logo, (block_x, logo_y))
-            text_x = block_x + logo_w + gap
+            text_x = block_x + logo_display_size[0] + 15
         else:
             text_x = block_x
             text_y = block_y
-        draw.text(
-            (text_x, text_y), header_text, font=font_bold, fill="white", anchor="lt"
+
+        draw.text((text_x, text_y), header_text, font=params['fonts']['bold'], fill="white", anchor="lt")
+
+    @staticmethod
+    def _create_player_prop_teams_section(image, draw, params, home_team, away_team, player_name, player_image, player_team):
+        """Create the teams section for player prop images."""
+        # Load team logos
+        home_logo = PlayerPropImageGenerator._load_team_logo(home_team, league)
+        away_logo = PlayerPropImageGenerator._load_team_logo(away_team, league)
+
+        # Draw teams section using existing method
+        PlayerPropImageGenerator.draw_player_prop_section(
+            image, draw, params['image_width'], True, home_logo, away_logo,
+            player_name, player_image, player_team, home_team, away_team, False
         )
 
-        # Teams/Player Section
-        y_base = 85
-        section_width = image_width // 2 - padding * 1.5
-        team_section_center_x = padding + section_width // 2
-        player_section_center_x = image_width - padding - section_width // 2
+    @staticmethod
+    def _create_player_prop_bet_details_section(draw, params, line, prop_type, odds, units, units_display_mode, display_as_risk):
+        """Create the bet details section for player prop images."""
+        # Calculate positions
+        line_y = 200
+        odds_y = line_y + 40
+        units_y = odds_y + 40
 
-        # Team logo (left)
-        team_logo = PlayerPropImageGenerator._load_team_logo(
-            team_name, league, guild_id
-        )
-        if team_logo:
-            team_logo_copy = team_logo.convert("RGBA").copy()
-            team_logo_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
-            team_logo_x = int(team_section_center_x - team_logo_copy.size[0] // 2)
-            team_logo_y = int(y_base + (logo_size[1] - team_logo_copy.size[1]) // 2)
-            # Use RGBA image as mask for proper transparency
-            if team_logo_copy.mode == 'RGBA':
-                image.paste(team_logo_copy, (team_logo_x, team_logo_y), team_logo_copy)
-            else:
-                image.paste(team_logo_copy, (team_logo_x, team_logo_y))
+        # Draw line
+        line_text = f"{prop_type}: {line}"
+        draw.text((params['padding'], line_y), line_text, fill=(255, 255, 255), font=params['fonts']['line'])
 
-        # Player image (right)
-        player_image, display_name = PlayerPropImageGenerator._load_player_image(
-            player_name, team_name, league, guild_id
-        )
-        if player_image:
-            player_image_copy = player_image.convert("RGBA").copy()
-            player_image_copy.thumbnail(logo_size, Image.Resampling.LANCZOS)
-            player_image_x = int(player_section_center_x - player_image_copy.size[0] // 2)
-            player_image_y = int(y_base + (logo_size[1] - player_image_copy.size[1]) // 2)
-            # Use RGBA image as mask for proper transparency
-            if player_image_copy.mode == 'RGBA':
-                image.paste(player_image_copy, (player_image_x, player_image_y), player_image_copy)
-            else:
-                image.paste(player_image_copy, (player_image_x, player_image_y), player_image_copy)
+        # Draw odds if provided
+        if odds:
+            odds_text = f"Odds: {odds}"
+            draw.text((params['padding'], odds_y), odds_text, fill=(255, 255, 255), font=params['fonts']['odds'])
 
-        # Team name (left, white)
-        team_name_w, _ = font_bold_team.getbbox(team_name)[2:]
-        team_name_x = team_section_center_x - team_name_w // 2
-        team_name_y = y_base + logo_size[1] + 8
-        draw.text(
-            (team_name_x, team_name_y),
-            team_name,
-            font=font_bold_team,
-            fill="white",
-            anchor="lt",
-        )
-
-        # Player name (right, white)
-        player_name_w, _ = font_bold_player.getbbox(display_name)[2:]
-        player_name_x = player_section_center_x - player_name_w // 2
-        player_name_y = y_base + logo_size[1] + 8
-        draw.text(
-            (player_name_x, player_name_y),
-            display_name,
-            font=font_bold_player,
-            fill="white",
-            anchor="lt",
-        )
-
-        # Remove prop_acronyms and use full, capitalized prop type
-        prop_full = prop_type.replace("_", " ").title()
-        # Combine line and prop type for display
-        line_and_prop = f"{line} {prop_full}"
-        line_and_prop_w, line_and_prop_h = font_line.getbbox(line_and_prop)[2:]
-        line_and_prop_y = (
-            team_name_y + 40
-        )  # Increased from 16 to 40 for more vertical space
-        draw.text(
-            ((image_width - line_and_prop_w) // 2, line_and_prop_y),
-            line_and_prop,
-            font=font_line,
-            fill="white",
-            anchor="lt",
-        )
-
-        # Separator line above odds
-        sep_above_odds_y = line_and_prop_y + line_and_prop_h + 18
-        draw.line(
-            [(padding, sep_above_odds_y), (image_width - padding, sep_above_odds_y)],
-            fill="#aaaaaa",
-            width=1,
-        )
-
-        # Odds (displayed between separator and units line)
-        odds_val = None
-        odds_text = ""
-        if odds is not None:
-            try:
-                odds_val = float(odds)
-                odds_text = (
-                    f"{int(odds_val):+d}" if odds_val > 0 else f"{int(odds_val):d}"
-                )
-            except Exception:
-                odds_text = ""
-        odds_w, odds_h = font_odds.getbbox(odds_text)[2:] if odds_text else (0, 0)
-        odds_y = sep_above_odds_y + 24
-        if odds_text:
-            draw.text(
-                ((image_width - odds_w) // 2, odds_y),
-                odds_text,
-                font=font_odds,
-                fill="#FFD700",
-                anchor="lt",
-            )
-
-        # Risk/Units (yellow, lock icons) - move below odds
-        from bot.utils.bet_utils import (
-            calculate_profit_from_odds,
-            determine_risk_win_display_auto,
-            format_units_display,
-        )
-
-        profit = (
-            calculate_profit_from_odds(odds_val, units) if odds_val is not None else 0.0
-        )
-        unit_label = "Unit" if units <= 1 else "Units"
-
-        if units_display_mode == "manual" and display_as_risk is not None:
-            payout_text = format_units_display(units, display_as_risk, unit_label)
+        # Draw units/risk
+        if display_as_risk:
+            risk_text = f"Risk: {units} units"
+            draw.text((params['padding'], units_y), risk_text, fill=(255, 255, 255), font=params['fonts']['risk'])
         else:
-            # Auto mode: intelligent determination based on odds and profit ratio
-            if units_display_mode == "auto":
-                display_as_risk_auto = determine_risk_win_display_auto(
-                    odds_val or 0, units, profit
-                )
-                payout_text = format_units_display(
-                    units, display_as_risk_auto, unit_label
-                )
-            else:
-                # Fallback to old logic for backward compatibility
-                if profit < 1.0:
-                    payout_text = f"To Risk {units:.2f} {unit_label}"
-                else:
-                    payout_text = f"To Win {units:.2f} {unit_label}"
-        payout_w, payout_h = font_risk.getbbox(payout_text)[2:]
-        payout_y = odds_y + odds_h + 8
-        lock_icon = None
-        try:
-            lock_icon = Image.open(lock_icon_path).resize((24, 24))
-            # Convert to RGBA to ensure proper transparency handling
-            if lock_icon.mode != 'RGBA':
-                lock_icon = lock_icon.convert('RGBA')
-        except Exception:
-            lock_icon = None
-        if lock_icon:
-            # Use RGBA image as mask for proper transparency
-            if lock_icon.mode == 'RGBA':
-                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y), lock_icon)
-            else:
-                image.paste(lock_icon, ((image_width - payout_w) // 2 - 28, payout_y))
-            draw.text(
-                ((image_width - payout_w) // 2, payout_y),
-                payout_text,
-                font=font_risk,
-                fill="#FFD700",
-                anchor="lt",
-            )
-            # Use RGBA image as mask for proper transparency
-            if lock_icon.mode == 'RGBA':
-                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y), lock_icon)
-            else:
-                image.paste(lock_icon, ((image_width - payout_w) // 2 + payout_w + 8, payout_y))
-        else:
-            draw.text(
-                ((image_width - payout_w) // 2, payout_y),
-                payout_text,
-                font=font_risk,
-                fill="#FFD700",
-                anchor="lt",
-            )
+            units_text = f"Units: {units}"
+            draw.text((params['padding'], units_y), units_text, fill=(255, 255, 255), font=params['fonts']['line'])
 
-        # Footer (bet id and timestamp) - moved down to avoid overlap
-        footer_padding = 25  # Increased from 12 to 25
-        footer_y = image_height - footer_padding - font_footer.size
+    @staticmethod
+    def _create_player_prop_footer_section(draw, params, bet_id, timestamp):
+        """Create the footer section for player prop images."""
+        footer_y = params['image_height'] - 50
 
-        # Add extra spacing from the content above
-        content_bottom = payout_y + payout_h + 20  # Add 20px spacing after payout text
-        if footer_y < content_bottom + 30:  # Ensure at least 30px gap
-            footer_y = content_bottom + 30
+        # Draw bet ID if provided
+        if bet_id:
+            bet_id_text = f"Bet ID: {bet_id}"
+            draw.text((params['padding'], footer_y), bet_id_text, fill=(200, 200, 200), font=params['fonts']['footer'])
 
-        # Ensure bet_id is properly formatted
-        if bet_id and str(bet_id).strip():
-            bet_id_text = f"Bet #{str(bet_id).strip()}"
-        else:
-            bet_id_text = ""
-
+        # Draw timestamp
         if timestamp:
-            if isinstance(timestamp, str):
-                timestamp_text = timestamp
-            else:
-                timestamp_text = timestamp.strftime("%Y-%m-%d %H:%M UTC")
-        else:
-            timestamp_text = ""
+            timestamp_text = f"Created: {timestamp}"
+            bbox = draw.textbbox((0, 0), timestamp_text, font=params['fonts']['footer'])
+            text_width = bbox[2] - bbox[0]
+            timestamp_x = params['image_width'] - text_width - params['padding']
+            draw.text((timestamp_x, footer_y), timestamp_text, fill=(200, 200, 200), font=params['fonts']['footer'])
 
-        # Draw bet ID bottom left
-        if bet_id_text:
-            draw.text(
-                (padding, footer_y), bet_id_text, font=font_footer, fill="#888888"
-            )
+    @staticmethod
+    def generate_player_prop_bet_image(
+        player_name,
+        team_name,
+        league,
+        line,
+        prop_type,
+        units,
+        output_path=None,
+        bet_id=None,
+        timestamp=None,
+        guild_id=None,
+        odds=None,
+        units_display_mode="auto",
+        display_as_risk=None,
+    ):
+        """Generates a player prop bet slip image."""
+        from PIL import Image, ImageDraw
 
-        # Draw timestamp bottom right
-        if timestamp_text:
-            ts_bbox = font_footer.getbbox(timestamp_text)
-            ts_width = ts_bbox[2] - ts_bbox[0]
-            draw.text(
-                (image_width - padding - ts_width, footer_y),
-                timestamp_text,
-                font=font_footer,
-                fill="#888888",
-            )
+        # Setup image parameters and fonts
+        params = PlayerPropImageGenerator._setup_player_prop_image_parameters()
 
-        # Save or return as bytes
+        # Create base image
+        image = Image.new("RGB", (params['image_width'], params['image_height']), params['bg_color'])
+        draw = ImageDraw.Draw(image)
+
+        # Find league logo
+        league_logo = PlayerPropImageGenerator._find_league_logo_for_player_prop(league)
+
+        # Create header section
+        PlayerPropImageGenerator._create_player_prop_header_section(image, draw, params, league, league_logo)
+
+        # Load player image
+        player_image = PlayerPropImageGenerator._load_player_image(player_name, team_name, league, guild_id)
+
+        # Create teams section
+        PlayerPropImageGenerator._create_player_prop_teams_section(
+            image, draw, params, home_team, away_team, player_name, player_image, team_name
+        )
+
+        # Create bet details section
+        PlayerPropImageGenerator._create_player_prop_bet_details_section(
+            draw, params, line, prop_type, odds, units, units_display_mode, display_as_risk
+        )
+
+        # Create footer section
+        PlayerPropImageGenerator._create_player_prop_footer_section(draw, params, bet_id, timestamp)
+
+        # Save or return the image
         if output_path:
-            image.save(output_path)
-            return None
+            image.save(output_path, "PNG")
+            return output_path
         else:
-            import io
-
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG")
-            buffer.seek(0)
-            return buffer.getvalue()
+            return image

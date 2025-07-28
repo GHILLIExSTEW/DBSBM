@@ -13,6 +13,26 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 
+class DailyRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
+    """Handler that creates a new log file each day."""
+
+    def __init__(self, filename: str, when: str = "midnight", interval: int = 1, backup_count: int = 30):
+        # Ensure the directory exists
+        log_dir = os.path.dirname(filename)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        super().__init__(filename, when=when, interval=interval, backupCount=backup_count)
+        self.suffix = "%Y-%m-%d"
+        self.namer = self._namer
+
+    def _namer(self, default_name: str) -> str:
+        """Custom namer to use date format in filename."""
+        base_name = os.path.splitext(default_name)[0]
+        extension = os.path.splitext(default_name)[1]
+        return f"{base_name}{extension}"
+
+
 class StructuredFormatter(logging.Formatter):
     """Structured formatter for JSON logging."""
 
@@ -58,7 +78,8 @@ def setup_logging(
     log_level: str = "INFO",
     log_file: Optional[str] = None,
     structured: bool = False,
-    production: bool = False
+    production: bool = False,
+    use_daily_logs: bool = True
 ) -> None:
     """Setup logging configuration for the application."""
 
@@ -82,28 +103,48 @@ def setup_logging(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
-
-    # File handler if specified
-    if log_file:
-        # Create logs directory if it doesn't exist
-        log_dir = os.path.dirname(log_file)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-
-        # Rotating file handler
-        file_handler = logging.handlers.RotatingFileHandler(
-            log_file,
-            maxBytes=10*1024*1024,  # 10MB
-            backupCount=5
+    # File handler - use daily rotating logs if requested
+    if use_daily_logs:
+        # Create daily log file in db_logs directory
+        daily_log_file = "db_logs/dbsbm_daily.log"
+        file_handler = DailyRotatingFileHandler(
+            daily_log_file,
+            when="midnight",
+            interval=1,
+            backup_count=30  # Keep 30 days of logs
         )
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
+
+        # Also add a console handler for critical errors only
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.CRITICAL)
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
+    else:
+        # Original behavior - console handler
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
+
+        # File handler if specified
+        if log_file:
+            # Create logs directory if it doesn't exist
+            log_dir = os.path.dirname(log_file)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+
+            # Rotating file handler
+            file_handler = logging.handlers.RotatingFileHandler(
+                log_file,
+                maxBytes=10*1024*1024,  # 10MB
+                backupCount=5
+            )
+            file_handler.setLevel(level)
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
 
     # Set specific logger levels for production
     if production:
@@ -230,7 +271,8 @@ def configure_production_logging():
         log_level="INFO",
         log_file="logs/dbsbm.log",
         structured=True,
-        production=True
+        production=True,
+        use_daily_logs=True
     )
 
 
@@ -240,7 +282,8 @@ def configure_development_logging():
         log_level="DEBUG",
         log_file="logs/dbsbm_dev.log",
         structured=False,
-        production=False
+        production=False,
+        use_daily_logs=True
     )
 
 
@@ -250,7 +293,8 @@ def configure_test_logging():
         log_level="WARNING",
         log_file=None,
         structured=False,
-        production=False
+        production=False,
+        use_daily_logs=False  # Keep console output for tests
     )
 
 

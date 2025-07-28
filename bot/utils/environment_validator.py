@@ -77,44 +77,60 @@ class EnvironmentValidator:
 
     @classmethod
     def validate_all(cls) -> Tuple[bool, List[str]]:
-        """
-        Validate all environment variables using centralized configuration.
-
-        Returns:
-            Tuple[bool, List[str]]: (is_valid, list_of_errors)
-        """
+        """Validate all environment configurations."""
         errors = []
 
+        # Validate centralized configuration
         try:
-            # Use centralized configuration validation
-            settings = get_settings()
-            validation_errors = settings.validate_required_settings()
-            if validation_errors:
-                errors.extend(validation_errors)
-                logger.error("❌ Centralized configuration validation failed")
-                for error in validation_errors:
-                    logger.error(f"  - {error}")
-            else:
-                logger.info("✅ Centralized configuration validation passed")
-
+            from config.settings import validate_settings
+            config_errors = validate_settings()
+            if config_errors:
+                errors.extend(config_errors)
+                logger.error("Centralized configuration validation failed")
         except Exception as e:
-            logger.warning(f"Could not use centralized configuration: {e}")
-            # Fallback to old validation method
-            errors.extend(cls._legacy_validate_all())
+            errors.append(f"Centralized configuration validation error: {str(e)}")
+            logger.error("Centralized configuration validation failed")
 
-        # Validate specific values
-        validation_errors = cls._validate_values()
-        if validation_errors:
-            errors.extend(validation_errors)
+        # Validate database connection
+        try:
+            db_valid = cls.validate_database_connection()
+            if not db_valid:
+                errors.append("Database connection validation failed")
+        except Exception as e:
+            errors.append(f"Database connection validation error: {str(e)}")
+
+        # Validate Redis connection
+        try:
+            redis_valid = cls.validate_redis_connection()
+            if not redis_valid:
+                errors.append("Redis connection validation failed")
+        except Exception as e:
+            errors.append(f"Redis connection validation error: {str(e)}")
+
+        # Validate API connections
+        try:
+            api_valid = cls.validate_api_connections()
+            if not api_valid:
+                errors.append("API connection validation failed")
+        except Exception as e:
+            errors.append(f"API connection validation error: {str(e)}")
+
+        # Validate Discord connection
+        try:
+            discord_valid = cls.validate_discord_connection()
+            if not discord_valid:
+                errors.append("Discord connection validation failed")
+        except Exception as e:
+            errors.append(f"Discord connection validation error: {str(e)}")
 
         is_valid = len(errors) == 0
 
-        if is_valid:
-            logger.info("✅ All environment variables validated successfully")
-        else:
-            logger.error("❌ Environment validation failed")
+        if not is_valid:
+            logger.error("Environment validation failed")
             for error in errors:
                 logger.error(f"  - {error}")
+            logger.error("Environment validation failed!")
+            logger.error("Please check your .env file and ensure all required variables are set.")
 
         return is_valid, errors
 

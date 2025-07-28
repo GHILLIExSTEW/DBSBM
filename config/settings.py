@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from pydantic.types import SecretStr
 from pydantic_settings import BaseSettings
 
@@ -55,18 +55,21 @@ class DatabaseSettings(BaseSettings):
         description="Connection timeout in seconds",
     )
 
-    @validator("pool_max_size")
-    def validate_pool_max_size(cls, v, values):
+    @field_validator("pool_max_size")
+    @classmethod
+    def validate_pool_max_size(cls, v, info):
         """Ensure max_size is greater than min_size."""
-        if "pool_min_size" in values and v < values["pool_min_size"]:
+        if (
+            info.data
+            and "pool_min_size" in info.data
+            and v < info.data["pool_min_size"]
+        ):
             raise ValueError(
                 "pool_max_size must be greater than or equal to pool_min_size"
             )
         return v
 
-    class Config:
-        env_prefix = "MYSQL_"
-        case_sensitive = False
+    model_config = {"env_prefix": "MYSQL_", "case_sensitive": False}
 
 
 class APISettings(BaseSettings):
@@ -102,9 +105,7 @@ class APISettings(BaseSettings):
         True, env="API_ENABLED", description="Enable API functionality"
     )
 
-    class Config:
-        env_prefix = "API_"
-        case_sensitive = False
+    model_config = {"env_prefix": "API_", "case_sensitive": False}
 
 
 class DiscordSettings(BaseSettings):
@@ -125,9 +126,13 @@ class DiscordSettings(BaseSettings):
         description="Authorized user ID for logo loading",
     )
 
-    @validator(
-        "test_guild_id", "authorized_user_id", "authorized_load_logo_user_id", pre=True
+    @field_validator(
+        "test_guild_id",
+        "authorized_user_id",
+        "authorized_load_logo_user_id",
+        mode="before",
     )
+    @classmethod
     def validate_discord_ids(cls, v):
         """Validate Discord IDs are positive integers."""
         if v is not None:
@@ -140,9 +145,7 @@ class DiscordSettings(BaseSettings):
                 raise ValueError("Discord ID must be a valid integer")
         return v
 
-    class Config:
-        env_prefix = "DISCORD_"
-        case_sensitive = False
+    model_config = {"env_prefix": "DISCORD_", "case_sensitive": False}
 
 
 class RedisSettings(BaseSettings):
@@ -160,9 +163,7 @@ class RedisSettings(BaseSettings):
         False, env="REDIS_ENABLED", description="Enable Redis caching"
     )
 
-    class Config:
-        env_prefix = "REDIS_"
-        case_sensitive = False
+    model_config = {"env_prefix": "REDIS_", "case_sensitive": False}
 
 
 class LoggingSettings(BaseSettings):
@@ -182,7 +183,8 @@ class LoggingSettings(BaseSettings):
         5, env="LOG_BACKUP_COUNT", ge=0, le=20, description="Number of backup files"
     )
 
-    @validator("level")
+    @field_validator("level")
+    @classmethod
     def validate_log_level(cls, v):
         """Validate log level is valid."""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -190,9 +192,7 @@ class LoggingSettings(BaseSettings):
             raise ValueError(f'Log level must be one of: {", ".join(valid_levels)}')
         return v.upper()
 
-    class Config:
-        env_prefix = "LOG_"
-        case_sensitive = False
+    model_config = {"env_prefix": "LOG_", "case_sensitive": False}
 
 
 class WebAppSettings(BaseSettings):
@@ -208,7 +208,8 @@ class WebAppSettings(BaseSettings):
         None, env="WEB_SERVER_URL", description="Web server URL"
     )
 
-    @validator("env")
+    @field_validator("env")
+    @classmethod
     def validate_flask_env(cls, v):
         """Validate Flask environment."""
         valid_envs = ["development", "production", "testing"]
@@ -218,9 +219,7 @@ class WebAppSettings(BaseSettings):
             )
         return v.lower()
 
-    class Config:
-        env_prefix = "WEBAPP_"
-        case_sensitive = False
+    model_config = {"env_prefix": "WEBAPP_", "case_sensitive": False}
 
 
 class SchedulerSettings(BaseSettings):
@@ -238,9 +237,7 @@ class SchedulerSettings(BaseSettings):
         description="Scheduler interval in seconds",
     )
 
-    class Config:
-        env_prefix = "SCHEDULER_"
-        case_sensitive = False
+    model_config = {"env_prefix": "SCHEDULER_", "case_sensitive": False}
 
 
 class FeatureSettings(BaseSettings):
@@ -259,9 +256,7 @@ class FeatureSettings(BaseSettings):
         True, env="MONITORING_ENABLED", description="Enable monitoring"
     )
 
-    class Config:
-        env_prefix = "FEATURE_"
-        case_sensitive = False
+    model_config = {"env_prefix": "FEATURE_", "case_sensitive": False}
 
 
 class Settings(BaseSettings):
@@ -294,7 +289,8 @@ class Settings(BaseSettings):
         self.scheduler = SchedulerSettings()
         self.features = FeatureSettings()
 
-    @validator("environment")
+    @field_validator("environment")
+    @classmethod
     def validate_environment(cls, v):
         """Validate environment setting."""
         valid_envs = ["development", "staging", "production", "testing"]
@@ -304,7 +300,7 @@ class Settings(BaseSettings):
 
     def get_masked_config(self) -> Dict[str, any]:
         """Get configuration with sensitive data masked for logging."""
-        config = self.dict()
+        config = self.model_dump()
 
         # Mask sensitive fields
         sensitive_fields = ["password", "token", "key"]
@@ -358,10 +354,11 @@ class Settings(BaseSettings):
         """Check if running in testing mode."""
         return self.environment == "testing"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+    }
 
 
 # Global settings instance
