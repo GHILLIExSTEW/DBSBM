@@ -1302,22 +1302,22 @@ class SystemIntegrationService:
             for service_id, registry in self.service_registry.items():
                 query = """
                 UPDATE service_registry
-                SET health_check_interval = :health_check_interval,
-                    circuit_breaker_threshold = :circuit_breaker_threshold,
-                    circuit_breaker_timeout = :circuit_breaker_timeout,
-                    load_balancer_type = :load_balancer_type,
-                    updated_at = :updated_at
-                WHERE service_id = :service_id
+                SET health_check_interval = %s,
+                    circuit_breaker_threshold = %s,
+                    circuit_breaker_timeout = %s,
+                    load_balancer_type = %s,
+                    updated_at = %s
+                WHERE service_id = %s
                 """
 
-                await self.db_manager.execute(query, {
-                    'health_check_interval': registry.health_check_interval,
-                    'circuit_breaker_threshold': registry.circuit_breaker_threshold,
-                    'circuit_breaker_timeout': registry.circuit_breaker_timeout,
-                    'load_balancer_type': registry.load_balancer_type.value,
-                    'updated_at': datetime.utcnow(),
-                    'service_id': service_id
-                })
+                await self.db_manager.execute(query, (
+                    registry.health_check_interval,
+                    registry.circuit_breaker_threshold,
+                    registry.circuit_breaker_timeout,
+                    registry.load_balancer_type.value,
+                    datetime.utcnow(),
+                    service_id
+                ))
 
             logger.debug("Updated service registry in database")
 
@@ -1329,18 +1329,18 @@ class SystemIntegrationService:
         try:
             query = """
             UPDATE load_balancers
-            SET instances = :instances, updated_at = :updated_at
-            WHERE balancer_id = :balancer_id
+            SET instances = %s, updated_at = %s
+            WHERE balancer_id = %s
             """
 
             instances_json = json.dumps([asdict(inst)
                                         for inst in balancer.instances])
 
-            await self.db_manager.execute(query, {
-                'instances': instances_json,
-                'updated_at': datetime.utcnow(),
-                'balancer_id': balancer.balancer_id
-            })
+            await self.db_manager.execute(query, (
+                instances_json,
+                datetime.utcnow(),
+                balancer.balancer_id
+            ))
 
             logger.debug(
                 f"Updated load balancer metrics for {balancer.balancer_id}")
