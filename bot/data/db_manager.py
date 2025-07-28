@@ -103,7 +103,6 @@ class DatabaseManager:
                         connect_timeout=self.connect_timeout,
                         echo=False,
                         charset="utf8mb4",
-                        pool_timeout=self.pool_timeout,
                     )
                     async with self._pool.acquire() as conn:
                         async with conn.cursor() as cursor:

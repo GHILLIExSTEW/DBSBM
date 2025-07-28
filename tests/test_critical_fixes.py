@@ -146,6 +146,7 @@ class TestDatabaseConfiguration:
         assert 1 <= db_manager.pool_min_size <= 50
         assert 1 <= db_manager.pool_max_size <= 100
         assert 0 <= db_manager.pool_max_overflow <= 50
+        # Note: pool_timeout is not used in aiomysql.create_pool() as it's not supported
         assert 5 <= db_manager.pool_timeout <= 300
         assert 5 <= db_manager.connect_timeout <= 300
 
