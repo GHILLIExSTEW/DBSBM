@@ -840,7 +840,7 @@ class BettingBot(commands.Bot):
             self.data_sync_service.start(),
             self.live_game_channel_service.start(),
             self.platinum_service.start(),
-            self.predictive_service.initialize(),
+            self.predictive_service.start(),
         ]
 
         # Initialize real ML service
