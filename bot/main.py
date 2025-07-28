@@ -791,18 +791,14 @@ class BettingBot(commands.Bot):
             await self.close()
             sys.exit("Database connection failed.")
 
-        # Initialize required database tables
-        await self.db_manager.execute(
-            """
-            CREATE TABLE IF NOT EXISTS guild_settings (
-                guild_id INTEGER PRIMARY KEY,
-                live_game_updates INTEGER DEFAULT 0,
-                is_paid INTEGER DEFAULT 0,
-                subscription_level VARCHAR(20) DEFAULT 'initial'
-            )
-            """
-        )
-        logger.info("Ensured guild_settings table exists.")
+        # Initialize database schema
+        try:
+            await self.db_manager.initialize_db()
+            logger.info("Database schema initialized successfully.")
+        except Exception as e:
+            logger.error(f"Database initialization error: {e}")
+            # Don't exit, just log the error and continue
+            # The bot can still function with basic features
 
         # Only load extensions if we're not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
