@@ -462,13 +462,72 @@ _global_monitor: Optional[PerformanceMonitor] = None
 
 def get_performance_monitor() -> PerformanceMonitor:
     """Get the global performance monitor instance."""
-    global _global_monitor
-    if _global_monitor is None:
-        _global_monitor = PerformanceMonitor()
-    return _global_monitor
+    if not hasattr(get_performance_monitor, '_instance'):
+        get_performance_monitor._instance = PerformanceMonitor()
+    return get_performance_monitor._instance
 
 
-# Decorator for monitoring function performance
+def time_operation(operation_name: str):
+    """
+    Decorator to time operations and record metrics.
+
+    Args:
+        operation_name: Name of the operation to track
+    """
+    def decorator(func):
+        async def async_wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = await func(*args, **kwargs)
+                execution_time = time.time() - start_time
+
+                # Record the metric
+                monitor = get_performance_monitor()
+                monitor.record_response_time(operation_name, execution_time)
+                monitor.record_request(operation_name, success=True)
+
+                return result
+            except Exception as e:
+                execution_time = time.time() - start_time
+
+                # Record the error
+                monitor = get_performance_monitor()
+                monitor.record_response_time(operation_name, execution_time)
+                monitor.record_request(operation_name, success=False)
+
+                raise
+
+        def sync_wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = func(*args, **kwargs)
+                execution_time = time.time() - start_time
+
+                # Record the metric
+                monitor = get_performance_monitor()
+                monitor.record_response_time(operation_name, execution_time)
+                monitor.record_request(operation_name, success=True)
+
+                return result
+            except Exception as e:
+                execution_time = time.time() - start_time
+
+                # Record the error
+                monitor = get_performance_monitor()
+                monitor.record_response_time(operation_name, execution_time)
+                monitor.record_request(operation_name, success=False)
+
+                raise
+
+        # Return the appropriate wrapper based on whether the function is async
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
+
+    return decorator
+
+
 def monitor_performance(operation_name: str):
     """
     Decorator to monitor function performance.

@@ -40,7 +40,13 @@ async def test_darts_consolidation():
 
             # Discover leagues for darts
             logger.info("Discovering darts leagues...")
-            darts_leagues = await api.discover_leagues("darts")
+            darts_response = await api.discover_leagues("darts")
+
+            # Handle APIResponse object
+            if hasattr(darts_response, 'data'):
+                darts_leagues = darts_response.data
+            else:
+                darts_leagues = darts_response
 
             if darts_leagues:
                 logger.info(f"Found {len(darts_leagues)} darts leagues:")

@@ -135,7 +135,7 @@ class TestUserService:
     def user_service(self, mock_bot, mock_db_manager):
         """UserService instance with mocked dependencies."""
         service = UserService(mock_bot, mock_db_manager)
-        # Mock the cache
+        # Mock the enhanced cache functions
         service.cache = Mock()
         service.cache.get = Mock(return_value=None)
         service.cache.set = Mock()
@@ -161,13 +161,13 @@ class TestUserService:
     @pytest.mark.asyncio
     async def test_get_user_not_found(self, user_service):
         """Test getting a non-existent user."""
-        # Mock the cache to return None first, then DB to return None
-        user_service.cache.get.return_value = None
-        user_service.db.fetch_one.return_value = None
+        # Mock the enhanced cache functions to return None
+        with patch('bot.services.user_service.enhanced_cache_get', return_value=None):
+            user_service.db.fetch_one.return_value = None
 
-        result = await user_service.get_user(123456789)
+            result = await user_service.get_user(123456789)
 
-        assert result is None
+            assert result is None
 
     @pytest.mark.asyncio
     async def test_get_or_create_user_existing(self, user_service):
@@ -176,45 +176,87 @@ class TestUserService:
             "user_id": 123456789,
             "username": "testuser",
             "balance": 0.0,  # Default balance for new users
+            "created_at": datetime.now(timezone.utc),  # Add created_at field
         }
-        user_service.db.fetch_one.return_value = user_data
 
-        result = await user_service.get_or_create_user(123456789, "testuser")
+        # Mock the enhanced cache functions
+        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
+             patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
+             patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
 
-        assert result == user_data
-        # Should not create new user
-        user_service.db.execute.assert_not_called()
+            user_service.db.fetch_one.return_value = user_data
+
+            result = await user_service.get_or_create_user(123456789, "testuser")
+
+            # Compare only the fields we care about, ignoring created_at
+            expected_data = {
+                "user_id": 123456789,
+                "username": "testuser",
+                "balance": 0.0,
+            }
+            assert result["user_id"] == expected_data["user_id"]
+            assert result["username"] == expected_data["username"]
+            assert result["balance"] == expected_data["balance"]
+            assert "created_at" in result  # Verify created_at is present
+            # Should not create new user
+            user_service.db.execute.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_get_or_create_user_new(self, user_service):
         """Test creating a new user."""
-        # Mock cache to return None
-        user_service.cache.get.return_value = None
-        user_service.db.fetch_one.return_value = None
-        user_service.db.execute.return_value = 1
+        # Mock the enhanced cache functions
+        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
+             patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
+             patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
 
-        # Mock the second call to get_user after creation
-        user_data = {"user_id": 123456789, "username": "testuser", "balance": 0.0}
-        user_service.db.fetch_one.side_effect = [None, user_data]
+            user_service.db.fetch_one.return_value = None
+            user_service.db.execute.return_value = 1
 
-        result = await user_service.get_or_create_user(123456789, "testuser")
+            # Mock the second call to get_user after creation
+            user_data = {
+                "user_id": 123456789,
+                "username": "testuser",
+                "balance": 0.0,
+                "created_at": datetime.now(timezone.utc),  # Add created_at field
+            }
+            user_service.db.fetch_one.side_effect = [None, user_data]
 
-        assert result == user_data
-        user_service.db.execute.assert_called_once()
+            result = await user_service.get_or_create_user(123456789, "testuser")
+
+            # Compare only the fields we care about, ignoring created_at
+            expected_data = {
+                "user_id": 123456789,
+                "username": "testuser",
+                "balance": 0.0,
+            }
+            assert result["user_id"] == expected_data["user_id"]
+            assert result["username"] == expected_data["username"]
+            assert result["balance"] == expected_data["balance"]
+            assert "created_at" in result  # Verify created_at is present
+            user_service.db.execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_user_balance_success(self, user_service):
         """Test successful balance update."""
-        user_data = {"user_id": 123456789, "username": "testuser", "balance": 100.0}
-        # Mock cache to return None first, then return user_data
-        user_service.cache.get.return_value = None
-        user_service.db.fetch_one.return_value = user_data
-        user_service.db.execute.return_value = 1
+        user_data = {
+            "user_id": 123456789,
+            "username": "testuser",
+            "balance": 100.0,
+            "created_at": datetime.now(timezone.utc),  # Add created_at field
+        }
 
-        result = await user_service.update_user_balance(123456789, 50.0, "bet_win")
+        # Mock the enhanced cache functions
+        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
+             patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
+             patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
 
-        assert result["balance"] == 150.0
-        user_service.db.execute.assert_called_once()
+            user_service.db.fetch_one.return_value = user_data
+            user_service.db.execute.return_value = 1
+
+            result = await user_service.update_user_balance(123456789, 50.0, "bet_win")
+
+            assert result["balance"] == 150.0  # 100.0 + 50.0 = 150.0
+            user_service.db.execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_user_balance_insufficient_funds(self, user_service):
@@ -373,8 +415,8 @@ class TestDatabaseManager:
         with patch("aiomysql.create_pool") as mock_create_pool:
             mock_create_pool.side_effect = Exception("Connection failed")
 
-            result = await db_manager.connect()
-            assert result is None
+            with pytest.raises(Exception):
+                await db_manager.connect()
 
     @pytest.mark.skip(
         reason="Database connection tests require complex mocking - skipping for now"
