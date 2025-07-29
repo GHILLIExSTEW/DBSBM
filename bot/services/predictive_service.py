@@ -32,7 +32,7 @@ import pandas as pd
 
 from bot.services.performance_monitor import time_operation, record_metric
 from bot.data.db_manager import DatabaseManager
-from bot.utils.cache_manager import cache_get, cache_set
+from bot.utils.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 
@@ -287,7 +287,7 @@ class PredictiveService:
 
                 # Cache prediction
                 cache_key = f"pred_{model_id}_{hash(str(input_data))}"
-                await cache_set(cache_key, prediction, expire=3600)  # Cache for 1 hour
+                cache_manager.set(cache_key, prediction, ttl=3600)  # Cache for 1 hour
 
                 record_metric("predictions_generated", 1)
                 return prediction
