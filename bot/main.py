@@ -796,13 +796,11 @@ class BettingBot(commands.Bot):
             raise
 
     async def _setup_hook_internal(self):
-        """Internal setup_hook implementation."""
-        logger.info("Step 1: Starting one-time downloads...")
-        await run_one_time_logo_download()
-        await run_one_time_player_data_download()
-        logger.info("Step 1: One-time downloads completed")
+        """Internal setup_hook implementation with progressive startup."""
+        logger.info("Step 1: Starting minimal initialization...")
 
-        logger.info("Step 2: Connecting to database...")
+        # Only do essential initialization here - connect to Discord first
+        logger.info("Step 1a: Connecting to database...")
         await self.db_manager.connect()
         if not self.db_manager._pool:
             logger.critical(
@@ -810,148 +808,31 @@ class BettingBot(commands.Bot):
             )
             await self.close()
             sys.exit("Database connection failed.")
-        logger.info("Step 2: Database connection successful")
+        logger.info("Step 1a: Database connection successful")
 
         # Initialize database schema
         try:
-            logger.info("Step 3: Initializing database schema...")
+            logger.info("Step 1b: Initializing database schema...")
             await self.db_manager.initialize_db()
             logger.info("Database schema initialized successfully.")
         except Exception as e:
             logger.error(f"Database initialization error: {e}")
             # Don't exit, just log the error and continue
-            # The bot can still function with basic features
 
         # Only load extensions if we're not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
-            logger.info("Step 4: Loading extensions...")
+            logger.info("Step 1c: Loading extensions...")
             await self.load_extensions()
             commands_list = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Registered commands: %s", commands_list)
         else:
-            logger.info("Step 4: Skipping extension loading (scheduler mode)")
+            logger.info("Step 1c: Skipping extension loading (scheduler mode)")
 
-        logger.info("Step 5: Starting services...")
-
-        # Initialize community engagement services
-        try:
-            logger.info("Step 5a: Initializing community services...")
-            from bot.services.community_analytics import CommunityAnalyticsService
-            from bot.services.community_events import CommunityEventsService
-
-            self.community_events_service = CommunityEventsService(
-                self, self.db_manager
-            )
-            self.community_analytics_service = CommunityAnalyticsService(
-                self, self.db_manager
-            )
-            logger.info("Community engagement services initialized")
-        except Exception as e:
-            logger.error(
-                f"Failed to initialize community engagement services: {e}")
-            self.community_events_service = None
-            self.community_analytics_service = None
-
-        logger.info("Step 5b: Starting core services...")
-        service_starts = [
-            self.admin_service.start(),
-            self.analytics_service.start(),
-            self.bet_service.start(),
-            self.user_service.start(),
-            self.voice_service.start(),
-            self.game_service.start(),
-            self.data_sync_service.start(),
-            self.live_game_channel_service.start(),
-            self.platinum_service.start(),
-            self.predictive_service.start(),
-        ]
-
-        # Initialize real ML service
-        try:
-            logger.info("Step 5c: Initializing ML service...")
-            from bot.services.real_ml_service import RealMLService
-            self.real_ml_service = RealMLService(
-                self.db_manager, self.sports_api, self.predictive_service)
-            logger.info("Real ML service initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize real ML service: {e}")
-            self.real_ml_service = None
-
-        # Add community services if initialized
-        if self.community_events_service:
-            service_starts.append(self.community_events_service.start())
-        if self.community_analytics_service:
-            service_starts.append(self.community_analytics_service.start())
-
-        # Initialize system integration service
-        try:
-            logger.info("Step 5d: Initializing system integration service...")
-            from bot.services.system_integration_service import SystemIntegrationService
-            self.system_integration_service = SystemIntegrationService(
-                self.db_manager)
-            service_starts.append(self.system_integration_service.start())
-            logger.info("System integration service initialized")
-        except Exception as e:
-            logger.error(
-                f"Failed to initialize system integration service: {e}")
-            self.system_integration_service = None
-
-        # Initialize rate limiter
-        try:
-            logger.info("Step 5e: Initializing rate limiter...")
-            self.rate_limiter = get_rate_limiter()
-            logger.info("Rate limiter initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize rate limiter: {e}")
-            raise
-
-        # Initialize performance monitor
-        try:
-            logger.info("Step 5f: Initializing performance monitor...")
-            self.performance_monitor = get_performance_monitor()
-            logger.info("Performance monitor initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize performance monitor: {e}")
-            raise
-
-        # Initialize error handler
-        try:
-            logger.info("Step 5g: Initializing error handler...")
-            self.error_handler = get_error_handler()
-            initialize_default_recovery_strategies()
-            logger.info("Error handler initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize error handler: {e}")
-            raise
-
-        logger.info("Step 5h: Starting all services...")
-        results = await asyncio.gather(*service_starts, return_exceptions=True)
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                service_name = (
-                    service_starts[i].__self__.__class__.__name__
-                    if hasattr(service_starts[i], "__self__")
-                    else f"Service {i}"
-                )
-                logger.error(
-                    "Error starting %s: %s", service_name, result, exc_info=True
-                )
         logger.info(
-            "Services startup initiated, including LiveGameChannelService.")
-
-        # Only start webapp and fetcher if not in scheduler mode
-        if not os.getenv("SCHEDULER_MODE"):
-            logger.info("Step 6: Starting webapp and fetcher...")
-            self.start_flask_webapp()
-            self.start_fetcher()
-            logger.info(
-                "Bot setup_hook completed successfully - commands will be synced in on_ready"
-            )
-        else:
-            logger.info(
-                "Bot setup_hook completed successfully in scheduler mode")
+            "Step 1: Minimal initialization completed - Discord connection ready")
 
     async def on_ready(self):
+        """Called when the bot is ready - initialize heavy components here."""
         logger.info("Logged in as %s (%s)", self.user.name, self.user.id)
         logger.info("discord.py API version: %s", discord.__version__)
         logger.info("Python version: %s", sys.version)
@@ -960,49 +841,183 @@ class BettingBot(commands.Bot):
             logger.debug("- %s (%s)", guild.name, guild.id)
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
-        # Display health status
-        try:
-            logger.info("🏥 Running health status check...")
-            from bot.utils.health_checker import run_system_health_check
-            health_results = await run_system_health_check()
-
-            if health_results:
-                logger.info("📊 HEALTH STATUS:")
-                for service, result in health_results.items():
-                    if isinstance(result, dict):
-                        status = result.get('status', 'unknown')
-                        response_time = result.get('response_time', 0)
-                        if status == 'healthy':
-                            logger.info(
-                                f"  ✅ {service}: Healthy ({response_time:.2f}s)")
-                        elif status == 'degraded':
-                            logger.warning(
-                                f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
-                        else:
-                            logger.error(
-                                f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
-                    else:
-                        logger.warning(f"  ❓ {service}: Unknown status")
-            else:
-                logger.warning("⚠️ No health check results available")
-        except Exception as e:
-            logger.warning(f"⚠️ Health check failed: {e}")
-
-        # Only sync commands if not in scheduler mode
+        # Sync commands first (essential for bot functionality)
         if not os.getenv("SCHEDULER_MODE"):
             try:
-                # Single point of command syncing
+                logger.info("🔄 Syncing commands...")
                 success = await self.sync_commands_with_retry()
-                if not success:
-                    logger.error("Failed to sync commands after retries")
-                    return
-                global_commands = [
-                    cmd.name for cmd in self.tree.get_commands()]
-                logger.info("Final global commands: %s", global_commands)
+                if success:
+                    global_commands = [
+                        cmd.name for cmd in self.tree.get_commands()]
+                    logger.info(
+                        "✅ Commands synced successfully: %s", global_commands)
+                else:
+                    logger.error("❌ Failed to sync commands after retries")
             except Exception as e:
-                logger.error("Failed to sync command tree: %s",
+                logger.error("❌ Failed to sync command tree: %s",
                              e, exc_info=True)
+
+        # Now that we're connected to Discord, initialize heavy components in background
+        logger.info("🔄 Starting background initialization...")
+        asyncio.create_task(self._initialize_heavy_components())
+
         logger.info("------ Bot is Ready ------")
+
+    async def _initialize_heavy_components(self):
+        """Initialize heavy components after Discord connection is established."""
+        try:
+            logger.info("Step 2: Starting one-time downloads...")
+            await run_one_time_logo_download()
+            await run_one_time_player_data_download()
+            logger.info("Step 2: One-time downloads completed")
+
+            logger.info("Step 3: Starting services...")
+
+            # Initialize community engagement services
+            try:
+                logger.info("Step 3a: Initializing community services...")
+                from bot.services.community_analytics import CommunityAnalyticsService
+                from bot.services.community_events import CommunityEventsService
+
+                self.community_events_service = CommunityEventsService(
+                    self, self.db_manager
+                )
+                self.community_analytics_service = CommunityAnalyticsService(
+                    self, self.db_manager
+                )
+                logger.info("Community engagement services initialized")
+            except Exception as e:
+                logger.error(
+                    f"Failed to initialize community engagement services: {e}")
+                self.community_events_service = None
+                self.community_analytics_service = None
+
+            logger.info("Step 3b: Starting core services...")
+            service_starts = [
+                self.admin_service.start(),
+                self.analytics_service.start(),
+                self.bet_service.start(),
+                self.user_service.start(),
+                self.voice_service.start(),
+                self.game_service.start(),
+                self.data_sync_service.start(),
+                self.live_game_channel_service.start(),
+                self.platinum_service.start(),
+                self.predictive_service.start(),
+            ]
+
+            # Initialize real ML service
+            try:
+                logger.info("Step 3c: Initializing ML service...")
+                from bot.services.real_ml_service import RealMLService
+                self.real_ml_service = RealMLService(
+                    self.db_manager, self.sports_api, self.predictive_service)
+                logger.info("Real ML service initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize real ML service: {e}")
+                self.real_ml_service = None
+
+            # Add community services if initialized
+            if self.community_events_service:
+                service_starts.append(self.community_events_service.start())
+            if self.community_analytics_service:
+                service_starts.append(self.community_analytics_service.start())
+
+            # Initialize system integration service
+            try:
+                logger.info(
+                    "Step 3d: Initializing system integration service...")
+                from bot.services.system_integration_service import SystemIntegrationService
+                self.system_integration_service = SystemIntegrationService(
+                    self.db_manager)
+                service_starts.append(self.system_integration_service.start())
+                logger.info("System integration service initialized")
+            except Exception as e:
+                logger.error(
+                    f"Failed to initialize system integration service: {e}")
+                self.system_integration_service = None
+
+            # Initialize rate limiter
+            try:
+                logger.info("Step 3e: Initializing rate limiter...")
+                self.rate_limiter = get_rate_limiter()
+                logger.info("Rate limiter initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize rate limiter: {e}")
+                raise
+
+            # Initialize performance monitor
+            try:
+                logger.info("Step 3f: Initializing performance monitor...")
+                self.performance_monitor = get_performance_monitor()
+                logger.info("Performance monitor initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize performance monitor: {e}")
+                raise
+
+            # Initialize error handler
+            try:
+                logger.info("Step 3g: Initializing error handler...")
+                self.error_handler = get_error_handler()
+                initialize_default_recovery_strategies()
+                logger.info("Error handler initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize error handler: {e}")
+                raise
+
+            logger.info("Step 3h: Starting all services...")
+            results = await asyncio.gather(*service_starts, return_exceptions=True)
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    service_name = (
+                        service_starts[i].__self__.__class__.__name__
+                        if hasattr(service_starts[i], "__self__")
+                        else f"Service {i}"
+                    )
+                    logger.error(
+                        "Error starting %s: %s", service_name, result, exc_info=True
+                    )
+            logger.info(
+                "Services startup initiated, including LiveGameChannelService.")
+
+            # Only start webapp and fetcher if not in scheduler mode
+            if not os.getenv("SCHEDULER_MODE"):
+                logger.info("Step 4: Starting webapp and fetcher...")
+                self.start_flask_webapp()
+                self.start_fetcher()
+                logger.info(
+                    "Bot background initialization completed successfully")
+            else:
+                logger.info(
+                    "Bot background initialization completed successfully in scheduler mode")
+
+            # Display health status
+            try:
+                logger.info("🏥 Running health status check...")
+                from bot.utils.health_checker import run_system_health_check
+                health_results = await run_system_health_check()
+
+                if health_results:
+                    logger.info("📊 HEALTH STATUS:")
+                    for service, result in health_results.items():
+                        if isinstance(result, dict):
+                            status = result.get('status', 'unknown')
+                            response_time = result.get('response_time', 0)
+                            if status == 'healthy':
+                                logger.info(
+                                    f"  ✅ {service}: Healthy ({response_time:.2f}s)")
+                            elif status == 'degraded':
+                                logger.warning(
+                                    f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
+                            else:
+                                logger.error(
+                                    f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+            except Exception as e:
+                logger.error(f"Health check failed: {e}")
+
+        except Exception as e:
+            logger.error(f"Background initialization failed: {e}")
+            # Don't crash the bot, just log the error
 
     async def on_guild_join(self, guild: discord.Guild):
         """Handle when the bot joins a new guild."""
@@ -1313,10 +1328,10 @@ class ManualSyncCog(commands.Cog):
 
 # --- Main Execution ---
 async def run_bot():
-    """Run the bot with retry logic for connection issues."""
+    """Run the bot with comprehensive error handling and retry logic."""
     retry_count = 0
-    max_retries = 5
-    retry_delay = 5  # seconds
+    max_retries = 3
+    retry_delay = 5
 
     # Run startup checks first
     try:
@@ -1343,19 +1358,52 @@ async def run_bot():
             logger.info("Attempting to start bot...")
             bot = BettingBot()
 
-            # Add timeout to bot startup
-            try:
-                await asyncio.wait_for(bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]), timeout=180.0)
-                logger.info("Bot started successfully")
+            # Progressive startup approach
+            logger.info("🔄 Starting progressive bot initialization...")
+
+            # Step 1: Initialize core components first
+            logger.info("Step 1: Initializing core components...")
+            await asyncio.wait_for(bot._setup_hook_internal(), timeout=60.0)
+            logger.info("✅ Core components initialized")
+
+            # Step 2: Connect to Discord with extended timeout and retry logic
+            logger.info("Step 2: Connecting to Discord...")
+
+            # Try multiple connection strategies
+            connection_success = False
+            for attempt in range(3):
+                try:
+                    logger.info(
+                        f"Discord connection attempt {attempt + 1}/3...")
+
+                    # Use a more conservative timeout for Discord connection
+                    await asyncio.wait_for(
+                        bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]),
+                        timeout=300.0  # 5 minutes for Discord connection
+                    )
+                    logger.info("✅ Bot started successfully")
+                    connection_success = True
+                    break
+
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Discord connection attempt {attempt + 1} timed out")
+                    if attempt < 2:  # Don't sleep after last attempt
+                        # Wait 10 seconds between attempts
+                        await asyncio.sleep(10)
+                except Exception as e:
+                    logger.error(
+                        f"Discord connection attempt {attempt + 1} failed: {e}")
+                    if attempt < 2:
+                        await asyncio.sleep(10)
+
+            if connection_success:
                 break
-            except asyncio.TimeoutError:
-                logger.error("Bot startup timed out after 180 seconds")
+            else:
+                logger.error("All Discord connection attempts failed")
                 await bot.close()
-                raise RuntimeError("Bot startup timed out")
-            except Exception as e:
-                logger.error(f"Bot startup failed: {e}")
-                await bot.close()
-                raise
+                raise RuntimeError(
+                    "Discord connection failed after all attempts")
 
         except discord.LoginFailure:
             logger.critical(
