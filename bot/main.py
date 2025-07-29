@@ -960,6 +960,34 @@ class BettingBot(commands.Bot):
             logger.debug("- %s (%s)", guild.name, guild.id)
         logger.info("Latency: %.2f ms", self.latency * 1000)
 
+        # Display health status
+        try:
+            logger.info("🏥 Running health status check...")
+            from bot.utils.health_checker import run_system_health_check
+            health_results = await run_system_health_check()
+
+            if health_results:
+                logger.info("📊 HEALTH STATUS:")
+                for service, result in health_results.items():
+                    if isinstance(result, dict):
+                        status = result.get('status', 'unknown')
+                        response_time = result.get('response_time', 0)
+                        if status == 'healthy':
+                            logger.info(
+                                f"  ✅ {service}: Healthy ({response_time:.2f}s)")
+                        elif status == 'degraded':
+                            logger.warning(
+                                f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
+                        else:
+                            logger.error(
+                                f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+                    else:
+                        logger.warning(f"  ❓ {service}: Unknown status")
+            else:
+                logger.warning("⚠️ No health check results available")
+        except Exception as e:
+            logger.warning(f"⚠️ Health check failed: {e}")
+
         # Only sync commands if not in scheduler mode
         if not os.getenv("SCHEDULER_MODE"):
             try:
@@ -1289,6 +1317,18 @@ async def run_bot():
     retry_count = 0
     max_retries = 5
     retry_delay = 5  # seconds
+
+    # Run startup checks first
+    try:
+        logger.info("🔍 Running startup checks...")
+        from startup_checks import DBSBMStartupChecker
+        checker = DBSBMStartupChecker()
+        await checker.run_all_checks()
+        logger.info("✅ Startup checks completed")
+    except Exception as e:
+        logger.warning(f"⚠️ Startup checks failed: {e}")
+        logger.info("Continuing with bot startup...")
+
     while retry_count < max_retries:
         try:
             logger.info("Attempting to start bot...")

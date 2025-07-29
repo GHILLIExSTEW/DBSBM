@@ -84,7 +84,7 @@ class DBSBMStartupChecker:
 
         env_checks = {}
 
-        # Check .env file
+        # Check .env file - look in bot folder
         env_file = self.project_root / "bot" / ".env"
         if env_file.exists():
             env_checks[".env File"] = "✅ Exists"
@@ -94,7 +94,16 @@ class DBSBMStartupChecker:
             logger.error("No .env file found")
 
         # Check required environment variables
-        required_vars = ["DISCORD_TOKEN", "MYSQL_PASSWORD", "API_KEY", "REDIS_URL"]
+        required_vars = [
+            "DISCORD_TOKEN",
+            "MYSQL_PASSWORD",
+            "API_KEY",
+            "REDIS_HOST",
+            "REDIS_PORT",
+            "REDIS_USERNAME",
+            "REDIS_PASSWORD",
+            "REDIS_DB",
+        ]
 
         for var in required_vars:
             if os.getenv(var):
@@ -256,9 +265,9 @@ class DBSBMStartupChecker:
         except Exception as e:
             perf_checks["Memory Usage"] = f"❓ Error: {e}"
 
-        # Check disk space
+        # Check disk space - fix the path issue
         try:
-            disk = psutil.disk_usage(self.project_root)
+            disk = psutil.disk_usage(str(self.project_root))
             disk_percent = (disk.used / disk.total) * 100
 
             if disk_percent < 90:
@@ -373,12 +382,14 @@ class DBSBMStartupChecker:
 
             for check, status in results.items():
                 total_checks += 1
-                if "✅" in status:
-                    passed_checks += 1
-                elif "❌" in status:
-                    failed_checks += 1
-                elif "⚠️" in status:
-                    warnings += 1
+                # Fix the type checking issue
+                if isinstance(status, str):
+                    if "✅" in status:
+                        passed_checks += 1
+                    elif "❌" in status:
+                        failed_checks += 1
+                    elif "⚠️" in status:
+                        warnings += 1
 
         print(f"Total Checks: {total_checks}")
         print(f"✅ Passed: {passed_checks}")
