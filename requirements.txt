@@ -1,4 +1,3 @@
-
 # Core Dependencies
 discord.py>=2.3.0
 aiohttp>=3.8.0
@@ -51,6 +50,7 @@ torch>=2.0.0
 nltk>=3.8.0
 textblob>=0.17.0
 spacy>=3.6.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl
 
 
 
