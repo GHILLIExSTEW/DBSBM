@@ -157,8 +157,7 @@ class EnhancedCacheManager:
             self._redis_db = self.settings.redis.database
         else:
             # Fallback to environment variables
-            self._redis_host = os.getenv(
-                "REDIS_HOST", "redis-11437.c309.us-east-2-1.ec2.redns.redis-cloud.com")
+            self._redis_host = os.getenv("REDIS_HOST")
             self._redis_port = int(os.getenv("REDIS_PORT", "11437"))
             self._redis_username = os.getenv("REDIS_USERNAME", "default")
             self._redis_password = os.getenv("REDIS_PASSWORD")

@@ -13,6 +13,7 @@ import importlib
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Tuple
+import re
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -260,10 +261,19 @@ class DBSBMStatusChecker:
             r'secret\s*=\s*["\'][^"\']+["\']',
         ]
 
+        # Safe patterns that use environment variables
+        safe_patterns = [
+            r'os\.getenv\([\'"][^\'"]+[\'"]\)',
+            r'os\.environ\[[\'"][^\'"]+[\'"]\]',
+            r'SecretStr\(',
+            r'get_secret_value\(',
+        ]
+
         # Search in Python files
         for root, dirs, files in os.walk(self.project_root):
-            if "venv" in root or "__pycache__" in root:
-                continue
+            # Skip virtual environments and other non-project directories
+            dirs[:] = [d for d in dirs if d not in ['__pycache__', '.git',
+                                                    'venv', 'env', '.venv', '.venv310', 'node_modules']]
 
             for file in files:
                 if file.endswith('.py'):
@@ -271,10 +281,22 @@ class DBSBMStatusChecker:
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
-                            for pattern in patterns:
-                                if pattern in content:
-                                    hardcoded.append(str(file_path))
-                                    break
+                            lines = content.split('\n')
+
+                            for line_num, line in enumerate(lines, 1):
+                                # Check for sensitive patterns
+                                for pattern in patterns:
+                                    if re.search(pattern, line, re.IGNORECASE):
+                                        # Check if it's a safe pattern
+                                        is_safe = False
+                                        for safe_pattern in safe_patterns:
+                                            if re.search(safe_pattern, line, re.IGNORECASE):
+                                                is_safe = True
+                                                break
+
+                                        if not is_safe:
+                                            hardcoded.append(str(file_path))
+                                            break
                     except Exception:
                         continue
 

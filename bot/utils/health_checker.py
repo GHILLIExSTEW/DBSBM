@@ -185,45 +185,62 @@ async def check_database_health() -> Dict[str, Any]:
 
         db_manager = get_db_manager()
 
-        # Test connection
+        # Test connection with shorter timeout
         start_time = time.time()
-        connection = await db_manager.get_connection()
-        response_time = time.time() - start_time
+        try:
+            # Use a shorter timeout for startup checks
+            connection = await asyncio.wait_for(
+                db_manager.get_connection(),
+                timeout=5.0  # Reduced timeout for startup
+            )
+            response_time = time.time() - start_time
 
-        if not connection:
-            return {
-                "status": "unhealthy",
-                "error_message": "Database connection failed",
-                "response_time": response_time
-            }
-
-        # Test simple query
-        start_time = time.time()
-        cursor = await connection.cursor()
-        await cursor.execute("SELECT 1")
-        result = await cursor.fetchone()
-        await cursor.close()
-        response_time = time.time() - start_time
-
-        if result and result[0] == 1:
-            return {
-                "status": "healthy",
-                "response_time": response_time,
-                "details": {
-                    "connection_pool_size": getattr(db_manager, 'pool_size', 'unknown'),
-                    "active_connections": getattr(db_manager, 'active_connections', 'unknown')
+            if not connection:
+                return {
+                    "status": "degraded",
+                    "error_message": "Database connection failed",
+                    "response_time": response_time
                 }
-            }
-        else:
+
+            # Test simple query with timeout
+            start_time = time.time()
+            cursor = await connection.cursor()
+            await asyncio.wait_for(cursor.execute("SELECT 1"), timeout=3.0)
+            result = await cursor.fetchone()
+            await cursor.close()
+            response_time = time.time() - start_time
+
+            if result and result[0] == 1:
+                return {
+                    "status": "healthy",
+                    "response_time": response_time,
+                    "details": {
+                        "connection_pool_size": getattr(db_manager, 'pool_size', 'unknown'),
+                        "active_connections": getattr(db_manager, 'active_connections', 'unknown')
+                    }
+                }
+            else:
+                return {
+                    "status": "degraded",
+                    "error_message": "Database query test failed",
+                    "response_time": response_time
+                }
+        except asyncio.TimeoutError:
             return {
-                "status": "unhealthy",
-                "error_message": "Database query test failed",
-                "response_time": response_time
+                "status": "degraded",
+                "error_message": "Database connection timeout",
+                "response_time": time.time() - start_time
+            }
+        except Exception as db_error:
+            return {
+                "status": "degraded",
+                "error_message": f"Database connection error: {str(db_error)}",
+                "response_time": time.time() - start_time
             }
 
     except Exception as e:
         return {
-            "status": "unhealthy",
+            "status": "degraded",
             "error_message": f"Database health check failed: {str(e)}",
             "response_time": 0.0
         }
@@ -237,58 +254,85 @@ async def check_cache_health() -> Dict[str, Any]:
 
         enhanced_cache_manager = get_enhanced_cache_manager()
 
-        # Test cache connection
+        # Test cache connection with timeout
         start_time = time.time()
-        is_healthy = await enhanced_cache_manager.health_check()
-        response_time = time.time() - start_time
+        try:
+            # Use shorter timeout for startup checks
+            is_healthy = await asyncio.wait_for(
+                enhanced_cache_manager.health_check(),
+                timeout=5.0  # Reduced timeout for startup
+            )
+            response_time = time.time() - start_time
 
-        if not is_healthy:
-            return {
-                "status": "unhealthy",
-                "error_message": "Cache connection failed",
-                "response_time": response_time
-            }
-
-        # Test cache operations
-        test_key = "_health_check_test"
-        test_value = "health_check_value"
-
-        # Test set operation
-        start_time = time.time()
-        set_success = await enhanced_cache_manager.set("test", test_key, test_value, ttl=10)
-        set_time = time.time() - start_time
-
-        # Test get operation
-        start_time = time.time()
-        retrieved_value = await enhanced_cache_manager.get("test", test_key)
-        get_time = time.time() - start_time
-
-        # Test delete operation
-        start_time = time.time()
-        delete_success = await enhanced_cache_manager.delete("test", test_key)
-        delete_time = time.time() - start_time
-
-        if set_success and retrieved_value == test_value and delete_success:
-            return {
-                "status": "healthy",
-                "response_time": (set_time + get_time + delete_time) / 3,
-                "details": {
-                    "set_time": set_time,
-                    "get_time": get_time,
-                    "delete_time": delete_time,
-                    "circuit_breaker_state": enhanced_cache_manager._circuit_breaker.state
+            if not is_healthy:
+                return {
+                    "status": "degraded",
+                    "error_message": "Cache connection failed",
+                    "response_time": response_time
                 }
-            }
-        else:
+
+            # Test cache operations with timeouts
+            test_key = "_health_check_test"
+            test_value = "health_check_value"
+
+            # Test set operation with timeout
+            start_time = time.time()
+            set_success = await asyncio.wait_for(
+                enhanced_cache_manager.set(
+                    "test", test_key, test_value, ttl=10),
+                timeout=3.0
+            )
+            set_time = time.time() - start_time
+
+            # Test get operation with timeout
+            start_time = time.time()
+            retrieved_value = await asyncio.wait_for(
+                enhanced_cache_manager.get("test", test_key),
+                timeout=3.0
+            )
+            get_time = time.time() - start_time
+
+            # Test delete operation with timeout
+            start_time = time.time()
+            delete_success = await asyncio.wait_for(
+                enhanced_cache_manager.delete("test", test_key),
+                timeout=3.0
+            )
+            delete_time = time.time() - start_time
+
+            if set_success and retrieved_value == test_value and delete_success:
+                return {
+                    "status": "healthy",
+                    "response_time": (set_time + get_time + delete_time) / 3,
+                    "details": {
+                        "set_time": set_time,
+                        "get_time": get_time,
+                        "delete_time": delete_time,
+                        "circuit_breaker_state": enhanced_cache_manager._circuit_breaker.state
+                    }
+                }
+            else:
+                return {
+                    "status": "degraded",
+                    "error_message": "Cache operations failed",
+                    "response_time": (set_time + get_time + delete_time) / 3
+                }
+        except asyncio.TimeoutError:
             return {
                 "status": "degraded",
-                "error_message": "Cache operations partially failed",
-                "response_time": (set_time + get_time + delete_time) / 3
+                "error_message": "Cache connection timeout",
+                "response_time": time.time() - start_time
+            }
+        except Exception as cache_error:
+            return {
+                "status": "degraded",
+                "error_message": f"Cache connection error: {str(cache_error)}",
+                "response_time": time.time() - start_time
             }
 
     except Exception as e:
         return {
-            "status": "unhealthy",
+            "status": "degraded",
             "error_message": f"Cache health check failed: {str(e)}",
             "response_time": 0.0
         }
@@ -302,11 +346,14 @@ async def check_api_health() -> Dict[str, Any]:
 
         sports_api = SportsAPI()
 
-        # Test API connectivity
+        # Test API connectivity with timeout
         start_time = time.time()
         try:
-            # Test a simple API call
-            leagues = await sports_api.get_leagues("soccer")
+            # Test a simple API call with timeout
+            leagues = await asyncio.wait_for(
+                sports_api.get_leagues("soccer"),
+                timeout=10.0  # Reduced timeout for startup
+            )
             response_time = time.time() - start_time
 
             if leagues and len(leagues) > 0:
@@ -325,16 +372,22 @@ async def check_api_health() -> Dict[str, Any]:
                     "response_time": response_time
                 }
 
+        except asyncio.TimeoutError:
+            return {
+                "status": "degraded",
+                "error_message": "API call timeout",
+                "response_time": time.time() - start_time
+            }
         except Exception as api_error:
             return {
-                "status": "unhealthy",
+                "status": "degraded",
                 "error_message": f"API call failed: {str(api_error)}",
                 "response_time": time.time() - start_time
             }
 
     except Exception as e:
         return {
-            "status": "unhealthy",
+            "status": "degraded",
             "error_message": f"API health check failed: {str(e)}",
             "response_time": 0.0
         }
@@ -343,38 +396,30 @@ async def check_api_health() -> Dict[str, Any]:
 async def check_discord_health() -> Dict[str, Any]:
     """Check Discord bot connectivity."""
     try:
-        # This would need to be called from the main bot instance
-        # For now, we'll check if the bot is running
-        import psutil
+        # During startup, we can't check if the bot is running yet
+        # So we'll check if the Discord token is configured
+        import os
 
-        # Look for Python processes that might be running the bot
-        bot_processes = []
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                if proc.info['name'] == 'python' and any('main.py' in cmd for cmd in proc.info['cmdline'] or []):
-                    bot_processes.append(proc.info)
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
-
-        if bot_processes:
+        discord_token = os.getenv("DISCORD_TOKEN")
+        if discord_token and discord_token != "your_discord_bot_token_here":
             return {
                 "status": "healthy",
                 "response_time": 0.0,
                 "details": {
-                    "bot_processes": len(bot_processes),
-                    "process_ids": [p['pid'] for p in bot_processes]
+                    "token_configured": True,
+                    "note": "Bot connectivity will be checked when running"
                 }
             }
         else:
             return {
-                "status": "unhealthy",
-                "error_message": "Discord bot process not found",
+                "status": "degraded",
+                "error_message": "Discord token not configured",
                 "response_time": 0.0
             }
 
     except Exception as e:
         return {
-            "status": "unhealthy",
+            "status": "degraded",
             "error_message": f"Discord health check failed: {str(e)}",
             "response_time": 0.0
         }

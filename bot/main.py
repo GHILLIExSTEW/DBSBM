@@ -145,8 +145,8 @@ except ImportError:
     from bot.services.voice_service import VoiceService
 
 # TEMPORARY FIX: Disable Redis to prevent freezing
-os.environ["REDIS_DISABLED"] = "true"
-logger.info("TEMPORARY FIX: Redis disabled to prevent startup freezing")
+# os.environ["REDIS_DISABLED"] = "true"
+# logger.info("TEMPORARY FIX: Redis disabled to prevent startup freezing")
 
 # --- Environment Variable Validation ---
 # Define required environment variables (after .env is loaded)
@@ -1323,8 +1323,17 @@ async def run_bot():
         logger.info("🔍 Running startup checks...")
         from startup_checks import DBSBMStartupChecker
         checker = DBSBMStartupChecker()
-        await checker.run_all_checks()
-        logger.info("✅ Startup checks completed")
+
+        # Add timeout to startup checks to prevent bot timeout
+        try:
+            await asyncio.wait_for(checker.run_all_checks(), timeout=30.0)
+            logger.info("✅ Startup checks completed")
+        except asyncio.TimeoutError:
+            logger.warning(
+                "⚠️ Startup checks timed out after 30 seconds, continuing...")
+        except Exception as e:
+            logger.warning(f"⚠️ Startup checks failed: {e}")
+            logger.info("Continuing with bot startup...")
     except Exception as e:
         logger.warning(f"⚠️ Startup checks failed: {e}")
         logger.info("Continuing with bot startup...")
