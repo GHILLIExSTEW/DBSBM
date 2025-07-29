@@ -929,15 +929,17 @@ class BettingBot(commands.Bot):
             try:
                 logger.info("Step 3a: Initializing community services...")
                 from bot.services.community_analytics import CommunityAnalyticsService
-                from bot.services.community_events import CommunityEventsService
+                # from bot.services.community_events import CommunityEventsService
 
-                self.community_events_service = CommunityEventsService(
-                    self, self.db_manager
-                )
+                # self.community_events_service = CommunityEventsService(
+                #     self, self.db_manager
+                # )
+                self.community_events_service = None  # Disabled community events
                 self.community_analytics_service = CommunityAnalyticsService(
                     self, self.db_manager
                 )
-                logger.info("Community engagement services initialized")
+                logger.info(
+                    "Community engagement services initialized (events disabled)")
             except Exception as e:
                 logger.error(
                     f"Failed to initialize community engagement services: {e}")

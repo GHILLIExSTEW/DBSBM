@@ -313,6 +313,7 @@ class GuildSettingsView(discord.ui.View):
     """View for guild settings setup"""
 
     SETUP_STEPS = [
+        # Free Tier Features
         {
             "name": "Embed Channel",
             "select": ChannelSelect,
@@ -321,8 +322,9 @@ class GuildSettingsView(discord.ui.View):
                 for ch in guild.text_channels
             ],
             "setting_key": "embed_channel_1",
-            "max_count": 2,  # Maximum number of embed channels allowed for premium
-            "free_count": 1,  # Maximum number of embed channels for free tier
+            "max_count": 1,  # Free tier gets 1 embed channel
+            "free_count": 1,
+            "description": "Channel for betting embeds (Free tier: 1 channel)",
         },
         {
             "name": "Command Channel",
@@ -332,8 +334,9 @@ class GuildSettingsView(discord.ui.View):
                 for ch in guild.text_channels
             ],
             "setting_key": "command_channel_1",
-            "max_count": 2,  # Maximum number of command channels allowed for premium
-            "free_count": 1,  # Maximum number of command channels for free tier
+            "max_count": 1,  # Free tier gets 1 command channel
+            "free_count": 1,
+            "description": "Channel for bot commands (Free tier: 1 channel)",
         },
         {
             "name": "Admin Channel",
@@ -343,8 +346,9 @@ class GuildSettingsView(discord.ui.View):
                 for ch in guild.text_channels
             ],
             "setting_key": "admin_channel_1",
-            "max_count": 1,  # Only one admin channel allowed
+            "max_count": 1,
             "free_count": 1,
+            "description": "Channel for admin commands",
         },
         {
             "name": "Main Chat Channel",
@@ -354,7 +358,7 @@ class GuildSettingsView(discord.ui.View):
                 for ch in guild.text_channels
             ],
             "setting_key": "main_chat_channel_id",
-            "max_count": 1,  # Only one main chat channel allowed
+            "max_count": 1,
             "free_count": 1,
             "description": "Channel for achievement notifications and community updates",
         },
@@ -366,8 +370,9 @@ class GuildSettingsView(discord.ui.View):
                 for role in guild.roles
             ],
             "setting_key": "admin_role",
-            "max_count": 1,  # Only one admin role allowed
+            "max_count": 1,
             "free_count": 1,
+            "description": "Role for admin permissions",
         },
         {
             "name": "Authorized Role",
@@ -377,8 +382,9 @@ class GuildSettingsView(discord.ui.View):
                 for role in guild.roles
             ],
             "setting_key": "authorized_role",
-            "max_count": 1,  # Only one authorized role allowed
+            "max_count": 1,
             "free_count": 1,
+            "description": "Role for authorized users",
         },
         {
             "name": "Member Role",
@@ -388,56 +394,308 @@ class GuildSettingsView(discord.ui.View):
                 for role in guild.roles
             ],
             "setting_key": "member_role",
-            "max_count": 1,  # Only one member role allowed
+            "max_count": 1,
             "free_count": 1,
+            "description": "Role tagged in official posts",
         },
         {
-            "name": "Bot Avatar URL",
-            "select": None,  # This will be handled by message input
-            "setting_key": "bot_image_mask",
-            "is_premium_only": True,
+            "name": "Min Units",
+            "select": None,
+            "setting_key": "min_units",
+            "is_number": True,
+            "default": 0.50,
+            "description": "Minimum units allowed for bets",
         },
         {
-            "name": "Guild Background URL",
-            "select": None,  # This will be handled by message input
-            "setting_key": "guild_background",
-            "is_premium_only": True,
+            "name": "Max Units",
+            "select": None,
+            "setting_key": "max_units",
+            "is_number": True,
+            "default": 3.00,
+            "description": "Maximum units allowed for bets",
         },
         {
-            "name": "Default Parlay Image",
-            "select": None,  # This will be handled by message input
-            "setting_key": "default_parlay_image",
-            "is_premium_only": True,
+            "name": "Embed Color",
+            "select": None,
+            "setting_key": "embed_color",
+            "default": "#00FF00",
+            "description": "Default color for embeds (hex format)",
         },
         {
-            "name": "Enable Live Game Updates",
-            "select": None,  # Will be handled by a yes/no prompt
+            "name": "Timezone",
+            "select": None,
+            "setting_key": "timezone",
+            "default": "UTC",
+            "description": "Timezone for date/time displays",
+        },
+        # Premium Features
+        {
+            "name": "Premium: Enable Live Game Updates",
+            "select": None,
             "setting_key": "live_game_updates",
             "is_boolean": True,
+            "is_premium_only": True,
+            "description": "Enable 15-second live game updates (Premium feature)",
         },
         {
-            "name": "Units Display Mode",
-            "select": None,  # Will be handled by a select menu
+            "name": "Premium: Additional Embed Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "embed_channel_2",
+            "max_count": 2,  # Premium gets 2 embed channels
+            "is_premium_only": True,
+            "description": "Second embed channel (Premium feature)",
+        },
+        {
+            "name": "Premium: Additional Command Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "command_channel_2",
+            "max_count": 2,  # Premium gets 2 command channels
+            "is_premium_only": True,
+            "description": "Second command channel (Premium feature)",
+        },
+        {
+            "name": "Premium: Bot Avatar URL",
+            "select": None,
+            "setting_key": "bot_image_mask",
+            "is_premium_only": True,
+            "description": "Custom bot avatar (Premium feature)",
+        },
+        {
+            "name": "Premium: Guild Background URL",
+            "select": None,
+            "setting_key": "guild_background",
+            "is_premium_only": True,
+            "description": "Custom guild background (Premium feature)",
+        },
+        {
+            "name": "Premium: Default Parlay Image",
+            "select": None,
+            "setting_key": "default_parlay_image",
+            "is_premium_only": True,
+            "description": "Custom parlay image (Premium feature)",
+        },
+        {
+            "name": "Premium: Units Display Mode",
+            "select": None,
             "setting_key": "units_display_mode",
             "is_premium_only": True,
+            "default": "auto",
+            "description": "Units display mode (Premium feature)",
+        },
+        # Platinum Features
+        {
+            "name": "Platinum: Embed Channel 3",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "embed_channel_3",
+            "max_count": 5,  # Platinum gets up to 5 embed channels
+            "is_platinum_only": True,
+            "description": "Third embed channel (Platinum feature)",
         },
         {
-            "name": "Platinum: Custom Parlay Image",
-            "select": None,
-            "setting_key": "platinum_parlay_image",
+            "name": "Platinum: Embed Channel 4",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "embed_channel_4",
+            "max_count": 5,
             "is_platinum_only": True,
+            "description": "Fourth embed channel (Platinum feature)",
         },
         {
-            "name": "Platinum: Custom Win Emoji",
-            "select": None,
-            "setting_key": "platinum_win_emoji",
+            "name": "Platinum: Embed Channel 5",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "embed_channel_5",
+            "max_count": 5,
             "is_platinum_only": True,
+            "description": "Fifth embed channel (Platinum feature)",
         },
         {
-            "name": "Platinum: Custom Loss Emoji",
-            "select": None,
-            "setting_key": "platinum_loss_emoji",
+            "name": "Platinum: Command Channel 3",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "command_channel_3",
+            "max_count": 5,  # Platinum gets up to 5 command channels
             "is_platinum_only": True,
+            "description": "Third command channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Command Channel 4",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "command_channel_4",
+            "max_count": 5,
+            "is_platinum_only": True,
+            "description": "Fourth command channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Command Channel 5",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "command_channel_5",
+            "max_count": 5,
+            "is_platinum_only": True,
+            "description": "Fifth command channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Admin Channel 2",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "admin_channel_2",
+            "max_count": 5,  # Platinum gets up to 5 admin channels
+            "is_platinum_only": True,
+            "description": "Second admin channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Admin Channel 3",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "admin_channel_3",
+            "max_count": 5,
+            "is_platinum_only": True,
+            "description": "Third admin channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Admin Channel 4",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "admin_channel_4",
+            "max_count": 5,
+            "is_platinum_only": True,
+            "description": "Fourth admin channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Admin Channel 5",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "admin_channel_5",
+            "max_count": 5,
+            "is_platinum_only": True,
+            "description": "Fifth admin channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Webhook URL",
+            "select": None,
+            "setting_key": "platinum_webhook_url",
+            "is_platinum_only": True,
+            "description": "Discord webhook URL for notifications (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Alert Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "platinum_alert_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Channel for Platinum alerts (Platinum feature)",
+        },
+        {
+            "name": "Platinum: API Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "platinum_api_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Channel for API features (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Analytics Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "platinum_analytics_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Channel for analytics (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Export Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "platinum_export_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Channel for data exports (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Parlay Embed Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "parlay_embed_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Dedicated parlay embed channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Player Prop Embed Channel",
+            "select": ChannelSelect,
+            "options": lambda guild: [
+                discord.SelectOption(label=ch.name, value=str(ch.id))
+                for ch in guild.text_channels
+            ],
+            "setting_key": "player_prop_embed_channel_id",
+            "max_count": 1,
+            "is_platinum_only": True,
+            "description": "Dedicated player prop embed channel (Platinum feature)",
+        },
+        {
+            "name": "Platinum: Default Parlay Thumbnail",
+            "select": None,
+            "setting_key": "default_parlay_thumbnail",
+            "is_platinum_only": True,
+            "description": "Custom parlay thumbnail (Platinum feature)",
         },
     ]
 
@@ -774,26 +1032,37 @@ class AdminCog(commands.Cog):
                 "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
             )
 
-            # If guild doesn't exist, create it with default values
+            # If guild doesn't exist, create it with default values for the new table structure
             if not existing_settings:
                 await self.bot.db_manager.execute(
                     """
                     INSERT INTO guild_settings
-                    (guild_id, is_paid, subscription_level)
-                    VALUES (%s, 0, 'free')
+                    (guild_id, is_active, subscription_level, is_paid,
+                     embed_channel_1, command_channel_1, admin_channel_1,
+                     live_game_updates, units_display_mode, min_units, max_units,
+                     embed_color, timezone, auto_sync_commands)
+                    VALUES (%s, 1, 'free', 0,
+                           NULL, NULL, NULL,
+                           0, 'auto', 0.50, 3.00,
+                           '#00FF00', 'UTC', 1)
                     """,
                     guild_id,
                 )
                 subscription_level = "free"
             else:
-                # Determine subscription level based on is_paid field and subscription_level
+                # Determine subscription level based on the new table structure
                 is_paid = existing_settings.get("is_paid", 0)
                 db_subscription_level = existing_settings.get(
                     "subscription_level", "free"
                 )
 
+                # Check for platinum features
+                platinum_features_enabled = existing_settings.get(
+                    "platinum_features_enabled", 0
+                )
+
                 # Map subscription levels properly
-                if db_subscription_level == "platinum":
+                if platinum_features_enabled or db_subscription_level == "platinum":
                     subscription_level = "platinum"
                 elif is_paid or db_subscription_level == "premium":
                     subscription_level = "premium"
@@ -801,7 +1070,8 @@ class AdminCog(commands.Cog):
                     subscription_level = "free"
 
                 logger.info(
-                    f"Guild {guild_id} - is_paid: {is_paid}, db_subscription_level: {db_subscription_level}, final_subscription_level: {subscription_level}"
+                    f"Guild {guild_id} - is_paid: {is_paid}, db_subscription_level: {db_subscription_level}, "
+                    f"platinum_features_enabled: {platinum_features_enabled}, final_subscription_level: {subscription_level}"
                 )
 
                 # Update subscription_level in database if it doesn't match
