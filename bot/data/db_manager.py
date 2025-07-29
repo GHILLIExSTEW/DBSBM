@@ -148,7 +148,7 @@ class DatabaseManager:
                     last_insert_id = cursor.lastrowid
 
                     execution_time = time.time() - start_time
-                    record_query(query, execution_time, success=True, rows_affected=affected_rows)
+                    record_query(query, execution_time, success=True)
 
                     return affected_rows, last_insert_id
         except Exception as e:
@@ -182,7 +182,7 @@ class DatabaseManager:
                     affected_rows = cursor.rowcount
 
                     execution_time = time.time() - start_time
-                    record_query(query, execution_time, success=True, rows_affected=affected_rows)
+                    record_query(query, execution_time, success=True)
 
                     return affected_rows
         except Exception as e:
