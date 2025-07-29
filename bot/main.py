@@ -421,6 +421,25 @@ class BettingBot(commands.Bot):
         commands_list = [cmd.name for cmd in self.tree.get_commands()]
         logger.info("Available commands after loading: %s", commands_list)
 
+    async def sync_commands_simple(self):
+        """Simple global sync without complex guild-specific logic."""
+        try:
+            # Get all commands
+            all_commands = self.tree.get_commands()
+            if not all_commands:
+                logger.error("No commands found")
+                return False
+
+            # Sync all commands globally
+            synced = await self.tree.sync()
+            synced_names = [cmd.name for cmd in synced]
+            logger.info(f"Simple sync successful: {synced_names}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Simple sync failed: {e}", exc_info=True)
+            return False
+
     async def sync_commands_with_retry(self, retries: int = 3, delay: int = 5):
         """Sync commands globally with retry logic."""
         for attempt in range(1, retries + 1):
@@ -446,6 +465,11 @@ class BettingBot(commands.Bot):
                 logger.info(
                     f"Stored {len(guild_command_names)} command names for guild syncing: {guild_command_names}"
                 )
+
+                # Store all commands before clearing
+                stored_commands = {}
+                for cmd in all_commands:
+                    stored_commands[cmd.name] = cmd
 
                 # Clear all commands globally first
                 self.tree.clear_commands(guild=None)
@@ -497,7 +521,7 @@ class BettingBot(commands.Bot):
                     if guild_id == TEST_GUILD_ID:
                         restricted_commands = ["load_logos", "down", "up"]
                         for cmd_name in restricted_commands:
-                            cmd = self.tree.get_command(cmd_name)
+                            cmd = stored_commands.get(cmd_name)
                             if cmd:
                                 self.tree.add_command(cmd, guild=guild_obj)
                         logger.info(
@@ -508,17 +532,14 @@ class BettingBot(commands.Bot):
                         commands_added = 0
                         for cmd_name in guild_command_names:
                             try:
-                                # Get the command from the original all_commands list
-                                cmd = next(
-                                    (c for c in all_commands if c.name == cmd_name),
-                                    None,
-                                )
+                                # Get the command from stored commands
+                                cmd = stored_commands.get(cmd_name)
                                 if cmd:
                                     self.tree.add_command(cmd, guild=guild_obj)
                                     commands_added += 1
                                 else:
                                     logger.warning(
-                                        f"Command {cmd_name} not found in all_commands"
+                                        f"Command {cmd_name} not found in stored commands"
                                     )
                             except Exception as e:
                                 logger.error(
@@ -542,7 +563,7 @@ class BettingBot(commands.Bot):
 
                     restricted_commands = ["load_logos", "down", "up"]
                     for cmd_name in restricted_commands:
-                        cmd = self.tree.get_command(cmd_name)
+                        cmd = stored_commands.get(cmd_name)
                         if cmd:
                             self.tree.add_command(cmd, guild=test_guild_obj)
 
@@ -844,21 +865,52 @@ class BettingBot(commands.Bot):
         # Sync commands first (essential for bot functionality)
         if not os.getenv("SCHEDULER_MODE"):
             try:
-                logger.info("🔄 Syncing commands...")
-                success = await self.sync_commands_with_retry()
-                if success:
+                logger.info("Syncing commands...")
+
+                # Try simple sync first
+                simple_success = await self.sync_commands_simple()
+                if simple_success:
                     global_commands = [
                         cmd.name for cmd in self.tree.get_commands()]
                     logger.info(
-                        "✅ Commands synced successfully: %s", global_commands)
+                        "Commands synced successfully with simple sync: %s", global_commands)
                 else:
-                    logger.error("❌ Failed to sync commands after retries")
+                    logger.warning(
+                        "Simple sync failed, trying complex sync...")
+                    # Fall back to complex sync
+                    success = await self.sync_commands_with_retry()
+                    if success:
+                        global_commands = [
+                            cmd.name for cmd in self.tree.get_commands()]
+                        logger.info(
+                            "Commands synced successfully with complex sync: %s", global_commands)
+                    else:
+                        logger.error("Failed to sync commands after retries")
+                        # Final fallback: try simple global sync
+                        logger.info("Attempting final fallback global sync...")
+                        try:
+                            synced = await self.tree.sync()
+                            synced_names = [cmd.name for cmd in synced]
+                            logger.info(
+                                "Fallback sync successful: %s", synced_names)
+                        except Exception as fallback_error:
+                            logger.error(
+                                "Fallback sync also failed: %s", fallback_error)
             except Exception as e:
-                logger.error("❌ Failed to sync command tree: %s",
+                logger.error("Failed to sync command tree: %s",
                              e, exc_info=True)
+                # Fallback: try simple global sync
+                logger.info("Attempting fallback global sync...")
+                try:
+                    synced = await self.tree.sync()
+                    synced_names = [cmd.name for cmd in synced]
+                    logger.info("Fallback sync successful: %s", synced_names)
+                except Exception as fallback_error:
+                    logger.error("Fallback sync also failed: %s",
+                                 fallback_error)
 
         # Now that we're connected to Discord, initialize heavy components in background
-        logger.info("🔄 Starting background initialization...")
+        logger.info("Starting background initialization...")
         asyncio.create_task(self._initialize_heavy_components())
 
         logger.info("------ Bot is Ready ------")

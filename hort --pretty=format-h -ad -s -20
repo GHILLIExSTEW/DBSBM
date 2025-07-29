@@ -1,0 +1,30 @@
+[33m1d9fa7a5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m REDIS FIX
+[33m0517953e[m REDIS FIX
+[33m5f5c56bb[m REDIS FIX
+[33mad2c2a45[m REDIS FIX
+[33m88a70daf[m REDIS FIX
+[33m57532233[m REDIS FIX
+[33m83f9b918[m REDIS FIX
+[33m3cce3b51[m REDIS FIX
+[33m4ffb2191[m REDIS FIX
+[33mc44cf390[m REDIS FIX
+[33me9112946[m REDIS FIX
+[33me8da2be9[m REDIS FIX
+[33m0f4383ec[m Predictive service start fix
+[33m2b542f65[m Predictive service start fix
+[33m29a16210[m Predictive service start fix
+[33mc34af71e[m  CRITICAL FIXES: Resolve import errors, test failures, and security issues
+[33m290f3f45[m Merge remote changes - resolved conflicts by accepting remote versions
+[33m578346d6[m Fixes
+[33mbf8b2a03[m Fixes
+[33m3b3ef6e4[m Fixes
+[33m99b3c22c[m Fixes
+[33m56e70b84[m Fixes
+[33m49bed8a7[m Fixes
+[33m6bb4d5c5[m Fix Redis connection hanging issue - add timeouts and graceful fallback
+[33m5130a775[m Fix Redis connection hanging issue - add timeouts and graceful fallback
+[33m9d6efa31[m Fix Redis connection hanging issue - add timeouts and graceful fallback
+[33m97a09534[m Fix test for admin service - no longer creates tables
+[33m47eebe9a[m Remove ALL table creation code - database is already set up
+[33m051ad62b[m Fix bot freezing during database initialization - Remove duplicate column additions in table creation methods - Fix cursor connection issues in _check_and_add_column method - Remove redundant _add_*_table_columns calls that were causing conflicts - Update test script to verify database initialization fixes
+[33md1c71111[m Fix bot freezing during database initialization - Remove duplicate table creation in main.py - Fix table existence checks in db_manager.py - Add proper error handling for database operations - Create test script to verify database connection
