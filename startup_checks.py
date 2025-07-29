@@ -27,6 +27,19 @@ from typing import Dict, List
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+
+    env_file = project_root / "bot" / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+        print(f"✅ Loaded environment variables from: {env_file}")
+    else:
+        print(f"⚠️ No .env file found at: {env_file}")
+except ImportError:
+    print("⚠️ python-dotenv not installed, skipping .env loading")
+
 # Configure debug logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -202,7 +215,7 @@ class DBSBMStartupChecker:
         try:
             hardcoded = await asyncio.wait_for(
                 asyncio.to_thread(self._check_hardcoded_credentials),
-                timeout=10.0,  # Reduced timeout for startup
+                timeout=5.0,  # Reduced timeout for startup
             )
 
             if hardcoded:

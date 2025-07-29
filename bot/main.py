@@ -1345,11 +1345,11 @@ async def run_bot():
 
             # Add timeout to bot startup
             try:
-                await asyncio.wait_for(bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]), timeout=120.0)
+                await asyncio.wait_for(bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]), timeout=180.0)
                 logger.info("Bot started successfully")
                 break
             except asyncio.TimeoutError:
-                logger.error("Bot startup timed out after 120 seconds")
+                logger.error("Bot startup timed out after 180 seconds")
                 await bot.close()
                 raise RuntimeError("Bot startup timed out")
             except Exception as e:
