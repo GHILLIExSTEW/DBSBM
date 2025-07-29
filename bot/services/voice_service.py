@@ -9,7 +9,7 @@ import discord
 from discord.ext import commands
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
 from bot.utils.errors import VoiceServiceError
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class VoiceService:
     def __init__(self, bot: commands.Bot, db_manager: DatabaseManager):
         self.bot = bot
         self.db_manager = db_manager
-        self.cache = enhanced_cache_manager
+        self.cache = get_enhanced_cache_manager()
         self._check_task = None
         self._is_running = False
 

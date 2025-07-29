@@ -233,7 +233,9 @@ async def check_cache_health() -> Dict[str, Any]:
     """Check cache connectivity and performance."""
     try:
         # Import here to avoid circular imports
-        from bot.utils.enhanced_cache_manager import enhanced_cache_manager
+        from bot.utils.enhanced_cache_manager import get_enhanced_cache_manager
+
+        enhanced_cache_manager = get_enhanced_cache_manager()
 
         # Test cache connection
         start_time = time.time()

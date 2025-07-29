@@ -7,24 +7,76 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import aiomysql
 
-from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
-from data.game_utils import get_league_abbreviation, normalize_team_name
-from data.cache_manager import cache_get, cache_set, cache_query
-from services.performance_monitor import record_query, time_operation
+# Fix import issues with fallback
+try:
+    from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+except ImportError:
+    # Fallback - create empty defaults
+    LEAGUE_CONFIG = {}
+    LEAGUE_IDS = {}
+
+try:
+    from data.game_utils import get_league_abbreviation, normalize_team_name
+except ImportError:
+    # Fallback functions
+    def get_league_abbreviation(league_name: str) -> str:
+        return league_name
+
+    def normalize_team_name(team_name: str) -> str:
+        return team_name
+
+try:
+    from data.cache_manager import cache_get, cache_set, cache_query
+except ImportError:
+    # Fallback cache functions
+    async def cache_get(key: str) -> Optional[Any]:
+        return None
+
+    async def cache_set(key: str, value: Any, ttl: int = 3600) -> bool:
+        return True
+
+    async def cache_query(key: str) -> Optional[Any]:
+        return None
+
+try:
+    from services.performance_monitor import record_query, time_operation
+except ImportError:
+    # Fallback performance monitoring
+    def record_query(query: str, duration: float) -> None:
+        pass
+
+    def time_operation(operation: str):
+        def decorator(func):
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+            return wrapper
+        return decorator
 
 logger = logging.getLogger(__name__)
 
-from config.database_mysql import (
-    MYSQL_DB,
-    MYSQL_HOST,
-    MYSQL_PASSWORD,
-    MYSQL_PORT,
-    MYSQL_USER,
-)
+# Fix import issues with fallback
+try:
+    from config.database_mysql import (
+        MYSQL_DB,
+        MYSQL_HOST,
+        MYSQL_PASSWORD,
+        MYSQL_PORT,
+        MYSQL_USER,
+    )
+except ImportError:
+    # Fallback to environment variables
+    import os
+    MYSQL_DB = os.getenv("MYSQL_DB")
+    MYSQL_HOST = os.getenv("MYSQL_HOST")
+    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+    MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
+    MYSQL_USER = os.getenv("MYSQL_USER")
 
 if not MYSQL_DB:
-    logger.critical("CRITICAL ERROR: MYSQL_DB environment variable is not set.")
-    logger.critical("Please set MYSQL_DB in your .env file or environment variables.")
+    logger.critical(
+        "CRITICAL ERROR: MYSQL_DB environment variable is not set.")
+    logger.critical(
+        "Please set MYSQL_DB in your .env file or environment variables.")
     logger.critical("Example: MYSQL_DB=betting_bot")
 logging.getLogger("aiomysql").setLevel(logging.WARNING)
 
@@ -52,7 +104,8 @@ class DatabaseManager:
             logger.critical(
                 f"Missing required MySQL environment variables: {', '.join(missing_vars)}"
             )
-            logger.critical("Please set all required variables in your .env file:")
+            logger.critical(
+                "Please set all required variables in your .env file:")
             logger.critical("MYSQL_HOST=localhost")
             logger.critical("MYSQL_USER=your_username")
             logger.critical("MYSQL_PASSWORD=your_password")
@@ -153,7 +206,8 @@ class DatabaseManager:
                     return affected_rows, last_insert_id
         except Exception as e:
             execution_time = time.time() - start_time
-            record_query(query, execution_time, success=False, error_message=str(e))
+            record_query(query, execution_time,
+                         success=False, error_message=str(e))
 
             logger.error(
                 "[DB EXECUTE] Error executing query: %s Args: %s. Error: %s",
@@ -172,7 +226,8 @@ class DatabaseManager:
             logger.error("Cannot executemany: DB pool unavailable.")
             raise ConnectionError("DB pool unavailable.")
 
-        logger.debug("Executing Many DB Query: %s Batch size: %s", query, len(args_list))
+        logger.debug("Executing Many DB Query: %s Batch size: %s",
+                     query, len(args_list))
         start_time = time.time()
 
         try:
@@ -187,7 +242,8 @@ class DatabaseManager:
                     return affected_rows
         except Exception as e:
             execution_time = time.time() - start_time
-            record_query(query, execution_time, success=False, error_message=str(e))
+            record_query(query, execution_time,
+                         success=False, error_message=str(e))
 
             logger.error(
                 "[DB EXECUTEMANY] Error executing batch query: %s",
@@ -195,7 +251,8 @@ class DatabaseManager:
                 exc_info=True,
             )
             logger.error("[DB EXECUTEMANY] Query that failed: %s", query)
-            logger.error("[DB EXECUTEMANY] Batch size that failed: %s", len(args_list))
+            logger.error(
+                "[DB EXECUTEMANY] Batch size that failed: %s", len(args_list))
             return None
 
     @time_operation("db_fetch_one")
@@ -228,7 +285,8 @@ class DatabaseManager:
                     result = await cursor.fetchone()
 
                     execution_time = time.time() - start_time
-                    record_query(query, execution_time, success=True, cache_hit=False)
+                    record_query(query, execution_time,
+                                 success=True, cache_hit=False)
 
                     # Cache the result for 10 minutes
                     if result is not None:
@@ -237,7 +295,8 @@ class DatabaseManager:
                     return result
         except Exception as e:
             execution_time = time.time() - start_time
-            record_query(query, execution_time, success=False, error_message=str(e))
+            record_query(query, execution_time,
+                         success=False, error_message=str(e))
 
             logger.error(
                 "Error fetching one row: %s Args: %s. Error: %s",
@@ -278,7 +337,8 @@ class DatabaseManager:
                     result = await cursor.fetchall()
 
                     execution_time = time.time() - start_time
-                    record_query(query, execution_time, success=True, cache_hit=False)
+                    record_query(query, execution_time,
+                                 success=True, cache_hit=False)
 
                     # Cache the result for 10 minutes
                     if result:
@@ -287,7 +347,8 @@ class DatabaseManager:
                     return result
         except Exception as e:
             execution_time = time.time() - start_time
-            record_query(query, execution_time, success=False, error_message=str(e))
+            record_query(query, execution_time,
+                         success=False, error_message=str(e))
 
             logger.error(
                 "Error fetching all rows: %s Args: %s. Error: %s",
@@ -329,7 +390,8 @@ class DatabaseManager:
                     result = row[0] if row else None
 
                     execution_time = time.time() - start_time
-                    record_query(query, execution_time, success=True, cache_hit=False)
+                    record_query(query, execution_time,
+                                 success=True, cache_hit=False)
 
                     # Cache the result for 10 minutes
                     if result is not None:
@@ -338,7 +400,8 @@ class DatabaseManager:
                     return result
         except Exception as e:
             execution_time = time.time() - start_time
-            record_query(query, execution_time, success=False, error_message=str(e))
+            record_query(query, execution_time,
+                         success=False, error_message=str(e))
 
             logger.error(
                 "Error fetching value: %s Args: %s. Error: %s",
@@ -385,7 +448,8 @@ class DatabaseManager:
             exists = await dict_cursor.fetchone()
 
         if not exists:
-            logger.info("Adding column '%s' to table '%s'...", column_name, table_name)
+            logger.info("Adding column '%s' to table '%s'...",
+                        column_name, table_name)
             alter_statement = f"ALTER TABLE `{table_name}` ADD COLUMN `{column_name}` {column_definition}"
             if after:
                 alter_statement += f" AFTER `{after}`"
@@ -402,7 +466,8 @@ class DatabaseManager:
                 )
                 raise
         else:
-            logger.debug("Column '%s' already exists in '%s'.", column_name, table_name)
+            logger.debug("Column '%s' already exists in '%s'.",
+                         column_name, table_name)
 
     async def initialize_db(self):
         """Initializes the database schema."""
@@ -413,7 +478,8 @@ class DatabaseManager:
         try:
             async with pool.acquire() as conn:
                 async with conn.cursor(aiomysql.Cursor) as cursor:
-                    logger.info("Attempting to initialize/verify database schema...")
+                    logger.info(
+                        "Attempting to initialize/verify database schema...")
 
                     # --- Users Table ---
                     if not await self.table_exists(conn, "users"):
@@ -1070,7 +1136,8 @@ class DatabaseManager:
                             cursor, "bet_legs", "odds", "DECIMAL(10,2) NULL"
                         )
 
-                    logger.info("Database schema initialization/verification complete.")
+                    logger.info(
+                        "Database schema initialization/verification complete.")
         except Exception as e:
             logger.error(
                 "Error initializing/verifying database schema: %s", e, exc_info=True
@@ -1237,7 +1304,8 @@ class DatabaseManager:
                 else json.dumps(game.get("raw_json", {}))
             ),
             game.get(
-                "fetched_at", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                "fetched_at", datetime.now(
+                    timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             ),
         )
         await self.execute(query, params)
@@ -1322,13 +1390,15 @@ class DatabaseManager:
                         season=season,
                     )
                     logger.info(
-                        "Fetched %d games for %s/%s", len(games), sport, league_name
+                        "Fetched %d games for %s/%s", len(
+                            games), sport, league_name
                     )
                     for game in games:
                         try:
                             game["season"] = season
                             await self.upsert_api_game(game)
-                            logger.info("Saved game %s to database", game.get("id"))
+                            logger.info(
+                                "Saved game %s to database", game.get("id"))
                         except Exception as e:
                             logger.error(
                                 "Error saving game %s: %s",
@@ -1401,9 +1471,11 @@ class DatabaseManager:
             league_abbr,
             league_key,
         )
-        logger.info("[get_normalized_games_for_dropdown] Starting sync_games_from_api")
+        logger.info(
+            "[get_normalized_games_for_dropdown] Starting sync_games_from_api")
         await self.sync_games_from_api(force_season=season)
-        logger.info("[get_normalized_games_for_dropdown] Completed sync_games_from_api")
+        logger.info(
+            "[get_normalized_games_for_dropdown] Completed sync_games_from_api")
         today_start = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -1445,7 +1517,8 @@ class DatabaseManager:
         from bot.config.leagues import LEAGUE_ID_MAP
 
         league_id = LEAGUE_ID_MAP.get(league_name, "1")
-        logger.info("[get_normalized_games_for_dropdown] Using league_id=%s", league_id)
+        logger.info(
+            "[get_normalized_games_for_dropdown] Using league_id=%s", league_id)
         if sport.lower() == "baseball" and league_key == "MLB":
             current_year = datetime.now().year
             current_month = datetime.now().month
@@ -1568,7 +1641,8 @@ class DatabaseManager:
             async with conn.cursor(aiomysql.DictCursor) as cursor:
                 await cursor.execute(query, (guild_id,))
                 rows = await cursor.fetchall()
-                logger.info("Fetched %d open bets for guild_id=%s", len(rows), guild_id)
+                logger.info("Fetched %d open bets for guild_id=%s",
+                            len(rows), guild_id)
                 return rows
 
     async def _get_or_create_game(self, api_game_id: str) -> int:

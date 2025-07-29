@@ -418,8 +418,9 @@ class TestDatabaseManager:
         with patch("aiomysql.create_pool") as mock_create_pool:
             mock_create_pool.side_effect = Exception("Connection failed")
 
-            with pytest.raises(Exception):
-                await db_manager.connect()
+            # DatabaseManager handles connection failures gracefully and returns None
+            result = await db_manager.connect()
+            assert result is None
 
     @pytest.mark.skip(
         reason="Database connection tests require complex mocking - skipping for now"

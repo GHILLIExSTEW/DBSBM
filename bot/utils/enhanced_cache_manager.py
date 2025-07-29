@@ -13,6 +13,7 @@ This module provides advanced caching capabilities with:
 import asyncio
 import json
 import logging
+import os
 import pickle
 import time
 from datetime import datetime, timedelta
@@ -28,7 +29,6 @@ try:
 except ImportError:
     # Fallback - try to import from parent directory
     import sys
-    import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Add multiple possible paths for different execution contexts
     possible_paths = [
@@ -157,7 +157,6 @@ class EnhancedCacheManager:
             self._redis_db = self.settings.redis.database
         else:
             # Fallback to environment variables
-            import os
             self._redis_host = os.getenv(
                 "REDIS_HOST", "redis-11437.c309.us-east-2-1.ec2.redns.redis-cloud.com")
             self._redis_port = int(os.getenv("REDIS_PORT", "11437"))
@@ -172,9 +171,11 @@ class EnhancedCacheManager:
             self._enabled = False
         else:
             # Check if Redis is explicitly disabled via environment variable
-            redis_disabled = os.getenv("REDIS_DISABLED", "false").lower() == "true"
+            redis_disabled = os.getenv(
+                "REDIS_DISABLED", "false").lower() == "true"
             if redis_disabled:
-                logger.info("Redis is explicitly disabled via REDIS_DISABLED environment variable")
+                logger.info(
+                    "Redis is explicitly disabled via REDIS_DISABLED environment variable")
                 self._enabled = False
             else:
                 self._enabled = True
@@ -237,7 +238,8 @@ class EnhancedCacheManager:
                         f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}")
                     return True
                 except asyncio.TimeoutError:
-                    logger.warning(f"Redis ping timeout on attempt {attempt + 1}")
+                    logger.warning(
+                        f"Redis ping timeout on attempt {attempt + 1}")
                     self._circuit_breaker.on_failure()
                     if attempt < self._connection_retries - 1:
                         await asyncio.sleep(self._retry_delay)
@@ -254,7 +256,8 @@ class EnhancedCacheManager:
                 if attempt < self._connection_retries - 1:
                     await asyncio.sleep(self._retry_delay)
 
-        logger.warning("Failed to connect to Redis Cloud after all retries - continuing with local cache only")
+        logger.warning(
+            "Failed to connect to Redis Cloud after all retries - continuing with local cache only")
         self._enabled = False
         return False
 
@@ -649,44 +652,56 @@ class EnhancedCacheManager:
         return warmed_count
 
 
-# Global enhanced cache manager instance
-enhanced_cache_manager = EnhancedCacheManager()
-
+# Global enhanced cache manager instance - use function to avoid import-time execution
+def get_enhanced_cache_manager():
+    """Get the global enhanced cache manager instance."""
+    if not hasattr(get_enhanced_cache_manager, '_instance'):
+        get_enhanced_cache_manager._instance = EnhancedCacheManager()
+    return get_enhanced_cache_manager._instance
 
 # Convenience functions for common cache operations
+
+
 async def enhanced_cache_get(prefix: str, key: str) -> Optional[Any]:
     """Get a value from enhanced cache."""
-    return await enhanced_cache_manager.get(prefix, key)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.get(prefix, key)
 
 
 async def enhanced_cache_set(prefix: str, key: str, value: Any, ttl: Optional[int] = None) -> bool:
     """Set a value in enhanced cache."""
-    return await enhanced_cache_manager.set(prefix, key, value, ttl)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.set(prefix, key, value, ttl)
 
 
 async def enhanced_cache_mget(prefix: str, keys: List[str]) -> List[Optional[Any]]:
     """Get multiple values from enhanced cache."""
-    return await enhanced_cache_manager.mget(prefix, keys)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.mget(prefix, keys)
 
 
 async def enhanced_cache_mset(prefix: str, data: Dict[str, Any], ttl: Optional[int] = None) -> bool:
     """Set multiple values in enhanced cache."""
-    return await enhanced_cache_manager.mset(prefix, data, ttl)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.mset(prefix, data, ttl)
 
 
 async def enhanced_cache_delete(prefix: str, key: str) -> bool:
     """Delete a value from enhanced cache."""
-    return await enhanced_cache_manager.delete(prefix, key)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.delete(prefix, key)
 
 
 async def enhanced_cache_exists(prefix: str, key: str) -> bool:
     """Check if a key exists in enhanced cache."""
-    return await enhanced_cache_manager.exists(prefix, key)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.exists(prefix, key)
 
 
 async def enhanced_cache_clear_prefix(prefix: str, pattern: str = None) -> int:
     """Clear all keys with a specific prefix in enhanced cache."""
-    return await enhanced_cache_manager.clear_prefix(prefix, pattern)
+    cache_manager = get_enhanced_cache_manager()
+    return await cache_manager.clear_prefix(prefix, pattern)
 
 
 # Enhanced caching decorators

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
 from bot.utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
@@ -478,7 +478,7 @@ class AnalyticsService:
     async def get_cache_stats(self) -> Dict[str, Any]:
         """Get analytics cache statistics."""
         try:
-            return await enhanced_cache_manager.get_stats()
+            return await get_enhanced_cache_manager().get_stats()
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
             return {}

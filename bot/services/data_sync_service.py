@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from bot.services.game_service import GameService
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
 from bot.utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class DataSyncService:
     def __init__(self, game_service: GameService, db_manager: DatabaseManager):
         self.game_service = game_service  # Can be None initially
         self.db_manager = db_manager
-        self.cache = enhanced_cache_manager
+        self.cache = get_enhanced_cache_manager()
         self._sync_task = None
         self._is_running = False
 

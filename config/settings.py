@@ -81,6 +81,9 @@ class APISettings(BaseSettings):
     rapidapi_key: Optional[SecretStr] = Field(
         None, env="RAPIDAPI_KEY", description="RapidAPI key"
     )
+    datagolf_key: Optional[SecretStr] = Field(
+        None, env="DATAGOLF_API_KEY", description="DataGolf API key"
+    )
     weather_key: Optional[SecretStr] = Field(
         None, env="WEATHER_API_KEY", description="WeatherAPI key"
     )
@@ -418,6 +421,11 @@ def get_api_config() -> Dict[str, any]:
         "rapidapi_key": (
             settings.api.rapidapi_key.get_secret_value()
             if settings.api.rapidapi_key
+            else None
+        ),
+        "datagolf_key": (
+            settings.api.datagolf_key.get_secret_value()
+            if settings.api.datagolf_key
             else None
         ),
         "timeout": settings.api.timeout,

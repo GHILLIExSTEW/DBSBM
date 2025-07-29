@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Script to help set up environment variables for DBSBM.
+Environment setup script for DBSBM.
+Creates .env template and validates environment configuration.
 """
 
 import os
 import sys
-from typing import Dict, List
+from pathlib import Path
 
 
 def create_env_template():
-    """Create a template .env file."""
+    """Create a .env template file with all required variables."""
     template = """# DBSBM Environment Configuration
 # Copy this file to .env and fill in your actual values
 
@@ -24,6 +25,8 @@ TEST_GUILD_ID=your_discord_guild_id
 
 # Optional Variables
 ODDS_API_KEY=your_odds_api_key_here
+RAPIDAPI_KEY=your_rapidapi_key_here
+DATAGOLF_API_KEY=your_datagolf_api_key_here
 LOG_LEVEL=INFO
 API_TIMEOUT=30
 API_RETRY_ATTEMPTS=3
@@ -98,11 +101,25 @@ def validate_env_values():
         "TEST_GUILD_ID": "Discord guild ID"
     }
 
+    # Optional API keys that should be validated if present
+    optional_api_vars = {
+        "RAPIDAPI_KEY": "RapidAPI key",
+        "DATAGOLF_API_KEY": "DataGolf API key",
+        "ODDS_API_KEY": "Odds API key"
+    }
+
     invalid_vars = []
 
+    # Check required variables
     for var_name, description in required_vars.items():
         value = os.getenv(var_name)
         if not value or value.startswith("your_") or value == "placeholder":
+            invalid_vars.append(f"{var_name} ({description})")
+
+    # Check optional API variables if they're set
+    for var_name, description in optional_api_vars.items():
+        value = os.getenv(var_name)
+        if value and (value.startswith("your_") or value == "placeholder"):
             invalid_vars.append(f"{var_name} ({description})")
 
     if invalid_vars:
@@ -116,40 +133,33 @@ def validate_env_values():
 
 
 def main():
-    """Main setup function."""
-    print("🚀 DBSBM Environment Setup Tool")
-    print("=" * 50)
+    """Main function to run environment setup."""
+    print("🔧 DBSBM Environment Setup")
+    print("=" * 40)
 
-    # Check if .env file exists
-    env_exists = check_env_file()
-
-    if not env_exists:
-        print("\n📝 Creating .env template file...")
+    # Check if .env exists
+    if not os.path.exists(".env"):
+        print("📝 Creating .env template...")
         create_env_template()
-        print("\n💡 Next steps:")
+        print("\n📋 Next steps:")
         print("1. Edit the .env file with your actual credentials")
         print("2. Run this script again to validate your configuration")
-        return 1
+        return
+
+    # Check environment file
+    print("🔍 Checking environment configuration...")
+    if not check_env_file():
+        print("\n❌ Please fix the missing variables and run again")
+        return
 
     # Validate environment values
-    print("\n🔍 Validating environment values...")
-    values_valid = validate_env_values()
-
-    if not values_valid:
-        print(
-            "\n💡 Please update the .env file with actual values and run this script again")
-        return 1
-
-    # Run the diagnostic tool
-    print("\n🔍 Running environment diagnostic...")
-    try:
-        from scripts.diagnose_env import main as diagnose_main
-        return diagnose_main()
-    except ImportError:
-        print("⚠️  Diagnostic script not found, but environment looks good!")
-        print("✅ Environment setup appears to be complete")
-        return 0
+    print("\n✅ Environment file is properly configured")
+    if validate_env_values():
+        print("\n🎉 Environment setup is complete!")
+        print("You can now run the DBSBM bot")
+    else:
+        print("\n❌ Please update the placeholder values in your .env file")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

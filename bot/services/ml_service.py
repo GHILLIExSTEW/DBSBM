@@ -12,7 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
 from bot.utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,8 @@ class MLService:
                         self.scalers[model_type] = pickle.loads(cached_scaler)
                         logger.info(f"Loaded cached model: {model_type}")
                     except Exception as e:
-                        logger.error(f"Error loading cached model {model_type}: {e}")
+                        logger.error(
+                            f"Error loading cached model {model_type}: {e}")
                         # Fall back to training new model
                         await self._train_model(model_type)
                 else:
@@ -133,7 +134,8 @@ class MLService:
             training_data = await self._get_training_data(model_type)
 
             if len(training_data) < self.config['min_training_samples']:
-                logger.warning(f"Insufficient training data for {model_type}: {len(training_data)} samples")
+                logger.warning(
+                    f"Insufficient training data for {model_type}: {len(training_data)} samples")
                 return
 
             # Prepare features and labels
@@ -163,7 +165,8 @@ class MLService:
             self.scalers[model_type] = scaler
 
             # Update model version
-            self.model_versions[model_type] = datetime.now(timezone.utc).isoformat()
+            self.model_versions[model_type] = datetime.now(
+                timezone.utc).isoformat()
 
             logger.info(f"Trained and cached model: {model_type}")
 
@@ -260,7 +263,8 @@ class MLService:
                 # Extract features
                 amount = float(row.get('amount', 0))
                 odds = float(row.get('odds', 1.0))
-                sport_encoded = hash(row.get('sport', '')) % 100  # Simple encoding
+                sport_encoded = hash(row.get('sport', '')
+                                     ) % 100  # Simple encoding
                 league_encoded = hash(row.get('league', '')) % 100
 
                 # Create feature vector
@@ -293,7 +297,8 @@ class MLService:
                 odds_change = final_odds - initial_odds
                 odds_change_percent = (odds_change / initial_odds) * 100
 
-                feature_vector = [initial_odds, final_odds, odds_change, odds_change_percent, sport_encoded, league_encoded]
+                feature_vector = [initial_odds, final_odds, odds_change,
+                                  odds_change_percent, sport_encoded, league_encoded]
                 features.append(feature_vector)
 
                 # Label: 1 if odds increased, 0 if decreased
@@ -322,7 +327,8 @@ class MLService:
                 # Calculate value metrics
                 value_ratio = expected_value / amount if amount > 0 else 0
 
-                feature_vector = [amount, odds, expected_value, value_ratio, sport_encoded, league_encoded]
+                feature_vector = [amount, odds, expected_value,
+                                  value_ratio, sport_encoded, league_encoded]
                 features.append(feature_vector)
 
                 # Label: 1 if actual result was positive, 0 otherwise
@@ -347,7 +353,8 @@ class MLService:
                 win_rate = float(row.get('win_rate', 0))
                 sport_encoded = hash(row.get('favorite_sport', '')) % 100
 
-                feature_vector = [bet_count, avg_bet_size, win_rate, sport_encoded]
+                feature_vector = [bet_count,
+                                  avg_bet_size, win_rate, sport_encoded]
                 features.append(feature_vector)
 
                 # Label: 1 if user is active (bet_count > 5), 0 otherwise
@@ -539,7 +546,7 @@ class MLService:
     async def get_cache_stats(self) -> Dict[str, Any]:
         """Get ML cache statistics."""
         try:
-            return await enhanced_cache_manager.get_stats()
+            return await get_enhanced_cache_manager().get_stats()
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
             return {}

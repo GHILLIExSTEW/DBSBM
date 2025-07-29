@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from bot.utils.enhanced_cache_manager import enhanced_cache_manager, enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete
+from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
 from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
 USER_CACHE_TTL = 3600  # Default TTL (1 hour)
@@ -20,7 +20,7 @@ class UserService:
     def __init__(self, bot, db_manager):
         self.bot = bot
         self.db = db_manager
-        self.cache = enhanced_cache_manager
+        self.cache = get_enhanced_cache_manager()
 
     async def start(self):
         """Initialize async components if needed."""
@@ -196,14 +196,18 @@ class UserService:
 
             # Calculate statistics
             total_bets = len(bets)
-            completed_bets = [bet for bet in bets if bet["status"] in ["won", "lost"]]
-            won_bets = [bet for bet in completed_bets if bet["status"] == "won"]
+            completed_bets = [
+                bet for bet in bets if bet["status"] in ["won", "lost"]]
+            won_bets = [
+                bet for bet in completed_bets if bet["status"] == "won"]
 
-            win_rate = len(won_bets) / len(completed_bets) if completed_bets else 0.0
+            win_rate = len(won_bets) / \
+                len(completed_bets) if completed_bets else 0.0
             total_volume = sum(bet["units"] for bet in bets)
             avg_bet_size = total_volume / total_bets if total_bets > 0 else 0.0
             total_winnings = sum(bet.get("payout", 0) for bet in won_bets)
-            roi = (total_winnings - total_volume) / total_volume if total_volume > 0 else 0.0
+            roi = (total_winnings - total_volume) / \
+                total_volume if total_volume > 0 else 0.0
 
             return {
                 "total_bets": total_bets,
@@ -242,7 +246,8 @@ class UserService:
             await self.update_user_balance(user_id, -amount, "withdrawal")
             return True
         except Exception as e:
-            logger.exception(f"Error subtracting units for user {user_id}: {e}")
+            logger.exception(
+                f"Error subtracting units for user {user_id}: {e}")
             return False
 
     async def get_top_users(self, guild_id: int, limit: int = 10) -> List[Dict[str, Any]]:
