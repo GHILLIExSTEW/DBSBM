@@ -619,6 +619,20 @@ class SportsAPI:
 
         return saved_files
 
+    async def get_leagues(self, sport: str = None) -> Dict[str, Any]:
+        """Get available leagues for a sport or all sports."""
+        try:
+            if sport:
+                if sport in LEAGUE_CONFIG:
+                    return {"status": "success", "data": LEAGUE_CONFIG[sport]}
+                else:
+                    return {"status": "error", "message": f"Sport '{sport}' not found"}
+            else:
+                return {"status": "success", "data": LEAGUE_CONFIG}
+        except Exception as e:
+            logger.error(f"Error getting leagues: {e}")
+            return {"status": "error", "message": str(e)}
+
 
 async def main():
     """Example usage."""

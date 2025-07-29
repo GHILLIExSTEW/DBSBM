@@ -351,24 +351,25 @@ async def check_api_health() -> Dict[str, Any]:
         try:
             # Test a simple API call with timeout
             leagues = await asyncio.wait_for(
-                sports_api.get_leagues("soccer"),
+                # Use "football" instead of "soccer"
+                sports_api.get_leagues("football"),
                 timeout=10.0  # Reduced timeout for startup
             )
             response_time = time.time() - start_time
 
-            if leagues and len(leagues) > 0:
+            if leagues and isinstance(leagues, dict) and leagues.get("status") == "success":
                 return {
                     "status": "healthy",
                     "response_time": response_time,
                     "details": {
-                        "leagues_found": len(leagues),
+                        "leagues_found": len(leagues.get("data", {})),
                         "api_endpoint": "sports-api"
                     }
                 }
             else:
                 return {
                     "status": "degraded",
-                    "error_message": "API returned empty response",
+                    "error_message": "API returned empty or invalid response",
                     "response_time": response_time
                 }
 

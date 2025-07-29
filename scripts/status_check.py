@@ -89,7 +89,7 @@ class DBSBMStatusChecker:
         env_status = {}
 
         # Check .env file
-        env_file = self.project_root / ".env"
+        env_file = self.project_root / "bot" / ".env"
         if env_file.exists():
             env_status[".env File"] = "✅ Exists"
         else:

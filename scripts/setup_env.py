@@ -57,7 +57,7 @@ FLASK_ENV=production
 
 def check_env_file():
     """Check if .env file exists and has required variables."""
-    env_file = ".env"
+    env_file = "bot/.env"
 
     if not os.path.exists(env_file):
         print(f"❌ {env_file} file not found")
@@ -138,13 +138,12 @@ def main():
     print("=" * 40)
 
     # Check if .env exists
-    if not os.path.exists(".env"):
+    if not os.path.exists("bot/.env"):
         print("📝 Creating .env template...")
         create_env_template()
-        print("\n📋 Next steps:")
         print("1. Edit the .env file with your actual credentials")
-        print("2. Run this script again to validate your configuration")
-        return
+        print("2. Run this script again to validate")
+        return False
 
     # Check environment file
     print("🔍 Checking environment configuration...")

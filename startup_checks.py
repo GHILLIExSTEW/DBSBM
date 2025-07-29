@@ -179,13 +179,16 @@ class DBSBMStartupChecker:
                                     f"✅ Healthy ({response_time:.2f}s)"
                                 )
                             elif status == "degraded":
+                                # Treat degraded as a warning during startup, not a failure
                                 health_checks[service] = (
                                     f"⚠️ Degraded ({response_time:.2f}s)"
                                 )
-                            else:
+                            elif status == "unhealthy":
                                 health_checks[service] = (
                                     f"❌ Unhealthy ({response_time:.2f}s)"
                                 )
+                            else:
+                                health_checks[service] = f"❓ Unknown status"
                         else:
                             health_checks[service] = f"❓ Unknown status"
                 else:
@@ -400,12 +403,12 @@ class DBSBMStartupChecker:
         print(f"⚠️ Warnings: {warnings}")
         print(f"❌ Failed: {failed_checks}")
 
-        if failed_checks == 0 and warnings == 0:
-            print("\n🎉 All checks passed! Bot is ready to start.")
-            logger.info("All startup checks passed successfully")
-        elif failed_checks == 0:
-            print("\n⚠️ Some warnings detected, but bot should start successfully.")
-            logger.warning("Startup checks completed with warnings")
+        # Be more lenient during startup - only treat actual failures as critical
+        if failed_checks == 0:
+            print(
+                "\n🎉 Bot is ready to start! (Some services may be degraded during startup)"
+            )
+            logger.info("Startup checks completed - bot can start")
         else:
             print(
                 f"\n❌ {failed_checks} critical issues detected. Please fix before starting bot."
@@ -485,22 +488,21 @@ class DBSBMStartupChecker:
         """Check file permissions for security."""
         permissions = {}
 
-        # Check .env file permissions
-        env_files = [self.project_root / ".env", self.project_root / "bot" / ".env"]
+        # Check .env file permissions - only check in bot folder where it actually exists
+        env_file = self.project_root / "bot" / ".env"
 
-        for env_file in env_files:
-            if env_file.exists():
-                try:
-                    # On Windows, we can't easily check file permissions like on Unix
-                    # So we'll just verify the file exists and is readable
-                    if env_file.is_file():
-                        permissions[str(env_file)] = "✅ Proper permissions"
-                    else:
-                        permissions[str(env_file)] = "❌ Not a regular file"
-                except Exception as e:
-                    permissions[str(env_file)] = f"❌ Error checking permissions: {e}"
-            else:
-                permissions[str(env_file)] = "⚠️ File not found"
+        if env_file.exists():
+            try:
+                # On Windows, we can't easily check file permissions like on Unix
+                # So we'll just verify the file exists and is readable
+                if env_file.is_file():
+                    permissions[str(env_file)] = "✅ Proper permissions"
+                else:
+                    permissions[str(env_file)] = "❌ Not a regular file"
+            except Exception as e:
+                permissions[str(env_file)] = f"❌ Error checking permissions: {e}"
+        else:
+            permissions[str(env_file)] = "⚠️ File not found"
 
         return permissions
 

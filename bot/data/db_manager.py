@@ -1710,3 +1710,13 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error fetching next bet serial: {e}", exc_info=True)
         return None
+
+# Global database manager instance
+_db_manager = None
+
+def get_db_manager() -> DatabaseManager:
+    """Get the global database manager instance."""
+    global _db_manager
+    if _db_manager is None:
+        _db_manager = DatabaseManager()
+    return _db_manager
