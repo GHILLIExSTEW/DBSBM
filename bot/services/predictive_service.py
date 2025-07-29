@@ -36,6 +36,7 @@ from bot.utils.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 
+
 class ModelType(Enum):
     """Types of machine learning models."""
     CLASSIFICATION = "classification"
@@ -45,6 +46,7 @@ class ModelType(Enum):
     RECOMMENDATION = "recommendation"
     ANOMALY_DETECTION = "anomaly_detection"
 
+
 class ModelStatus(Enum):
     """Status of machine learning models."""
     TRAINING = "training"
@@ -52,6 +54,7 @@ class ModelStatus(Enum):
     INACTIVE = "inactive"
     DEPRECATED = "deprecated"
     ERROR = "error"
+
 
 class PredictionType(Enum):
     """Types of predictions."""
@@ -61,6 +64,7 @@ class PredictionType(Enum):
     RISK_ASSESSMENT = "risk_assessment"
     CHURN_PREDICTION = "churn_prediction"
     RECOMMENDATION = "recommendation"
+
 
 @dataclass
 class MLModel:
@@ -81,6 +85,7 @@ class MLModel:
     trained_at: Optional[datetime] = None
     deployed_at: Optional[datetime] = None
 
+
 @dataclass
 class Prediction:
     """Prediction data structure."""
@@ -94,6 +99,7 @@ class Prediction:
     user_id: Optional[int] = None
     guild_id: Optional[int] = None
 
+
 @dataclass
 class ModelPerformance:
     """Model performance data structure."""
@@ -105,6 +111,7 @@ class ModelPerformance:
     dataset_size: int
     evaluation_type: str
 
+
 @dataclass
 class FeatureImportance:
     """Feature importance data structure."""
@@ -113,6 +120,7 @@ class FeatureImportance:
     rank: int
     model_id: str
     calculated_at: datetime
+
 
 class PredictiveService:
     """Predictive analytics and machine learning service."""
@@ -195,10 +203,33 @@ class PredictiveService:
             logger.error(f"Failed to initialize predictive service: {e}")
             raise
 
+    async def start(self):
+        """Start the PredictiveService and perform any necessary setup."""
+        logger.info("Starting PredictiveService")
+        try:
+            # Initialize the service
+            await self.initialize()
+            logger.info("PredictiveService started successfully")
+        except Exception as e:
+            logger.error(
+                f"Failed to start PredictiveService: {e}", exc_info=True)
+            raise RuntimeError(f"Could not start PredictiveService: {str(e)}")
+
+    async def stop(self):
+        """Stop the PredictiveService and perform any necessary cleanup."""
+        logger.info("Stopping PredictiveService")
+        try:
+            await self.cleanup()
+            logger.info("PredictiveService stopped successfully")
+        except Exception as e:
+            logger.error(
+                f"Failed to stop PredictiveService: {e}", exc_info=True)
+            raise RuntimeError(f"Could not stop PredictiveService: {str(e)}")
+
     @time_operation("model_training")
     async def train_model(self, model_name: str, model_type: ModelType, features: List[str],
-                         target_variable: str, training_data: List[Dict[str, Any]],
-                         config: Dict[str, Any]) -> Optional[MLModel]:
+                          target_variable: str, training_data: List[Dict[str, Any]],
+                          config: Dict[str, Any]) -> Optional[MLModel]:
         """Train a new machine learning model."""
         try:
             model_id = f"model_{uuid.uuid4().hex[:12]}"
@@ -242,7 +273,8 @@ class PredictiveService:
             else:
                 model.status = ModelStatus.ERROR
                 await self._update_model(model)
-                logger.error(f"Model training failed: {training_result['error']}")
+                logger.error(
+                    f"Model training failed: {training_result['error']}")
                 return None
 
         except Exception as e:
@@ -251,8 +283,8 @@ class PredictiveService:
 
     @time_operation("prediction_generation")
     async def generate_prediction(self, model_id: str, input_data: Dict[str, Any],
-                                prediction_type: PredictionType, user_id: Optional[int] = None,
-                                guild_id: Optional[int] = None) -> Optional[Prediction]:
+                                  prediction_type: PredictionType, user_id: Optional[int] = None,
+                                  guild_id: Optional[int] = None) -> Optional[Prediction]:
         """Generate a prediction using a trained model."""
         try:
             model = self.active_models.get(model_id)
@@ -263,7 +295,8 @@ class PredictiveService:
             # Validate input data
             validation_result = await self._validate_input_data(input_data, model.features)
             if not validation_result['valid']:
-                logger.error(f"Input data validation failed: {validation_result['errors']}")
+                logger.error(
+                    f"Input data validation failed: {validation_result['errors']}")
                 return None
 
             # Generate prediction
@@ -287,12 +320,14 @@ class PredictiveService:
 
                 # Cache prediction
                 cache_key = f"pred_{model_id}_{hash(str(input_data))}"
-                cache_manager.set(cache_key, prediction, ttl=3600)  # Cache for 1 hour
+                cache_manager.set(cache_key, prediction,
+                                  ttl=3600)  # Cache for 1 hour
 
                 record_metric("predictions_generated", 1)
                 return prediction
             else:
-                logger.error(f"Prediction generation failed: {prediction_result['error']}")
+                logger.error(
+                    f"Prediction generation failed: {prediction_result['error']}")
                 return None
 
         except Exception as e:
@@ -365,7 +400,8 @@ class PredictiveService:
 
                 return feature_importances
             else:
-                logger.error(f"Feature importance analysis failed: {importance_result['error']}")
+                logger.error(
+                    f"Feature importance analysis failed: {importance_result['error']}")
                 return []
 
         except Exception as e:
@@ -418,7 +454,7 @@ class PredictiveService:
 
     @time_operation("batch_prediction")
     async def generate_batch_predictions(self, model_id: str, input_data_list: List[Dict[str, Any]],
-                                       prediction_type: PredictionType) -> List[Prediction]:
+                                         prediction_type: PredictionType) -> List[Prediction]:
         """Generate predictions for multiple inputs."""
         try:
             predictions = []
@@ -449,7 +485,8 @@ class PredictiveService:
 
             # Validate model performance
             if not await self._validate_model_performance(model):
-                logger.error(f"Model {model_id} does not meet performance requirements")
+                logger.error(
+                    f"Model {model_id} does not meet performance requirements")
                 return False
 
             # Deploy model
@@ -465,7 +502,8 @@ class PredictiveService:
 
                 return True
             else:
-                logger.error(f"Model deployment failed: {deployment_result['error']}")
+                logger.error(
+                    f"Model deployment failed: {deployment_result['error']}")
                 return False
 
         except Exception as e:
