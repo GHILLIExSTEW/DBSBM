@@ -1,0 +1,10 @@
+# Base directory structure
+base_dir: "${PROJECT_ROOT}"
+assets_dir: "${base_dir}/assets"
+font_dir: "${assets_dir}/fonts"
+# logo_dir: "${assets_dir}/logos"
+# teams_subdir: "${logo_dir}/teams"
+# leagues_subdir: "${logo_dir}/leagues"
+
+# Default fallback category
+default_fallback_category: "OTHER_SPORTS"

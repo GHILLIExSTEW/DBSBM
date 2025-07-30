@@ -1,0 +1,26 @@
+leagues:
+  - code: NFL
+    name: National Football League
+    sport: Football
+    country: USA
+    logo_path: static/logos/leagues/FOOTBALL/NFL/nfl.webp
+  - code: CFL
+    name: Canadian Football League
+    sport: Football
+    country: Canada
+    logo_path: static/logos/leagues/FOOTBALL/CFL/cfl.webp
+  - code: NCAA
+    name: NCAA College Football
+    sport: Football
+    country: USA
+    logo_path: static/logos/leagues/FOOTBALL/NCAA/ncaa.webp
+  - code: XFL
+    name: XFL
+    sport: Football
+    country: USA
+    logo_path: static/logos/leagues/FOOTBALL/XFL/xfl.webp
+  - code: AFL
+    name: Australian Football League
+    sport: Football
+    country: Australia
+    logo_path: static/logos/leagues/FOOTBALL/AFL/afl.webp

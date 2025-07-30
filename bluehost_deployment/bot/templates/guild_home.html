@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ guild.name }} Home{% endblock %}
+{% block content %}
+<h1>{{ guild.name }} Home</h1>
+<p>Welcome, {{ guild.owner }}!</p>
+<ul>
+    <li><a href="{{ url_for('live_scores', guild_id=guild.id) }}">Live Scores</a></li>
+    <li><a href="{{ url_for('player_stats', guild_id=guild.id) }}">Player Stats</a></li>
+    <li><a href="{{ url_for('odds_buster', guild_id=guild.id) }}">Odds Buster</a></li>
+    <li><a href="{{ url_for('playmaker_stats', guild_id=guild.id) }}">Playmaker/Capper Stats</a></li>
+    <li><a href="{{ url_for('guild_settings', guild_id=guild.id) }}">Guild Settings</a></li>
+    <li><a href="{{ url_for('subscriptions', guild_id=guild.id) }}">Subscriptions</a></li>
+</ul>
+{% endblock %}

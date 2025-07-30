@@ -1,0 +1,58 @@
+"""Pittsburgh Steelers 2025-2026 Schedule"""
+
+PITTSBURGH_STEELERS_SCHEDULE = {
+    "week_1": ("SUNDAY", "SEPTEMBER 7, 2025", "AT NEW YORK JETS", "1:00 PM", "CBS"),
+    "week_2": ("SUNDAY", "SEPTEMBER 14, 2025", "VS SEATTLE SEAHAWKS", "1:00 PM", "FOX"),
+    "week_3": (
+        "SUNDAY",
+        "SEPTEMBER 21, 2025",
+        "AT NEW ENGLAND PATRIOTS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_4": (
+        "SUNDAY",
+        "SEPTEMBER 28, 2025",
+        "VS MINNESOTA VIKINGS (DUBLIN)",
+        "9:30 AM",
+        "NFLN",
+    ),
+    "week_5": ("BYE WEEK", "", "BYE WEEK", "", ""),
+    "week_6": ("SUNDAY", "OCTOBER 12, 2025", "VS CLEVELAND BROWNS", "1:00 PM", "CBS"),
+    "week_7": (
+        "THURSDAY",
+        "OCTOBER 16, 2025",
+        "AT CINCINNATI BENGALS",
+        "8:15 PM",
+        "PRIME VIDEO",
+    ),
+    "week_8": ("SUNDAY", "OCTOBER 26, 2025", "VS GREEN BAY PACKERS", "8:20 PM", "NBC"),
+    "week_9": ("SUNDAY", "NOVEMBER 2, 2025", "VS INDIANAPOLIS COLTS", "1:00 PM", "CBS"),
+    "week_10": (
+        "SUNDAY",
+        "NOVEMBER 9, 2025",
+        "AT LOS ANGELES CHARGERS",
+        "8:15 PM",
+        "ESPN/ABC",
+    ),
+    "week_11": (
+        "SUNDAY",
+        "NOVEMBER 16, 2025",
+        "VS CINCINNATI BENGALS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_12": ("SUNDAY", "NOVEMBER 23, 2025", "AT CHICAGO BEARS", "1:00 PM", "CBS"),
+    "week_13": ("SUNDAY", "NOVEMBER 30, 2025", "VS BUFFALO BILLS", "4:25 PM", "CBS"),
+    "week_14": ("SUNDAY", "DECEMBER 7, 2025", "AT BALTIMORE RAVENS", "1:00 PM", "CBS"),
+    "week_15": (
+        "MONDAY",
+        "DECEMBER 15, 2025",
+        "VS MIAMI DOLPHINS",
+        "8:15 PM",
+        "ESPN/ABC",
+    ),
+    "week_16": ("SUNDAY", "DECEMBER 21, 2025", "AT DETROIT LIONS", "4:25 PM", "CBS"),
+    "week_17": ("SUNDAY", "DECEMBER 28, 2025", "AT CLEVELAND BROWNS", "1:00 PM", "CBS"),
+    "week_18": ("SATURDAY", "JANUARY 3, 2026", "VS BALTIMORE RAVENS", "TBD", "TBD"),
+}

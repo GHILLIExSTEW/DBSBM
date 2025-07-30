@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Bet Tracking AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-chart-line"></i>
+                    Bet Tracking AI Dashboard
+                </h1>
+                <p class="dashboard-subtitle">Track your betting performance and server statistics</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Guilds Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-server"></i> Active Servers</h3>
+                </div>
+                <div class="card-body">
+                    {% if guilds %}
+                        <div class="row">
+                            {% for guild in guilds %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="guild-card">
+                                    <div class="guild-card-header">
+                                        <h5>{{ guild.guild_name }}</h5>
+                                        <span class="guild-id">ID: {{ guild.guild_id }}</span>
+                                    </div>
+                                    <div class="guild-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">Monthly Units:</span>
+                                            <span class="stat-value">{{ guild.monthly_units|default(0) }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">Yearly Units:</span>
+                                            <span class="stat-value">{{ guild.yearly_units|default(0) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="guild-actions">
+                                        <a href="{{ url_for('guild_home', guild_id=guild.guild_id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i> View Server
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No active servers found.</p>
+                            <p class="text-muted">Add your Discord server to start tracking bets!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Games Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-gamepad"></i> Live Games</h3>
+                </div>
+                <div class="card-body">
+                    {% if live_games %}
+                        <div class="row">
+                            {% for game in live_games %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="game-card">
+                                    <div class="game-header">
+                                        <h6>{{ game.league_name }}</h6>
+                                        <span class="game-time">{{ game.game_time }}</span>
+                                    </div>
+                                    <div class="game-teams">
+                                        <div class="team home-team">
+                                            <span class="team-name">{{ game.home_team_name }}</span>
+                                            <span class="team-score">{{ game.home_score|default(0) }}</span>
+                                        </div>
+                                        <div class="vs-divider">VS</div>
+                                        <div class="team away-team">
+                                            <span class="team-name">{{ game.away_team_name }}</span>
+                                            <span class="team-score">{{ game.away_score|default(0) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="game-status">
+                                        <span class="status-badge {{ game.status|lower }}">{{ game.status }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No live games available.</p>
+                            <p class="text-muted">Check back later for live scores and updates!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('server_list') }}" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-list"></i>
+                                <br>View All Servers
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-home"></i>
+                                <br>Home Page
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('health') }}" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-heartbeat"></i>
+                                <br>System Health
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('api_status') }}" class="btn btn-outline-warning btn-lg w-100">
+                                <i class="fas fa-cog"></i>
+                                <br>API Status
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-header {
+    text-align: center;
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.guild-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.guild-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.guild-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.guild-card-header h5 {
+    margin: 0;
+    color: #333;
+}
+
+.guild-id {
+    font-size: 0.8rem;
+    color: #666;
+    background: #f8f9fa;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.guild-stats {
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.game-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    transition: transform 0.2s;
+}
+
+.game-card:hover {
+    transform: translateY(-2px);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.game-header h6 {
+    margin: 0;
+    color: #333;
+}
+
+.game-time {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.game-teams {
+    margin-bottom: 1rem;
+}
+
+.team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.vs-divider {
+    text-align: center;
+    font-weight: bold;
+    color: #666;
+    margin: 0.5rem 0;
+}
+
+.team-name {
+    font-weight: 500;
+}
+
+.team-score {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.status-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.live {
+    background: #dc3545;
+    color: white;
+}
+
+.status-badge.scheduled {
+    background: #ffc107;
+    color: #333;
+}
+
+.status-badge.finished {
+    background: #28a745;
+    color: white;
+}
+
+.btn-lg {
+    padding: 1.5rem 1rem;
+    font-size: 1rem;
+}
+
+.btn-lg i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %} 

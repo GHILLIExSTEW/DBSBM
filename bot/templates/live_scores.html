@@ -1,83 +1,425 @@
 {% extends "base.html" %}
-
+{% block title %}Live Scores - {{ guild.name if guild else 'All Guilds' }}{% endblock %}
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">Live Scores</h1>
+<div class="live-scores">
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-trophy"></i>
+            Live Scores
+        </h1>
+        <p class="page-subtitle">Real-time game scores and statistics</p>
+    </div>
 
-    {% for league in leagues %}
-    <div class="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
-        <!-- League Header -->
-        <div class="p-4 bg-gray-50 border-b flex items-center">
-            {% if league.logo %}
-            <img src="{{ league.logo }}" alt="{{ league.name }}" class="w-8 h-8 mr-3">
-            {% endif %}
-            <h2 class="text-xl font-bold text-gray-900">{{ league.name }}</h2>
-        </div>
-
-        <!-- Games -->
-        <div class="divide-y">
-            {% for game in league.games %}
-            <div class="p-4 hover:bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <!-- Home Team -->
-                    <div class="flex items-center flex-1">
-                        {% if game.home_logo %}
-                        <img src="{{ game.home_logo }}" alt="{{ game.home_team_name }}" class="w-8 h-8 mr-3">
-                        {% endif %}
-                        <span class="font-semibold">{{ game.home_team_name }}</span>
-                    </div>
-
-                    <!-- Score -->
-                    <div class="flex items-center px-4">
-                        {% if game.score %}
-                        <span class="text-xl font-bold mx-2">{{ game.score.get('home', 0) }}</span>
-                        <span class="text-gray-500 mx-2">-</span>
-                        <span class="text-xl font-bold mx-2">{{ game.score.get('away', 0) }}</span>
-                        {% else %}
-                        <span class="text-gray-500">{{ game.start_time.strftime('%I:%M %p') }}</span>
-                        {% endif %}
-                    </div>
-
-                    <!-- Away Team -->
-                    <div class="flex items-center flex-1 justify-end">
-                        <span class="font-semibold">{{ game.away_team_name }}</span>
-                        {% if game.away_logo %}
-                        <img src="{{ game.away_logo }}" alt="{{ game.away_team_name }}" class="w-8 h-8 ml-3">
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Game Status -->
-                <div class="mt-2 text-sm text-gray-500">
-                    {% if game.status == 'live' %}
-                    <span class="text-red-600">● LIVE</span>
-                    {% elif game.status == 'halftime' %}
-                    <span class="text-yellow-600">● HALFTIME</span>
-                    {% else %}
-                    <span class="text-blue-600">● {{ game.status|title }}</span>
-                    {% endif %}
-
-                    {% if game.odds %}
-                    <span class="ml-4">
-                        {% if game.odds.get('home_ml') %}
-                        <span class="mr-2">Home: {{ game.odds.home_ml }}</span>
-                        {% endif %}
-                        {% if game.odds.get('away_ml') %}
-                        <span>Away: {{ game.odds.away_ml }}</span>
-                        {% endif %}
-                    </span>
-                    {% endif %}
+    {% if leagues %}
+        {% for league in leagues %}
+        <div class="league-section">
+            <!-- League Header -->
+            <div class="league-header">
+                {% if league.logo %}
+                <img src="{{ league.logo }}" alt="{{ league.name }}" class="league-logo">
+                {% endif %}
+                <div class="league-info">
+                    <h2 class="league-name">{{ league.name }}</h2>
+                    <p class="league-description">Live games and upcoming matches</p>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endfor %}
 
-    {% if not leagues %}
-    <div class="text-center py-12">
-        <p class="text-gray-500 text-lg">No live games at the moment</p>
-    </div>
+            <!-- Games Container -->
+            <div class="games-container">
+                {% for game in league.games %}
+                <div class="game-card">
+                    <div class="game-header">
+                        <div class="game-status-badge">
+                            {% if game.status == 'live' %}
+                            <span class="status-live">
+                                <i class="fas fa-circle"></i> LIVE
+                            </span>
+                            {% elif game.status == 'halftime' %}
+                            <span class="status-halftime">
+                                <i class="fas fa-circle"></i> HALFTIME
+                            </span>
+                            {% else %}
+                            <span class="status-scheduled">
+                                <i class="fas fa-circle"></i> {{ game.status|title }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if game.odds %}
+                        <div class="odds-badge">
+                            <i class="fas fa-coins"></i>
+                            <span>Odds Available</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="game-content">
+                        <!-- Home Team -->
+                        <div class="team-section home-team">
+                            <div class="team-info">
+                                {% if game.home_logo %}
+                                <img src="{{ game.home_logo }}" alt="{{ game.home_team_name }}" class="team-logo">
+                                {% endif %}
+                                <div class="team-details">
+                                    <span class="team-name">{{ game.home_team_name }}</span>
+                                    {% if game.odds and game.odds.get('home_ml') %}
+                                    <span class="team-odds">{{ game.odds.home_ml }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Score Section -->
+                        <div class="score-section">
+                            {% if game.score %}
+                            <div class="score-display">
+                                <span class="score-value">{{ game.score.get('home', 0) }}</span>
+                                <span class="score-separator">-</span>
+                                <span class="score-value">{{ game.score.get('away', 0) }}</span>
+                            </div>
+                            {% else %}
+                            <div class="game-time">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ game.start_time.strftime('%I:%M %p') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Away Team -->
+                        <div class="team-section away-team">
+                            <div class="team-info">
+                                <div class="team-details">
+                                    <span class="team-name">{{ game.away_team_name }}</span>
+                                    {% if game.odds and game.odds.get('away_ml') %}
+                                    <span class="team-odds">{{ game.odds.away_ml }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if game.away_logo %}
+                                <img src="{{ game.away_logo }}" alt="{{ game.away_team_name }}" class="team-logo">
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if game.odds %}
+                    <div class="odds-section">
+                        <div class="odds-grid">
+                            {% if game.odds.get('home_ml') %}
+                            <div class="odds-item">
+                                <span class="odds-label">Home ML:</span>
+                                <span class="odds-value">{{ game.odds.home_ml }}</span>
+                            </div>
+                            {% endif %}
+                            {% if game.odds.get('away_ml') %}
+                            <div class="odds-item">
+                                <span class="odds-label">Away ML:</span>
+                                <span class="odds-value">{{ game.odds.away_ml }}</span>
+                            </div>
+                            {% endif %}
+                            {% if game.odds.get('spread') %}
+                            <div class="odds-item">
+                                <span class="odds-label">Spread:</span>
+                                <span class="odds-value">{{ game.odds.spread }}</span>
+                            </div>
+                            {% endif %}
+                            {% if game.odds.get('total') %}
+                            <div class="odds-item">
+                                <span class="odds-label">Total:</span>
+                                <span class="odds-value">{{ game.odds.total }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-content">
+                <i class="fas fa-clock"></i>
+                <h3>No Live Games</h3>
+                <p>Check back later for live games and scores</p>
+            </div>
+        </div>
     {% endif %}
 </div>
+
+<style>
+.live-scores {
+    max-width: 100%;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ffb300;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.league-section {
+    margin-bottom: 3rem;
+}
+
+.league-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.league-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.league-name {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ffb300;
+    margin: 0;
+}
+
+.league-description {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.875rem;
+}
+
+.games-container {
+    display: grid;
+    gap: 1rem;
+}
+
+.game-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-2px);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.game-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.odds-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ffb300;
+    font-size: 0.875rem;
+}
+
+.game-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.team-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.home-team {
+    justify-content: flex-start;
+}
+
+.away-team {
+    justify-content: flex-end;
+}
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.team-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.team-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.team-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.team-odds {
+    font-size: 0.875rem;
+    color: #ffb300;
+    font-weight: 500;
+}
+
+.score-section {
+    text-align: center;
+    min-width: 120px;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.score-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffb300;
+}
+
+.score-separator {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.5rem;
+}
+
+.game-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.odds-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.odds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.odds-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.odds-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.odds-value {
+    color: #ffb300;
+    font-weight: bold;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.empty-content i {
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.empty-content h3 {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.empty-content p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .game-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .team-section {
+        justify-content: center;
+    }
+    
+    .odds-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+}
+</style>
 {% endblock %}

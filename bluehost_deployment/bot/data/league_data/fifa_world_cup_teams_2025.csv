@@ -1,0 +1,33 @@
+team_id,team_name,team_code,country,founded,national,logo_url,venue_name,venue_city,venue_capacity
+49,Chelsea,CHE,England,1905,False,https://media.api-sports.io/football/teams/49.png,Stamford Bridge,London,41841
+50,Manchester City,MAC,England,1880,False,https://media.api-sports.io/football/teams/50.png,Etihad Stadium,Manchester,55097
+85,Paris Saint Germain,PAR,France,1970,False,https://media.api-sports.io/football/teams/85.png,Parc des Princes,Paris,47929
+120,Botafogo,BOT,Brazil,1904,False,https://media.api-sports.io/football/teams/120.png,Estádio Nilton Santos,Rio de Janeiro,46931
+121,Palmeiras,PAL,Brazil,1914,False,https://media.api-sports.io/football/teams/121.png,Allianz Parque,"São Paulo, São Paulo",43713
+124,Fluminense,FLU,Brazil,1902,False,https://media.api-sports.io/football/teams/124.png,Estadio Jornalista Mário Filho (Maracanã),"Rio de Janeiro, Rio de Janeiro",78838
+127,Flamengo,FLA,Brazil,1895,False,https://media.api-sports.io/football/teams/127.png,Estadio Jornalista Mário Filho (Maracanã),"Rio de Janeiro, Rio de Janeiro",78838
+157,Bayern München,BAY,Germany,1900,False,https://media.api-sports.io/football/teams/157.png,Fußball Arena München,München,75024
+165,Borussia Dortmund,DOR,Germany,1909,False,https://media.api-sports.io/football/teams/165.png,BVB Stadion Dortmund,Dortmund,81365
+211,Benfica,BEN,Portugal,1904,False,https://media.api-sports.io/football/teams/211.png,Estádio do Sport Lisboa e Benfica (da Luz),Lisboa,65647
+212,FC Porto,POR,Portugal,1893,False,https://media.api-sports.io/football/teams/212.png,Estádio Do Dragão,Porto,50399
+287,Urawa,URA,Japan,1950,False,https://media.api-sports.io/football/teams/287.png,Saitama Stadium 2002,Saitama,65000
+435,River Plate,RIV,Argentina,1901,False,https://media.api-sports.io/football/teams/435.png,Estadio Mâs Monumental,"Capital Federal, Ciudad de Buenos Aires",83214
+451,Boca Juniors,BOC,Argentina,1905,False,https://media.api-sports.io/football/teams/451.png,Estadio Alberto José Armando,Ciudad de Buenos Aires,49000
+496,Juventus,JUV,Italy,1897,False,https://media.api-sports.io/football/teams/496.png,Allianz Stadium,Torino,45666
+505,Inter,INT,Italy,1908,False,https://media.api-sports.io/football/teams/505.png,Stadio Giuseppe Meazza,Milano,80018
+530,Atletico Madrid,MAD,Spain,1903,False,https://media.api-sports.io/football/teams/530.png,Estádio Cívitas Metropolitano,Madrid,70460
+541,Real Madrid,REA,Spain,1902,False,https://media.api-sports.io/football/teams/541.png,Estadio Santiago Bernabéu,Madrid,85454
+571,Red Bull Salzburg,SAL,Austria,1933,False,https://media.api-sports.io/football/teams/571.png,Red Bull Arena,Wals-Siezenheim,31895
+968,Wydad AC,WYD,Morocco,1937,False,https://media.api-sports.io/football/teams/968.png,Stade Mohamed V,Casablanca,45891
+980,ES Tunis,EST,Tunisia,1919,False,https://media.api-sports.io/football/teams/980.png,Stade Olympique de Radès,Radès,65000
+1577,Al Ahly,AHL,Egypt,1907,False,https://media.api-sports.io/football/teams/1577.png,WE Al-Ahly Stadium,Cairo,30000
+1595,Seattle Sounders,SEA,USA,2007,False,https://media.api-sports.io/football/teams/1595.png,Lumen Field,"Seattle, Washington",72000
+1616,Los Angeles FC,,USA,2014,False,https://media.api-sports.io/football/teams/1616.png,BMO Stadium,"Los Angeles, California",22921
+2282,Monterrey,MON,Mexico,1945,False,https://media.api-sports.io/football/teams/2282.png,Estadio BBVA,Guadalupe,53500
+2292,Pachuca,PAC,Mexico,1901,False,https://media.api-sports.io/football/teams/2292.png,Estadio Hidalgo,Pachuca de Soto,30000
+2537,Auckland City,AUC,New-Zealand,2004,False,https://media.api-sports.io/football/teams/2537.png,Kiwitea Street,Auckland,5000
+2699,Mamelodi Sundowns,MAM,South-Africa,1970,False,https://media.api-sports.io/football/teams/2699.png,Loftus Versfeld Stadium,Tshwane,51762
+2767,Ulsan Hyundai FC,ULS,South-Korea,1983,False,https://media.api-sports.io/football/teams/2767.png,Ulsan Munsu Football Stadium,Ulsan,44102
+2865,Al Ain,AIN,United-Arab-Emirates,1968,False,https://media.api-sports.io/football/teams/2865.png,Hazza Bin Zayed Stadium,Al Ain,25174
+2932,Al-Hilal Saudi FC,HIL,Saudi-Arabia,1957,False,https://media.api-sports.io/football/teams/2932.png,Kingdom Arena,Riyadh,26000
+9568,Inter Miami,,USA,2018,False,https://media.api-sports.io/football/teams/9568.png,Chase Stadium,"Fort Lauderdale, Florida",21550

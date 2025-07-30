@@ -1,0 +1,52 @@
+"""Green Bay Packers 2025-2026 Schedule"""
+
+GREEN_BAY_PACKERS_SCHEDULE = {
+    "week_1": ("SUNDAY", "SEPTEMBER 7, 2025", "VS DETROIT LIONS", "4:25 PM", "CBS"),
+    "week_2": (
+        "THURSDAY",
+        "SEPTEMBER 11, 2025",
+        "VS WASHINGTON COMMANDERS",
+        "8:15 PM",
+        "PRIME VIDEO",
+    ),
+    "week_3": ("SUNDAY", "SEPTEMBER 21, 2025", "AT CLEVELAND BROWNS", "1:00 PM", "FOX"),
+    "week_4": ("SUNDAY", "SEPTEMBER 28, 2025", "AT DALLAS COWBOYS", "8:20 PM", "NBC"),
+    "week_5": ("BYE WEEK", "", "BYE WEEK", "", ""),
+    "week_6": ("SUNDAY", "OCTOBER 12, 2025", "VS CINCINNATI BENGALS", "4:25 PM", "CBS"),
+    "week_7": ("SUNDAY", "OCTOBER 19, 2025", "AT ARIZONA CARDINALS", "4:25 PM", "FOX"),
+    "week_8": (
+        "SUNDAY",
+        "OCTOBER 26, 2025",
+        "AT PITTSBURGH STEELERS",
+        "8:20 PM",
+        "NBC",
+    ),
+    "week_9": ("SUNDAY", "NOVEMBER 2, 2025", "VS CAROLINA PANTHERS", "1:00 PM", "FOX"),
+    "week_10": (
+        "MONDAY",
+        "NOVEMBER 10, 2025",
+        "VS PHILADELPHIA EAGLES",
+        "8:15 PM",
+        "ESPN/ABC",
+    ),
+    "week_11": ("SUNDAY", "NOVEMBER 16, 2025", "AT NEW YORK GIANTS", "1:00 PM", "FOX"),
+    "week_12": (
+        "SUNDAY",
+        "NOVEMBER 23, 2025",
+        "VS MINNESOTA VIKINGS",
+        "1:00 PM",
+        "FOX",
+    ),
+    "week_13": (
+        "THURSDAY",
+        "NOVEMBER 27, 2025",
+        "AT DETROIT LIONS (THANKSGIVING)",
+        "1:00 PM",
+        "FOX",
+    ),
+    "week_14": ("SUNDAY", "DECEMBER 7, 2025", "VS CHICAGO BEARS", "1:00 PM", "FOX"),
+    "week_15": ("SUNDAY", "DECEMBER 14, 2025", "AT DENVER BRONCOS", "4:25 PM", "CBS"),
+    "week_16": ("SATURDAY", "DECEMBER 20, 2025", "AT CHICAGO BEARS", "TBD", "FOX"),
+    "week_17": ("SATURDAY", "DECEMBER 27, 2025", "VS BALTIMORE RAVENS", "TBD", "TBD"),
+    "week_18": ("SATURDAY", "JANUARY 3, 2026", "AT MINNESOTA VIKINGS", "TBD", "TBD"),
+}

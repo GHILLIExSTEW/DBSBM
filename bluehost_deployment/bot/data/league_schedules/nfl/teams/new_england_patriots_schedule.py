@@ -1,0 +1,52 @@
+"""New England Patriots 2025-2026 Schedule"""
+
+NEW_ENGLAND_PATRIOTS_SCHEDULE = {
+    "week_1": ("SUNDAY", "SEPTEMBER 7, 2025", "VS LAS VEGAS RAIDERS", "1:00 PM", "CBS"),
+    "week_2": ("SUNDAY", "SEPTEMBER 14, 2025", "AT MIAMI DOLPHINS", "1:00 PM", "CBS"),
+    "week_3": (
+        "SUNDAY",
+        "SEPTEMBER 21, 2025",
+        "VS PITTSBURGH STEELERS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_4": (
+        "SUNDAY",
+        "SEPTEMBER 28, 2025",
+        "VS CAROLINA PANTHERS",
+        "1:00 PM",
+        "FOX",
+    ),
+    "week_5": ("SUNDAY", "OCTOBER 5, 2025", "AT BUFFALO BILLS", "8:20 PM", "NBC"),
+    "week_6": ("SUNDAY", "OCTOBER 12, 2025", "AT NEW ORLEANS SAINTS", "1:00 PM", "CBS"),
+    "week_7": ("SUNDAY", "OCTOBER 19, 2025", "AT TENNESSEE TITANS", "1:00 PM", "CBS"),
+    "week_8": ("SUNDAY", "OCTOBER 26, 2025", "VS CLEVELAND BROWNS", "1:00 PM", "FOX"),
+    "week_9": ("SUNDAY", "NOVEMBER 2, 2025", "VS ATLANTA FALCONS", "1:00 PM", "CBS"),
+    "week_10": (
+        "SUNDAY",
+        "NOVEMBER 9, 2025",
+        "AT TAMPA BAY BUCCANEERS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_11": (
+        "THURSDAY",
+        "NOVEMBER 13, 2025",
+        "VS NEW YORK JETS",
+        "8:15 PM",
+        "PRIME VIDEO",
+    ),
+    "week_12": (
+        "SUNDAY",
+        "NOVEMBER 23, 2025",
+        "AT CINCINNATI BENGALS",
+        "1:00 PM",
+        "CBS",
+    ),
+    "week_13": ("MONDAY", "DECEMBER 1, 2025", "VS NEW YORK GIANTS", "8:15 PM", "ESPN"),
+    "week_14": ("BYE WEEK", "", "BYE WEEK", "", ""),
+    "week_15": ("SUNDAY", "DECEMBER 14, 2025", "VS BUFFALO BILLS", "1:00 PM", "CBS"),
+    "week_16": ("SUNDAY", "DECEMBER 21, 2025", "AT BALTIMORE RAVENS", "1:00 PM", "CBS"),
+    "week_17": ("SUNDAY", "DECEMBER 28, 2025", "AT NEW YORK JETS", "1:00 PM", "CBS"),
+    "week_18": ("SATURDAY", "JANUARY 3, 2026", "VS MIAMI DOLPHINS", "TBD", "TBD"),
+}

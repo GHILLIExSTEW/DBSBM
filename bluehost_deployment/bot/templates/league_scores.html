@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ league_name }} Scores</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #181818; color: #fff; margin: 0; padding: 0; }
+        .container { max-width: 1000px; margin: 2em auto; padding: 2em; background: #23272a; border-radius: 16px; box-shadow: 0 8px 32px #000a; }
+        .league-header { display: flex; align-items: center; margin-bottom: 1em; padding: 1em; border-radius: 10px; }
+        .league-title { font-size: 2em; color: #fff; margin-right: 1em; font-weight: 700; letter-spacing: 1px; }
+        .league-sport { font-size: 1.2em; color: #7ec8e3; text-transform: capitalize; font-weight: 500; }
+        table { background: #262b33; border-radius: 10px; width: 100%; margin-bottom: 1em; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+        th, td { padding: 0.9em 0.7em; text-align: left; }
+        th { color: #ffb300; font-size: 1.15em; border-bottom: 2px solid #444; background: #23272a; }
+        tr.game { border-bottom: 1px solid #333; transition: background 0.2s; }
+        tr.game:hover { background: #1a1d22; }
+        tr:last-child.game { border-bottom: none; }
+        .status { color: #7ec8e3; font-size: 1em; font-weight: 500; }
+        .score { font-size: 1.2em; font-weight: 700; letter-spacing: 1px; }
+        .score-lead { color: #4caf50; }
+        .score-trail { color: #e53935; }
+        .score-tied { color: #ffb300; }
+        .no-games { color: #bbb; font-style: italic; text-align: center; padding: 1em; }
+        .team-name { font-weight: 600; font-size: 1.1em; }
+        .back-link { display: inline-block; margin-bottom: 1.5em; color: #7ec8e3; text-decoration: none; font-size: 1.1em; }
+        .back-link:hover { text-decoration: underline; color: #ffb300; }
+    </style>
+</head>
+<body>
+    {% set bg_color = (
+        '#1e293b' if league_info.sport == 'Baseball'
+        else '#ff9800' if league_info.sport == 'Basketball'
+        else '#388e3c' if league_info.sport == 'Soccer'
+        else '#1976d2' if league_info.sport == 'Hockey'
+        else '#4e342e' if league_info.sport == 'American Football'
+        else '#23272a'
+    ) %}
+    <div class="container">
+        <a class="back-link" href="/">&larr; Back to Leagues</a>
+        <div class="league-header" style="background: {{ bg_color }}">
+            <span class="league-title">
+                {% if league_info.sport == 'Baseball' %}⚾{% elif league_info.sport == 'Basketball' %}🏀{% elif league_info.sport == 'Soccer' %}⚽{% elif league_info.sport == 'Hockey' %}🏒{% elif league_info.sport == 'American Football' %}🏈{% else %}🏆{% endif %}
+                {{ league_name }}
+            </span>
+            <span class="league-sport">({{ league_info.sport }})</span>
+        </div>
+        <table>
+            <tr>
+                <th>Home</th>
+                <th>Score</th>
+                <th>Away</th>
+                {% if league_info.sport == 'Baseball' %}
+                    <th>Inning</th>
+                {% elif league_info.sport == 'Basketball' %}
+                    <th>Quarter</th>
+                {% elif league_info.sport == 'Soccer' %}
+                    <th>Half</th>
+                {% elif league_info.sport == 'Hockey' %}
+                    <th>Period</th>
+                {% elif league_info.sport == 'American Football' %}
+                    <th>Quarter</th>
+                {% endif %}
+                <th>Status</th>
+            </tr>
+            {% for game in games %}
+            <tr class="game">
+                {% set home = game.get('home_team', 'N/A') %}
+                {% set away = game.get('away_team', 'N/A') %}
+                {% set score = game.get('score') %}
+                {% set home_score = score.get('home', '-') if score else '-' %}
+                {% set away_score = score.get('away', '-') if score else '-' %}
+                {% if home_score != '-' and away_score != '-' and home_score != away_score %}
+                    {% set home_class = 'score-lead' if home_score > away_score else 'score-trail' %}
+                    {% set away_class = 'score-lead' if away_score > home_score else 'score-trail' %}
+                {% elif home_score == away_score and home_score != '-' %}
+                    {% set home_class = 'score-tied' %}
+                    {% set away_class = 'score-tied' %}
+                {% else %}
+                    {% set home_class = '' %}
+                    {% set away_class = '' %}
+                {% endif %}
+                <td class="team-name">{{ home }}</td>
+                <td class="score">
+                    <span class="{{ home_class }}">{{ home_score }}</span>
+                    -
+                    <span class="{{ away_class }}">{{ away_score }}</span>
+                </td>
+                <td class="team-name">{{ away }}</td>
+                {% if league_info.sport == 'Baseball' %}
+                    <td>{{ game.get('inning', '-') }}</td>
+                {% elif league_info.sport == 'Basketball' %}
+                    <td>{{ game.get('quarter', '-') }}</td>
+                {% elif league_info.sport == 'Soccer' %}
+                    <td>{{ game.get('half', '-') }}</td>
+                {% elif league_info.sport == 'Hockey' %}
+                    <td>{{ game.get('period', '-') }}</td>
+                {% elif league_info.sport == 'American Football' %}
+                    <td>{{ game.get('quarter', '-') }}</td>
+                {% endif %}
+                <td class="status">{{ game.get('status', 'N/A') }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="no-games">No games scheduled.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

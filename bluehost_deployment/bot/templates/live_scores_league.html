@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Live Scores: {{ league_name }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{{ url_for('landing') }}" class="text-blue-600 hover:underline">&larr; Back to All Live Scores</a>
+    <h1 class="text-3xl font-bold mb-6">Live Scores: {{ league_name }}</h1>
+    <div class="mb-8">
+        <!-- API-SPORTS GAMES widget for this league -->
+        <div id="wg-api-football-games"
+             data-host="v3.football.api-sports.io"
+             data-key="{{ api_key }}"
+             data-league="{{ league_id }}"
+             data-theme="dark"
+             data-refresh="15"
+             data-show-toolbar="true"
+             data-show-errors="false"
+             data-show-logos="true"
+             data-modal-game="true"
+             data-modal-standings="true"
+             data-modal-show-logos="true">
+        </div>
+        <script type="module" src="https://widgets.api-sports.io/2.0.3/widgets.js"></script>
+    </div>
+    <div class="text-gray-500 text-sm">
+        <p>Click a game for details or standings. Powered by API-SPORTS.</p>
+    </div>
+</div>
+{% endblock %}

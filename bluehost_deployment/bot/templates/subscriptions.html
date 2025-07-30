@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Subscriptions{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Subscriptions</h1>
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Upgrade Your Experience</h2>
+        <p class="mb-4">Unlock premium features, increased limits, and priority support by subscribing to one of our plans. All widgets and core features are available on the free plan, but advanced analytics, customizations, and more are available to subscribers.</p>
+        <ul class="mb-4 list-disc list-inside">
+            <li><span class="font-semibold">Free Plan:</span> Access to all widgets, basic stats, and live scores.</li>
+            <li><span class="font-semibold">Pro Plan:</span> Advanced analytics, more customization, higher API limits, and priority support.</li>
+            <li><span class="font-semibold">Enterprise:</span> Custom integrations, white-label options, and dedicated account management.</li>
+        </ul>
+        <a href="/register" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold">Get Started</a>
+    </div>
+    <div class="text-gray-500 text-sm">
+        <p>Questions? <a href="/contact" class="text-blue-600 hover:underline">Contact us</a> for more information about our plans.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+teams:
+  # EHF Champions League (sample)
+  - id: 1
+    name: FC Barcelona Handbol
+    league: EHF
+    country: Spain
+    logo_path: static/logos/teams/EHF/barcelona.webp
+    venue:
+      name: Palau Blaugrana
+      city: Barcelona
+      capacity: 7585

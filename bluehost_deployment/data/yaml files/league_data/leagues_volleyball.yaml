@@ -1,0 +1,6 @@
+leagues:
+  - code: VNL
+    name: FIVB Volleyball Nations League
+    sport: Volleyball
+    country: International
+    logo_path: static/logos/leagues/VOLLEYBALL/VNL/vnl.webp

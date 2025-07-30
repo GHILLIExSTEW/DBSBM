@@ -1,0 +1,8 @@
+team_id,team_name,team_code,country,founded,national,logo_url,venue_name,venue_city,venue_capacity
+127,Flamengo,FLA,Brazil,1895,False,https://media.api-sports.io/football/teams/127.png,Estadio Jornalista Mário Filho (Maracanã),"Rio de Janeiro, Rio de Janeiro",78838
+541,Real Madrid,REA,Spain,1902,False,https://media.api-sports.io/football/teams/541.png,Estadio Santiago Bernabéu,Madrid,85454
+968,Wydad AC,WYD,Morocco,1937,False,https://media.api-sports.io/football/teams/968.png,Stade Mohamed V,Casablanca,45891
+1577,Al Ahly,AHL,Egypt,1907,False,https://media.api-sports.io/football/teams/1577.png,WE Al-Ahly Stadium,Cairo,30000
+1595,Seattle Sounders,SEA,USA,2007,False,https://media.api-sports.io/football/teams/1595.png,Lumen Field,"Seattle, Washington",72000
+2537,Auckland City,AUC,New-Zealand,2004,False,https://media.api-sports.io/football/teams/2537.png,Kiwitea Street,Auckland,5000
+2932,Al-Hilal Saudi FC,HIL,Saudi-Arabia,1957,False,https://media.api-sports.io/football/teams/2932.png,Kingdom Arena,Riyadh,26000

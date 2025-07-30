@@ -1,14 +1,375 @@
 {% extends "base.html" %}
-{% block title %}{{ guild.name }} Home{% endblock %}
+{% block title %}{{ guild.name }} - Guild Dashboard{% endblock %}
 {% block content %}
-<h1>{{ guild.name }} Home</h1>
-<p>Welcome, {{ guild.owner }}!</p>
-<ul>
-    <li><a href="{{ url_for('live_scores', guild_id=guild.id) }}">Live Scores</a></li>
-    <li><a href="{{ url_for('player_stats', guild_id=guild.id) }}">Player Stats</a></li>
-    <li><a href="{{ url_for('odds_buster', guild_id=guild.id) }}">Odds Buster</a></li>
-    <li><a href="{{ url_for('playmaker_stats', guild_id=guild.id) }}">Playmaker/Capper Stats</a></li>
-    <li><a href="{{ url_for('guild_settings', guild_id=guild.id) }}">Guild Settings</a></li>
-    <li><a href="{{ url_for('subscriptions', guild_id=guild.id) }}">Subscriptions</a></li>
-</ul>
+<div class="guild-dashboard">
+    <!-- Guild Header -->
+    <div class="guild-header">
+        <div class="guild-info">
+            <h1 class="guild-title">
+                <i class="fas fa-users"></i>
+                {{ guild.guild_name or guild.name or 'Unknown Guild' }}
+            </h1>
+            <p class="guild-subtitle">Welcome back, {{ guild.owner or 'User' }}!</p>
+        </div>
+        <div class="guild-actions">
+            <a href="{{ url_for('guild_settings', guild_id=guild.id) }}" class="btn btn-secondary">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-section">
+        <h2 class="section-title">
+            <i class="fas fa-chart-bar"></i>
+            Today's Overview
+        </h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ guild_stats.today_bets if guild_stats else 0 }}</div>
+                    <div class="stat-label">Today's Bets</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value {% if (guild_stats.today_units if guild_stats else 0) > 0 %}positive{% elif (guild_stats.today_units if guild_stats else 0) < 0 %}negative{% endif %}">
+                        {{ "%.2f"|format(guild_stats.today_units if guild_stats else 0) }}
+                    </div>
+                    <div class="stat-label">Today's Units</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ guild_stats.active_users if guild_stats else 0 }}</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ "%.1f"|format(guild_stats.win_rate if guild_stats else 0) }}%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="actions-section">
+        <h2 class="section-title">
+            <i class="fas fa-bolt"></i>
+            Quick Actions
+        </h2>
+        <div class="actions-grid">
+            <a href="{{ url_for('live_scores', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h3>Live Scores</h3>
+                <p>Real-time game scores and statistics</p>
+            </a>
+            
+            <a href="{{ url_for('player_stats', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3>Player Stats</h3>
+                <p>Individual player performance tracking</p>
+            </a>
+            
+            <a href="{{ url_for('odds_buster', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3>Odds Buster</h3>
+                <p>Advanced odds calculation tools</p>
+            </a>
+            
+            <a href="{{ url_for('playmaker_stats', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Playmaker Stats</h3>
+                <p>Top performers and capper analytics</p>
+            </a>
+            
+            <a href="{{ url_for('subscriptions', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h3>Subscriptions</h3>
+                <p>Manage premium features and billing</p>
+            </a>
+            
+            <a href="{{ url_for('guild_settings', guild_id=guild.id) }}" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h3>Settings</h3>
+                <p>Configure guild preferences and permissions</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+        <h2 class="section-title">
+            <i class="fas fa-history"></i>
+            Recent Activity
+        </h2>
+        <div class="activity-list">
+            {% if recent_activity %}
+                {% for activity in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-{{ activity.icon }}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">{{ activity.message }}</div>
+                        <div class="activity-time">{{ activity.timestamp }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <h3>No Recent Activity</h3>
+                    <p>Activity will appear here as members use the bot</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.guild-dashboard {
+    max-width: 100%;
+}
+
+.guild-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.guild-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #ffb300;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.guild-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ffb300;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stats-section {
+    margin-bottom: 3rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #ffb300;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 179, 0, 0.1);
+    border-radius: 50%;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffb300;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+}
+
+.actions-section {
+    margin-bottom: 3rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+    padding: 2rem;
+    text-align: center;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+}
+
+.action-icon {
+    font-size: 3rem;
+    color: #ffb300;
+    margin-bottom: 1rem;
+}
+
+.action-card h3 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #ffb300;
+}
+
+.action-card p {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+}
+
+.activity-section {
+    margin-bottom: 2rem;
+}
+
+.activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.activity-icon {
+    font-size: 1.25rem;
+    color: #ffb300;
+    width: 40px;
+    text-align: center;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+    .guild-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .guild-title {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
 {% endblock %}

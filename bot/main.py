@@ -355,7 +355,6 @@ class BettingBot(commands.Bot):
         self.performance_monitor = None  # Will be initialized in setup_hook
         self.error_handler = None  # Will be initialized in setup_hook
         # Community engagement services will be initialized in setup_hook
-        self.community_events_service = None
         self.community_analytics_service = None
         # System integration services will be initialized in setup_hook
         self.system_integration_service = None
@@ -396,8 +395,8 @@ class BettingBot(commands.Bot):
             "platinum_fixed.py",  # Platinum tier commands (fixed version)
             "platinum_api.py",  # Platinum API commands
             "sync_cog.py",  # Sync commands
-            "community.py",  # Community engagement commands
-            "community_leaderboard.py",  # Community leaderboard commands
+            # "community.py",  # Community engagement commands (DISABLED)
+            # "community_leaderboard.py",  # Community leaderboard commands (DISABLED)
             "predictive.py",  # Predictive analytics commands
             "real_ml_commands.py",  # Real ML commands (Platinum only)
             "weather.py",  # Weather command for game venues
@@ -925,26 +924,24 @@ class BettingBot(commands.Bot):
 
             logger.info("Step 3: Starting services...")
 
-            # Initialize community engagement services
-            try:
-                logger.info("Step 3a: Initializing community services...")
-                from bot.services.community_analytics import CommunityAnalyticsService
-                # from bot.services.community_events import CommunityEventsService
+            # Initialize community engagement services (DISABLED)
+            # try:
+            #     logger.info("Step 3a: Initializing community services...")
+            #     from bot.services.community_analytics import CommunityAnalyticsService
 
-                # self.community_events_service = CommunityEventsService(
-                #     self, self.db_manager
-                # )
-                self.community_events_service = None  # Disabled community events
-                self.community_analytics_service = CommunityAnalyticsService(
-                    self, self.db_manager
-                )
-                logger.info(
-                    "Community engagement services initialized (events disabled)")
-            except Exception as e:
-                logger.error(
-                    f"Failed to initialize community engagement services: {e}")
-                self.community_events_service = None
-                self.community_analytics_service = None
+            #     self.community_analytics_service = CommunityAnalyticsService(
+            #         self, self.db_manager
+            #     )
+            #     logger.info(
+            #         "Community engagement services initialized")
+            # except Exception as e:
+            #     logger.error(
+            #         f"Failed to initialize community engagement services: {e}")
+            #     self.community_analytics_service = None
+            
+            # Community engagement services are disabled
+            self.community_analytics_service = None
+            logger.info("Community engagement services disabled")
 
             logger.info("Step 3b: Starting core services...")
             service_starts = [
@@ -972,8 +969,6 @@ class BettingBot(commands.Bot):
                 self.real_ml_service = None
 
             # Add community services if initialized
-            if self.community_events_service:
-                service_starts.append(self.community_events_service.start())
             if self.community_analytics_service:
                 service_starts.append(self.community_analytics_service.start())
 

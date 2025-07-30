@@ -1,0 +1,30 @@
+teams:
+  # PDC (sample)
+  - id: 1
+    name: Michael van Gerwen
+    league: PDC
+    country: Netherlands
+    logo_path: static/logos/teams/PDC/michael_van_gerwen.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  - id: 2
+    name: Gerwyn Price
+    league: PDC
+    country: Wales
+    logo_path: static/logos/teams/PDC/gerwyn_price.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
+  # MODUS (sample)
+  - id: 101
+    name: Fallon Sherrock
+    league: MODUS
+    country: England
+    logo_path: static/logos/teams/MODUS/fallon_sherrock.webp
+    venue:
+      name: ''
+      city: ''
+      capacity: ''
