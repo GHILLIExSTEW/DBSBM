@@ -9,20 +9,20 @@ import aiomysql
 
 # Fix import issues with fallback
 try:
-    from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+    from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 except ImportError:
     # Fallback - create empty defaults
     LEAGUE_CONFIG = {}
     LEAGUE_IDS = {}
 
 try:
-    from data.game_utils import get_league_abbreviation, normalize_team_name
+    from bot.data.game_utils import get_league_abbreviation, normalize_team_name
 except ImportError:
     # Fallback functions
     def get_league_abbreviation(league_name: str) -> str:
         return league_name
 
-    def normalize_team_name(team_name: str) -> str:
+    def normalize_team_name(team_name: str, sport: str = None, league: str = None) -> str:
         return team_name
 
 try:
@@ -1498,7 +1498,7 @@ class DatabaseManager:
             AND season = %s
             ORDER BY start_time ASC LIMIT 100
         """
-        from bot.config.leagues import LEAGUE_ID_MAP
+        from bot.data.game_utils import LEAGUE_ID_MAP
 
         league_id = LEAGUE_ID_MAP.get(league_name, "1")
         logger.info(

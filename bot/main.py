@@ -1418,6 +1418,14 @@ async def run_bot():
             # Step 2: Connect to Discord with extended timeout and retry logic
             logger.info("Step 2: Connecting to Discord...")
 
+            # Validate Discord token first
+            discord_token = REQUIRED_ENV_VARS["DISCORD_TOKEN"]
+            if not discord_token:
+                raise RuntimeError("DISCORD_TOKEN environment variable is not set")
+            
+            if not discord_token.startswith("MT") or len(discord_token) < 50:
+                raise RuntimeError("DISCORD_TOKEN format appears invalid")
+
             # Try multiple connection strategies
             connection_success = False
             for attempt in range(3):
@@ -1427,7 +1435,7 @@ async def run_bot():
 
                     # Use a more conservative timeout for Discord connection
                     await asyncio.wait_for(
-                        bot.start(REQUIRED_ENV_VARS["DISCORD_TOKEN"]),
+                        bot.start(discord_token),
                         timeout=300.0  # 5 minutes for Discord connection
                     )
                     logger.info("✅ Bot started successfully")
@@ -1436,10 +1444,16 @@ async def run_bot():
 
                 except asyncio.TimeoutError:
                     logger.warning(
-                        f"Discord connection attempt {attempt + 1} timed out")
+                        f"Discord connection attempt {attempt + 1} timed out after 5 minutes")
                     if attempt < 2:  # Don't sleep after last attempt
                         # Wait 10 seconds between attempts
                         await asyncio.sleep(10)
+                except discord.LoginFailure:
+                    logger.critical("Discord login failed - invalid token")
+                    raise RuntimeError("Discord login failed - check your bot token")
+                except discord.PrivilegedIntentsRequired as e:
+                    logger.critical(f"Privileged intents required: {e}")
+                    raise RuntimeError("Enable required intents in Discord Developer Portal")
                 except Exception as e:
                     logger.error(
                         f"Discord connection attempt {attempt + 1} failed: {e}")

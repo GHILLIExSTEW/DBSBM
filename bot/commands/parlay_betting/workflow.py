@@ -11,7 +11,7 @@ from discord.ext import commands
 from discord.ui import View
 
 from bot.commands.admin import require_registered_guild
-from bot.data.game_utils import get_normalized_games_for_dropdown
+from bot.data.db_manager import get_db_manager
 from bot.utils.errors import ValidationError
 from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
@@ -235,8 +235,9 @@ class ParlayBetWorkflowView(View):
         """Handle line type selection."""
         # Get games for the selected league
         try:
-            games = await get_normalized_games_for_dropdown(
-                self.selected_sport, self.selected_league
+            db_manager = get_db_manager()
+            games = await db_manager.get_normalized_games_for_dropdown(
+                self.selected_league
             )
 
             if not games:

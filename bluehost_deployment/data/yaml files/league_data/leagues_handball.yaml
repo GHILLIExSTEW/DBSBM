@@ -1,6 +1,0 @@
-leagues:
-  - code: EHF
-    name: EHF Champions League
-    sport: Handball
-    country: Europe
-    logo_path: static/logos/leagues/HANDBALL/EHF/ehf.webp

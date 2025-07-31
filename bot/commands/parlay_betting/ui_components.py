@@ -131,7 +131,7 @@ class ParlayGameSelect(Select):
             options.append(
                 SelectOption(
                     label=label[:100],  # Discord limit
-                    value=str(game.get("game_id", "")),
+                    value=str(game.get("id", "")),
                     description=f"{home_team} vs {away_team}",
                 )
             )
@@ -149,7 +149,7 @@ class ParlayGameSelect(Select):
         if selected_value == "manual":
             # Handle manual entry
             self.parent_view.selected_game = {
-                "game_id": "manual",
+                "id": "manual",
                 "home_team": "Manual Entry",
                 "away_team": "Manual Entry",
                 "is_manual": True,
@@ -158,7 +158,7 @@ class ParlayGameSelect(Select):
             return
 
         selected_game = next(
-            (game for game in self.games if str(game.get("game_id")) == selected_value),
+            (game for game in self.games if str(game.get("id")) == selected_value),
             None,
         )
 
