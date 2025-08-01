@@ -144,6 +144,7 @@ try:
     from bot.services.game_service import GameService
     from bot.services.platinum_service import PlatinumService
     from bot.services.predictive_service import PredictiveService
+    from bot.services.statistics_service import StatisticsService
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
 except ImportError:
@@ -156,6 +157,7 @@ except ImportError:
     from bot.services.game_service import GameService
     from bot.services.platinum_service import PlatinumService
     from bot.services.predictive_service import PredictiveService
+    from bot.services.statistics_service import StatisticsService
     from bot.services.user_service import UserService
     from bot.services.voice_service import VoiceService
 
@@ -365,6 +367,7 @@ class BettingBot(commands.Bot):
             self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
         self.predictive_service = PredictiveService(self.db_manager)
+        self.statistics_service = StatisticsService(self.db_manager)
         self.real_ml_service = None  # Will be initialized in setup_hook
         self.rate_limiter = None  # Will be initialized in setup_hook
         self.performance_monitor = None  # Will be initialized in setup_hook
@@ -972,6 +975,7 @@ class BettingBot(commands.Bot):
                 self.live_game_channel_service.start(),
                 self.platinum_service.start(),
                 self.predictive_service.start(),
+                self.statistics_service.start(),
             ]
 
             # Initialize real ML service

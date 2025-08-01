@@ -464,6 +464,35 @@ async def check_memory_health() -> Dict[str, Any]:
         }
 
 
+async def check_statistics_health() -> Dict[str, Any]:
+    """Check statistics service health."""
+    try:
+        # Import here to avoid circular imports
+        from bot.services.statistics_service import StatisticsService
+        
+        # Create a temporary statistics service instance for health check
+        stats_service = StatisticsService()
+        
+        # Get health status
+        start_time = time.time()
+        health_status = await stats_service.get_health_status()
+        response_time = time.time() - start_time
+        
+        return {
+            "status": health_status.get("status", "unknown"),
+            "response_time": response_time,
+            "details": health_status.get("details", {}),
+            "error_message": health_status.get("error_message")
+        }
+
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error_message": f"Statistics health check failed: {str(e)}",
+            "response_time": 0.0
+        }
+
+
 # Global health checker instance
 health_checker = HealthChecker()
 
@@ -481,6 +510,8 @@ def register_default_health_checks():
         "discord", check_discord_health, interval=30)
     health_checker.register_health_check(
         "memory", check_memory_health, interval=60)
+    health_checker.register_health_check(
+        "statistics", check_statistics_health, interval=60)
 
 
 async def run_system_health_check() -> Dict[str, Any]:
