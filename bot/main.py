@@ -1067,6 +1067,8 @@ class BettingBot(commands.Bot):
             # Display health status
             try:
                 logger.info("🏥 Running health status check...")
+                # Add a small delay to ensure all services are properly initialized
+                await asyncio.sleep(2)
                 from bot.utils.health_checker import run_system_health_check
                 health_results = await run_system_health_check()
 

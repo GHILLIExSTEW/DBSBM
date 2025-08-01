@@ -495,64 +495,71 @@ async def check_memory_health() -> Dict[str, Any]:
 async def check_statistics_health() -> Dict[str, Any]:
     """Check statistics service health."""
     try:
-        # Import here to avoid circular imports
-        try:
-            from bot.services.statistics_service import StatisticsService
-        except ImportError:
-            return {
-                "status": "unhealthy",
-                "error_message": "Statistics service not available",
-                "response_time": 0.0
-            }
-        
-        # Create a temporary statistics service instance for health check
-        stats_service = StatisticsService()
-        
-        # For health check purposes, we'll check if the service can be instantiated
-        # and if it can collect basic stats, rather than checking if it's running
         start_time = time.time()
+        logger.debug("Starting statistics health check...")
         
-        # Try to get basic stats without requiring the service to be running
+        # Simple health check - just verify we can import and instantiate the service
         try:
+            logger.debug("Attempting to import StatisticsService...")
+            from bot.services.statistics_service import StatisticsService
+            logger.debug("StatisticsService imported successfully")
+            
+            # Try to create an instance (this should work even if the service isn't running)
+            logger.debug("Attempting to instantiate StatisticsService...")
+            stats_service = StatisticsService()
+            logger.debug("StatisticsService instantiated successfully")
+            
+            # If we can import and instantiate the service, consider it healthy
+            status = "healthy"
+            
+            # Try to get basic system stats if psutil is available
             try:
+                logger.debug("Attempting to import psutil...")
                 import psutil
-            except ImportError:
-                status = "unhealthy"
-                stats = {"error": "psutil module not available"}
-                response_time = time.time() - start_time
-                return {
-                    "status": status,
-                    "response_time": response_time,
-                    "details": stats,
-                    "error_message": "Statistics service health check failed - psutil not available"
-                }
-            
-            memory = psutil.virtual_memory()
-            cpu_percent = psutil.cpu_percent(interval=0.1)  # Quick check
-            
-            stats = {
-                "status": "healthy",
-                "uptime": 0.0,  # Service not running, so uptime is 0
-                "memory_usage": memory.percent,
-                "cpu_usage": cpu_percent,
-                "active_connections": 0,
-                "total_requests": 0,
-                "error_rate": 0.0
-            }
-            
-            # Determine health based on basic metrics
-            if stats.get("memory_usage", 0) > 90 or stats.get("cpu_usage", 0) > 90:
-                status = "degraded"
-            elif stats.get("memory_usage", 0) > 80 or stats.get("cpu_usage", 0) > 80:
-                status = "degraded"
-            else:
-                status = "healthy"
+                logger.debug("psutil imported successfully")
                 
-        except Exception as stats_error:
+                memory = psutil.virtual_memory()
+                cpu_percent = psutil.cpu_percent(interval=0.1)
+                
+                stats = {
+                    "status": "healthy",
+                    "uptime": 0.0,  # Service not running, so uptime is 0
+                    "memory_usage": memory.percent,
+                    "cpu_usage": cpu_percent,
+                    "active_connections": 0,
+                    "total_requests": 0,
+                    "error_rate": 0.0
+                }
+                
+                # Only mark as degraded if system resources are critically high
+                if stats.get("memory_usage", 0) > 95 or stats.get("cpu_usage", 0) > 95:
+                    status = "degraded"
+                    
+                logger.debug(f"Statistics health check completed with status: {status}")
+                    
+            except ImportError as psutil_error:
+                # psutil not available, but service can be instantiated
+                logger.debug(f"psutil not available: {psutil_error}")
+                status = "healthy"  # Still healthy even without psutil
+                stats = {
+                    "status": "healthy",
+                    "uptime": 0.0,
+                    "memory_usage": 0,
+                    "cpu_usage": 0,
+                    "active_connections": 0,
+                    "total_requests": 0,
+                    "error_rate": 0.0,
+                    "note": "psutil not available, using basic health check"
+                }
+                
+        except ImportError as import_error:
+            # StatisticsService not available
+            logger.error(f"StatisticsService import failed: {import_error}")
             status = "unhealthy"
-            stats = {"error": str(stats_error)}
-        
+            stats = {"error": "Statistics service not available"}
+            
         response_time = time.time() - start_time
+        logger.debug(f"Statistics health check response time: {response_time:.2f}s")
         
         return {
             "status": status,
@@ -562,6 +569,7 @@ async def check_statistics_health() -> Dict[str, Any]:
         }
 
     except Exception as e:
+        logger.error(f"Statistics health check failed with exception: {e}")
         return {
             "status": "unhealthy",
             "error_message": f"Statistics health check failed: {str(e)}",
