@@ -609,7 +609,8 @@ class StraightBetWorkflowView(View):
         logger.debug(f"Starting straight betting workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}")
         logger.info(f"Straight betting workflow initiated by user {interaction_that_triggered_workflow_start.user.id}")
         
-        # Initialize bet details
+        # Initialize bet details and set current step
+        self.current_step = 1
         self.bet_details = {
             "user_id": interaction_that_triggered_workflow_start.user.id,
             "guild_id": interaction_that_triggered_workflow_start.guild_id,
@@ -776,10 +777,12 @@ class StraightBetWorkflowView(View):
         logger.debug(f"Current step: {self.current_step}")
         
         try:
-            if self.current_step == 1:
-                logger.debug("Handling step 1: Sport selection")
-                await self._handle_step_1_sport_selection(interaction)
-            elif self.current_step == 2:
+            # Increment the step number to move to the next step
+            self.current_step += 1
+            self.bet_details["current_step"] = self.current_step
+            logger.debug(f"Advanced to step: {self.current_step}")
+            
+            if self.current_step == 2:
                 logger.debug("Handling step 2: League selection")
                 await self._handle_step_2_league_selection(interaction)
             elif self.current_step == 3:
