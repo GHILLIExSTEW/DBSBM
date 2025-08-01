@@ -950,23 +950,43 @@ class StraightBetWorkflowView(View):
             self.stop()
             return
 
-        # Get text channels with embed permissions
-        channels = [
-            channel
-            for channel in guild.text_channels
-            if channel.permissions_for(guild.me).embed_links
-        ]
+        # Get allowed embed channels from guild settings
+        allowed_channels = []
+        try:
+            guild_settings = await self.bot.db_manager.fetch_one(
+                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                (str(guild.id),),
+            )
+            if guild_settings:
+                for channel_id in (
+                    guild_settings.get("embed_channel_1"),
+                    guild_settings.get("embed_channel_2"),
+                ):
+                    if channel_id:
+                        try:
+                            cid = int(channel_id)
+                            channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                            if (
+                                isinstance(channel, discord.TextChannel)
+                                and channel.permissions_for(guild.me).send_messages
+                            ):
+                                if channel not in allowed_channels:
+                                    allowed_channels.append(channel)
+                        except Exception as e:
+                            logger.error(f"Error processing channel {channel_id}: {e}")
+        except Exception as e:
+            logger.error(f"Error fetching guild settings: {e}")
 
-        if not channels:
+        if not allowed_channels:
             await self.edit_message(
-                content="❌ No channels with embed permissions found. Please contact an administrator.",
+                content="❌ No valid embed channels configured. Please contact an admin.",
                 view=None,
             )
             self.stop()
             return
 
         self.clear_items()
-        self.add_item(ChannelSelect(self, channels))
+        self.add_item(ChannelSelect(self, allowed_channels))
         self.add_item(CancelButton(self))
         await self.edit_message(content=self.get_content(), view=self)
 
@@ -1382,20 +1402,23 @@ class StraightBetWorkflowView(View):
         """Generate preview image based on bet type. Returns True if successful."""
         bet_type = self.bet_details.get("line_type", "game_line")
 
+        # Always use 1 unit for preview images
+        preview_units = 1.0
+
         # Determine display mode
         odds = float(self.bet_details.get("odds", 0.0))
         units_display_mode, display_as_risk = self._determine_units_display_mode(
-            units, odds
+            preview_units, odds
         )
 
         try:
             if bet_type == "game_line":
                 return await self._generate_game_line_preview(
-                    units, units_display_mode, display_as_risk
+                    preview_units, units_display_mode, display_as_risk
                 )
             elif bet_type == "player_prop":
                 return await self._generate_player_prop_preview(
-                    units, units_display_mode, display_as_risk
+                    preview_units, units_display_mode, display_as_risk
                 )
             else:
                 logger.warning(f"Unknown bet type: {bet_type}")
@@ -1414,15 +1437,23 @@ class StraightBetWorkflowView(View):
         self.add_item(ConfirmUnitsButton(self))
         self.add_item(CancelButton(self))
 
-        file_to_send = None
+        # Send preview image as ephemeral message
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)
             file_to_send = File(
                 self.preview_image_bytes, filename="bet_preview_units.webp"
             )
+            
+            # Send ephemeral message with preview
+            await self.original_interaction.followup.send(
+                "**Preview of your bet with 1 unit:**",
+                file=file_to_send,
+                ephemeral=True
+            )
 
+        # Update main message without file
         await self.edit_message(
-            content=self.get_content(), view=self, file=file_to_send
+            content=self.get_content(), view=self
         )
 
     async def _handle_units_selection(

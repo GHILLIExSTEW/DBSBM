@@ -356,20 +356,40 @@ class ParlayBetWorkflowView(View):
         await interaction.response.send_modal(modal)
         self.current_step = "units_selection"
 
-    async def _handle_units_selection(self, interaction: Interaction):
+    async def _handle_units_selection(self, interaction: Interaction, units: float = None):
         """Handle units selection."""
-        # Create units selection view
-        view = View(timeout=300)
-        view.add_item(UnitsSelect(self))
-        view.add_item(CancelButton(self))
+        if units is not None:
+            # Update units and generate preview
+            self.units = units
+            
+            # Generate preview image with 1 unit
+            await self._generate_parlay_preview(interaction)
+            
+            # Create units selection view
+            view = View(timeout=300)
+            view.add_item(UnitsSelect(self))
+            view.add_item(CancelButton(self))
 
-        embed = discord.Embed(
-            title="🏈 Units Selection",
-            description="Select the number of units for this parlay.",
-            color=discord.Color.blue(),
-        )
+            embed = discord.Embed(
+                title="🏈 Units Selection",
+                description="Select the number of units for this parlay.",
+                color=discord.Color.blue(),
+            )
 
-        await interaction.response.edit_message(embed=embed, view=view)
+            await interaction.response.edit_message(embed=embed, view=view)
+        else:
+            # Initial units selection setup
+            view = View(timeout=300)
+            view.add_item(UnitsSelect(self))
+            view.add_item(CancelButton(self))
+
+            embed = discord.Embed(
+                title="🏈 Units Selection",
+                description="Select the number of units for this parlay.",
+                color=discord.Color.blue(),
+            )
+
+            await interaction.response.edit_message(embed=embed, view=view)
 
     async def _handle_channel_selection(self, interaction: Interaction):
         """Handle channel selection."""
@@ -381,14 +401,42 @@ class ParlayBetWorkflowView(View):
             )
             return
 
-        text_channels = [
-            channel
-            for channel in guild.text_channels
-            if channel.permissions_for(guild.me).send_messages
-        ]
+        # Get allowed embed channels from guild settings
+        allowed_channels = []
+        try:
+            guild_settings = await self.bot.db_manager.fetch_one(
+                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                (str(guild.id),),
+            )
+            if guild_settings:
+                for channel_id in (
+                    guild_settings.get("embed_channel_1"),
+                    guild_settings.get("embed_channel_2"),
+                ):
+                    if channel_id:
+                        try:
+                            cid = int(channel_id)
+                            channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                            if (
+                                isinstance(channel, discord.TextChannel)
+                                and channel.permissions_for(guild.me).send_messages
+                            ):
+                                if channel not in allowed_channels:
+                                    allowed_channels.append(channel)
+                        except Exception as e:
+                            logger.error(f"Error processing channel {channel_id}: {e}")
+        except Exception as e:
+            logger.error(f"Error fetching guild settings: {e}")
+
+        if not allowed_channels:
+            await interaction.response.edit_message(
+                content="❌ No valid embed channels configured. Please contact an admin.",
+                view=None,
+            )
+            return
 
         view = View(timeout=300)
-        view.add_item(ChannelSelect(self, text_channels))
+        view.add_item(ChannelSelect(self, allowed_channels))
         view.add_item(CancelButton(self))
 
         embed = discord.Embed(
@@ -443,13 +491,27 @@ class ParlayBetWorkflowView(View):
             }
 
             # Generate image
-            image_buffer = await generator.generate_parlay_bet_slip(bet_data)
+            image_bytes = generator.generate_image(
+                legs=bet_data["legs"],
+                output_path=None,
+                total_odds=bet_data["total_odds"],
+                units=bet_data["units"],
+                bet_id=bet_data.get("bet_id"),
+                bet_datetime=bet_data["timestamp"],
+                finalized=True
+            )
 
-            # Create file
-            file = File(image_buffer, filename=f"parlay_bet_{self.workflow_id}.png")
+            if image_bytes:
+                # Convert bytes to BytesIO for Discord File
+                import io
+                image_buffer = io.BytesIO(image_bytes)
+                image_buffer.seek(0)
+                
+                # Create file
+                file = File(image_buffer, filename=f"parlay_bet_{self.workflow_id}.png")
 
             # Post to selected channel
-            if self.selected_channel_id:
+            if image_bytes and self.selected_channel_id:
                 channel = self.bot.get_channel(self.selected_channel_id)
                 if channel:
                     await channel.send(file=file)
@@ -461,6 +523,10 @@ class ParlayBetWorkflowView(View):
                     await interaction.response.send_message(
                         "❌ Error: Could not find selected channel.", ephemeral=True
                     )
+            elif not image_bytes:
+                await interaction.response.send_message(
+                    "❌ Error: Could not generate bet slip image.", ephemeral=True
+                )
             else:
                 await interaction.response.send_message(
                     "❌ Error: No channel selected.", ephemeral=True
@@ -476,6 +542,60 @@ class ParlayBetWorkflowView(View):
         """Update the league selection page."""
         self.league_page = page
         await self._handle_sport_selection(interaction)
+
+    async def _generate_parlay_preview(self, interaction: Interaction):
+        """Generate parlay preview image with 1 unit and send as ephemeral message."""
+        try:
+            # Always use 1 unit for preview
+            preview_units = 1.0
+            
+            # Generate preview image
+            generator = await self.get_bet_slip_generator()
+            
+            # Create bet slip data for preview
+            bet_data = {
+                "legs": self.legs,
+                "total_odds": self.total_odds,
+                "units": preview_units,
+                "notes": self.parlay_notes,
+                "user": interaction.user,
+                "timestamp": datetime.now(timezone.utc),
+            }
+            
+            # Generate image
+            image_bytes = generator.generate_parlay_preview(
+                legs=bet_data["legs"],
+                total_odds=bet_data["total_odds"],
+                units=bet_data["units"]
+            )
+            
+            if image_bytes:
+                # Convert bytes to BytesIO for Discord File
+                import io
+                image_buffer = io.BytesIO(image_bytes)
+                image_buffer.seek(0)
+                
+                # Create file
+                file = File(image_buffer, filename=f"parlay_preview_{self.workflow_id}.png")
+                
+                # Send ephemeral message with preview
+                await interaction.followup.send(
+                    "**Preview of your parlay bet with 1 unit:**",
+                    file=file,
+                    ephemeral=True
+                )
+            else:
+                await interaction.followup.send(
+                    "❌ Error generating preview image.",
+                    ephemeral=True
+                )
+                
+        except Exception as e:
+            logger.error(f"Error generating parlay preview: {e}")
+            await interaction.followup.send(
+                "❌ Error generating preview image.",
+                ephemeral=True
+            )
 
     async def cleanup(self):
         """Clean up the workflow."""

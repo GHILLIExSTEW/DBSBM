@@ -470,12 +470,15 @@ class PlayerPropsWorkflowView(View):
             generator = PlayerPropImageGenerator(
                 guild_id=self.original_interaction.guild_id
             )
+            # Always use 1 unit for preview images
+            preview_units = 1.0
+            
             bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                 player_name=player_name,
                 team_name=team_name,
                 league=league,
                 line=line,
-                units=units,
+                units=preview_units,
                 output_path=None,
                 bet_id=bet_id,
                 timestamp=timestamp,
@@ -504,14 +507,23 @@ class PlayerPropsWorkflowView(View):
         self.add_item(ConfirmUnitsButton(self))
         self.add_item(CancelButton(self))
 
-        file_to_send = None
+        # Send preview image as ephemeral message
         if self.preview_image_bytes:
             self.preview_image_bytes.seek(0)
             file_to_send = File(
                 self.preview_image_bytes, filename="player_prop_preview_units.webp"
             )
+            
+            # Send ephemeral message with preview
+            await self.original_interaction.followup.send(
+                "**Preview of your player prop bet with 1 unit:**",
+                file=file_to_send,
+                ephemeral=True
+            )
+
+        # Update main message without file
         await self.edit_message(
-            content=self.get_content(), view=self, file=file_to_send
+            content=self.get_content(), view=self
         )
 
     def stop(self):
