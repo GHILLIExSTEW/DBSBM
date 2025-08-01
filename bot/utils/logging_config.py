@@ -283,7 +283,7 @@ def configure_development_logging():
         log_file="logs/dbsbm_dev.log",
         structured=False,
         production=False,
-        use_daily_logs=True
+        use_daily_logs=False  # Changed to False to enable DEBUG console output
     )
 
 
