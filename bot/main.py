@@ -694,7 +694,10 @@ class BettingBot(commands.Bot):
     def start_fetcher(self):
         """Start the fetcher process and monitor its status."""
         if self.fetcher_process is None or self.fetcher_process.poll() is not None:
-            fetcher_log_path = os.path.join(BASE_DIR, "logs", "fetcher.log")
+            # Use the new fetcher logger system
+            from bot.utils.fetcher_logger import get_fetcher_logger
+            fetcher_logger = get_fetcher_logger()
+            fetcher_log_path = fetcher_logger.get_current_log_path()
             os.makedirs(os.path.dirname(fetcher_log_path), exist_ok=True)
             logger.info(
                 "Setting up fetcher process with log at: %s", fetcher_log_path)
@@ -806,11 +809,12 @@ class BettingBot(commands.Bot):
                             last_lines = lines[-20:] if len(
                                 lines) > 20 else lines
                             logger.error(
-                                "Last few lines from fetcher.log:\n%s",
+                                "Last few lines from %s:\n%s",
+                                os.path.basename(log_path),
                                 "".join(last_lines),
                             )
                     except Exception as e:
-                        logger.error("Failed to read fetcher.log: %s", e)
+                        logger.error("Failed to read fetcher log: %s", e)
 
                     # Wait a bit before restarting
                     await asyncio.sleep(5)
