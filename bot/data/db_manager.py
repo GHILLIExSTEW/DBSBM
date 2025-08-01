@@ -26,23 +26,27 @@ except ImportError:
         return team_name
 
 try:
-    from data.cache_manager import cache_get, cache_set, cache_query
+    from bot.utils.enhanced_cache_manager import enhanced_cache_get as cache_get, enhanced_cache_set as cache_set, enhanced_cache_query as cache_query
 except ImportError:
     # Fallback cache functions
-    async def cache_get(key: str) -> Optional[Any]:
+    async def cache_get(prefix: str, key: str) -> Optional[Any]:
         return None
 
-    async def cache_set(key: str, value: Any, ttl: int = 3600) -> bool:
+    async def cache_set(prefix: str, key: str, value: Any, ttl: int = 3600) -> bool:
         return True
 
-    async def cache_query(key: str) -> Optional[Any]:
-        return None
+    async def cache_query(prefix: str = "db_query", ttl: Optional[int] = None):
+        def decorator(func):
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+            return wrapper
+        return decorator
 
 try:
     from services.performance_monitor import record_query, time_operation
 except ImportError:
     # Fallback performance monitoring
-    def record_query(query: str, duration: float) -> None:
+    def record_query(query: str, duration: float, success: bool = True, error_message: str = None, cache_hit: bool = False) -> None:
         pass
 
     def time_operation(operation: str):

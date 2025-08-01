@@ -8,7 +8,9 @@ import json
 import logging
 import os
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import aiohttp
@@ -30,6 +32,39 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Process lock file
+LOCK_FILE = Path(tempfile.gettempdir()) / "dbsbm_fetcher.lock"
+
+def acquire_lock():
+    """Acquire a process lock to prevent multiple instances."""
+    try:
+        if LOCK_FILE.exists():
+            # Check if the lock is stale (older than 10 minutes)
+            lock_age = datetime.now() - datetime.fromtimestamp(LOCK_FILE.stat().st_mtime)
+            if lock_age.total_seconds() > 600:  # 10 minutes
+                logger.warning("Removing stale lock file")
+                LOCK_FILE.unlink()
+            else:
+                logger.error("Fetcher is already running. If this is incorrect, delete the lock file manually.")
+                return False
+        
+        # Create lock file
+        LOCK_FILE.write_text(str(os.getpid()))
+        logger.info(f"Acquired lock (PID: {os.getpid()})")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to acquire lock: {e}")
+        return False
+
+def release_lock():
+    """Release the process lock."""
+    try:
+        if LOCK_FILE.exists():
+            LOCK_FILE.unlink()
+            logger.info("Released lock")
+    except Exception as e:
+        logger.error(f"Failed to release lock: {e}")
 
 # API endpoints for different sports
 SPORT_ENDPOINTS = {
@@ -211,61 +246,90 @@ class MainFetcher:
                 "date": date,
             }
 
-        try:
-            async with self.session.get(
-                url, headers=headers, params=params
-            ) as response:
-                if response.status == 429:  # Rate limit exceeded
-                    logger.warning(
-                        f"Rate limit exceeded for {league['name']}, waiting..."
-                    )
-                    await asyncio.sleep(60)
-                    return await self._fetch_league_games(league, date)
-
-                response.raise_for_status()
-                data = await response.json()
-
-                if "errors" in data and data["errors"]:
-                    logger.warning(f"API errors for {league['name']}: {data['errors']}")
-                    return 0
-
-                games = data.get("response", [])
-                games_saved = 0
-
-                # Debug logging for AFL
-                if sport == "afl" and games:
-                    logger.info(
-                        f"Found {len(games)} AFL games, attempting to process..."
-                    )
-                    if len(games) > 0:
-                        logger.debug(
-                            f"Sample AFL game structure: {json.dumps(games[0], indent=2)[:300]}..."
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                async with self.session.get(
+                    url, headers=headers, params=params, timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status == 429:  # Rate limit exceeded
+                        logger.warning(
+                            f"Rate limit exceeded for {league['name']} (attempt {attempt + 1}/{max_retries}), waiting {retry_delay * (attempt + 1)} seconds..."
                         )
-
-                for game in games:
-                    try:
-                        mapped_game = self._map_game_data(game, sport, league)
-                        if mapped_game:
-                            await self._save_game_to_db(mapped_game)
-                            games_saved += 1
-                        else:
-                            # Log when mapping fails but don't treat as error
-                            if sport.lower() == "afl":
-                                logger.debug(
-                                    f"Skipping AFL game due to mapping issues for {league['name']}"
-                                )
-                    except Exception as e:
-                        logger.error(f"Error processing game for {league['name']}: {e}")
+                        await asyncio.sleep(retry_delay * (attempt + 1))
                         continue
 
-                return games_saved
+                    if response.status == 401:  # Unauthorized
+                        logger.error(f"API key invalid for {league['name']}")
+                        return 0
 
-        except aiohttp.ClientError as e:
-            logger.error(f"Network error fetching {league['name']}: {e}")
-            return 0
-        except Exception as e:
-            logger.error(f"Unexpected error fetching {league['name']}: {e}")
-            return 0
+                    if response.status == 403:  # Forbidden
+                        logger.error(f"Access forbidden for {league['name']} - check API permissions")
+                        return 0
+
+                    response.raise_for_status()
+                    data = await response.json()
+
+                    if "errors" in data and data["errors"]:
+                        logger.warning(f"API errors for {league['name']}: {data['errors']}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(retry_delay)
+                            continue
+                        return 0
+
+                    games = data.get("response", [])
+                    games_saved = 0
+
+                    # Debug logging for problematic sports
+                    if sport in ["american-football", "afl"] and games:
+                        logger.info(
+                            f"Found {len(games)} {sport} games for {league['name']}, attempting to process..."
+                        )
+                        if len(games) > 0:
+                            logger.debug(
+                                f"Sample {sport} game structure: {json.dumps(games[0], indent=2)[:300]}..."
+                            )
+
+                    for game in games:
+                        try:
+                            mapped_game = self._map_game_data(game, sport, league)
+                            if mapped_game:
+                                await self._save_game_to_db(mapped_game)
+                                games_saved += 1
+                            else:
+                                # Log when mapping fails but don't treat as error
+                                logger.debug(
+                                    f"Skipping game due to mapping issues for {league['name']}"
+                                )
+                        except Exception as e:
+                            logger.error(f"Error processing game for {league['name']}: {e}")
+                            continue
+
+                    return games_saved
+
+            except aiohttp.ClientError as e:
+                logger.error(f"Network error fetching {league['name']} (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return 0
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout error fetching {league['name']} (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return 0
+            except Exception as e:
+                logger.error(f"Unexpected error fetching {league['name']} (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return 0
+
+        logger.error(f"Failed to fetch {league['name']} after {max_retries} attempts")
+        return 0
 
     def _map_game_data(self, game: Dict, sport: str, league: Dict) -> Optional[Dict]:
         """Map API game data to our database format."""
@@ -405,29 +469,33 @@ class MainFetcher:
             away_team = safe_get(teams, "away", default={})
             fixture = safe_get(game, "fixture", default={})
 
-            # Get game ID from either game or fixture
+            # Get game ID from either game or fixture with better error handling
             game_id = str(
                 safe_get(game, "id", default=safe_get(fixture, "id", default=""))
             )
+            
+            # If no game ID found, try alternative field names and log for debugging
             if not game_id:
-                # For AFL, try alternative field names
-                if sport.lower() == "afl":
-                    game_id = str(
-                        safe_get(
-                            game,
-                            "game_id",
-                            default=safe_get(game, "match_id", default=""),
-                        )
-                    )
-                    if not game_id:
-                        # Log the actual structure for debugging
-                        logger.warning(
-                            f"AFL game structure: {json.dumps(game, indent=2)[:500]}..."
-                        )
-                        logger.error(f"Missing game ID for {sport}/{league['name']}")
-                        return None
-                else:
-                    logger.error(f"Missing game ID for {sport}/{league['name']}")
+                # Try alternative field names for different API structures
+                alternative_ids = [
+                    safe_get(game, "game_id"),
+                    safe_get(game, "match_id"),
+                    safe_get(game, "fixture_id"),
+                    safe_get(fixture, "game_id"),
+                    safe_get(fixture, "match_id"),
+                ]
+                
+                for alt_id in alternative_ids:
+                    if alt_id:
+                        game_id = str(alt_id)
+                        logger.info(f"Found alternative game ID {game_id} for {sport}/{league['name']}")
+                        break
+                
+                if not game_id:
+                    # Log the game structure for debugging (truncated to avoid spam)
+                    game_structure = json.dumps(game, indent=2)[:300] + "..." if len(json.dumps(game)) > 300 else json.dumps(game)
+                    logger.warning(f"Game structure for {sport}/{league['name']}: {game_structure}")
+                    logger.error(f"Missing game ID for {sport}/{league['name']} - skipping game")
                     return None
 
             # Get start time from either game or fixture
@@ -620,6 +688,11 @@ async def main():
     print("FETCHER: Starting fetcher process...")
     logger.info("Starting fetcher process...")
 
+    # Acquire lock
+    if not acquire_lock():
+        logger.error("Fetcher process already running. Exiting.")
+        sys.exit(1)
+
     # Database connection
     pool = None
     try:
@@ -675,8 +748,9 @@ async def main():
         await asyncio.sleep(300)  # Wait 5 minutes before restarting
         # Don't raise - let the process restart
     finally:
+        # Always release the lock
+        release_lock()
         if pool:
-            pool.close()
             await pool.wait_closed()
             logger.info("Database connection pool closed")
 

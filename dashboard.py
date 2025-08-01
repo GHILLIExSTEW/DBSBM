@@ -97,7 +97,7 @@ if path == '/dashboard':
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>�� BetBot Dashboard</h1>
+                    <h1>🎯 BetBot Dashboard</h1>
                     <p>Real-time betting analytics and guild management</p>
                 </div>
                 
@@ -107,11 +107,11 @@ if path == '/dashboard':
                         <div class="stat-number">{data['total_bets']}</div>
                     </div>
                     <div class="stat-card">
-                        <h3>�� Monthly Bets</h3>
+                        <h3>💰 Monthly Bets</h3>
                         <div class="stat-number">{data['monthly_bets']}</div>
                     </div>
                     <div class="stat-card">
-                        <h3>��️ Active Guilds</h3>
+                        <h3>👥 Active Guilds</h3>
                         <div class="stat-number">{len(data['guilds'])}</div>
                     </div>
                 </div>

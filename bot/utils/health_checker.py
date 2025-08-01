@@ -294,7 +294,7 @@ async def check_cache_health() -> Dict[str, Any]:
             start_time = time.time()
             set_success = await asyncio.wait_for(
                 enhanced_cache_manager.set(
-                    "test", test_key, test_value, ttl=10),
+                    "db_query", test_key, test_value, ttl=10),
                 timeout=3.0
             )
             set_time = time.time() - start_time
@@ -302,7 +302,7 @@ async def check_cache_health() -> Dict[str, Any]:
             # Test get operation with timeout
             start_time = time.time()
             retrieved_value = await asyncio.wait_for(
-                enhanced_cache_manager.get("test", test_key),
+                enhanced_cache_manager.get("db_query", test_key),
                 timeout=3.0
             )
             get_time = time.time() - start_time
@@ -310,7 +310,7 @@ async def check_cache_health() -> Dict[str, Any]:
             # Test delete operation with timeout
             start_time = time.time()
             delete_success = await asyncio.wait_for(
-                enhanced_cache_manager.delete("test", test_key),
+                enhanced_cache_manager.delete("db_query", test_key),
                 timeout=3.0
             )
             delete_time = time.time() - start_time

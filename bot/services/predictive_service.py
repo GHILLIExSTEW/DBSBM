@@ -703,6 +703,8 @@ class PredictiveService:
                 best_accuracy = 0.0
 
                 for model in self.models.values():
+                    if model.performance_metrics is None:
+                        model.performance_metrics = {}
                     accuracy = model.performance_metrics.get('accuracy', 0.0)
                     accuracies.append(accuracy)
 
@@ -823,6 +825,8 @@ class PredictiveService:
     async def _validate_model_performance(self, model: MLModel) -> bool:
         """Validate if model meets performance requirements."""
         try:
+            if model.performance_metrics is None:
+                model.performance_metrics = {}
             accuracy = model.performance_metrics.get('accuracy', 0.0)
             return accuracy >= self.performance_thresholds.get('accuracy', 0.75)
 
@@ -896,6 +900,8 @@ class PredictiveService:
         """Check if model should be retrained."""
         try:
             # Check performance degradation
+            if model.performance_metrics is None:
+                model.performance_metrics = {}
             accuracy = model.performance_metrics.get('accuracy', 0.0)
             return accuracy < self.performance_thresholds.get('accuracy', 0.75)
 

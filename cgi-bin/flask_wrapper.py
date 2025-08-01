@@ -18,8 +18,8 @@ else:
 
 query_string = os.environ.get('QUERY_STRING', '')
 
-# Construct the URL to the running Flask app
-flask_url = f"http://127.0.0.1:6000{path_info}"
+# Construct the URL to the running Flask app - using the correct port from logs
+flask_url = f"http://127.0.0.1:25594{path_info}"
 if query_string:
     flask_url += f"?{query_string}"
 
@@ -58,7 +58,7 @@ except Exception as e:
     <body>
         <h1>❌ Flask App Error</h1>
         <p>Error: {str(e)}</p>
-        <p>Make sure the Flask app is running on port 6000</p>
+        <p>Make sure the Flask app is running on port 25594</p>
         <p>Path: {path_info}</p>
     </body>
     </html>

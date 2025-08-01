@@ -1074,7 +1074,12 @@ class BettingBot(commands.Bot):
 
                 if health_results:
                     logger.info("📊 HEALTH STATUS:")
-                    for service, result in health_results.items():
+                    # Debug: Log the structure of health_results
+                    logger.debug(f"Health results structure: {list(health_results.keys())}")
+                    # Extract services from the health report structure
+                    services = health_results.get('services', {})
+                    logger.debug(f"Services found: {list(services.keys())}")
+                    for service, result in services.items():
                         if isinstance(result, dict):
                             status = result.get('status', 'unknown')
                             response_time = result.get('response_time', 0)
@@ -1086,7 +1091,7 @@ class BettingBot(commands.Bot):
                                     f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
                             else:
                                 logger.error(
-                                    f"  [ERROR] {service}: Unhealthy ({response_time:.2f}s)")
+                                    f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
             except Exception as e:
                 logger.error(f"Health check failed: {e}")
 
