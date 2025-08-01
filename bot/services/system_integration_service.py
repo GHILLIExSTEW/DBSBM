@@ -272,7 +272,7 @@ class SystemIntegrationService:
         self.config = {
             'service_discovery_enabled': True,
             'load_balancing_enabled': True,
-            'circuit_breaker_enabled': True,
+            'circuit_breaker_enabled': False,  # Disabled by default to reduce DB writes
             'api_gateway_enabled': True,
             'deployment_automation_enabled': True,
             'distributed_tracing_enabled': True,
@@ -305,8 +305,14 @@ class SystemIntegrationService:
                 self._service_discovery_loop())
             self.load_balancer_task = asyncio.create_task(
                 self._load_balancer_loop())
-            self.circuit_breaker_task = asyncio.create_task(
-                self._circuit_breaker_loop())
+            
+            # Only start circuit breaker task if enabled
+            if self.config.get('circuit_breaker_enabled', True):
+                self.circuit_breaker_task = asyncio.create_task(
+                    self._circuit_breaker_loop())
+            else:
+                self.circuit_breaker_task = None
+                
             self.deployment_task = asyncio.create_task(
                 self._deployment_automation_loop())
 
@@ -653,11 +659,19 @@ class SystemIntegrationService:
         """Background circuit breaker loop."""
         while self.is_running:
             try:
-                # Update circuit breaker states
+                # Only update circuit breakers that have changed state
                 for breaker in self.circuit_breakers.values():
-                    await self._update_circuit_breaker_state(breaker)
+                    # Check if the breaker needs to transition from OPEN to HALF_OPEN
+                    if (breaker.state == CircuitBreakerState.OPEN and 
+                        breaker.last_failure_time and 
+                        (datetime.utcnow() - breaker.last_failure_time).seconds > breaker.timeout_seconds):
+                        
+                        breaker.state = CircuitBreakerState.HALF_OPEN
+                        breaker.updated_at = datetime.utcnow()
+                        await self._update_circuit_breaker_state(breaker)
+                        logger.debug(f"Circuit breaker {breaker.breaker_id} transitioned to HALF_OPEN")
 
-                await asyncio.sleep(10)  # Update every 10 seconds
+                await asyncio.sleep(60)  # Check every 60 seconds instead of 10
 
             except asyncio.CancelledError:
                 break
