@@ -81,14 +81,29 @@ except ImportError:
         from utils.logging_config import auto_configure_logging
         auto_configure_logging()
     except ImportError:
-        # Fallback to basic logging setup
+        # Fallback to basic logging setup with DEBUG level for more verbose output
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
         )
+
+# Set Discord library to DEBUG level for more connection details
 discord_logger = logging.getLogger("discord")
-discord_logger.setLevel(logging.WARNING)
+discord_logger.setLevel(logging.DEBUG)
+
+# Set aiohttp to DEBUG for connection details
+aiohttp_logger = logging.getLogger("aiohttp")
+aiohttp_logger.setLevel(logging.DEBUG)
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Add console handler for immediate debug output
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 # --- Path Setup ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1384,6 +1399,28 @@ async def run_bot():
     max_retries = 3
     retry_delay = 5
 
+    # Enhanced debug output
+    logger.debug("🚀 Starting bot initialization process...")
+    logger.debug(f"Current working directory: {os.getcwd()}")
+    logger.debug(f"Python version: {sys.version}")
+    logger.debug(f"Discord.py version: {discord.__version__}")
+    logger.debug(f"aiohttp version: {aiohttp.__version__}")
+    
+    # Check environment variables
+    logger.debug("🔍 Checking environment variables...")
+    env_vars = ["DISCORD_TOKEN", "API_KEY", "MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DB"]
+    for var in env_vars:
+        value = os.getenv(var)
+        if value:
+            # Mask sensitive values
+            if "TOKEN" in var or "PASSWORD" in var or "KEY" in var:
+                masked_value = value[:10] + "..." + value[-5:] if len(value) > 15 else "***"
+                logger.debug(f"✅ {var}: {masked_value}")
+            else:
+                logger.debug(f"✅ {var}: {value}")
+        else:
+            logger.warning(f"⚠️ {var}: NOT SET")
+
     # Run startup checks first (non-blocking)
     try:
         logger.info("🔍 Running startup checks...")
@@ -1422,50 +1459,71 @@ async def run_bot():
 
             # Validate Discord token first
             discord_token = os.getenv("DISCORD_TOKEN")
+            logger.debug(f"Discord token length: {len(discord_token) if discord_token else 0}")
+            logger.debug(f"Discord token starts with MT: {discord_token.startswith('MT') if discord_token else False}")
+            
             if not discord_token:
+                logger.critical("❌ DISCORD_TOKEN environment variable is not set")
                 raise RuntimeError("DISCORD_TOKEN environment variable is not set")
             
             if not discord_token.startswith("MT") or len(discord_token) < 50:
+                logger.critical(f"❌ DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})")
                 raise RuntimeError("DISCORD_TOKEN format appears invalid")
+
+            # Log bot configuration
+            logger.debug(f"Bot intents: {bot.intents}")
+            logger.debug(f"Bot command prefix: {bot.command_prefix}")
+            logger.debug(f"Bot description: {bot.description}")
 
             # Try multiple connection strategies
             connection_success = False
             for attempt in range(3):
                 try:
-                    logger.info(
-                        f"Discord connection attempt {attempt + 1}/3...")
+                    logger.info(f"🔄 Discord connection attempt {attempt + 1}/3...")
+                    logger.debug(f"Starting Discord connection with token: {discord_token[:10]}...{discord_token[-5:]}")
 
                     # Use a more conservative timeout for Discord connection
+                    start_time = datetime.now()
                     await asyncio.wait_for(
                         bot.start(discord_token),
                         timeout=300.0  # 5 minutes for Discord connection
                     )
-                    logger.info("✅ Bot started successfully")
+                    end_time = datetime.now()
+                    connection_time = (end_time - start_time).total_seconds()
+                    logger.info(f"✅ Bot started successfully in {connection_time:.2f} seconds")
                     connection_success = True
                     break
 
                 except asyncio.TimeoutError:
-                    logger.warning(
-                        f"Discord connection attempt {attempt + 1} timed out after 5 minutes")
+                    logger.warning(f"⏰ Discord connection attempt {attempt + 1} timed out after 5 minutes")
                     if attempt < 2:  # Don't sleep after last attempt
-                        # Wait 10 seconds between attempts
+                        logger.debug("Waiting 10 seconds before next attempt...")
                         await asyncio.sleep(10)
-                except discord.LoginFailure:
-                    logger.critical("Discord login failed - invalid token")
+                except discord.LoginFailure as e:
+                    logger.critical(f"❌ Discord login failed - invalid token: {e}")
                     raise RuntimeError("Discord login failed - check your bot token")
                 except discord.PrivilegedIntentsRequired as e:
-                    logger.critical(f"Privileged intents required: {e}")
+                    logger.critical(f"❌ Privileged intents required: {e}")
                     raise RuntimeError("Enable required intents in Discord Developer Portal")
+                except discord.HTTPException as e:
+                    logger.error(f"❌ Discord HTTP error on attempt {attempt + 1}: {e}")
+                    if attempt < 2:
+                        await asyncio.sleep(10)
+                except aiohttp.ClientError as e:
+                    logger.error(f"❌ Network error on attempt {attempt + 1}: {e}")
+                    if attempt < 2:
+                        await asyncio.sleep(10)
                 except Exception as e:
-                    logger.error(
-                        f"Discord connection attempt {attempt + 1} failed: {e}")
+                    logger.error(f"❌ Discord connection attempt {attempt + 1} failed: {e}")
+                    logger.debug(f"Exception type: {type(e).__name__}")
+                    logger.debug(f"Exception details: {str(e)}")
                     if attempt < 2:
                         await asyncio.sleep(10)
 
             if connection_success:
                 break
             else:
-                logger.error("All Discord connection attempts failed")
+                logger.error("❌ All Discord connection attempts failed")
                 await bot.close()
                 raise RuntimeError(
                     "Discord connection failed after all attempts")
@@ -1510,6 +1568,9 @@ async def run_bot():
                 e,
                 exc_info=True,
             )
+            logger.debug(f"Exception type: {type(e).__name__}")
+            logger.debug(f"Exception args: {e.args}")
+            logger.debug(f"Exception traceback: {sys.exc_info()}")
             break
 
 

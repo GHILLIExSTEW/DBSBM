@@ -52,6 +52,7 @@ class DBSBMStartupChecker:
     async def _check_environment_variables(self):
         """Check that all required environment variables are set."""
         self.total_checks += 1
+        logger.debug("🔍 Checking environment variables...")
         
         required_vars = [
             "DISCORD_TOKEN",
@@ -64,9 +65,21 @@ class DBSBMStartupChecker:
         ]
         
         missing_vars = []
+        present_vars = []
+        
         for var in required_vars:
-            if not os.getenv(var):
+            value = os.getenv(var)
+            if not value:
                 missing_vars.append(var)
+                logger.debug(f"❌ {var}: NOT SET")
+            else:
+                present_vars.append(var)
+                # Mask sensitive values for logging
+                if "TOKEN" in var or "PASSWORD" in var or "KEY" in var:
+                    masked_value = value[:10] + "..." + value[-5:] if len(value) > 15 else "***"
+                    logger.debug(f"✅ {var}: {masked_value}")
+                else:
+                    logger.debug(f"✅ {var}: {value}")
         
         if missing_vars:
             error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
@@ -75,12 +88,17 @@ class DBSBMStartupChecker:
         else:
             self.checks_passed += 1
             logger.info("✅ All required environment variables are set")
+            logger.debug(f"Found {len(present_vars)} environment variables")
     
     async def _check_discord_token(self):
         """Validate Discord token format."""
         self.total_checks += 1
         
         token = os.getenv("DISCORD_TOKEN")
+        logger.debug(f"Checking Discord token...")
+        logger.debug(f"Token length: {len(token) if token else 0}")
+        logger.debug(f"Token starts with MT: {token.startswith('MT') if token else False}")
+        
         if not token:
             error_msg = "Discord token is not set"
             self.errors.append(error_msg)
@@ -89,10 +107,14 @@ class DBSBMStartupChecker:
         
         # Basic format validation
         if not token.startswith("MT") or len(token) < 50:
-            error_msg = "Discord token format appears invalid"
+            error_msg = f"Discord token format appears invalid (length: {len(token)}, starts with MT: {token.startswith('MT')})"
             self.errors.append(error_msg)
             logger.error(error_msg)
             return
+        
+        # Additional validation
+        logger.debug(f"Token format validation passed")
+        logger.debug(f"Token preview: {token[:10]}...{token[-5:]}")
         
         self.checks_passed += 1
         logger.info("✅ Discord token format appears valid")
@@ -100,18 +122,33 @@ class DBSBMStartupChecker:
     async def _check_database_connection(self):
         """Test database connection."""
         self.total_checks += 1
+        logger.debug("🔍 Testing database connection...")
         
         try:
             import aiomysql
             
+            # Get database configuration
+            host = os.getenv("MYSQL_HOST")
+            port = int(os.getenv("MYSQL_PORT", 3306))
+            user = os.getenv("MYSQL_USER")
+            password = os.getenv("MYSQL_PASSWORD")
+            db = os.getenv("MYSQL_DB")
+            
+            logger.debug(f"Database host: {host}")
+            logger.debug(f"Database port: {port}")
+            logger.debug(f"Database user: {user}")
+            logger.debug(f"Database name: {db}")
+            logger.debug(f"Database password: {'***' if password else 'NOT SET'}")
+            
             # Test connection with timeout
+            logger.debug("Attempting database connection...")
             conn = await asyncio.wait_for(
                 aiomysql.connect(
-                    host=os.getenv("MYSQL_HOST"),
-                    port=int(os.getenv("MYSQL_PORT", 3306)),
-                    user=os.getenv("MYSQL_USER"),
-                    password=os.getenv("MYSQL_PASSWORD"),
-                    db=os.getenv("MYSQL_DB"),
+                    host=host,
+                    port=port,
+                    user=user,
+                    password=password,
+                    db=db,
                     autocommit=True
                 ),
                 timeout=10.0
@@ -124,15 +161,21 @@ class DBSBMStartupChecker:
             error_msg = f"Database connection failed: {str(e)}"
             self.errors.append(error_msg)
             logger.error(error_msg)
+            logger.debug(f"Database connection exception type: {type(e).__name__}")
+            logger.debug(f"Database connection exception details: {str(e)}")
     
     async def _check_api_connection(self):
         """Test API connection."""
         self.total_checks += 1
+        logger.debug("🔍 Testing API connection...")
         
         try:
             import aiohttp
             
             api_key = os.getenv("API_KEY")
+            logger.debug(f"API key length: {len(api_key) if api_key else 0}")
+            logger.debug(f"API key preview: {api_key[:10]}...{api_key[-5:] if api_key and len(api_key) > 15 else '***'}")
+            
             if not api_key:
                 error_msg = "API key is not set"
                 self.errors.append(error_msg)
@@ -140,13 +183,20 @@ class DBSBMStartupChecker:
                 return
             
             # Test API with a simple request
+            test_url = "https://v3.football.api-sports.io/status"
+            headers = {"x-rapidapi-key": api_key}
+            
+            logger.debug(f"Testing API endpoint: {test_url}")
+            logger.debug(f"API headers: {headers}")
+            
             async with aiohttp.ClientSession() as session:
-                # Use a simple endpoint to test connectivity
-                test_url = "https://v3.football.api-sports.io/status"
-                headers = {"x-rapidapi-key": api_key}
-                
                 async with session.get(test_url, headers=headers) as response:
+                    logger.debug(f"API response status: {response.status}")
+                    logger.debug(f"API response headers: {dict(response.headers)}")
+                    
                     if response.status == 200:
+                        response_text = await response.text()
+                        logger.debug(f"API response content: {response_text[:200]}...")
                         self.checks_passed += 1
                         logger.info("✅ API connection successful")
                     else:
@@ -158,10 +208,13 @@ class DBSBMStartupChecker:
             error_msg = f"API connection test failed: {str(e)}"
             self.errors.append(error_msg)
             logger.error(error_msg)
+            logger.debug(f"API connection exception type: {type(e).__name__}")
+            logger.debug(f"API connection exception details: {str(e)}")
     
     async def _check_file_permissions(self):
         """Check file permissions for critical directories."""
         self.total_checks += 1
+        logger.debug("🔍 Checking file permissions and critical directories...")
         
         critical_dirs = [
             "data",
@@ -171,9 +224,24 @@ class DBSBMStartupChecker:
         ]
         
         missing_dirs = []
+        existing_dirs = []
+        
         for dir_name in critical_dirs:
             if not os.path.exists(dir_name):
                 missing_dirs.append(dir_name)
+                logger.debug(f"❌ Directory missing: {dir_name}")
+            else:
+                existing_dirs.append(dir_name)
+                logger.debug(f"✅ Directory exists: {dir_name}")
+                # Check if directory is writable
+                try:
+                    test_file = os.path.join(dir_name, ".test_write")
+                    with open(test_file, 'w') as f:
+                        f.write("test")
+                    os.remove(test_file)
+                    logger.debug(f"✅ Directory writable: {dir_name}")
+                except Exception as e:
+                    logger.debug(f"⚠️ Directory not writable: {dir_name} - {e}")
         
         if missing_dirs:
             warning_msg = f"Missing directories: {', '.join(missing_dirs)}"
@@ -182,10 +250,12 @@ class DBSBMStartupChecker:
         else:
             self.checks_passed += 1
             logger.info("✅ All critical directories exist")
+            logger.debug(f"Found {len(existing_dirs)} existing directories")
     
     async def _check_dependencies(self):
         """Check that all required dependencies are available."""
         self.total_checks += 1
+        logger.debug("🔍 Checking required dependencies...")
         
         required_modules = [
             "discord",
@@ -196,11 +266,22 @@ class DBSBMStartupChecker:
         ]
         
         missing_modules = []
+        available_modules = []
+        
         for module in required_modules:
             try:
-                __import__(module)
-            except ImportError:
+                imported_module = __import__(module)
+                available_modules.append(module)
+                logger.debug(f"✅ Module available: {module}")
+                # Log version if available
+                try:
+                    version = getattr(imported_module, '__version__', 'unknown')
+                    logger.debug(f"  Version: {version}")
+                except:
+                    pass
+            except ImportError as e:
                 missing_modules.append(module)
+                logger.debug(f"❌ Module missing: {module} - {e}")
         
         if missing_modules:
             error_msg = f"Missing required modules: {', '.join(missing_modules)}"
@@ -208,4 +289,5 @@ class DBSBMStartupChecker:
             logger.error(error_msg)
         else:
             self.checks_passed += 1
-            logger.info("✅ All required dependencies are available") 
+            logger.info("✅ All required dependencies are available")
+            logger.debug(f"Found {len(available_modules)} available modules") 
