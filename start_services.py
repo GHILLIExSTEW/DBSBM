@@ -58,9 +58,9 @@ def start_fetcher():
     """Start the fetcher process."""
     print("🚀 Starting fetcher...")
     
-    fetcher_script = "bot/utils/fetcher.py"
+    fetcher_script = "bot/utils/comprehensive_fetcher.py"
     if not os.path.exists(fetcher_script):
-        print(f"❌ Fetcher script not found: {fetcher_script}")
+        print(f"❌ Comprehensive fetcher script not found: {fetcher_script}")
         return None
     
     try:
@@ -70,7 +70,7 @@ def start_fetcher():
             stderr=subprocess.PIPE,
             text=True
         )
-        print(f"✅ Fetcher started with PID: {process.pid}")
+        print(f"✅ Comprehensive fetcher started with PID: {process.pid}")
         return process
     except Exception as e:
         print(f"❌ Failed to start fetcher: {e}")

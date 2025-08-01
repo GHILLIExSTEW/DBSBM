@@ -742,7 +742,7 @@ class BettingBot(commands.Bot):
                     logger.info("Starting fetcher process...")
                     self.fetcher_process = subprocess.Popen(
                         [sys.executable, os.path.join(
-                            BASE_DIR, "utils", "fetcher.py")],
+                            BASE_DIR, "utils", "comprehensive_fetcher.py")],
                         stdout=log_file,
                         stderr=log_file,
                         text=True,
@@ -751,7 +751,7 @@ class BettingBot(commands.Bot):
                         cwd=BASE_DIR,
                     )
                     logger.info(
-                        "Started fetcher (fetcher.py) as subprocess with PID %d",
+                        "Started comprehensive fetcher (comprehensive_fetcher.py) as subprocess with PID %d",
                         self.fetcher_process.pid,
                     )
 

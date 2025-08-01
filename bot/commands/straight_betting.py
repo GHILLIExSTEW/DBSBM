@@ -802,10 +802,12 @@ class StraightBetWorkflowView(View):
                 await self._handle_step_8_final_confirmation(interaction)
             else:
                 logger.error(f"Invalid step number: {self.current_step}")
-                await interaction.response.send_message("❌ Error: Invalid workflow step.", ephemeral=True)
+                # Use followup since interaction was already deferred
+                await interaction.followup.send("❌ Error: Invalid workflow step.", ephemeral=True)
         except Exception as e:
             logger.exception(f"Error in go_next for step {self.current_step}: {e}")
-            await interaction.response.send_message("❌ Error occurred during workflow step.", ephemeral=True)
+            # Use followup since interaction was already deferred
+            await interaction.followup.send("❌ Error occurred during workflow step.", ephemeral=True)
 
     async def _generate_bet_slip_image(
         self, details: Dict, bet_id: str, timestamp
