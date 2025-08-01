@@ -1086,7 +1086,7 @@ class BettingBot(commands.Bot):
                                     f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
                             else:
                                 logger.error(
-                                    f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+                                    f"  [ERROR] {service}: Unhealthy ({response_time:.2f}s)")
             except Exception as e:
                 logger.error(f"Health check failed: {e}")
 
