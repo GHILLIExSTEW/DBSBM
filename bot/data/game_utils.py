@@ -269,7 +269,7 @@ def normalize_team_name(team_name: str, sport: str = None, league: str = None) -
         str: The normalized team name
     """
     if not team_name:
-        return team_name
+        return "Unknown"
 
     # Convert to lowercase for matching
     team_name_lower = team_name.lower()
@@ -333,7 +333,7 @@ def normalize_team_name_any_league(team_name: str) -> str:
         str: The normalized team name
     """
     if not team_name:
-        return team_name
+        return "Unknown"
 
     # Try each major sport and league combination
     sports_and_leagues = [

@@ -924,8 +924,8 @@ class StraightBetWorkflowView(View):
                 self.stop()
         else:
             # Show team selection
-            home_team = self.bet_details.get("home_team", "Unknown")
-            away_team = self.bet_details.get("away_team", "Unknown")
+            home_team = self.bet_details.get("home_team_name", "Unknown")
+            away_team = self.bet_details.get("away_team_name", "Unknown")
 
             self.clear_items()
             self.add_item(TeamSelect(self, home_team, away_team))
