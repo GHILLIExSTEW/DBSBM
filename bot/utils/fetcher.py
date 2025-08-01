@@ -18,7 +18,7 @@ import aiomysql
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv("bot/.env")
 API_KEY = os.getenv("API_KEY")
 
 # Configure logging
@@ -728,7 +728,18 @@ async def main():
                 logger.info(
                     f"Waiting {wait_seconds/60:.1f} minutes until next fetch..."
                 )
-                await asyncio.sleep(wait_seconds)
+                
+                # Use shorter sleep intervals to allow for graceful shutdown
+                sleep_interval = min(wait_seconds, 300)  # Max 5 minutes
+                while wait_seconds > 0:
+                    try:
+                        await asyncio.sleep(sleep_interval)
+                        wait_seconds -= sleep_interval
+                        if wait_seconds <= 0:
+                            break
+                    except asyncio.CancelledError:
+                        logger.info("Fetcher shutdown requested")
+                        return
 
                 # Run scheduled fetch
                 logger.info("Running scheduled hourly fetch...")
@@ -736,17 +747,28 @@ async def main():
                     results = await fetcher.fetch_all_leagues()
                     logger.info(f"Scheduled fetch completed with results: {results}")
 
+            except asyncio.CancelledError:
+                logger.info("Fetcher shutdown requested")
+                break
             except Exception as e:
                 logger.error(f"Error in scheduled fetch: {e}")
                 logger.info("Waiting 5 minutes before retrying...")
-                await asyncio.sleep(300)  # Wait 5 minutes before retrying
+                try:
+                    await asyncio.sleep(300)  # Wait 5 minutes before retrying
+                except asyncio.CancelledError:
+                    logger.info("Fetcher shutdown requested during retry wait")
+                    break
                 continue  # Continue the loop instead of potentially exiting
 
+    except asyncio.CancelledError:
+        logger.info("Fetcher shutdown requested")
     except Exception as e:
         logger.error(f"Fetcher process failed: {e}")
         logger.info("Fetcher will restart in 5 minutes...")
-        await asyncio.sleep(300)  # Wait 5 minutes before restarting
-        # Don't raise - let the process restart
+        try:
+            await asyncio.sleep(300)  # Wait 5 minutes before restarting
+        except asyncio.CancelledError:
+            logger.info("Fetcher shutdown requested during restart wait")
     finally:
         # Always release the lock
         release_lock()
@@ -758,8 +780,20 @@ async def main():
 if __name__ == "__main__":
     print("FETCHER: Script started, about to run main()")
     try:
+        # Set up signal handling for graceful shutdown
+        def signal_handler(signum, frame):
+            print(f"FETCHER: Received signal {signum}, shutting down gracefully...")
+            sys.exit(0)
+        
+        import signal
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
         asyncio.run(main())
         print("FETCHER: Main function completed successfully")
+    except KeyboardInterrupt:
+        print("FETCHER: KeyboardInterrupt received, shutting down gracefully...")
+        sys.exit(0)
     except Exception as e:
         print(f"FETCHER: Error in main function: {e}")
         import traceback

@@ -1,11 +1,13 @@
-import asyncio
-import json
-import logging
-import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
-
 import aiomysql
+import asyncio
+import logging
+from typing import Optional, Dict, Any, List, Tuple
+from dotenv import load_dotenv
+import os
+from datetime import datetime, timezone
+
+# Load environment variables
+load_dotenv("bot/.env")
 
 # Fix import issues with fallback
 try:

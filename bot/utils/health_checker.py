@@ -12,6 +12,12 @@ from typing import Dict, List, Any, Optional, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv("bot/.env")
+
+from bot.data.db_manager import DatabaseManager
 
 
 logger = logging.getLogger(__name__)
@@ -197,13 +203,13 @@ async def check_database_health() -> Dict[str, Any]:
         start_time = time.time()
         try:
             # Use a shorter timeout for startup checks
-            connection = await asyncio.wait_for(
-                db_manager.get_connection(),
+            pool = await asyncio.wait_for(
+                db_manager.connect(),
                 timeout=5.0  # Reduced timeout for startup
             )
             response_time = time.time() - start_time
 
-            if not connection:
+            if not pool:
                 return {
                     "status": "degraded",
                     "error_message": "Database connection failed",
@@ -212,27 +218,27 @@ async def check_database_health() -> Dict[str, Any]:
 
             # Test simple query with timeout
             start_time = time.time()
-            cursor = await connection.cursor()
-            await asyncio.wait_for(cursor.execute("SELECT 1"), timeout=3.0)
-            result = await cursor.fetchone()
-            await cursor.close()
-            response_time = time.time() - start_time
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    await asyncio.wait_for(cursor.execute("SELECT 1"), timeout=3.0)
+                    result = await cursor.fetchone()
+                    response_time = time.time() - start_time
 
-            if result and result[0] == 1:
-                return {
-                    "status": "healthy",
-                    "response_time": response_time,
-                    "details": {
-                        "connection_pool_size": getattr(db_manager, 'pool_size', 'unknown'),
-                        "active_connections": getattr(db_manager, 'active_connections', 'unknown')
-                    }
-                }
-            else:
-                return {
-                    "status": "degraded",
-                    "error_message": "Database query test failed",
-                    "response_time": response_time
-                }
+                    if result and result[0] == 1:
+                        return {
+                            "status": "healthy",
+                            "response_time": response_time,
+                            "details": {
+                                "connection_pool_size": getattr(db_manager, '_pool', None),
+                                "active_connections": "unknown"
+                            }
+                        }
+                    else:
+                        return {
+                            "status": "degraded",
+                            "error_message": "Database query test failed",
+                            "response_time": response_time
+                        }
         except asyncio.TimeoutError:
             return {
                 "status": "degraded",
