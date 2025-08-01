@@ -821,14 +821,16 @@ class BettingBot(commands.Bot):
 
         # Only do essential initialization here - connect to Discord first
         logger.info("Step 1a: Connecting to database...")
-        await self.db_manager.connect()
-        if not self.db_manager._pool:
-            logger.critical(
-                "Database connection pool failed to initialize. Bot cannot continue."
-            )
-            await self.close()
-            sys.exit("Database connection failed.")
-        logger.info("Step 1a: Database connection successful")
+        try:
+            await self.db_manager.connect()
+            if not self.db_manager._pool:
+                logger.warning(
+                    "Database connection pool failed to initialize. Bot will continue without database."
+                )
+            else:
+                logger.info("Step 1a: Database connection successful")
+        except Exception as e:
+            logger.warning(f"Database connection failed: {e}. Bot will continue without database.")
 
         # Initialize database schema
         try:
@@ -1382,19 +1384,19 @@ async def run_bot():
     max_retries = 3
     retry_delay = 5
 
-    # Run startup checks first
+    # Run startup checks first (non-blocking)
     try:
         logger.info("🔍 Running startup checks...")
         from startup_checks import DBSBMStartupChecker
         checker = DBSBMStartupChecker()
 
-        # Add timeout to startup checks to prevent bot timeout
+        # Run startup checks with timeout but don't block startup
         try:
-            await asyncio.wait_for(checker.run_all_checks(), timeout=30.0)
+            await asyncio.wait_for(checker.run_all_checks(), timeout=15.0)
             logger.info("✅ Startup checks completed")
         except asyncio.TimeoutError:
             logger.warning(
-                "⚠️ Startup checks timed out after 30 seconds, continuing...")
+                "⚠️ Startup checks timed out after 15 seconds, continuing...")
         except Exception as e:
             logger.warning(f"⚠️ Startup checks failed: {e}")
             logger.info("Continuing with bot startup...")
@@ -1419,7 +1421,7 @@ async def run_bot():
             logger.info("Step 2: Connecting to Discord...")
 
             # Validate Discord token first
-            discord_token = REQUIRED_ENV_VARS["DISCORD_TOKEN"]
+            discord_token = os.getenv("DISCORD_TOKEN")
             if not discord_token:
                 raise RuntimeError("DISCORD_TOKEN environment variable is not set")
             
