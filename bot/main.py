@@ -859,12 +859,15 @@ class BettingBot(commands.Bot):
             logger.error(f"Database initialization error: {e}")
             # Don't exit, just log the error and continue
 
-        # Only load extensions if we're not in scheduler mode
-        if not os.getenv("SCHEDULER_MODE"):
+        # Only load extensions if we're not in scheduler mode and extensions haven't been loaded yet
+        if not os.getenv("SCHEDULER_MODE") and not hasattr(self, '_extensions_loaded'):
             logger.info("Step 1c: Loading extensions...")
             await self.load_extensions()
+            self._extensions_loaded = True
             commands_list = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Registered commands: %s", commands_list)
+        elif hasattr(self, '_extensions_loaded'):
+            logger.info("Step 1c: Extensions already loaded, skipping...")
         else:
             logger.info("Step 1c: Skipping extension loading (scheduler mode)")
 
@@ -1428,7 +1431,10 @@ async def run_bot():
     # Run startup checks first (non-blocking)
     try:
         logger.info("🔍 Running startup checks...")
-        from startup_checks import DBSBMStartupChecker
+        try:
+            from startup_checks import DBSBMStartupChecker
+        except ImportError:
+            from bot.startup_checks import DBSBMStartupChecker
         checker = DBSBMStartupChecker()
 
         # Run startup checks with timeout but don't block startup
@@ -1453,10 +1459,9 @@ async def run_bot():
             # Progressive startup approach
             logger.info("🔄 Starting progressive bot initialization...")
 
-            # Step 1: Initialize core components first
-            logger.info("Step 1: Initializing core components...")
-            await asyncio.wait_for(bot._setup_hook_internal(), timeout=60.0)
-            logger.info("✅ Core components initialized")
+            # Step 1: Initialize core components first (skip since setup_hook will handle this)
+            logger.info("Step 1: Core components will be initialized in setup_hook...")
+            logger.info("✅ Core components initialization skipped (will be handled by Discord)")
 
             # Step 2: Connect to Discord with extended timeout and retry logic
             logger.info("Step 2: Connecting to Discord...")
