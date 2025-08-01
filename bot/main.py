@@ -1070,30 +1070,42 @@ class BettingBot(commands.Bot):
                 # Add a small delay to ensure all services are properly initialized
                 await asyncio.sleep(2)
                 from bot.utils.health_checker import run_system_health_check
-                health_results = await run_system_health_check()
-
-                if health_results:
-                    logger.info("📊 HEALTH STATUS:")
-                    # Debug: Log the structure of health_results
-                    logger.debug(f"Health results structure: {list(health_results.keys())}")
-                    # Extract services from the health report structure
-                    services = health_results.get('services', {})
-                    logger.debug(f"Services found: {list(services.keys())}")
-                    for service, result in services.items():
-                        if isinstance(result, dict):
-                            status = result.get('status', 'unknown')
-                            response_time = result.get('response_time', 0)
-                            if status == 'healthy':
-                                logger.info(
-                                    f"  ✅ {service}: Healthy ({response_time:.2f}s)")
-                            elif status == 'degraded':
-                                logger.warning(
-                                    f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
-                            else:
-                                logger.error(
-                                    f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+                
+                try:
+                    health_results = await asyncio.wait_for(run_system_health_check(), timeout=10.0)
+                    
+                    if health_results:
+                        logger.info("📊 HEALTH STATUS:")
+                        # Debug: Log the structure of health_results
+                        logger.debug(f"Health results structure: {list(health_results.keys())}")
+                        # Extract services from the health report structure
+                        services = health_results.get('services', {})
+                        logger.debug(f"Services found: {list(services.keys())}")
+                        for service, result in services.items():
+                            if isinstance(result, dict):
+                                status = result.get('status', 'unknown')
+                                response_time = result.get('response_time', 0)
+                                if status == 'healthy':
+                                    logger.info(
+                                        f"  ✅ {service}: Healthy ({response_time:.2f}s)")
+                                elif status == 'degraded':
+                                    logger.warning(
+                                        f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
+                                else:
+                                    logger.error(
+                                        f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+                    else:
+                        logger.warning("Health check returned no results")
+                        
+                except asyncio.TimeoutError:
+                    logger.error("Health check timed out after 10 seconds")
+                except Exception as health_check_error:
+                    logger.error(f"Health check execution failed: {health_check_error}")
+                    # Don't let health check failures crash the bot
+                    
             except Exception as e:
-                logger.error(f"Health check failed: {e}")
+                logger.error(f"Health check setup failed: {e}")
+                # Don't let health check failures crash the bot
 
         except Exception as e:
             logger.error(f"Background initialization failed: {e}")

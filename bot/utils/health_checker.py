@@ -505,17 +505,15 @@ async def check_statistics_health() -> Dict[str, Any]:
         start_time = time.time()
         logger.debug("Starting statistics health check...")
         
-        # Try to get the bot instance if available
+        # Try to get the bot instance if available - but avoid accessing _get_current()
         bot_instance = None
         try:
             import discord
-            for client in discord.Client._get_current():
-                if hasattr(client, 'statistics_service'):
-                    bot_instance = client
-                    logger.debug("Found bot instance with statistics service")
-                    break
+            # Don't try to access _get_current() as it returns unpickleable Future objects
+            # Instead, just check if we can import discord successfully
+            logger.debug("Discord library available for health check")
         except Exception as e:
-            logger.debug(f"Could not find bot instance: {e}")
+            logger.debug(f"Could not import discord: {e}")
         
         # Simple health check - just verify we can import and instantiate the service
         try:
