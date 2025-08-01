@@ -201,31 +201,48 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
     async def on_submit(self, interaction: discord.Interaction):
         """Handle modal submission with validation."""
+        logger.debug(f"EnhancedPlayerPropModal submitted by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.info(f"User {interaction.user.id} submitted player prop modal")
+        
         try:
             # Validate and process inputs
+            logger.debug("Starting input validation")
             validation_result = await self._validate_inputs()
+            logger.debug(f"Validation result: {validation_result}")
 
             if not validation_result["valid"]:
+                logger.warning(f"Validation failed for user {interaction.user.id}: {validation_result['error']}")
                 await interaction.response.send_message(
                     f"❌ **Validation Error:** {validation_result['error']}",
                     ephemeral=True,
                 )
                 return
 
-            # Create the bet
+            # Store validated data in view reference
             bet_data = validation_result["bet_data"]
-            success = await self._create_player_prop_bet(interaction, bet_data)
+            logger.debug(f"Storing validated bet data: {bet_data}")
+            self._store_bet_data(bet_data)
 
-            if success:
-                # Show units selection screen
-                await self._show_units_selection(interaction, bet_data)
+            # Generate preview image
+            logger.debug("Generating preview image")
+            await self._generate_preview_image(bet_data)
+
+            # Add the leg to the parlay using the view's add_leg method
+            if hasattr(self.view_ref, "add_leg"):
+                logger.debug("Adding leg to parlay")
+                await self.view_ref.add_leg(interaction, bet_data)
             else:
-                await interaction.response.send_message(
-                    "❌ **Error creating bet.** Please try again.", ephemeral=True
+                logger.error("View reference missing add_leg method")
+                await interaction.followup.send(
+                    "❌ Error: Could not add leg to parlay", ephemeral=True
                 )
 
+            # Properly close the modal
+            await interaction.response.defer()
+            logger.debug("Modal submission completed successfully")
+
         except Exception as e:
-            logger.error(f"Error in player prop modal submission: {e}")
+            logger.exception(f"Error in ParlayEnhancedPlayerPropModal on_submit for user {interaction.user.id}: {e}")
             await interaction.response.send_message(
                 "❌ **An error occurred.** Please try again.", ephemeral=True
             )

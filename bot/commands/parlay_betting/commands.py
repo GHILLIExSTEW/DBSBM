@@ -19,7 +19,7 @@ class ParlayCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        logging.info("ParlayCog initialized")
+        logger.info("ParlayCog initialized")
 
     @app_commands.command(
         name="parlay",
@@ -28,25 +28,37 @@ class ParlayCog(commands.Cog):
     @require_registered_guild()
     async def parlay(self, interaction: Interaction):
         """Handle the /parlay command."""
-        logging.info(
-            f"/parlay command invoked by {interaction.user} (ID: {interaction.user.id})"
-        )
+        logger.debug(f"Parlay command invoked by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.info(f"User {interaction.user.id} started parlay workflow")
+        
         try:
+            # Check if user is in allowed channel
+            from commands.betting import is_allowed_command_channel
+
+            if not await is_allowed_command_channel(interaction):
+                logger.debug(f"User {interaction.user.id} not in allowed channel for parlay")
+                return
+
             view = ParlayBetWorkflowView(interaction, self.bot)
-            logging.debug("ParlayBetWorkflowView initialized successfully.")
+            logger.debug("ParlayBetWorkflowView initialized successfully.")
+            
             await interaction.response.send_message(
                 "Let's build your parlay! Add legs (game lines or player props) and finalize when ready:",
                 view=view,
                 ephemeral=True,
             )
+            logger.debug("Initial parlay message sent")
+            
             view.message = await interaction.original_response()
-            logging.info("/parlay command response sent successfully.")
+            logger.debug("Message object assigned to parlay workflow view")
 
             # Start the workflow
             await view.start_flow(interaction)
-            logging.info("Parlay workflow started successfully.")
+            logger.debug("Parlay workflow started successfully")
+            logger.info("Parlay workflow started successfully.")
+            
         except Exception as e:
-            logging.error(f"Error in /parlay command: {e}", exc_info=True)
+            logger.exception(f"Error in /parlay command for user {interaction.user.id}: {e}")
             await interaction.response.send_message(
                 "❌ An error occurred while processing your parlay request.",
                 ephemeral=True,
@@ -55,10 +67,10 @@ class ParlayCog(commands.Cog):
 
 async def setup(bot: commands.Bot):
     """Set up the parlay betting cog."""
-    logging.info("Setting up parlay commands...")
+    logger.info("Setting up parlay commands...")
     try:
         await bot.add_cog(ParlayCog(bot))
-        logging.info("ParlayCog loaded successfully")
+        logger.info("ParlayCog loaded successfully")
     except Exception as e:
-        logging.error(f"Error during parlay command setup: {e}", exc_info=True)
+        logger.exception(f"Error during parlay command setup: {e}")
         raise

@@ -36,31 +36,39 @@ class EnhancedPlayerPropsCog(commands.Cog):
     @require_registered_guild()
     async def playerprops(self, interaction: discord.Interaction):
         """Enhanced player props command with search and validation."""
+        logger.debug(f"PlayerProps command invoked by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.info(f"User {interaction.user.id} started player props workflow")
+        
         try:
             # Check if user is in allowed channel
             from commands.betting import is_allowed_command_channel
 
             if not await is_allowed_command_channel(interaction):
+                logger.debug(f"User {interaction.user.id} not in allowed channel for player props")
                 return
 
             # Create the player props workflow view
             view = PlayerPropsWorkflowView(
                 interaction, self.bot, message_to_control=None
             )
+            logger.debug("PlayerPropsWorkflowView created successfully")
 
             # Send the initial message as ephemeral
             await interaction.response.send_message(
                 "Starting player props workflow...", view=view, ephemeral=True
             )
+            logger.debug("Initial player props message sent")
 
             # Retrieve and assign the message object
             view.message = await interaction.original_response()
+            logger.debug("Message object assigned to workflow view")
 
             # Start the workflow
             await view.start_flow(interaction)
+            logger.debug("Player props workflow started successfully")
 
         except Exception as e:
-            logger.error(f"Error in playerprops command: {e}", exc_info=True)
+            logger.exception(f"Error in playerprops command for user {interaction.user.id}: {e}")
             await interaction.response.send_message(
                 f"❌ **Error:** {str(e)}", ephemeral=True
             )
@@ -79,10 +87,13 @@ class SportSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
+        logger.debug(f"PlayerProps SportSelect callback triggered by user {interaction.user.id} in guild {interaction.guild_id}")
         value = self.values[0]
+        logger.debug(f"Selected sport: {value}")
         self.parent_view.bet_details["sport"] = value
         self.disabled = True
         await interaction.response.defer()
+        logger.debug(f"Deferred response for sport selection, proceeding to next step")
         await self.parent_view.go_next(interaction)
 
 
@@ -105,258 +116,147 @@ class PlayerPropsWorkflowView(View):
         self._stopped = False
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
-        """Start the player props workflow."""
-        try:
-            self.current_step = 0
-            await self.go_next(interaction_that_triggered_workflow_start)
-        except Exception as e:
-            logger.error(f"Error starting player props workflow: {e}")
-            await interaction_that_triggered_workflow_start.followup.send(
-                "❌ Error starting player props workflow. Please try again.",
-                ephemeral=True,
-            )
+        logger.debug(f"Starting player props workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}")
+        logger.info(f"Player props workflow initiated by user {interaction_that_triggered_workflow_start.user.id}")
+        
+        # Initialize bet details
+        self.bet_details = {
+            "user_id": interaction_that_triggered_workflow_start.user.id,
+            "guild_id": interaction_that_triggered_workflow_start.guild_id,
+            "bet_type": "player_prop",
+            "current_step": 1,
+        }
+        logger.debug(f"Initialized player props bet details: {self.bet_details}")
+        
+        # Start with sport selection
+        await self._handle_step_1_sport_selection(interaction_that_triggered_workflow_start)
 
     async def go_next(self, interaction: Interaction):
-        """Advance to the next step in the player props workflow."""
-        if hasattr(self, "_skip_increment") and self._skip_increment:
-            self._skip_increment = False
-            return
+        logger.debug(f"PlayerProps go_next called for user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.debug(f"Current step: {self.current_step}")
+        
+        try:
+            if self.current_step == 1:
+                logger.debug("Handling step 1: Sport selection")
+                await self._handle_step_1_sport_selection(interaction)
+            elif self.current_step == 2:
+                logger.debug("Handling step 2: League selection")
+                await self._handle_step_2_league_selection(interaction)
+            elif self.current_step == 3:
+                logger.debug("Handling step 3: Game selection")
+                await self._handle_step_3_game_selection(interaction)
+            elif self.current_step == 4:
+                logger.debug("Handling step 4: Team selection")
+                await self._handle_step_4_team_selection(interaction)
+            elif self.current_step == 5:
+                logger.debug("Handling step 5: Player prop modal")
+                await self._handle_step_5_player_prop_modal(interaction)
+            else:
+                logger.error(f"Invalid step number: {self.current_step}")
+                await interaction.response.send_message("❌ Error: Invalid workflow step.", ephemeral=True)
+        except Exception as e:
+            logger.exception(f"Error in PlayerProps go_next for step {self.current_step}: {e}")
+            await interaction.response.send_message("❌ Error occurred during workflow step.", ephemeral=True)
 
-        self.current_step += 1
-        logger.info(
-            f"[PLAYER PROPS WORKFLOW] go_next called for step {self.current_step}"
-        )
+    async def _handle_step_1_sport_selection(self, interaction: Interaction):
+        """Handles the sport selection step."""
+        sports = get_all_sport_categories()
+        self.clear_items()
+        self.add_item(SportSelect(self, sports))
+        self.add_item(CancelButton(self))
+        await self.edit_message(content=self.get_content(), view=self)
 
-        if self.current_step == 1:
-            # Step 1: Sport category selection
-            sports = get_all_sport_categories()
-            self.clear_items()
-            self.add_item(SportSelect(self, sports))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
-        elif self.current_step == 2:
-            # Step 2: League selection within selected sport
-            from commands.straight_betting import LeagueSelect
+    async def _handle_step_2_league_selection(self, interaction: Interaction):
+        """Handles the league selection step."""
+        sport = self.bet_details.get("sport")
+        leagues = get_leagues_by_sport(sport)
+        self.clear_items()
+        self.add_item(LeagueSelect(self, leagues))
+        self.add_item(CancelButton(self))
+        await self.edit_message(content=self.get_content(), view=self)
 
-            sport = self.bet_details.get("sport")
-            leagues = get_leagues_by_sport(sport)
-            self.clear_items()
-            self.add_item(LeagueSelect(self, leagues))
-            self.add_item(CancelButton(self))
-            await self.edit_message(content=self.get_content(), view=self)
-            return
-        elif self.current_step == 3:
-            # Step 3: Game selection
-            from commands.straight_betting import GameSelect
+    async def _handle_step_3_game_selection(self, interaction: Interaction):
+        """Handles the game selection step."""
+        from commands.straight_betting import GameSelect
+        from bot.data.game_utils import get_normalized_games_for_dropdown
 
-            from bot.data.game_utils import get_normalized_games_for_dropdown
+        league = self.bet_details.get("league", "N/A")
+        logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
 
-            league = self.bet_details.get("league", "N/A")
-            logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
+        try:
+            games = await get_normalized_games_for_dropdown(
+                self.bot.db_manager, league
+            )
 
-            try:
-                games = await get_normalized_games_for_dropdown(
-                    self.bot.db_manager, league
-                )
-
-                if not games:
-                    await self.edit_message(
-                        content=f"No games found for {league}. Please try a different league or check back later.",
-                        view=None,
-                    )
-                    self.stop()
-                    return
-
-                self.clear_items()
-                self.add_item(GameSelect(self, games))
-                self.add_item(CancelButton(self))
-                await self.edit_message(content=self.get_content(), view=self)
-
-            except Exception as e:
-                logger.error(f"Error fetching games: {e}")
+            if not games:
                 await self.edit_message(
-                    content=f"Error fetching games for {league}. Please try again or contact support.",
+                    content=f"No games found for {league}. Please try a different league or check back later.",
                     view=None,
                 )
                 self.stop()
                 return
-        elif self.current_step == 4:
-            # Step 4: Team selection
-            home_team = self.bet_details.get("home_team_name", "")
-            away_team = self.bet_details.get("away_team_name", "")
-            self.clear_items()
-            self.add_item(PlayerPropTeamSelect(self, home_team, away_team))
-            self.add_item(CancelButton(self))
-            await self.edit_message(
-                content="Select which team's players you want to bet on:", view=self
-            )
-            return
-        elif self.current_step == 5:
-            # Step 5: Player/Prop selection (enhanced modal)
-            from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
-
-            team_name = self.bet_details.get("team", "")
-            game_id = self.bet_details.get("api_game_id", "")
-            league = self.bet_details.get("league", "")
-
-            # Create the enhanced player prop view
-            view = await setup_enhanced_player_prop(
-                self.bot, self.bot.db_manager, league, game_id, team_name
-            )
-
-            # Store the view reference for later use
-            self.player_prop_view = view
-
-            embed = discord.Embed(
-                title=f"🎯 Player Props - {team_name}",
-                description=f"Create player prop bets for {team_name} players.\n\n"
-                f"**Features:**\n"
-                f"• 🔍 Smart player search\n"
-                f"• ✅ Automatic validation\n"
-                f"• 📊 Performance stats\n"
-                f"• 🎨 Modern bet slips",
-                color=discord.Color.gold(),
-            )
-
-            embed.add_field(name="🏆 League", value=league, inline=True)
-            embed.add_field(
-                name="🎮 Game",
-                value=f"{self.bet_details.get('away_team_name', '')} @ {self.bet_details.get('home_team_name', '')}",
-                inline=True,
-            )
-            embed.add_field(name="👥 Team", value=team_name, inline=True)
-
-            await self.edit_message(embed=embed, view=view)
-            return
-        elif self.current_step == 6:
-            # Step 6: Units selection
-            from commands.straight_betting import ConfirmUnitsButton, UnitsSelect
 
             self.clear_items()
-            self.add_item(UnitsSelect(self))
-            self.add_item(ConfirmUnitsButton(self))
+            self.add_item(GameSelect(self, games))
             self.add_item(CancelButton(self))
+            await self.edit_message(content=self.get_content(), view=self)
 
-            # Generate preview image
-            try:
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.close()
-                    self.preview_image_bytes = None
-
-                # Get player prop details from the enhanced modal
-                player_name = self.bet_details.get("player_name", "Player")
-                team_name = self.bet_details.get("team", "Team")
-                league = self.bet_details.get("league", "N/A")
-                line = self.bet_details.get("line", "N/A")
-                bet_id = str(self.bet_details.get("preview_bet_serial", ""))
-                timestamp = datetime.now(timezone.utc)
-
-                generator = PlayerPropImageGenerator(
-                    guild_id=self.original_interaction.guild_id
-                )
-                bet_slip_image_bytes = generator.generate_player_prop_bet_image(
-                    player_name=player_name,
-                    team_name=team_name,
-                    league=league,
-                    line=line,
-                    units=1.0,
-                    output_path=None,
-                    bet_id=bet_id,
-                    timestamp=timestamp,
-                    guild_id=str(self.original_interaction.guild_id),
-                    odds=0.0,  # Will be set later
-                    units_display_mode="auto",
-                    display_as_risk=False,
-                )
-                if bet_slip_image_bytes:
-                    self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
-                    self.preview_image_bytes.seek(0)
-                else:
-                    self.preview_image_bytes = None
-            except Exception as e:
-                logger.exception(f"Error generating preview image: {e}")
-                self.preview_image_bytes = None
-
-            file_to_send = None
-            if self.preview_image_bytes:
-                self.preview_image_bytes.seek(0)
-                file_to_send = File(
-                    self.preview_image_bytes, filename="player_prop_preview.webp"
-                )
-
+        except Exception as e:
+            logger.error(f"Error fetching games: {e}")
             await self.edit_message(
-                content=self.get_content(), view=self, file=file_to_send
-            )
-            return
-        elif self.current_step == 7:
-            # Step 7: Channel selection
-            from commands.straight_betting import ChannelSelect, FinalConfirmButton
-
-            try:
-                # Fetch allowed embed channels from guild settings
-                allowed_channels = []
-                guild_settings = await self.bot.db_manager.fetch_one(
-                    "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
-                    (str(self.original_interaction.guild_id),),
-                )
-                if guild_settings:
-                    for channel_id in (
-                        guild_settings.get("embed_channel_1"),
-                        guild_settings.get("embed_channel_2"),
-                    ):
-                        if channel_id:
-                            try:
-                                cid = int(channel_id)
-                                channel = self.bot.get_channel(
-                                    cid
-                                ) or await self.bot.fetch_channel(cid)
-                                if (
-                                    isinstance(channel, discord.TextChannel)
-                                    and channel.permissions_for(
-                                        self.original_interaction.guild.me
-                                    ).send_messages
-                                ):
-                                    if channel not in allowed_channels:
-                                        allowed_channels.append(channel)
-                            except Exception as e:
-                                logger.error(
-                                    f"Error processing channel {channel_id}: {e}"
-                                )
-                if not allowed_channels:
-                    await self.edit_message(
-                        content="❌ No valid embed channels configured. Please contact an admin.",
-                        view=None,
-                    )
-                    self.stop()
-                    return
-                self.clear_items()
-                self.add_item(ChannelSelect(self, allowed_channels))
-                self.add_item(FinalConfirmButton(self))
-                self.add_item(CancelButton(self))
-                file_to_send = None
-                if self.preview_image_bytes:
-                    self.preview_image_bytes.seek(0)
-                    file_to_send = File(
-                        self.preview_image_bytes, filename="player_prop_preview.webp"
-                    )
-                await self.edit_message(
-                    content=self.get_content(), view=self, file=file_to_send
-                )
-            except Exception as e:
-                logger.error(f"Error in channel selection: {e}")
-                await self.edit_message(
-                    content="❌ Error loading channels. Please try again.",
-                    view=None,
-                )
-                self.stop()
-            return
-        else:
-            logger.warning(f"Unknown step: {self.current_step}")
-            await self.edit_message(
-                content="❌ Unknown workflow step. Please restart.", view=None
+                content=f"Error fetching games for {league}. Please try again or contact support.",
+                view=None,
             )
             self.stop()
+            return
+
+    async def _handle_step_4_team_selection(self, interaction: Interaction):
+        """Handles the team selection step."""
+        home_team = self.bet_details.get("home_team_name", "")
+        away_team = self.bet_details.get("away_team_name", "")
+        self.clear_items()
+        self.add_item(PlayerPropTeamSelect(self, home_team, away_team))
+        self.add_item(CancelButton(self))
+        await self.edit_message(
+            content="Select which team's players you want to bet on:", view=self
+        )
+
+    async def _handle_step_5_player_prop_modal(self, interaction: Interaction):
+        """Handles the player prop modal step."""
+        from commands.enhanced_player_prop_modal import setup_enhanced_player_prop
+
+        team_name = self.bet_details.get("team", "")
+        game_id = self.bet_details.get("api_game_id", "")
+        league = self.bet_details.get("league", "")
+
+        # Create the enhanced player prop view
+        view = await setup_enhanced_player_prop(
+            self.bot, self.bot.db_manager, league, game_id, team_name
+        )
+
+        # Store the view reference for later use
+        self.player_prop_view = view
+
+        embed = discord.Embed(
+            title=f"🎯 Player Props - {team_name}",
+            description=f"Create player prop bets for {team_name} players.\n\n"
+            f"**Features:**\n"
+            f"• 🔍 Smart player search\n"
+            f"• ✅ Automatic validation\n"
+            f"• 📊 Performance stats\n"
+            f"• 🎨 Modern bet slips",
+            color=discord.Color.gold(),
+        )
+
+        embed.add_field(name="🏆 League", value=league, inline=True)
+        embed.add_field(
+            name="🎮 Game",
+            value=f"{self.bet_details.get('away_team_name', '')} @ {self.bet_details.get('home_team_name', '')}",
+            inline=True,
+        )
+        embed.add_field(name="👥 Team", value=team_name, inline=True)
+
+        await self.edit_message(embed=embed, view=view)
 
     async def edit_message(
         self,

@@ -92,9 +92,13 @@ class ParlayBetWorkflowView(View):
         self, modal_interaction: Interaction, leg_details: Dict[str, Any], file=None
     ):
         """Add a leg to the parlay."""
+        logger.debug(f"Adding leg to parlay for user {modal_interaction.user.id}")
+        logger.debug(f"Leg details: {leg_details}")
+        
         try:
             # Validate leg details
             if not validate_bet_details(leg_details):
+                logger.error(f"Invalid leg details for user {modal_interaction.user.id}")
                 await modal_interaction.response.send_message(
                     "❌ Invalid leg details. Please try again.", ephemeral=True
                 )
@@ -115,6 +119,7 @@ class ParlayBetWorkflowView(View):
 
             # Add to legs list
             self.legs.append(leg_details)
+            logger.debug(f"Leg added successfully. Total legs: {len(self.legs)}")
 
             # Reset current leg
             self.current_leg = {}
@@ -126,38 +131,31 @@ class ParlayBetWorkflowView(View):
 
             # Show parlay summary
             await self._show_parlay_summary(modal_interaction)
+            logger.debug("Parlay summary updated with new leg")
 
         except Exception as e:
-            logger.error(f"Error adding leg: {e}")
+            logger.exception(f"Error adding leg to parlay: {e}")
             await modal_interaction.response.send_message(
-                "❌ Error adding leg. Please try again.", ephemeral=True
+                "❌ Error adding leg to parlay. Please try again.", ephemeral=True
             )
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
-        """Start the parlay betting workflow."""
+        logger.debug(f"Starting parlay workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}")
+        logger.info(f"Parlay workflow initiated by user {interaction_that_triggered_workflow_start.user.id}")
+        
         try:
-            # Get available sports
-            sports = get_sport_categories()
-
-            # Create sport selection view
-            view = View(timeout=300)
-            view.add_item(SportSelect(self, sports))
-            view.add_item(CancelButton(self))
-
-            embed = discord.Embed(
-                title="🏈 Parlay Bet Creation",
-                description="Select a sport to begin creating your parlay bet.",
-                color=discord.Color.blue(),
-            )
-
-            await interaction_that_triggered_workflow_start.response.edit_message(
-                embed=embed, view=view
-            )
-
+            # Initialize workflow state
+            self.current_step = "sport_selection"
+            logger.debug(f"Initialized parlay workflow with step: {self.current_step}")
+            
+            # Start with sport selection
+            await self._handle_sport_selection(interaction_that_triggered_workflow_start)
+            logger.debug("Parlay workflow sport selection completed")
         except Exception as e:
-            logger.error(f"Error starting parlay flow: {e}")
-            await interaction_that_triggered_workflow_start.response.send_message(
-                "❌ Error starting parlay creation. Please try again.", ephemeral=True
+            logger.exception(f"Error starting parlay workflow: {e}")
+            await interaction_that_triggered_workflow_start.followup.send(
+                "❌ Error starting parlay workflow. Please try again.",
+                ephemeral=True,
             )
 
     async def go_next(self, interaction: Interaction):
