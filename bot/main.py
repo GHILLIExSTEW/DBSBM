@@ -98,12 +98,23 @@ aiohttp_logger.setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Add console handler for immediate debug output to root logger
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-console_handler.setFormatter(formatter)
-logging.getLogger().addHandler(console_handler)
+# Set specific logger levels to reduce console verbosity
+# Database and system integration services can be very verbose
+logging.getLogger("bot.data.db_manager").setLevel(logging.INFO)
+logging.getLogger("bot.services.system_integration_service").setLevel(logging.INFO)
+logging.getLogger("bot.services.experimental_systems_integration").setLevel(logging.INFO)
+logging.getLogger("bot.services.integration_service").setLevel(logging.INFO)
+logging.getLogger("bot.utils.enhanced_cache_manager").setLevel(logging.INFO)
+
+# Only add console handler if no handlers are already configured
+# This prevents overriding the logging configuration from logging_config.py
+root_logger = logging.getLogger()
+if not root_logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
 # --- Path Setup ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
