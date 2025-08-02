@@ -1374,12 +1374,26 @@ class DatabaseManager:
                             sport,
                             league_name,
                         )
-                    games = await api.fetch_games(
+                    games_response = await api.fetch_games(
                         sport=sport,
                         league=league_name,
                         date=current_date,
                         season=season,
                     )
+                    
+                    # Handle potential APIResponse object
+                    if hasattr(games_response, 'data'):
+                        games = games_response.data
+                    else:
+                        games = games_response
+                        
+                    if not isinstance(games, list):
+                        logger.warning(
+                            "Expected list of games but got %s for %s/%s", 
+                            type(games), sport, league_name
+                        )
+                        games = []
+                        
                     logger.info(
                         "Fetched %d games for %s/%s", len(
                             games), sport, league_name
@@ -1462,11 +1476,7 @@ class DatabaseManager:
             league_abbr,
             league_key,
         )
-        logger.info(
-            "[get_normalized_games_for_dropdown] Starting sync_games_from_api")
-        await self.sync_games_from_api(force_season=season)
-        logger.info(
-            "[get_normalized_games_for_dropdown] Completed sync_games_from_api")
+        # Query existing games from api_games table without syncing from API
         today_start = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
         )

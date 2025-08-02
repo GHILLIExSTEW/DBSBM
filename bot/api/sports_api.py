@@ -502,7 +502,13 @@ class SportsAPI:
                 self.fetcher = await APISportsFetcher().__aenter__()
 
             logger.info(f"[fetch_games] Making API request to endpoint: {endpoint}")
-            data = await self.fetcher.fetch_data(sport.lower(), endpoint, params)
+            api_response = await self.fetcher.fetch_data(sport.lower(), endpoint, params)
+
+            # Handle APIResponse object - extract the data
+            if hasattr(api_response, 'data'):
+                data = api_response.data
+            else:
+                data = api_response
 
             if not data:
                 logger.warning(
