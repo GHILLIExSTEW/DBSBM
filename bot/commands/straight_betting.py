@@ -404,10 +404,17 @@ class TeamSelect(Select):
             await interaction.response.send_message("❌ Error: Invalid team selection.", ephemeral=True)
             return
         
-        self.disabled = True
-        await interaction.response.defer()
-        logger.debug(f"Deferred response for team selection, proceeding to next step")
-        await self.parent_view.go_next(interaction)
+        # Show modal for line and odds entry
+        logger.debug("Showing modal for line and odds entry")
+        modal = StraightBetDetailsModal(
+            line_type=self.parent_view.bet_details.get("line_type", "game_line"),
+            selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+            bet_details_from_view=self.parent_view.bet_details,
+            is_manual=False,
+            view_custom_id_suffix=str(interaction.id),
+        )
+        modal.view_ref = self.parent_view
+        await interaction.response.send_modal(modal)
 
 
 class UnitsSelect(Select):
@@ -1215,6 +1222,10 @@ class StraightBetDetailsModal(Modal):
 
         # Add manual entry fields if needed
         self._add_manual_entry_fields()
+        
+        # For non-manual entries, also add line and odds fields
+        if not self.is_manual:
+            self._add_line_and_odds_fields()
 
     def _get_league_specific_title(self, league: str) -> str:
         """Get league-specific modal title."""
@@ -1432,6 +1443,28 @@ class StraightBetDetailsModal(Modal):
             label="Odds",
             placeholder="e.g., -110, +150, +200",
             required=True,
+            custom_id=f"odds_input_{self.view_custom_id_suffix}",
+        )
+        self.add_item(self.odds_input)
+
+    def _add_line_and_odds_fields(self):
+        """Add line and odds fields for non-manual entries."""
+        # Line field
+        self.line_input = TextInput(
+            label="Line",
+            placeholder="e.g., -7.5, +110, Over 220.5",
+            required=True,
+            max_length=50,
+            custom_id=f"line_input_{self.view_custom_id_suffix}",
+        )
+        self.add_item(self.line_input)
+
+        # Odds field
+        self.odds_input = TextInput(
+            label="Odds",
+            placeholder="e.g., -110, +150",
+            required=True,
+            max_length=20,
             custom_id=f"odds_input_{self.view_custom_id_suffix}",
         )
         self.add_item(self.odds_input)
