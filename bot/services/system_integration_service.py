@@ -236,52 +236,44 @@ class DeploymentConfig:
 class SystemIntegrationService:
     """Comprehensive system integration and microservices architecture service."""
 
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, 
+                 enable_load_balancer_loop: bool = True,
+                 load_balancer_update_interval: int = 30,
+                 enable_verbose_logging: bool = False):
+        """
+        Initialize the system integration service.
+        
+        Args:
+            db_manager: Database manager instance
+            enable_load_balancer_loop: Whether to run the load balancer update loop
+            load_balancer_update_interval: Seconds between load balancer updates
+            enable_verbose_logging: Whether to enable verbose debug logging
+        """
         self.db_manager = db_manager
         self.cache_manager = EnhancedCacheManager()
-        self.cache_ttls = SYSTEM_INTEGRATION_CACHE_TTLS
-
-        # Service registry
-        self.service_registry: Dict[str, ServiceRegistry] = {}
-        self.service_instances: Dict[str, ServiceInstance] = {}
-
-        # Load balancers
-        self.load_balancers: Dict[str, LoadBalancer] = {}
-
-        # Circuit breakers
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
-
-        # API gateways
-        self.api_gateways: Dict[str, APIGateway] = {}
-
-        # Deployment configurations
-        self.deployment_configs: Dict[str, DeploymentConfig] = {}
-
-        # HTTP session for health checks
+        
+        # Configuration options
+        self.enable_load_balancer_loop = enable_load_balancer_loop
+        self.load_balancer_update_interval = load_balancer_update_interval
+        self.enable_verbose_logging = enable_verbose_logging
+        
+        # Service state
+        self.is_running = False
         self.session = None
-
+        
+        # Service registries
+        self.service_registry: Dict[str, ServiceRegistry] = {}
+        self.load_balancers: Dict[str, LoadBalancer] = {}
+        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.api_gateways: Dict[str, APIGateway] = {}
+        self.deployment_configs: Dict[str, DeploymentConfig] = {}
+        
         # Background tasks
         self.health_check_task = None
         self.service_discovery_task = None
         self.load_balancer_task = None
         self.circuit_breaker_task = None
-        self.deployment_task = None
-        self.is_running = False
-
-        # Configuration
-        self.config = {
-            'service_discovery_enabled': True,
-            'load_balancing_enabled': True,
-            'circuit_breaker_enabled': False,  # Disabled by default to reduce DB writes
-            'api_gateway_enabled': True,
-            'deployment_automation_enabled': True,
-            'distributed_tracing_enabled': True,
-            'service_mesh_enabled': True,
-            'health_check_interval': 30,
-            'service_timeout': 30,
-            'max_retries': 3,
-            'retry_delay': 1
-        }
+        self.deployment_automation_task = None
 
     async def start(self):
         """Start the system integration service."""
@@ -303,17 +295,21 @@ class SystemIntegrationService:
                 self._health_check_loop())
             self.service_discovery_task = asyncio.create_task(
                 self._service_discovery_loop())
-            self.load_balancer_task = asyncio.create_task(
-                self._load_balancer_loop())
             
-            # Only start circuit breaker task if enabled
-            if self.config.get('circuit_breaker_enabled', True):
-                self.circuit_breaker_task = asyncio.create_task(
-                    self._circuit_breaker_loop())
+            # Conditionally start load balancer task
+            if self.enable_load_balancer_loop:
+                self.load_balancer_task = asyncio.create_task(
+                    self._load_balancer_loop())
+                logger.info(f"Load balancer loop started (interval: {self.load_balancer_update_interval}s)")
             else:
-                self.circuit_breaker_task = None
+                self.load_balancer_task = None
+                logger.info("Load balancer loop disabled")
+            
+            # Start circuit breaker task
+            self.circuit_breaker_task = asyncio.create_task(
+                self._circuit_breaker_loop())
                 
-            self.deployment_task = asyncio.create_task(
+            self.deployment_automation_task = asyncio.create_task(
                 self._deployment_automation_loop())
 
             logger.info("System integration service started successfully")
@@ -328,7 +324,7 @@ class SystemIntegrationService:
 
         # Cancel background tasks
         tasks = [self.health_check_task, self.service_discovery_task,
-                 self.load_balancer_task, self.circuit_breaker_task, self.deployment_task]
+                 self.load_balancer_task, self.circuit_breaker_task, self.deployment_automation_task]
 
         for task in tasks:
             if task:
@@ -643,11 +639,17 @@ class SystemIntegrationService:
         """Background load balancer loop."""
         while self.is_running:
             try:
-                # Update load balancer metrics
+                # Update load balancer metrics (reduced logging)
+                updated_count = 0
                 for balancer in self.load_balancers.values():
-                    await self._update_load_balancer_metrics(balancer)
+                    if await self._update_load_balancer_metrics(balancer):
+                        updated_count += 1
+                
+                # Only log if there were actual updates and verbose logging is enabled
+                if updated_count > 0 and self.enable_verbose_logging:
+                    logger.debug(f"Updated {updated_count} load balancer metrics")
 
-                await asyncio.sleep(30)  # Update every 30 seconds
+                await asyncio.sleep(self.load_balancer_update_interval)
 
             except asyncio.CancelledError:
                 break
@@ -1338,8 +1340,8 @@ class SystemIntegrationService:
         except Exception as e:
             logger.error(f"Failed to update service registry: {e}")
 
-    async def _update_load_balancer_metrics(self, balancer: LoadBalancer):
-        """Update load balancer metrics."""
+    async def _update_load_balancer_metrics(self, balancer: LoadBalancer) -> bool:
+        """Update load balancer metrics. Returns True if updated, False if no change."""
         try:
             query = """
             UPDATE load_balancers
@@ -1350,17 +1352,33 @@ class SystemIntegrationService:
             instances_json = json.dumps([asdict(inst)
                                         for inst in balancer.instances])
 
+            # Check if there's actually a change before updating
+            current_instances = await self._get_current_balancer_instances(balancer.balancer_id)
+            if current_instances == instances_json:
+                return False  # No change, don't log
+
             await self.db_manager.execute(query, (
                 instances_json,
                 datetime.utcnow(),
                 balancer.balancer_id
             ))
 
-            logger.debug(
-                f"Updated load balancer metrics for {balancer.balancer_id}")
+            # Only log if there was an actual change
+            logger.debug(f"Updated load balancer metrics for {balancer.balancer_id}")
+            return True
 
         except Exception as e:
             logger.error(f"Failed to update load balancer metrics: {e}")
+            return False
+
+    async def _get_current_balancer_instances(self, balancer_id: str) -> str:
+        """Get current instances JSON for a load balancer."""
+        try:
+            query = "SELECT instances FROM load_balancers WHERE balancer_id = %s"
+            result = await self.db_manager.fetch_one(query, (balancer_id,))
+            return result['instances'] if result else '[]'
+        except Exception:
+            return '[]'
 
     async def _update_circuit_breaker_state(self, breaker: CircuitBreaker):
         """Update circuit breaker state."""

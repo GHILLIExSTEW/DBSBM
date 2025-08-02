@@ -1,0 +1,56 @@
+# Logging Configuration for DBSBM System
+# This file controls verbose logging settings to reduce log noise
+
+# System Integration Service Settings
+system_integration:
+  # Enable/disable load balancer update loop
+  enable_load_balancer_loop: false  # Set to false to disable verbose load balancer logs
+  
+  # Load balancer update interval (seconds)
+  load_balancer_update_interval: 300  # 5 minutes instead of 30 seconds
+  
+  # Enable verbose debug logging
+  enable_verbose_logging: false  # Set to true only when debugging
+  
+  # Circuit breaker settings
+  circuit_breaker_enabled: true
+  circuit_breaker_update_interval: 60  # 1 minute
+
+# Database logging settings
+database:
+  # Enable detailed database query logging
+  enable_query_logging: false
+  
+  # Enable cache hit/miss logging
+  enable_cache_logging: false
+  
+  # Log slow queries (milliseconds)
+  slow_query_threshold: 1000
+
+# API logging settings
+api:
+  # Enable detailed API request logging
+  enable_request_logging: false
+  
+  # Log API response times
+  enable_response_time_logging: false
+
+# Performance monitoring
+performance:
+  # Enable performance metrics logging
+  enable_metrics_logging: false
+  
+  # Log operation timing
+  enable_timing_logging: false
+
+# General logging levels
+logging_levels:
+  # Set default logging level
+  default: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR
+  
+  # Specific module logging levels
+  modules:
+    bot.services.system_integration_service: "WARNING"  # Reduce system integration logs
+    bot.data.db_manager: "WARNING"  # Reduce database logs
+    bot.utils.enhanced_cache_manager: "WARNING"  # Reduce cache logs
+    bot.services.performance_monitor: "WARNING"  # Reduce performance logs 
