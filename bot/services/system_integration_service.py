@@ -257,12 +257,26 @@ class SystemIntegrationService:
         self.load_balancer_update_interval = load_balancer_update_interval
         self.enable_verbose_logging = enable_verbose_logging
         
+        # Service configuration
+        self.config = {
+            'health_check_interval': 30,
+            'service_timeout': 5,
+            'max_retries': 3,
+            'retry_delay': 1,
+            'circuit_breaker_threshold': 5,
+            'circuit_breaker_timeout': 60,
+            'load_balancer_update_interval': load_balancer_update_interval,
+            'service_discovery_interval': 60,
+            'deployment_check_interval': 300
+        }
+        
         # Service state
         self.is_running = False
         self.session = None
         
         # Service registries
         self.service_registry: Dict[str, ServiceRegistry] = {}
+        self.service_instances: Dict[str, ServiceInstance] = {}
         self.load_balancers: Dict[str, LoadBalancer] = {}
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self.api_gateways: Dict[str, APIGateway] = {}
