@@ -1,5 +1,6 @@
 import aiomysql
 import asyncio
+import json
 import logging
 import time
 from typing import Optional, Dict, Any, List, Tuple
@@ -1251,22 +1252,26 @@ class DatabaseManager:
                 team = teams.get(key)
                 if team and isinstance(team, dict):
                     return team.get("name")
-            # Fallback to flat
-            return game.get(f"{key}_team_name") or game.get(f"{key}_name")
+            # Fallback to flat - check multiple possible field names
+            return (game.get(f"{key}_team_name") or 
+                   game.get(f"{key}_name") or 
+                   game.get(f"{key}_team") or
+                   game.get(f"{key}"))
 
         home_team_name = safe_get_team(game, "home")
         away_team_name = safe_get_team(game, "away")
 
         query = """
             INSERT INTO api_games (
-                api_game_id, sport, league_id, season, home_team_name, away_team_name,
+                api_game_id, sport, league_id, league_name, season, home_team_name, away_team_name,
                 start_time, end_time, status, score, raw_json, fetched_at, created_at, updated_at
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
             ON DUPLICATE KEY UPDATE
                 sport=VALUES(sport),
                 league_id=VALUES(league_id),
+                league_name=VALUES(league_name),
                 season=VALUES(season),
                 home_team_name=VALUES(home_team_name),
                 away_team_name=VALUES(away_team_name),
@@ -1278,17 +1283,40 @@ class DatabaseManager:
                 fetched_at=VALUES(fetched_at),
                 updated_at=CURRENT_TIMESTAMP
         """
+        # Convert score to JSON string if it's a dict
+        score_data = game.get("score")
+        if isinstance(score_data, dict):
+            score_json = json.dumps(score_data)
+        else:
+            score_json = score_data
+
+        # Convert datetime strings to MySQL format
+        def format_datetime(dt_str):
+            if not dt_str:
+                return None
+            try:
+                # Parse ISO 8601 format and convert to MySQL format
+                from datetime import datetime
+                dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                return dt.strftime('%Y-%m-%d %H:%M:%S')
+            except (ValueError, AttributeError):
+                return None
+
+        start_time = format_datetime(game.get("start_time"))
+        end_time = format_datetime(game.get("end_time"))
+
         params = (
             str(game.get("api_game_id") or game.get("id")),
             game.get("sport", ""),
             str(game.get("league_id", "")),
+            game.get("league", ""),
             season,
             home_team_name,
             away_team_name,
-            game.get("start_time"),
-            game.get("end_time"),
+            start_time,
+            end_time,
             game.get("status", ""),
-            game.get("score"),
+            score_json,
             (
                 game.get("raw_json")
                 if isinstance(game.get("raw_json"), str)
