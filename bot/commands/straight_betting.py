@@ -388,14 +388,17 @@ class TeamSelect(Select):
         value = self.values[0]
         logger.debug(f"Selected team: {value}")
         
-        if value == "home":
-            self.parent_view.bet_details["selected_team"] = self.home_team
+        # Parse the team selection value
+        if value.endswith("_home"):
+            team_name = value[:-5]  # Remove "_home" suffix
+            self.parent_view.bet_details["selected_team"] = team_name
             self.parent_view.bet_details["team_type"] = "home"
-            logger.debug(f"Selected home team: {self.home_team}")
-        elif value == "away":
-            self.parent_view.bet_details["selected_team"] = self.away_team
+            logger.debug(f"Selected home team: {team_name}")
+        elif value.endswith("_away"):
+            team_name = value[:-5]  # Remove "_away" suffix
+            self.parent_view.bet_details["selected_team"] = team_name
             self.parent_view.bet_details["team_type"] = "away"
-            logger.debug(f"Selected away team: {self.away_team}")
+            logger.debug(f"Selected away team: {team_name}")
         else:
             logger.error(f"Invalid team selection: {value}")
             await interaction.response.send_message("❌ Error: Invalid team selection.", ephemeral=True)
