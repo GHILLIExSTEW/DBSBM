@@ -310,7 +310,12 @@ class GameSelect(Select):
         # Find the selected game data
         selected_game = None
         for game in self.parent_view.games:
-            if game.get("id") == value:
+            # Handle both formats: "api_164940" and "164940"
+            if game.get("id") == value or game.get("api_game_id") == value:
+                selected_game = game
+                break
+            # Also check if the value starts with "api_" and matches the api_game_id
+            elif value.startswith("api_") and game.get("api_game_id") == value[4:]:
                 selected_game = game
                 break
         
