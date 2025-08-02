@@ -290,6 +290,23 @@ class GameSelect(Select):
         value = self.values[0]
         logger.debug(f"Selected game value: {value}")
         
+        # Handle manual entry
+        if value == "manual":
+            logger.debug("Manual entry selected")
+            self.parent_view.bet_details["game_id"] = "manual"
+            self.parent_view.bet_details["home_team_name"] = "Manual Entry"
+            self.parent_view.bet_details["away_team_name"] = "Manual Entry"
+            self.parent_view.bet_details["game_time"] = "Manual Entry"
+            self.parent_view.bet_details["league"] = self.parent_view.bet_details.get("league", "Unknown")
+            self.parent_view.bet_details["is_manual"] = True
+            
+            logger.debug(f"Stored manual entry details: {self.parent_view.bet_details}")
+            self.disabled = True
+            await interaction.response.defer()
+            logger.debug(f"Deferred response for manual entry, proceeding to next step")
+            await self.parent_view.go_next(interaction)
+            return
+        
         # Find the selected game data
         selected_game = None
         for game in self.parent_view.games:
@@ -711,11 +728,17 @@ class StraightBetWorkflowView(View):
         league = self.bet_details.get("league")
         logger.debug(f"Selected league: {league}")
         
-        # Get games for the selected league
-        # This would typically involve an API call or database query
-        games = []  # Placeholder - would be populated with actual games
-        logger.debug(f"Found {len(games)} games for league {league}")
+        # Get games for the selected league from database
+        try:
+            from bot.data.db_manager import DatabaseManager
+            db_manager = DatabaseManager()
+            games = await db_manager.get_normalized_games_for_dropdown(league)
+            logger.debug(f"Found {len(games)} games for league {league}")
+        except Exception as e:
+            logger.error(f"Error fetching games for league {league}: {e}")
+            games = []
         
+        self.games = games  # Store games for GameSelect to use
         self.clear_items()
         self.add_item(GameSelect(self, games))
         self.add_item(CancelButton(self))
