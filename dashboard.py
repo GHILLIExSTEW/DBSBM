@@ -12,14 +12,16 @@ path = os.environ.get('PATH_INFO', '/')
 
 # Database connection function
 def get_db_connection():
-    import mysql.connector
+    import psycopg2
+    import os
     try:
-        connection = mysql.connector.connect(
-            host='na05-sql.pebblehost.com',
-            user='customer_990306_Server_database',
-            password='NGNrWmR@IypQb4k@tzgk+NnI',
-            database='customer_990306_Server_database',
-            port=3306)
+        connection = psycopg2.connect(
+            host=os.getenv('PG_HOST', 'localhost'),
+            user=os.getenv('PG_USER', 'postgres'),
+            password=os.getenv('PG_PASSWORD', ''),
+            dbname=os.getenv('PG_DATABASE', 'dbsbm'),
+            port=int(os.getenv('PG_PORT', 5432))
+        )
         return connection
     except Exception as e:
         return None
@@ -51,26 +53,26 @@ def get_dashboard_data():
         cursor.close()
         connection.close()
         
+    try:
+        cursor = connection.cursor()
+        # Get total bets
+        cursor.execute("SELECT COUNT(*) FROM bets")
+        total_bets = cursor.fetchone()[0]
+        # Get recent bets
+        cursor.execute("SELECT bet_serial, bet_type, units, created_at, guild_id FROM bets ORDER BY created_at DESC LIMIT 10")
+        recent_bets = cursor.fetchall()
+        # Get guilds
+        cursor.execute("SELECT guild_id, is_active, subscription_level FROM guild_settings")
+        guilds = cursor.fetchall()
+        cursor.close()
+        connection.close()
         return {
-            'total_bets': total_bets,
-            'monthly_bets': monthly_bets,
-            'recent_bets': recent_bets,
-            'guilds': guilds
+            "total_bets": total_bets,
+            "recent_bets": recent_bets,
+            "guilds": guilds
         }
     except Exception as e:
         return None
-
-# Route to dashboard
-if path == '/dashboard':
-    data = get_dashboard_data()
-    if data:
-        print("Content-Type: text/html")
-        print()
-        print(f"""
-        <html>
-        <head>
-            <title>BetBot Dashboard</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; }}

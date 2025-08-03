@@ -18,38 +18,38 @@ from pydantic_settings import BaseSettings
 class DatabaseSettings(BaseSettings):
     """Database configuration settings."""
 
-    host: str = Field("localhost", env="MYSQL_HOST", description="MySQL host address")
-    port: int = Field(3306, env="MYSQL_PORT", description="MySQL port")
-    user: str = Field("root", env="MYSQL_USER", description="MySQL username")
+    host: str = Field("localhost", env="PG_HOST", description="PostgreSQL host address")
+    port: int = Field(5432, env="PG_PORT", description="PostgreSQL port")
+    user: str = Field("postgres", env="PG_USER", description="PostgreSQL username")
     password: SecretStr = Field(
-        SecretStr(""), env="MYSQL_PASSWORD", description="MySQL password"
+        SecretStr(""), env="PG_PASSWORD", description="PostgreSQL password"
     )
-    database: str = Field("dbsbm", env="MYSQL_DB", description="MySQL database name")
+    database: str = Field("dbsbm", env="PG_DATABASE", description="PostgreSQL database name")
 
     # Connection pool settings
     pool_min_size: int = Field(
-        1, env="MYSQL_POOL_MIN_SIZE", ge=1, le=50, description="Minimum pool size"
+        1, env="PG_POOL_MIN_SIZE", ge=1, le=50, description="Minimum pool size"
     )
     pool_max_size: int = Field(
-        10, env="MYSQL_POOL_MAX_SIZE", ge=1, le=100, description="Maximum pool size"
+        10, env="PG_POOL_MAX_SIZE", ge=1, le=100, description="Maximum pool size"
     )
     pool_max_overflow: int = Field(
         5,
-        env="MYSQL_POOL_MAX_OVERFLOW",
+        env="PG_POOL_MAX_OVERFLOW",
         ge=0,
         le=50,
         description="Maximum overflow connections",
     )
     pool_timeout: int = Field(
         30,
-        env="MYSQL_POOL_TIMEOUT",
+        env="PG_POOL_TIMEOUT",
         ge=5,
         le=300,
         description="Connection pool timeout in seconds",
     )
     connect_timeout: int = Field(
         30,
-        env="MYSQL_CONNECT_TIMEOUT",
+        env="PG_CONNECT_TIMEOUT",
         ge=5,
         le=300,
         description="Connection timeout in seconds",
@@ -69,7 +69,7 @@ class DatabaseSettings(BaseSettings):
             )
         return v
 
-    model_config = {"env_prefix": "MYSQL_", "case_sensitive": False}
+    model_config = {"env_prefix": "PG_", "case_sensitive": False}
 
 
 class APISettings(BaseSettings):
@@ -323,13 +323,13 @@ class Settings(BaseSettings):
 
         # Check database settings
         if not self.database.host:
-            errors.append("MYSQL_HOST is required")
+            errors.append("PG_HOST is required")
         if not self.database.user:
-            errors.append("MYSQL_USER is required")
+            errors.append("PG_USER is required")
         if not self.database.password.get_secret_value():
-            errors.append("MYSQL_PASSWORD is required")
+            errors.append("PG_PASSWORD is required")
         if not self.database.database:
-            errors.append("MYSQL_DB is required")
+            errors.append("PG_DATABASE is required")
 
         # Check Discord settings
         if not self.discord.token.get_secret_value():
@@ -343,7 +343,7 @@ class Settings(BaseSettings):
 
     def get_connection_string(self) -> str:
         """Get database connection string (without password)."""
-        return f"mysql://{self.database.user}:***@{self.database.host}:{self.database.port}/{self.database.database}"
+        return f"postgresql://{self.database.user}:***@{self.database.host}:{self.database.port}/{self.database.database}"
 
     def is_development(self) -> bool:
         """Check if running in development mode."""

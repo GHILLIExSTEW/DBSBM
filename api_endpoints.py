@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
 import os
 import logging
 
@@ -15,16 +14,16 @@ CORS(app)  # Allow WordPress to access the API
 def get_db_connection():
     """Create database connection."""
     try:
-        connection = mysql.connector.connect(
-            host=os.getenv('MYSQL_HOST', 'localhost'),
-            user=os.getenv('MYSQL_USER', 'dbsbm'),
-            password=os.getenv('MYSQL_PASSWORD', ''),
-            database=os.getenv('MYSQL_DB', 'dbsbm'),
-            port=int(os.getenv('MYSQL_PORT', 3306))
+        connection = psycopg2.connect(
+            host=os.getenv('PG_HOST', 'localhost'),
+            user=os.getenv('PG_USER', 'postgres'),
+            password=os.getenv('PG_PASSWORD', ''),
+            dbname=os.getenv('PG_DATABASE', 'dbsbm'),
+            port=int(os.getenv('PG_PORT', 5432))
         )
         return connection
-    except Error as e:
-        logger.error(f"Error connecting to MySQL: {e}")
+    except Exception as e:
+        logger.error(f"Error connecting to PostgreSQL: {e}")
         return None
 
 @app.route('/api/health')

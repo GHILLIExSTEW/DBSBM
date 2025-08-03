@@ -939,4 +939,4 @@ CREATE TRIGGER update_analytics_visualizations_updated_at BEFORE UPDATE ON analy
 -- Migration Complete
 -- ============================================
 
-COMMENT ON DATABASE current_database() IS 'DBSBM - Discord Betting Sports Bot Manager Database'; 
+COMMENT ON DATABASE dbsbm IS 'DBSBM - Discord Betting Sports Bot Manager Database'; 

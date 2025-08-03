@@ -15,13 +15,12 @@ class TestDatabaseQueryOptimizationSimple:
 
     def test_database_manager_initialization(self):
         """Test database manager initialization with enhanced cache."""
-        with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-            with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                    with patch("bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"):
-                        with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+        with patch("bot.config.database.PG_DATABASE", "test_db"):
+            with patch("bot.config.database.PG_HOST", "localhost"):
+                with patch("bot.config.database.PG_USER", "test_user"):
+                    with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                        with patch("bot.config.database.PG_PORT", 5432):
                             db_manager = DatabaseManager()
-
                             # Test configuration
                             assert db_manager.enable_query_cache is True
                             assert db_manager.default_cache_ttl == 600
@@ -31,29 +30,26 @@ class TestDatabaseQueryOptimizationSimple:
 
     def test_cache_key_generation(self):
         """Test cache key generation."""
-        with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-            with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                    with patch("bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"):
-                        with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+        with patch("bot.config.database.PG_DATABASE", "test_db"):
+            with patch("bot.config.database.PG_HOST", "localhost"):
+                with patch("bot.config.database.PG_USER", "test_user"):
+                    with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                        with patch("bot.config.database.PG_PORT", 5432):
                             db_manager = DatabaseManager()
-
-                            query = "SELECT * FROM users WHERE id = %s"
+                            query = "SELECT * FROM users WHERE id = $1"
                             args = (123,)
-
                             cache_key = db_manager._generate_cache_key(query, args)
                             assert cache_key.startswith("db_query:")
                             assert len(cache_key) > 20
 
     def test_should_cache_query_logic(self):
         """Test query caching logic."""
-        with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-            with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                    with patch("bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"):
-                        with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+        with patch("bot.config.database.PG_DATABASE", "test_db"):
+            with patch("bot.config.database.PG_HOST", "localhost"):
+                with patch("bot.config.database.PG_USER", "test_user"):
+                    with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                        with patch("bot.config.database.PG_PORT", 5432):
                             db_manager = DatabaseManager()
-
                             # Should cache SELECT queries
                             assert (
                                 db_manager._should_cache_query("SELECT * FROM users")
@@ -65,7 +61,6 @@ class TestDatabaseQueryOptimizationSimple:
                                 )
                                 is True
                             )
-
                             # Should not cache write operations
                             assert (
                                 db_manager._should_cache_query(
@@ -85,7 +80,6 @@ class TestDatabaseQueryOptimizationSimple:
                                 )
                                 is False
                             )
-
                             # Should not cache queries with time functions
                             assert (
                                 db_manager._should_cache_query("SELECT NOW()") is False
@@ -119,13 +113,12 @@ class TestDatabaseQueryOptimizationSimple:
 
     def test_connection_pool_settings(self):
         """Test connection pool optimization settings."""
-        with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-            with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                    with patch("bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"):
-                        with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+        with patch("bot.config.database.PG_DATABASE", "test_db"):
+            with patch("bot.config.database.PG_HOST", "localhost"):
+                with patch("bot.config.database.PG_USER", "test_user"):
+                    with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                        with patch("bot.config.database.PG_PORT", 5432):
                             db_manager = DatabaseManager()
-
                             # Test pool settings
                             assert db_manager.pool_min_size >= 1
                             assert db_manager.pool_max_size >= db_manager.pool_min_size
@@ -202,13 +195,12 @@ class TestDatabaseQueryOptimizationSimple:
 
     def test_enhanced_cache_manager_integration(self):
         """Test that database manager uses enhanced cache manager."""
-        with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-            with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                    with patch("bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"):
-                        with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+        with patch("bot.config.database.PG_DATABASE", "test_db"):
+            with patch("bot.config.database.PG_HOST", "localhost"):
+                with patch("bot.config.database.PG_USER", "test_user"):
+                    with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                        with patch("bot.config.database.PG_PORT", 5432):
                             db_manager = DatabaseManager()
-
                             # Verify enhanced cache manager is used
                             assert hasattr(db_manager, "cache_manager")
                             assert db_manager.cache_manager is not None
@@ -229,22 +221,18 @@ class TestDatabaseQueryOptimizationSimple:
                 "DB_ENABLE_QUERY_CACHE": "false",
                 "DB_SLOW_QUERY_THRESHOLD": "2.0",
                 "DB_ENABLE_QUERY_LOGGING": "false",
-                "MYSQL_POOL_MIN_SIZE": "2",
-                "MYSQL_POOL_MAX_SIZE": "20",
-                "MYSQL_POOL_MAX_OVERFLOW": "10",
-                "MYSQL_POOL_TIMEOUT": "60",
-                "MYSQL_CONNECT_TIMEOUT": "60",
+                "PG_POOL_MIN_SIZE": "2",
+                "PG_POOL_MAX_SIZE": "20",
+                "PG_POOL_MAX_OVERFLOW": "10",
+                "PG_POOL_TIMEOUT": "60",
+                "PG_CONNECT_TIMEOUT": "60",
             }.get(key, default)
-
-            with patch("bot.config.database_mysql.MYSQL_DB", "test_db"):
-                with patch("bot.config.database_mysql.MYSQL_HOST", "localhost"):
-                    with patch("bot.config.database_mysql.MYSQL_USER", "test_user"):
-                        with patch(
-                            "bot.config.database_mysql.MYSQL_PASSWORD", "test_pass"
-                        ):
-                            with patch("bot.config.database_mysql.MYSQL_PORT", 3306):
+            with patch("bot.config.database.PG_DATABASE", "test_db"):
+                with patch("bot.config.database.PG_HOST", "localhost"):
+                    with patch("bot.config.database.PG_USER", "test_user"):
+                        with patch("bot.config.database.PG_PASSWORD", "test_pass"):
+                            with patch("bot.config.database.PG_PORT", 5432):
                                 db_manager = DatabaseManager()
-
                                 # Test environment variable configuration
                                 assert db_manager.default_cache_ttl == 300
                                 assert db_manager.enable_query_cache is False
