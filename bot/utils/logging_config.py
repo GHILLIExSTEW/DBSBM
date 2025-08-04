@@ -16,13 +16,21 @@ from datetime import datetime
 class DailyRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
     """Handler that creates a new log file each day."""
 
-    def __init__(self, filename: str, when: str = "midnight", interval: int = 1, backup_count: int = 30):
+    def __init__(
+        self,
+        filename: str,
+        when: str = "midnight",
+        interval: int = 1,
+        backup_count: int = 30,
+    ):
         # Ensure the directory exists
         log_dir = os.path.dirname(filename)
         if log_dir and not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        super().__init__(filename, when=when, interval=interval, backupCount=backup_count)
+        super().__init__(
+            filename, when=when, interval=interval, backupCount=backup_count
+        )
         self.suffix = "%Y-%m-%d"
         self.namer = self._namer
 
@@ -44,7 +52,7 @@ class StructuredFormatter(logging.Formatter):
             "message": record.getMessage(),
             "module": record.module,
             "function": record.funcName,
-            "line": record.lineno
+            "line": record.lineno,
         }
 
         # Add exception info if present
@@ -53,11 +61,29 @@ class StructuredFormatter(logging.Formatter):
 
         # Add extra fields
         for key, value in record.__dict__.items():
-            if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
-                           'filename', 'module', 'lineno', 'funcName', 'created',
-                           'msecs', 'relativeCreated', 'thread', 'threadName',
-                           'processName', 'process', 'getMessage', 'exc_info', 'exc_text',
-                           'stack_info']:
+            if key not in [
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+            ]:
                 log_entry[key] = value
 
         return str(log_entry)
@@ -79,7 +105,7 @@ def setup_logging(
     log_file: Optional[str] = None,
     structured: bool = False,
     production: bool = False,
-    use_daily_logs: bool = True
+    use_daily_logs: bool = True,
 ) -> None:
     """Setup logging configuration for the application."""
 
@@ -100,7 +126,7 @@ def setup_logging(
         formatter = ProductionFormatter()
     else:
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
     # File handler - use daily rotating logs if requested
@@ -111,7 +137,7 @@ def setup_logging(
             daily_log_file,
             when="midnight",
             interval=1,
-            backup_count=30  # Keep 30 days of logs
+            backup_count=30,  # Keep 30 days of logs
         )
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
@@ -138,9 +164,7 @@ def setup_logging(
 
             # Rotating file handler
             file_handler = logging.handlers.RotatingFileHandler(
-                log_file,
-                maxBytes=10*1024*1024,  # 10MB
-                backupCount=5
+                log_file, maxBytes=10 * 1024 * 1024, backupCount=5  # 10MB
             )
             file_handler.setLevel(level)
             file_handler.setFormatter(formatter)
@@ -150,13 +174,13 @@ def setup_logging(
     if production:
         # Reduce debug logging for specific modules
         debug_loggers = [
-            'bot.utils.enhanced_cache_manager',
-            'bot.services.database_query_service',
-            'bot.services.api_response_cache_service',
-            'bot.services.bet_service',
-            'bot.utils.multi_provider_api',
-            'bot.utils.image_url_converter',
-            'bot.utils.performance_monitor'
+            "bot.utils.enhanced_cache_manager",
+            "bot.services.database_query_service",
+            "bot.services.api_response_cache_service",
+            "bot.services.bet_service",
+            "bot.utils.multi_provider_api",
+            "bot.utils.image_url_converter",
+            "bot.utils.performance_monitor",
         ]
 
         for logger_name in debug_loggers:
@@ -165,12 +189,12 @@ def setup_logging(
 
     # Suppress noisy third-party loggers
     noisy_loggers = [
-        'urllib3.connectionpool',
-        'requests.packages.urllib3.connectionpool',
-        'asyncio',
-        'discord.gateway',
-        'discord.client',
-        'websockets.protocol'
+        "urllib3.connectionpool",
+        "requests.packages.urllib3.connectionpool",
+        "asyncio",
+        "discord.gateway",
+        "discord.client",
+        "websockets.protocol",
     ]
 
     for logger_name in noisy_loggers:
@@ -187,18 +211,16 @@ def log_performance(logger: logging.Logger, operation: str, duration: float, **k
     log_data = {
         "operation": operation,
         "duration_ms": round(duration * 1000, 2),
-        **kwargs
+        **kwargs,
     }
     logger.info(f"Performance: {log_data}")
 
 
-def log_security_event(logger: logging.Logger, event: str, user_id: Optional[str] = None, **kwargs):
+def log_security_event(
+    logger: logging.Logger, event: str, user_id: Optional[str] = None, **kwargs
+):
     """Log security events."""
-    log_data = {
-        "security_event": event,
-        "user_id": user_id,
-        **kwargs
-    }
+    log_data = {"security_event": event, "user_id": user_id, **kwargs}
     logger.warning(f"Security: {log_data}")
 
 
@@ -206,14 +228,14 @@ def log_error_with_context(
     logger: logging.Logger,
     error: Exception,
     context: Optional[Dict[str, Any]] = None,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
 ):
     """Log errors with context information."""
     error_data = {
         "error_type": type(error).__name__,
         "error_message": str(error),
         "user_id": user_id,
-        **(context or {})
+        **(context or {}),
     }
     logger.error(f"Error: {error_data}", exc_info=True)
 
@@ -240,7 +262,7 @@ class LogLevelManager:
         # Store temporary level info
         self.temporary_levels[logger_name] = {
             "level": new_level,
-            "expires_at": datetime.now().timestamp() + duration
+            "expires_at": datetime.now().timestamp() + duration,
         }
 
     def restore_original_levels(self):
@@ -251,8 +273,7 @@ class LogLevelManager:
             if current_time > temp_info["expires_at"]:
                 # Restore original level
                 logger = logging.getLogger(logger_name)
-                original_level = self.original_levels.get(
-                    logger_name, logging.INFO)
+                original_level = self.original_levels.get(logger_name, logging.INFO)
                 logger.setLevel(original_level)
 
                 # Clean up
@@ -272,7 +293,7 @@ def configure_production_logging():
         log_file="logs/dbsbm.log",
         structured=True,
         production=True,
-        use_daily_logs=True
+        use_daily_logs=True,
     )
 
 
@@ -283,7 +304,7 @@ def configure_development_logging():
         log_file="logs/dbsbm_dev.log",
         structured=False,
         production=False,
-        use_daily_logs=False  # Changed to False to enable DEBUG console output
+        use_daily_logs=False,  # Changed to False to enable DEBUG console output
     )
 
 
@@ -294,7 +315,7 @@ def configure_test_logging():
         log_file=None,
         structured=False,
         production=False,
-        use_daily_logs=False  # Keep console output for tests
+        use_daily_logs=False,  # Keep console output for tests
     )
 
 

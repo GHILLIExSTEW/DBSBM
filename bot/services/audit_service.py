@@ -22,28 +22,32 @@ logger = logging.getLogger(__name__)
 
 # Audit-specific cache TTLs
 AUDIT_CACHE_TTLS = {
-    'audit_logs': 1800,             # 30 minutes
-    'audit_events': 900,             # 15 minutes
-    'audit_reports': 3600,           # 1 hour
-    'audit_alerts': 300,             # 5 minutes
-    'audit_compliance': 7200,        # 2 hours
-    'audit_retention': 3600,         # 1 hour
-    'audit_analytics': 1800,         # 30 minutes
-    'audit_exports': 600,            # 10 minutes
-    'audit_monitoring': 300,         # 5 minutes
-    'audit_performance': 1800,       # 30 minutes
+    "audit_logs": 1800,  # 30 minutes
+    "audit_events": 900,  # 15 minutes
+    "audit_reports": 3600,  # 1 hour
+    "audit_alerts": 300,  # 5 minutes
+    "audit_compliance": 7200,  # 2 hours
+    "audit_retention": 3600,  # 1 hour
+    "audit_analytics": 1800,  # 30 minutes
+    "audit_exports": 600,  # 10 minutes
+    "audit_monitoring": 300,  # 5 minutes
+    "audit_performance": 1800,  # 30 minutes
 }
+
 
 class AuditLevel(Enum):
     """Audit log levels."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class AuditCategory(Enum):
     """Audit event categories."""
+
     USER_ACTION = "user_action"
     SYSTEM_EVENT = "system_event"
     SECURITY_EVENT = "security_event"
@@ -52,16 +56,20 @@ class AuditCategory(Enum):
     CONFIGURATION = "configuration"
     COMPLIANCE = "compliance"
 
+
 class AuditStatus(Enum):
     """Audit event status."""
+
     PENDING = "pending"
     PROCESSED = "processed"
     FAILED = "failed"
     ARCHIVED = "archived"
 
+
 @dataclass
 class AuditLog:
     """Audit log entry."""
+
     id: int
     tenant_id: int
     user_id: Optional[int]
@@ -74,9 +82,11 @@ class AuditLog:
     user_agent: Optional[str]
     created_at: datetime
 
+
 @dataclass
 class AuditEvent:
     """Audit event configuration."""
+
     id: int
     tenant_id: int
     event_name: str
@@ -87,9 +97,11 @@ class AuditEvent:
     created_at: datetime
     updated_at: datetime
 
+
 @dataclass
 class AuditReport:
     """Audit report configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -100,9 +112,11 @@ class AuditReport:
     created_at: datetime
     updated_at: datetime
 
+
 @dataclass
 class AuditAlert:
     """Audit alert configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -112,6 +126,7 @@ class AuditAlert:
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
 
 class AuditService:
     """Audit service for comprehensive audit logging and compliance tracking."""
@@ -149,10 +164,18 @@ class AuditService:
         logger.info("Audit service stopped")
 
     @time_operation("audit_log_event")
-    async def log_event(self, tenant_id: int, event_type: str, category: AuditCategory,
-                       level: AuditLevel, message: str, details: Dict[str, Any],
-                       user_id: Optional[int] = None, ip_address: Optional[str] = None,
-                       user_agent: Optional[str] = None) -> Optional[AuditLog]:
+    async def log_event(
+        self,
+        tenant_id: int,
+        event_type: str,
+        category: AuditCategory,
+        level: AuditLevel,
+        message: str,
+        details: Dict[str, Any],
+        user_id: Optional[int] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Optional[AuditLog]:
         """Log an audit event."""
         try:
             query = """
@@ -162,17 +185,20 @@ class AuditService:
                     :message, :details, :ip_address, :user_agent, NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'user_id': user_id,
-                'event_type': event_type,
-                'category': category.value,
-                'level': level.value,
-                'message': message,
-                'details': json.dumps(details),
-                'ip_address': ip_address,
-                'user_agent': user_agent
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "event_type": event_type,
+                    "category": category.value,
+                    "level": level.value,
+                    "message": message,
+                    "details": json.dumps(details),
+                    "ip_address": ip_address,
+                    "user_agent": user_agent,
+                },
+            )
 
             log_id = result.lastrowid
 
@@ -187,7 +213,7 @@ class AuditService:
                 details=details,
                 ip_address=ip_address,
                 user_agent=user_agent,
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
 
             # Clear related cache
@@ -202,8 +228,13 @@ class AuditService:
             return None
 
     @time_operation("audit_get_logs")
-    async def get_audit_logs(self, tenant_id: int, category: Optional[AuditCategory] = None,
-                            level: Optional[AuditLevel] = None, limit: int = 100) -> List[AuditLog]:
+    async def get_audit_logs(
+        self,
+        tenant_id: int,
+        category: Optional[AuditCategory] = None,
+        level: Optional[AuditLevel] = None,
+        limit: int = 100,
+    ) -> List[AuditLog]:
         """Get audit logs for a tenant."""
         try:
             # Try to get from cache first
@@ -215,55 +246,58 @@ class AuditService:
 
             # Build query
             query = "SELECT * FROM audit_logs WHERE tenant_id = :tenant_id"
-            params = {'tenant_id': tenant_id}
+            params = {"tenant_id": tenant_id}
 
             if category:
                 query += " AND category = :category"
-                params['category'] = category.value
+                params["category"] = category.value
 
             if level:
                 query += " AND level = :level"
-                params['level'] = level.value
+                params["level"] = level.value
 
             query += " ORDER BY created_at DESC LIMIT :limit"
-            params['limit'] = limit
+            params["limit"] = limit
 
             results = await self.db_manager.fetch_all(query, params)
 
             logs = []
             for row in results:
                 log = AuditLog(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    user_id=row['user_id'],
-                    event_type=row['event_type'],
-                    category=AuditCategory(row['category']),
-                    level=AuditLevel(row['level']),
-                    message=row['message'],
-                    details=json.loads(row['details']) if row['details'] else {},
-                    ip_address=row['ip_address'],
-                    user_agent=row['user_agent'],
-                    created_at=row['created_at']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    user_id=row["user_id"],
+                    event_type=row["event_type"],
+                    category=AuditCategory(row["category"]),
+                    level=AuditLevel(row["level"]),
+                    message=row["message"],
+                    details=json.loads(row["details"]) if row["details"] else {},
+                    ip_address=row["ip_address"],
+                    user_agent=row["user_agent"],
+                    created_at=row["created_at"],
                 )
                 logs.append(log)
 
             # Cache logs
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': l.id,
-                    'tenant_id': l.tenant_id,
-                    'user_id': l.user_id,
-                    'event_type': l.event_type,
-                    'category': l.category.value,
-                    'level': l.level.value,
-                    'message': l.message,
-                    'details': l.details,
-                    'ip_address': l.ip_address,
-                    'user_agent': l.user_agent,
-                    'created_at': l.created_at.isoformat()
-                } for l in logs],
-                ttl=self.cache_ttls['audit_logs']
+                [
+                    {
+                        "id": l.id,
+                        "tenant_id": l.tenant_id,
+                        "user_id": l.user_id,
+                        "event_type": l.event_type,
+                        "category": l.category.value,
+                        "level": l.level.value,
+                        "message": l.message,
+                        "details": l.details,
+                        "ip_address": l.ip_address,
+                        "user_agent": l.user_agent,
+                        "created_at": l.created_at.isoformat(),
+                    }
+                    for l in logs
+                ],
+                ttl=self.cache_ttls["audit_logs"],
             )
 
             return logs
@@ -273,8 +307,14 @@ class AuditService:
             return []
 
     @time_operation("audit_create_event")
-    async def create_audit_event(self, tenant_id: int, event_name: str, event_type: str,
-                               category: AuditCategory, retention_days: int = 365) -> Optional[AuditEvent]:
+    async def create_audit_event(
+        self,
+        tenant_id: int,
+        event_name: str,
+        event_type: str,
+        category: AuditCategory,
+        retention_days: int = 365,
+    ) -> Optional[AuditEvent]:
         """Create a new audit event configuration."""
         try:
             query = """
@@ -284,13 +324,16 @@ class AuditService:
                     1, :retention_days, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'event_name': event_name,
-                'event_type': event_type,
-                'category': category.value,
-                'retention_days': retention_days
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "event_name": event_name,
+                    "event_type": event_type,
+                    "category": category.value,
+                    "retention_days": retention_days,
+                },
+            )
 
             event_id = result.lastrowid
 
@@ -298,7 +341,9 @@ class AuditService:
             event = await self.get_audit_event_by_id(event_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"audit_events:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"audit_events:{tenant_id}:*"
+            )
 
             record_metric("audit_events_created", 1)
             return event
@@ -323,38 +368,38 @@ class AuditService:
             SELECT * FROM audit_events WHERE id = :event_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'event_id': event_id})
+            result = await self.db_manager.fetch_one(query, {"event_id": event_id})
 
             if not result:
                 return None
 
             event = AuditEvent(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                event_name=result['event_name'],
-                event_type=result['event_type'],
-                category=AuditCategory(result['category']),
-                is_enabled=result['is_enabled'],
-                retention_days=result['retention_days'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                event_name=result["event_name"],
+                event_type=result["event_type"],
+                category=AuditCategory(result["category"]),
+                is_enabled=result["is_enabled"],
+                retention_days=result["retention_days"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache event
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': event.id,
-                    'tenant_id': event.tenant_id,
-                    'event_name': event.event_name,
-                    'event_type': event.event_type,
-                    'category': event.category.value,
-                    'is_enabled': event.is_enabled,
-                    'retention_days': event.retention_days,
-                    'created_at': event.created_at.isoformat(),
-                    'updated_at': event.updated_at.isoformat()
+                    "id": event.id,
+                    "tenant_id": event.tenant_id,
+                    "event_name": event.event_name,
+                    "event_type": event.event_type,
+                    "category": event.category.value,
+                    "is_enabled": event.is_enabled,
+                    "retention_days": event.retention_days,
+                    "created_at": event.created_at.isoformat(),
+                    "updated_at": event.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['audit_events']
+                ttl=self.cache_ttls["audit_events"],
             )
 
             return event
@@ -364,11 +409,15 @@ class AuditService:
             return None
 
     @time_operation("audit_get_events")
-    async def get_audit_events_by_tenant(self, tenant_id: int, category: Optional[AuditCategory] = None) -> List[AuditEvent]:
+    async def get_audit_events_by_tenant(
+        self, tenant_id: int, category: Optional[AuditCategory] = None
+    ) -> List[AuditEvent]:
         """Get audit events for a tenant."""
         try:
             # Try to get from cache first
-            cache_key = f"audit_events:{tenant_id}:{category.value if category else 'all'}"
+            cache_key = (
+                f"audit_events:{tenant_id}:{category.value if category else 'all'}"
+            )
             cached_events = await self.cache_manager.enhanced_cache_get(cache_key)
 
             if cached_events:
@@ -376,44 +425,47 @@ class AuditService:
 
             # Build query
             query = "SELECT * FROM audit_events WHERE tenant_id = :tenant_id"
-            params = {'tenant_id': tenant_id}
+            params = {"tenant_id": tenant_id}
 
             if category:
                 query += " AND category = :category"
-                params['category'] = category.value
+                params["category"] = category.value
 
             results = await self.db_manager.fetch_all(query, params)
 
             events = []
             for row in results:
                 event = AuditEvent(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    event_name=row['event_name'],
-                    event_type=row['event_type'],
-                    category=AuditCategory(row['category']),
-                    is_enabled=row['is_enabled'],
-                    retention_days=row['retention_days'],
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    event_name=row["event_name"],
+                    event_type=row["event_type"],
+                    category=AuditCategory(row["category"]),
+                    is_enabled=row["is_enabled"],
+                    retention_days=row["retention_days"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 events.append(event)
 
             # Cache events
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': e.id,
-                    'tenant_id': e.tenant_id,
-                    'event_name': e.event_name,
-                    'event_type': e.event_type,
-                    'category': e.category.value,
-                    'is_enabled': e.is_enabled,
-                    'retention_days': e.retention_days,
-                    'created_at': e.created_at.isoformat(),
-                    'updated_at': e.updated_at.isoformat()
-                } for e in events],
-                ttl=self.cache_ttls['audit_events']
+                [
+                    {
+                        "id": e.id,
+                        "tenant_id": e.tenant_id,
+                        "event_name": e.event_name,
+                        "event_type": e.event_type,
+                        "category": e.category.value,
+                        "is_enabled": e.is_enabled,
+                        "retention_days": e.retention_days,
+                        "created_at": e.created_at.isoformat(),
+                        "updated_at": e.updated_at.isoformat(),
+                    }
+                    for e in events
+                ],
+                ttl=self.cache_ttls["audit_events"],
             )
 
             return events
@@ -423,8 +475,14 @@ class AuditService:
             return []
 
     @time_operation("audit_create_report")
-    async def create_audit_report(self, tenant_id: int, name: str, report_type: str,
-                                parameters: Dict[str, Any], schedule: Optional[str] = None) -> Optional[AuditReport]:
+    async def create_audit_report(
+        self,
+        tenant_id: int,
+        name: str,
+        report_type: str,
+        parameters: Dict[str, Any],
+        schedule: Optional[str] = None,
+    ) -> Optional[AuditReport]:
         """Create a new audit report."""
         try:
             query = """
@@ -434,13 +492,16 @@ class AuditService:
                     1, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'report_type': report_type,
-                'parameters': json.dumps(parameters),
-                'schedule': schedule
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "report_type": report_type,
+                    "parameters": json.dumps(parameters),
+                    "schedule": schedule,
+                },
+            )
 
             report_id = result.lastrowid
 
@@ -448,7 +509,9 @@ class AuditService:
             report = await self.get_audit_report_by_id(report_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"audit_reports:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"audit_reports:{tenant_id}:*"
+            )
 
             record_metric("audit_reports_created", 1)
             return report
@@ -473,38 +536,40 @@ class AuditService:
             SELECT * FROM audit_reports WHERE id = :report_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'report_id': report_id})
+            result = await self.db_manager.fetch_one(query, {"report_id": report_id})
 
             if not result:
                 return None
 
             report = AuditReport(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                report_type=result['report_type'],
-                parameters=json.loads(result['parameters']) if result['parameters'] else {},
-                schedule=result['schedule'],
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                report_type=result["report_type"],
+                parameters=(
+                    json.loads(result["parameters"]) if result["parameters"] else {}
+                ),
+                schedule=result["schedule"],
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache report
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': report.id,
-                    'tenant_id': report.tenant_id,
-                    'name': report.name,
-                    'report_type': report.report_type,
-                    'parameters': report.parameters,
-                    'schedule': report.schedule,
-                    'is_active': report.is_active,
-                    'created_at': report.created_at.isoformat(),
-                    'updated_at': report.updated_at.isoformat()
+                    "id": report.id,
+                    "tenant_id": report.tenant_id,
+                    "name": report.name,
+                    "report_type": report.report_type,
+                    "parameters": report.parameters,
+                    "schedule": report.schedule,
+                    "is_active": report.is_active,
+                    "created_at": report.created_at.isoformat(),
+                    "updated_at": report.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['audit_reports']
+                ttl=self.cache_ttls["audit_reports"],
             )
 
             return report
@@ -514,7 +579,9 @@ class AuditService:
             return None
 
     @time_operation("audit_generate_report")
-    async def generate_audit_report(self, report_id: int, parameters: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    async def generate_audit_report(
+        self, report_id: int, parameters: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
         """Generate an audit report."""
         try:
             # Get report configuration
@@ -530,13 +597,13 @@ class AuditService:
                 return cached_data
 
             # Generate report data based on type
-            report_data = await self._generate_audit_report_data(report, parameters or {})
+            report_data = await self._generate_audit_report_data(
+                report, parameters or {}
+            )
 
             # Cache report data
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                report_data,
-                ttl=self.cache_ttls['audit_reports']
+                cache_key, report_data, ttl=self.cache_ttls["audit_reports"]
             )
 
             record_metric("audit_reports_generated", 1)
@@ -547,8 +614,14 @@ class AuditService:
             return None
 
     @time_operation("audit_create_alert")
-    async def create_audit_alert(self, tenant_id: int, name: str, alert_type: str,
-                               conditions: Dict[str, Any], actions: List[str]) -> Optional[AuditAlert]:
+    async def create_audit_alert(
+        self,
+        tenant_id: int,
+        name: str,
+        alert_type: str,
+        conditions: Dict[str, Any],
+        actions: List[str],
+    ) -> Optional[AuditAlert]:
         """Create a new audit alert."""
         try:
             query = """
@@ -558,13 +631,16 @@ class AuditService:
                     1, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'alert_type': alert_type,
-                'conditions': json.dumps(conditions),
-                'actions': json.dumps(actions)
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "alert_type": alert_type,
+                    "conditions": json.dumps(conditions),
+                    "actions": json.dumps(actions),
+                },
+            )
 
             alert_id = result.lastrowid
 
@@ -572,7 +648,9 @@ class AuditService:
             alert = await self.get_audit_alert_by_id(alert_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"audit_alerts:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"audit_alerts:{tenant_id}:*"
+            )
 
             record_metric("audit_alerts_created", 1)
             return alert
@@ -597,38 +675,40 @@ class AuditService:
             SELECT * FROM audit_alerts WHERE id = :alert_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'alert_id': alert_id})
+            result = await self.db_manager.fetch_one(query, {"alert_id": alert_id})
 
             if not result:
                 return None
 
             alert = AuditAlert(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                alert_type=result['alert_type'],
-                conditions=json.loads(result['conditions']) if result['conditions'] else {},
-                actions=json.loads(result['actions']) if result['actions'] else [],
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                alert_type=result["alert_type"],
+                conditions=(
+                    json.loads(result["conditions"]) if result["conditions"] else {}
+                ),
+                actions=json.loads(result["actions"]) if result["actions"] else [],
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache alert
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': alert.id,
-                    'tenant_id': alert.tenant_id,
-                    'name': alert.name,
-                    'alert_type': alert.alert_type,
-                    'conditions': alert.conditions,
-                    'actions': alert.actions,
-                    'is_active': alert.is_active,
-                    'created_at': alert.created_at.isoformat(),
-                    'updated_at': alert.updated_at.isoformat()
+                    "id": alert.id,
+                    "tenant_id": alert.tenant_id,
+                    "name": alert.name,
+                    "alert_type": alert.alert_type,
+                    "conditions": alert.conditions,
+                    "actions": alert.actions,
+                    "is_active": alert.is_active,
+                    "created_at": alert.created_at.isoformat(),
+                    "updated_at": alert.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['audit_alerts']
+                ttl=self.cache_ttls["audit_alerts"],
             )
 
             return alert
@@ -638,7 +718,9 @@ class AuditService:
             return None
 
     @time_operation("audit_get_analytics")
-    async def get_audit_analytics(self, tenant_id: int, days: int = 30) -> Dict[str, Any]:
+    async def get_audit_analytics(
+        self, tenant_id: int, days: int = 30
+    ) -> Dict[str, Any]:
         """Get audit analytics for a tenant."""
         try:
             # Try to get from cache first
@@ -660,10 +742,9 @@ class AuditService:
             GROUP BY category, level
             """
 
-            log_results = await self.db_manager.fetch_all(log_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            log_results = await self.db_manager.fetch_all(
+                log_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             # Get event statistics
             event_query = """
@@ -676,33 +757,36 @@ class AuditService:
             GROUP BY event_type
             """
 
-            event_results = await self.db_manager.fetch_all(event_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            event_results = await self.db_manager.fetch_all(
+                event_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             analytics = {
-                'log_statistics': {
-                    'by_category': {row['category']: row['count'] for row in log_results},
-                    'by_level': {row['level']: row['count'] for row in log_results},
-                    'total_logs': sum(row['count'] for row in log_results)
+                "log_statistics": {
+                    "by_category": {
+                        row["category"]: row["count"] for row in log_results
+                    },
+                    "by_level": {row["level"]: row["count"] for row in log_results},
+                    "total_logs": sum(row["count"] for row in log_results),
                 },
-                'event_statistics': {
-                    'by_type': {row['event_type']: row['count'] for row in event_results},
-                    'total_events': sum(row['count'] for row in event_results)
+                "event_statistics": {
+                    "by_type": {
+                        row["event_type"]: row["count"] for row in event_results
+                    },
+                    "total_events": sum(row["count"] for row in event_results),
                 },
-                'period': {
-                    'days': days,
-                    'start_date': (datetime.utcnow() - timedelta(days=days)).isoformat(),
-                    'end_date': datetime.utcnow().isoformat()
-                }
+                "period": {
+                    "days": days,
+                    "start_date": (
+                        datetime.utcnow() - timedelta(days=days)
+                    ).isoformat(),
+                    "end_date": datetime.utcnow().isoformat(),
+                },
             }
 
             # Cache analytics
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                analytics,
-                ttl=self.cache_ttls['audit_analytics']
+                cache_key, analytics, ttl=self.cache_ttls["audit_analytics"]
             )
 
             return analytics
@@ -742,14 +826,18 @@ class AuditService:
         """Background task to clean up expired audit logs."""
         while self.is_running:
             try:
-                cutoff_date = datetime.utcnow() - timedelta(days=365) # Example retention period
+                cutoff_date = datetime.utcnow() - timedelta(
+                    days=365
+                )  # Example retention period
                 query = "DELETE FROM audit_logs WHERE created_at < :cutoff_date"
-                await self.db_manager.execute(query, {'cutoff_date': cutoff_date})
-                logger.info(f"Cleaned up {await self.db_manager.rowcount} expired audit logs.")
-                await asyncio.sleep(86400) # Run daily
+                await self.db_manager.execute(query, {"cutoff_date": cutoff_date})
+                logger.info(
+                    f"Cleaned up {await self.db_manager.rowcount} expired audit logs."
+                )
+                await asyncio.sleep(86400)  # Run daily
             except Exception as e:
                 logger.error(f"Error during log retention cleanup: {e}")
-                await asyncio.sleep(3600) # Wait 1 hour on error
+                await asyncio.sleep(3600)  # Wait 1 hour on error
 
     async def _monitor_audit_events(self):
         """Background task to monitor for suspicious activity and compliance violations."""
@@ -761,12 +849,14 @@ class AuditService:
                 # Example: Check compliance status
                 await self._check_compliance_status()
 
-                await asyncio.sleep(300) # Check every 5 minutes
+                await asyncio.sleep(300)  # Check every 5 minutes
             except Exception as e:
                 logger.error(f"Error in audit event monitoring: {e}")
-                await asyncio.sleep(600) # Wait 10 minutes on error
+                await asyncio.sleep(600)  # Wait 10 minutes on error
 
-    async def _generate_audit_report_data(self, report: AuditReport, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_audit_report_data(
+        self, report: AuditReport, parameters: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Placeholder for generating actual report data."""
         # In a real application, this would call a dedicated report generation service
         # and return the results.
@@ -778,14 +868,30 @@ class AuditService:
             "generated_at": datetime.utcnow().isoformat(),
             "data": {
                 "total_events": 100,
-                "event_distribution": {"user_login": 20, "bet_placement": 30, "payment_processing": 20, "data_access": 30},
-                "severity_distribution": {"low": 50, "medium": 30, "high": 10, "critical": 10},
-                "top_users": [{"id": 1, "username": "User1", "count": 50}, {"id": 2, "username": "User2", "count": 30}],
-                "top_guilds": [{"id": 1, "name": "Guild1", "count": 40}, {"id": 2, "name": "Guild2", "count": 20}],
+                "event_distribution": {
+                    "user_login": 20,
+                    "bet_placement": 30,
+                    "payment_processing": 20,
+                    "data_access": 30,
+                },
+                "severity_distribution": {
+                    "low": 50,
+                    "medium": 30,
+                    "high": 10,
+                    "critical": 10,
+                },
+                "top_users": [
+                    {"id": 1, "username": "User1", "count": 50},
+                    {"id": 2, "username": "User2", "count": 30},
+                ],
+                "top_guilds": [
+                    {"id": 1, "name": "Guild1", "count": 40},
+                    {"id": 2, "name": "Guild2", "count": 20},
+                ],
                 "compliance_status": "compliant",
                 "findings": [],
-                "recommendations": []
-            }
+                "recommendations": [],
+            },
         }
 
     async def _detect_anomalies(self):

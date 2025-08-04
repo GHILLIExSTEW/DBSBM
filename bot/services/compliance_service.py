@@ -22,20 +22,22 @@ logger = logging.getLogger(__name__)
 
 # Compliance-specific cache TTLs
 COMPLIANCE_CACHE_TTLS = {
-    'compliance_rules': 3600,        # 1 hour
-    'compliance_checks': 1800,        # 30 minutes
-    'compliance_reports': 7200,       # 2 hours
-    'compliance_alerts': 300,         # 5 minutes
-    'compliance_audits': 3600,        # 1 hour
-    'compliance_policies': 7200,      # 2 hours
-    'compliance_monitoring': 300,     # 5 minutes
-    'compliance_analytics': 1800,     # 30 minutes
-    'compliance_exports': 600,        # 10 minutes
-    'compliance_performance': 1800,   # 30 minutes
+    "compliance_rules": 3600,  # 1 hour
+    "compliance_checks": 1800,  # 30 minutes
+    "compliance_reports": 7200,  # 2 hours
+    "compliance_alerts": 300,  # 5 minutes
+    "compliance_audits": 3600,  # 1 hour
+    "compliance_policies": 7200,  # 2 hours
+    "compliance_monitoring": 300,  # 5 minutes
+    "compliance_analytics": 1800,  # 30 minutes
+    "compliance_exports": 600,  # 10 minutes
+    "compliance_performance": 1800,  # 30 minutes
 }
+
 
 class ComplianceType(Enum):
     """Compliance types."""
+
     GDPR = "gdpr"
     SOC2 = "soc2"
     PCI_DSS = "pci_dss"
@@ -43,23 +45,29 @@ class ComplianceType(Enum):
     SOX = "sox"
     CUSTOM = "custom"
 
+
 class ComplianceStatus(Enum):
     """Compliance status."""
+
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     PENDING = "pending"
     REVIEW = "review"
 
+
 class ComplianceSeverity(Enum):
     """Compliance severity levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
+
 @dataclass
 class ComplianceRule:
     """Compliance rule configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -72,9 +80,11 @@ class ComplianceRule:
     created_at: datetime
     updated_at: datetime
 
+
 @dataclass
 class ComplianceCheck:
     """Compliance check result."""
+
     id: int
     tenant_id: int
     rule_id: int
@@ -84,9 +94,11 @@ class ComplianceCheck:
     severity: ComplianceSeverity
     created_at: datetime
 
+
 @dataclass
 class ComplianceReport:
     """Compliance report configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -97,9 +109,11 @@ class ComplianceReport:
     created_at: datetime
     updated_at: datetime
 
+
 @dataclass
 class ComplianceAlert:
     """Compliance alert configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -109,6 +123,7 @@ class ComplianceAlert:
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
 
 class ComplianceService:
     """Compliance service for regulatory compliance and governance."""
@@ -146,9 +161,16 @@ class ComplianceService:
         logger.info("Compliance service stopped")
 
     @time_operation("compliance_create_rule")
-    async def create_compliance_rule(self, tenant_id: int, name: str, compliance_type: ComplianceType,
-                                   rule_type: str, conditions: Dict[str, Any], actions: List[str],
-                                   severity: ComplianceSeverity) -> Optional[ComplianceRule]:
+    async def create_compliance_rule(
+        self,
+        tenant_id: int,
+        name: str,
+        compliance_type: ComplianceType,
+        rule_type: str,
+        conditions: Dict[str, Any],
+        actions: List[str],
+        severity: ComplianceSeverity,
+    ) -> Optional[ComplianceRule]:
         """Create a new compliance rule."""
         try:
             query = """
@@ -158,15 +180,18 @@ class ComplianceService:
                     :conditions, :actions, :severity, 1, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'compliance_type': compliance_type.value,
-                'rule_type': rule_type,
-                'conditions': json.dumps(conditions),
-                'actions': json.dumps(actions),
-                'severity': severity.value
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "compliance_type": compliance_type.value,
+                    "rule_type": rule_type,
+                    "conditions": json.dumps(conditions),
+                    "actions": json.dumps(actions),
+                    "severity": severity.value,
+                },
+            )
 
             rule_id = result.lastrowid
 
@@ -174,7 +199,9 @@ class ComplianceService:
             rule = await self.get_compliance_rule_by_id(rule_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"compliance_rules:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"compliance_rules:{tenant_id}:*"
+            )
 
             record_metric("compliance_rules_created", 1)
             return rule
@@ -199,42 +226,44 @@ class ComplianceService:
             SELECT * FROM compliance_rules WHERE id = :rule_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'rule_id': rule_id})
+            result = await self.db_manager.fetch_one(query, {"rule_id": rule_id})
 
             if not result:
                 return None
 
             rule = ComplianceRule(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                compliance_type=ComplianceType(result['compliance_type']),
-                rule_type=result['rule_type'],
-                conditions=json.loads(result['conditions']) if result['conditions'] else {},
-                actions=json.loads(result['actions']) if result['actions'] else [],
-                severity=ComplianceSeverity(result['severity']),
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                compliance_type=ComplianceType(result["compliance_type"]),
+                rule_type=result["rule_type"],
+                conditions=(
+                    json.loads(result["conditions"]) if result["conditions"] else {}
+                ),
+                actions=json.loads(result["actions"]) if result["actions"] else [],
+                severity=ComplianceSeverity(result["severity"]),
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache rule
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': rule.id,
-                    'tenant_id': rule.tenant_id,
-                    'name': rule.name,
-                    'compliance_type': rule.compliance_type.value,
-                    'rule_type': rule.rule_type,
-                    'conditions': rule.conditions,
-                    'actions': rule.actions,
-                    'severity': rule.severity.value,
-                    'is_active': rule.is_active,
-                    'created_at': rule.created_at.isoformat(),
-                    'updated_at': rule.updated_at.isoformat()
+                    "id": rule.id,
+                    "tenant_id": rule.tenant_id,
+                    "name": rule.name,
+                    "compliance_type": rule.compliance_type.value,
+                    "rule_type": rule.rule_type,
+                    "conditions": rule.conditions,
+                    "actions": rule.actions,
+                    "severity": rule.severity.value,
+                    "is_active": rule.is_active,
+                    "created_at": rule.created_at.isoformat(),
+                    "updated_at": rule.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['compliance_rules']
+                ttl=self.cache_ttls["compliance_rules"],
             )
 
             return rule
@@ -244,7 +273,9 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_get_rules")
-    async def get_compliance_rules_by_tenant(self, tenant_id: int, compliance_type: Optional[ComplianceType] = None) -> List[ComplianceRule]:
+    async def get_compliance_rules_by_tenant(
+        self, tenant_id: int, compliance_type: Optional[ComplianceType] = None
+    ) -> List[ComplianceRule]:
         """Get compliance rules for a tenant."""
         try:
             # Try to get from cache first
@@ -256,48 +287,53 @@ class ComplianceService:
 
             # Build query
             query = "SELECT * FROM compliance_rules WHERE tenant_id = :tenant_id"
-            params = {'tenant_id': tenant_id}
+            params = {"tenant_id": tenant_id}
 
             if compliance_type:
                 query += " AND compliance_type = :compliance_type"
-                params['compliance_type'] = compliance_type.value
+                params["compliance_type"] = compliance_type.value
 
             results = await self.db_manager.fetch_all(query, params)
 
             rules = []
             for row in results:
                 rule = ComplianceRule(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    name=row['name'],
-                    compliance_type=ComplianceType(row['compliance_type']),
-                    rule_type=row['rule_type'],
-                    conditions=json.loads(row['conditions']) if row['conditions'] else {},
-                    actions=json.loads(row['actions']) if row['actions'] else [],
-                    severity=ComplianceSeverity(row['severity']),
-                    is_active=row['is_active'],
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    name=row["name"],
+                    compliance_type=ComplianceType(row["compliance_type"]),
+                    rule_type=row["rule_type"],
+                    conditions=(
+                        json.loads(row["conditions"]) if row["conditions"] else {}
+                    ),
+                    actions=json.loads(row["actions"]) if row["actions"] else [],
+                    severity=ComplianceSeverity(row["severity"]),
+                    is_active=row["is_active"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 rules.append(rule)
 
             # Cache rules
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': r.id,
-                    'tenant_id': r.tenant_id,
-                    'name': r.name,
-                    'compliance_type': r.compliance_type.value,
-                    'rule_type': r.rule_type,
-                    'conditions': r.conditions,
-                    'actions': r.actions,
-                    'severity': r.severity.value,
-                    'is_active': r.is_active,
-                    'created_at': r.created_at.isoformat(),
-                    'updated_at': r.updated_at.isoformat()
-                } for r in rules],
-                ttl=self.cache_ttls['compliance_rules']
+                [
+                    {
+                        "id": r.id,
+                        "tenant_id": r.tenant_id,
+                        "name": r.name,
+                        "compliance_type": r.compliance_type.value,
+                        "rule_type": r.rule_type,
+                        "conditions": r.conditions,
+                        "actions": r.actions,
+                        "severity": r.severity.value,
+                        "is_active": r.is_active,
+                        "created_at": r.created_at.isoformat(),
+                        "updated_at": r.updated_at.isoformat(),
+                    }
+                    for r in rules
+                ],
+                ttl=self.cache_ttls["compliance_rules"],
             )
 
             return rules
@@ -307,8 +343,9 @@ class ComplianceService:
             return []
 
     @time_operation("compliance_run_check")
-    async def run_compliance_check(self, tenant_id: int, rule_id: int, check_type: str,
-                                 data: Dict[str, Any]) -> Optional[ComplianceCheck]:
+    async def run_compliance_check(
+        self, tenant_id: int, rule_id: int, check_type: str, data: Dict[str, Any]
+    ) -> Optional[ComplianceCheck]:
         """Run a compliance check."""
         try:
             # Get rule
@@ -327,14 +364,17 @@ class ComplianceService:
                     :details, :severity, NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'rule_id': rule_id,
-                'check_type': check_type,
-                'status': check_result['status'].value,
-                'details': json.dumps(check_result['details']),
-                'severity': check_result['severity'].value
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "rule_id": rule_id,
+                    "check_type": check_type,
+                    "status": check_result["status"].value,
+                    "details": json.dumps(check_result["details"]),
+                    "severity": check_result["severity"].value,
+                },
+            )
 
             check_id = result.lastrowid
 
@@ -343,14 +383,16 @@ class ComplianceService:
                 tenant_id=tenant_id,
                 rule_id=rule_id,
                 check_type=check_type,
-                status=check_result['status'],
-                details=check_result['details'],
-                severity=check_result['severity'],
-                created_at=datetime.utcnow()
+                status=check_result["status"],
+                details=check_result["details"],
+                severity=check_result["severity"],
+                created_at=datetime.utcnow(),
             )
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"compliance_checks:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"compliance_checks:{tenant_id}:*"
+            )
 
             record_metric("compliance_checks_run", 1)
             return check
@@ -360,8 +402,14 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_create_report")
-    async def create_compliance_report(self, tenant_id: int, name: str, report_type: str,
-                                     parameters: Dict[str, Any], schedule: Optional[str] = None) -> Optional[ComplianceReport]:
+    async def create_compliance_report(
+        self,
+        tenant_id: int,
+        name: str,
+        report_type: str,
+        parameters: Dict[str, Any],
+        schedule: Optional[str] = None,
+    ) -> Optional[ComplianceReport]:
         """Create a new compliance report."""
         try:
             query = """
@@ -371,13 +419,16 @@ class ComplianceService:
                     1, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'report_type': report_type,
-                'parameters': json.dumps(parameters),
-                'schedule': schedule
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "report_type": report_type,
+                    "parameters": json.dumps(parameters),
+                    "schedule": schedule,
+                },
+            )
 
             report_id = result.lastrowid
 
@@ -385,7 +436,9 @@ class ComplianceService:
             report = await self.get_compliance_report_by_id(report_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"compliance_reports:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"compliance_reports:{tenant_id}:*"
+            )
 
             record_metric("compliance_reports_created", 1)
             return report
@@ -395,7 +448,9 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_get_report")
-    async def get_compliance_report_by_id(self, report_id: int) -> Optional[ComplianceReport]:
+    async def get_compliance_report_by_id(
+        self, report_id: int
+    ) -> Optional[ComplianceReport]:
         """Get compliance report by ID."""
         try:
             # Try to get from cache first
@@ -410,38 +465,40 @@ class ComplianceService:
             SELECT * FROM compliance_reports WHERE id = :report_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'report_id': report_id})
+            result = await self.db_manager.fetch_one(query, {"report_id": report_id})
 
             if not result:
                 return None
 
             report = ComplianceReport(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                report_type=result['report_type'],
-                parameters=json.loads(result['parameters']) if result['parameters'] else {},
-                schedule=result['schedule'],
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                report_type=result["report_type"],
+                parameters=(
+                    json.loads(result["parameters"]) if result["parameters"] else {}
+                ),
+                schedule=result["schedule"],
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache report
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': report.id,
-                    'tenant_id': report.tenant_id,
-                    'name': report.name,
-                    'report_type': report.report_type,
-                    'parameters': report.parameters,
-                    'schedule': report.schedule,
-                    'is_active': report.is_active,
-                    'created_at': report.created_at.isoformat(),
-                    'updated_at': report.updated_at.isoformat()
+                    "id": report.id,
+                    "tenant_id": report.tenant_id,
+                    "name": report.name,
+                    "report_type": report.report_type,
+                    "parameters": report.parameters,
+                    "schedule": report.schedule,
+                    "is_active": report.is_active,
+                    "created_at": report.created_at.isoformat(),
+                    "updated_at": report.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['compliance_reports']
+                ttl=self.cache_ttls["compliance_reports"],
             )
 
             return report
@@ -451,7 +508,9 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_generate_report")
-    async def generate_compliance_report(self, report_id: int, parameters: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    async def generate_compliance_report(
+        self, report_id: int, parameters: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
         """Generate a compliance report."""
         try:
             # Get report configuration
@@ -467,13 +526,13 @@ class ComplianceService:
                 return cached_data
 
             # Generate report data based on type
-            report_data = await self._generate_compliance_report_data(report, parameters or {})
+            report_data = await self._generate_compliance_report_data(
+                report, parameters or {}
+            )
 
             # Cache report data
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                report_data,
-                ttl=self.cache_ttls['compliance_reports']
+                cache_key, report_data, ttl=self.cache_ttls["compliance_reports"]
             )
 
             record_metric("compliance_reports_generated", 1)
@@ -484,8 +543,14 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_create_alert")
-    async def create_compliance_alert(self, tenant_id: int, name: str, alert_type: str,
-                                    conditions: Dict[str, Any], actions: List[str]) -> Optional[ComplianceAlert]:
+    async def create_compliance_alert(
+        self,
+        tenant_id: int,
+        name: str,
+        alert_type: str,
+        conditions: Dict[str, Any],
+        actions: List[str],
+    ) -> Optional[ComplianceAlert]:
         """Create a new compliance alert."""
         try:
             query = """
@@ -495,13 +560,16 @@ class ComplianceService:
                     1, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'alert_type': alert_type,
-                'conditions': json.dumps(conditions),
-                'actions': json.dumps(actions)
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "alert_type": alert_type,
+                    "conditions": json.dumps(conditions),
+                    "actions": json.dumps(actions),
+                },
+            )
 
             alert_id = result.lastrowid
 
@@ -509,7 +577,9 @@ class ComplianceService:
             alert = await self.get_compliance_alert_by_id(alert_id)
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"compliance_alerts:{tenant_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"compliance_alerts:{tenant_id}:*"
+            )
 
             record_metric("compliance_alerts_created", 1)
             return alert
@@ -519,7 +589,9 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_get_alert")
-    async def get_compliance_alert_by_id(self, alert_id: int) -> Optional[ComplianceAlert]:
+    async def get_compliance_alert_by_id(
+        self, alert_id: int
+    ) -> Optional[ComplianceAlert]:
         """Get compliance alert by ID."""
         try:
             # Try to get from cache first
@@ -534,38 +606,40 @@ class ComplianceService:
             SELECT * FROM compliance_alerts WHERE id = :alert_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'alert_id': alert_id})
+            result = await self.db_manager.fetch_one(query, {"alert_id": alert_id})
 
             if not result:
                 return None
 
             alert = ComplianceAlert(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                alert_type=result['alert_type'],
-                conditions=json.loads(result['conditions']) if result['conditions'] else {},
-                actions=json.loads(result['actions']) if result['actions'] else [],
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                alert_type=result["alert_type"],
+                conditions=(
+                    json.loads(result["conditions"]) if result["conditions"] else {}
+                ),
+                actions=json.loads(result["actions"]) if result["actions"] else [],
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache alert
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': alert.id,
-                    'tenant_id': alert.tenant_id,
-                    'name': alert.name,
-                    'alert_type': alert.alert_type,
-                    'conditions': alert.conditions,
-                    'actions': alert.actions,
-                    'is_active': alert.is_active,
-                    'created_at': alert.created_at.isoformat(),
-                    'updated_at': alert.updated_at.isoformat()
+                    "id": alert.id,
+                    "tenant_id": alert.tenant_id,
+                    "name": alert.name,
+                    "alert_type": alert.alert_type,
+                    "conditions": alert.conditions,
+                    "actions": alert.actions,
+                    "is_active": alert.is_active,
+                    "created_at": alert.created_at.isoformat(),
+                    "updated_at": alert.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['compliance_alerts']
+                ttl=self.cache_ttls["compliance_alerts"],
             )
 
             return alert
@@ -575,7 +649,9 @@ class ComplianceService:
             return None
 
     @time_operation("compliance_get_analytics")
-    async def get_compliance_analytics(self, tenant_id: int, days: int = 30) -> Dict[str, Any]:
+    async def get_compliance_analytics(
+        self, tenant_id: int, days: int = 30
+    ) -> Dict[str, Any]:
         """Get compliance analytics for a tenant."""
         try:
             # Try to get from cache first
@@ -597,10 +673,9 @@ class ComplianceService:
             GROUP BY compliance_type, severity
             """
 
-            rule_results = await self.db_manager.fetch_all(rule_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            rule_results = await self.db_manager.fetch_all(
+                rule_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             # Get check statistics
             check_query = """
@@ -614,34 +689,39 @@ class ComplianceService:
             GROUP BY status, severity
             """
 
-            check_results = await self.db_manager.fetch_all(check_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            check_results = await self.db_manager.fetch_all(
+                check_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             analytics = {
-                'rule_statistics': {
-                    'by_type': {row['compliance_type']: row['count'] for row in rule_results},
-                    'by_severity': {row['severity']: row['count'] for row in rule_results},
-                    'total_rules': sum(row['count'] for row in rule_results)
+                "rule_statistics": {
+                    "by_type": {
+                        row["compliance_type"]: row["count"] for row in rule_results
+                    },
+                    "by_severity": {
+                        row["severity"]: row["count"] for row in rule_results
+                    },
+                    "total_rules": sum(row["count"] for row in rule_results),
                 },
-                'check_statistics': {
-                    'by_status': {row['status']: row['count'] for row in check_results},
-                    'by_severity': {row['severity']: row['count'] for row in check_results},
-                    'total_checks': sum(row['count'] for row in check_results)
+                "check_statistics": {
+                    "by_status": {row["status"]: row["count"] for row in check_results},
+                    "by_severity": {
+                        row["severity"]: row["count"] for row in check_results
+                    },
+                    "total_checks": sum(row["count"] for row in check_results),
                 },
-                'period': {
-                    'days': days,
-                    'start_date': (datetime.utcnow() - timedelta(days=days)).isoformat(),
-                    'end_date': datetime.utcnow().isoformat()
-                }
+                "period": {
+                    "days": days,
+                    "start_date": (
+                        datetime.utcnow() - timedelta(days=days)
+                    ).isoformat(),
+                    "end_date": datetime.utcnow().isoformat(),
+                },
             }
 
             # Cache analytics
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                analytics,
-                ttl=self.cache_ttls['compliance_analytics']
+                cache_key, analytics, ttl=self.cache_ttls["compliance_analytics"]
             )
 
             return analytics

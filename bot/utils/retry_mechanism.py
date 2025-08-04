@@ -11,8 +11,12 @@ import time
 from functools import wraps
 from typing import Callable, Optional, Type, Union, List, Any
 from .exceptions import (
-    DBSBMBaseException, NetworkException, TimeoutException,
-    RateLimitException, is_retryable_exception, get_retry_delay
+    DBSBMBaseException,
+    NetworkException,
+    TimeoutException,
+    RateLimitException,
+    is_retryable_exception,
+    get_retry_delay,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ class RetryConfig:
         max_delay: float = 60.0,
         exponential_base: float = 2.0,
         jitter: bool = True,
-        retryable_exceptions: Optional[List[Type[Exception]]] = None
+        retryable_exceptions: Optional[List[Type[Exception]]] = None,
     ):
         self.max_attempts = max_attempts
         self.base_delay = base_delay
@@ -36,7 +40,9 @@ class RetryConfig:
         self.exponential_base = exponential_base
         self.jitter = jitter
         self.retryable_exceptions = retryable_exceptions or [
-            NetworkException, TimeoutException, RateLimitException
+            NetworkException,
+            TimeoutException,
+            RateLimitException,
         ]
 
 
@@ -47,7 +53,7 @@ class CircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: int = 60,
-        expected_exception: Type[Exception] = Exception
+        expected_exception: Type[Exception] = Exception,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -81,7 +87,8 @@ class CircuitBreaker:
         if self.failure_count >= self.failure_threshold:
             self.state = "OPEN"
             logger.warning(
-                f"Circuit breaker opened after {self.failure_count} failures")
+                f"Circuit breaker opened after {self.failure_count} failures"
+            )
 
 
 def calculate_delay(attempt: int, config: RetryConfig) -> float:
@@ -92,7 +99,8 @@ def calculate_delay(attempt: int, config: RetryConfig) -> float:
     if config.jitter:
         # Add jitter to prevent thundering herd
         import random
-        delay *= (0.5 + random.random() * 0.5)
+
+        delay *= 0.5 + random.random() * 0.5
 
     return delay
 
@@ -102,7 +110,7 @@ async def retry_async(
     *args,
     config: Optional[RetryConfig] = None,
     circuit_breaker: Optional[CircuitBreaker] = None,
-    **kwargs
+    **kwargs,
 ) -> Any:
     """Retry an async function with exponential backoff."""
     config = config or RetryConfig()
@@ -140,11 +148,13 @@ async def retry_async(
             if attempt < config.max_attempts:
                 delay = calculate_delay(attempt, config)
                 logger.warning(
-                    f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s...")
+                    f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s..."
+                )
                 await asyncio.sleep(delay)
             else:
                 logger.error(
-                    f"All {config.max_attempts} attempts failed. Last error: {e}")
+                    f"All {config.max_attempts} attempts failed. Last error: {e}"
+                )
                 raise e
 
     raise last_exception
@@ -153,17 +163,15 @@ async def retry_async(
 def retry(
     config: Optional[RetryConfig] = None,
     circuit_breaker: Optional[CircuitBreaker] = None,
-    retryable_exceptions: Optional[List[Type[Exception]]] = None
+    retryable_exceptions: Optional[List[Type[Exception]]] = None,
 ):
     """Decorator for retrying functions."""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             return await retry_async(
-                func, *args,
-                config=config,
-                circuit_breaker=circuit_breaker,
-                **kwargs
+                func, *args, config=config, circuit_breaker=circuit_breaker, **kwargs
             )
 
         @wraps(func)
@@ -181,10 +189,7 @@ def retry(
 
 
 def _retry_sync(
-    func: Callable,
-    *args,
-    config: Optional[RetryConfig] = None,
-    **kwargs
+    func: Callable, *args, config: Optional[RetryConfig] = None, **kwargs
 ) -> Any:
     """Retry a sync function with exponential backoff."""
     config = config or RetryConfig()
@@ -206,11 +211,13 @@ def _retry_sync(
             if attempt < config.max_attempts:
                 delay = calculate_delay(attempt, config)
                 logger.warning(
-                    f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s...")
+                    f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s..."
+                )
                 time.sleep(delay)
             else:
                 logger.error(
-                    f"All {config.max_attempts} attempts failed. Last error: {e}")
+                    f"All {config.max_attempts} attempts failed. Last error: {e}"
+                )
                 raise e
 
     raise last_exception
@@ -236,21 +243,14 @@ class RetryManager:
         return self.retry_configs[name]
 
     async def execute_with_retry(
-        self,
-        func: Callable,
-        operation_name: str,
-        *args,
-        **kwargs
+        self, func: Callable, operation_name: str, *args, **kwargs
     ) -> Any:
         """Execute a function with retry logic."""
         circuit_breaker = self.get_circuit_breaker(operation_name)
         retry_config = self.get_retry_config(operation_name)
 
         return await retry_async(
-            func, *args,
-            config=retry_config,
-            circuit_breaker=circuit_breaker,
-            **kwargs
+            func, *args, config=retry_config, circuit_breaker=circuit_breaker, **kwargs
         )
 
 
@@ -260,29 +260,17 @@ retry_manager = RetryManager()
 
 # Predefined retry configurations
 DATABASE_RETRY_CONFIG = RetryConfig(
-    max_attempts=3,
-    base_delay=0.5,
-    max_delay=10.0,
-    exponential_base=2.0
+    max_attempts=3, base_delay=0.5, max_delay=10.0, exponential_base=2.0
 )
 
 API_RETRY_CONFIG = RetryConfig(
-    max_attempts=5,
-    base_delay=1.0,
-    max_delay=30.0,
-    exponential_base=2.0
+    max_attempts=5, base_delay=1.0, max_delay=30.0, exponential_base=2.0
 )
 
 CACHE_RETRY_CONFIG = RetryConfig(
-    max_attempts=2,
-    base_delay=0.1,
-    max_delay=5.0,
-    exponential_base=1.5
+    max_attempts=2, base_delay=0.1, max_delay=5.0, exponential_base=1.5
 )
 
 NETWORK_RETRY_CONFIG = RetryConfig(
-    max_attempts=3,
-    base_delay=1.0,
-    max_delay=60.0,
-    exponential_base=2.0
+    max_attempts=3, base_delay=1.0, max_delay=60.0, exponential_base=2.0
 )

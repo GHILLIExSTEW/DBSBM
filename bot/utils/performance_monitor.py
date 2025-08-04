@@ -462,7 +462,7 @@ _global_monitor: Optional[PerformanceMonitor] = None
 
 def get_performance_monitor() -> PerformanceMonitor:
     """Get the global performance monitor instance."""
-    if not hasattr(get_performance_monitor, '_instance'):
+    if not hasattr(get_performance_monitor, "_instance"):
         get_performance_monitor._instance = PerformanceMonitor()
     return get_performance_monitor._instance
 
@@ -474,6 +474,7 @@ def time_operation(operation_name: str):
     Args:
         operation_name: Name of the operation to track
     """
+
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             start_time = time.time()

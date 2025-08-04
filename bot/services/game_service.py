@@ -99,7 +99,9 @@ class GameService:
             logger.error(f"Error getting league standings: {str(e)}")
             return []
 
-    async def get_upcoming_games_by_league(self, sport: str, league_name: str, limit: int = 10) -> List[Dict]:
+    async def get_upcoming_games_by_league(
+        self, sport: str, league_name: str, limit: int = 10
+    ) -> List[Dict]:
         """Get upcoming games for a specific sport and league."""
         try:
             # Map sport names to database sport values
@@ -111,7 +113,7 @@ class GameService:
                 "hockey": "Hockey",
                 "ice hockey": "Hockey",
                 "ufc": "UFC",
-                "mma": "UFC"
+                "mma": "UFC",
             }
 
             db_sport = sport_mapping.get(sport.lower(), sport.title())
@@ -137,11 +139,15 @@ class GameService:
                 logger.info(f"No upcoming games found for {sport} - {league_name}")
                 return []
 
-            logger.info(f"Found {len(games)} upcoming games for {sport} - {league_name}")
+            logger.info(
+                f"Found {len(games)} upcoming games for {sport} - {league_name}"
+            )
             return games
 
         except Exception as e:
-            logger.error(f"Error getting upcoming games for {sport} - {league_name}: {e}")
+            logger.error(
+                f"Error getting upcoming games for {sport} - {league_name}: {e}"
+            )
             return []
 
     async def get_teams(self, league: str) -> List[str]:

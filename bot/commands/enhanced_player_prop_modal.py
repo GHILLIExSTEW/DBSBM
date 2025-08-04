@@ -201,9 +201,11 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
     async def on_submit(self, interaction: discord.Interaction):
         """Handle modal submission with validation."""
-        logger.debug(f"EnhancedPlayerPropModal submitted by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.debug(
+            f"EnhancedPlayerPropModal submitted by user {interaction.user.id} in guild {interaction.guild_id}"
+        )
         logger.info(f"User {interaction.user.id} submitted player prop modal")
-        
+
         try:
             # Validate and process inputs
             logger.debug("Starting input validation")
@@ -211,7 +213,9 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             logger.debug(f"Validation result: {validation_result}")
 
             if not validation_result["valid"]:
-                logger.warning(f"Validation failed for user {interaction.user.id}: {validation_result['error']}")
+                logger.warning(
+                    f"Validation failed for user {interaction.user.id}: {validation_result['error']}"
+                )
                 await interaction.response.send_message(
                     f"❌ **Validation Error:** {validation_result['error']}",
                     ephemeral=True,
@@ -242,7 +246,9 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             logger.debug("Modal submission completed successfully")
 
         except Exception as e:
-            logger.exception(f"Error in ParlayEnhancedPlayerPropModal on_submit for user {interaction.user.id}: {e}")
+            logger.exception(
+                f"Error in ParlayEnhancedPlayerPropModal on_submit for user {interaction.user.id}: {e}"
+            )
             await interaction.response.send_message(
                 "❌ **An error occurred.** Please try again.", ephemeral=True
             )

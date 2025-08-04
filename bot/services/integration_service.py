@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 class IntegrationType(Enum):
     """Types of integrations available."""
+
     ERP = "erp"
     CRM = "crm"
     ACCOUNTING = "accounting"
@@ -51,6 +52,7 @@ class IntegrationType(Enum):
 
 class IntegrationStatus(Enum):
     """Status of integrations."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     ERROR = "error"
@@ -60,6 +62,7 @@ class IntegrationStatus(Enum):
 
 class SyncDirection(Enum):
     """Data synchronization direction."""
+
     INBOUND = "inbound"
     OUTBOUND = "outbound"
     BIDIRECTIONAL = "bidirectional"
@@ -68,6 +71,7 @@ class SyncDirection(Enum):
 @dataclass
 class IntegrationConfig:
     """Integration configuration data structure."""
+
     integration_id: str
     integration_type: IntegrationType
     name: str
@@ -85,6 +89,7 @@ class IntegrationConfig:
 @dataclass
 class DataMapping:
     """Data mapping configuration."""
+
     mapping_id: str
     integration_id: str
     source_field: str
@@ -96,6 +101,7 @@ class DataMapping:
 @dataclass
 class SyncJob:
     """Data synchronization job."""
+
     job_id: str
     integration_id: str
     sync_direction: SyncDirection
@@ -121,60 +127,60 @@ class IntegrationService:
 
         # Integration configuration
         self.config = {
-            'integration_enabled': True,
-            'auto_sync_enabled': True,
-            'error_retry_enabled': True,
-            'health_monitoring_enabled': True,
-            'data_validation_enabled': True
+            "integration_enabled": True,
+            "auto_sync_enabled": True,
+            "error_retry_enabled": True,
+            "health_monitoring_enabled": True,
+            "data_validation_enabled": True,
         }
 
         # Pre-built connectors
         self.prebuilt_connectors = {
-            'salesforce': {
-                'type': IntegrationType.CRM,
-                'api_version': 'v58.0',
-                'endpoints': ['contacts', 'accounts', 'opportunities', 'leads'],
-                'auth_type': 'oauth2'
+            "salesforce": {
+                "type": IntegrationType.CRM,
+                "api_version": "v58.0",
+                "endpoints": ["contacts", "accounts", "opportunities", "leads"],
+                "auth_type": "oauth2",
             },
-            'hubspot': {
-                'type': IntegrationType.CRM,
-                'api_version': 'v3',
-                'endpoints': ['contacts', 'companies', 'deals', 'tickets'],
-                'auth_type': 'api_key'
+            "hubspot": {
+                "type": IntegrationType.CRM,
+                "api_version": "v3",
+                "endpoints": ["contacts", "companies", "deals", "tickets"],
+                "auth_type": "api_key",
             },
-            'quickbooks': {
-                'type': IntegrationType.ACCOUNTING,
-                'api_version': 'v3',
-                'endpoints': ['customers', 'invoices', 'payments', 'items'],
-                'auth_type': 'oauth2'
+            "quickbooks": {
+                "type": IntegrationType.ACCOUNTING,
+                "api_version": "v3",
+                "endpoints": ["customers", "invoices", "payments", "items"],
+                "auth_type": "oauth2",
             },
-            'xero': {
-                'type': IntegrationType.ACCOUNTING,
-                'api_version': 'v2.0',
-                'endpoints': ['contacts', 'invoices', 'payments', 'accounts'],
-                'auth_type': 'oauth2'
+            "xero": {
+                "type": IntegrationType.ACCOUNTING,
+                "api_version": "v2.0",
+                "endpoints": ["contacts", "invoices", "payments", "accounts"],
+                "auth_type": "oauth2",
             },
-            'stripe': {
-                'type': IntegrationType.PAYMENT_GATEWAY,
-                'api_version': '2023-10-16',
-                'endpoints': ['customers', 'charges', 'subscriptions', 'refunds'],
-                'auth_type': 'api_key'
+            "stripe": {
+                "type": IntegrationType.PAYMENT_GATEWAY,
+                "api_version": "2023-10-16",
+                "endpoints": ["customers", "charges", "subscriptions", "refunds"],
+                "auth_type": "api_key",
             },
-            'paypal': {
-                'type': IntegrationType.PAYMENT_GATEWAY,
-                'api_version': 'v1',
-                'endpoints': ['payments', 'orders', 'payouts', 'webhooks'],
-                'auth_type': 'oauth2'
-            }
+            "paypal": {
+                "type": IntegrationType.PAYMENT_GATEWAY,
+                "api_version": "v1",
+                "endpoints": ["payments", "orders", "payouts", "webhooks"],
+                "auth_type": "oauth2",
+            },
         }
 
         # Sync intervals (in minutes)
         self.sync_intervals = {
-            'real_time': 0,
-            'near_real_time': 5,
-            'hourly': 60,
-            'daily': 1440,
-            'weekly': 10080
+            "real_time": 0,
+            "near_real_time": 5,
+            "hourly": 60,
+            "daily": 1440,
+            "weekly": 10080,
         }
 
     async def initialize(self):
@@ -201,9 +207,15 @@ class IntegrationService:
             raise
 
     @time_operation("integration_creation")
-    async def create_integration(self, integration_type: IntegrationType, name: str,
-                                 provider: str, config_data: Dict[str, Any],
-                                 credentials: Dict[str, Any], sync_settings: Dict[str, Any]) -> Optional[IntegrationConfig]:
+    async def create_integration(
+        self,
+        integration_type: IntegrationType,
+        name: str,
+        provider: str,
+        config_data: Dict[str, Any],
+        credentials: Dict[str, Any],
+        sync_settings: Dict[str, Any],
+    ) -> Optional[IntegrationConfig]:
         """Create a new integration configuration."""
         try:
             integration_id = f"int_{uuid.uuid4().hex[:12]}"
@@ -218,7 +230,7 @@ class IntegrationService:
                 credentials=credentials,
                 sync_settings=sync_settings,
                 created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                updated_at=datetime.utcnow(),
             )
 
             # Store integration
@@ -226,7 +238,7 @@ class IntegrationService:
 
             # Test connection
             connection_test = await self._test_integration_connection(integration)
-            if connection_test['success']:
+            if connection_test["success"]:
                 integration.status = IntegrationStatus.ACTIVE
                 await self._update_integration(integration)
 
@@ -241,8 +253,13 @@ class IntegrationService:
             return None
 
     @time_operation("data_synchronization")
-    async def sync_data(self, integration_id: str, data_type: str,
-                        sync_direction: SyncDirection, data: Optional[Dict[str, Any]] = None) -> Optional[SyncJob]:
+    async def sync_data(
+        self,
+        integration_id: str,
+        data_type: str,
+        sync_direction: SyncDirection,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Optional[SyncJob]:
         """Synchronize data with an external system."""
         try:
             integration = self.integrations.get(integration_id)
@@ -261,7 +278,7 @@ class IntegrationService:
                 records_processed=0,
                 records_successful=0,
                 records_failed=0,
-                started_at=datetime.utcnow()
+                started_at=datetime.utcnow(),
             )
 
             # Store sync job
@@ -273,16 +290,17 @@ class IntegrationService:
             elif sync_direction == SyncDirection.INBOUND:
                 result = await self._sync_inbound_data(integration, data_type)
             else:  # BIDIRECTIONAL
-                result = await self._sync_bidirectional_data(integration, data_type, data)
+                result = await self._sync_bidirectional_data(
+                    integration, data_type, data
+                )
 
             # Update sync job with results
-            sync_job.records_processed = result.get('processed', 0)
-            sync_job.records_successful = result.get('successful', 0)
-            sync_job.records_failed = result.get('failed', 0)
-            sync_job.status = "completed" if result.get(
-                'success', False) else "failed"
+            sync_job.records_processed = result.get("processed", 0)
+            sync_job.records_successful = result.get("successful", 0)
+            sync_job.records_failed = result.get("failed", 0)
+            sync_job.status = "completed" if result.get("success", False) else "failed"
             sync_job.completed_at = datetime.utcnow()
-            sync_job.error_details = result.get('error', None)
+            sync_job.error_details = result.get("error", None)
 
             # Update sync job
             await self._update_sync_job(sync_job)
@@ -304,7 +322,7 @@ class IntegrationService:
         try:
             integration = self.integrations.get(integration_id)
             if not integration:
-                return {'status': 'not_found', 'error': 'Integration not found'}
+                return {"status": "not_found", "error": "Integration not found"}
 
             # Test connection
             connection_test = await self._test_integration_connection(integration)
@@ -317,11 +335,11 @@ class IntegrationService:
 
             # Determine overall health
             health_status = "healthy"
-            if not connection_test['success']:
+            if not connection_test["success"]:
                 health_status = "unhealthy"
             elif error_rate > 0.1:  # More than 10% error rate
                 health_status = "degraded"
-            elif last_sync_status.get('failed', False):
+            elif last_sync_status.get("failed", False):
                 health_status = "warning"
 
             # Update integration health status
@@ -329,21 +347,26 @@ class IntegrationService:
             await self._update_integration(integration)
 
             return {
-                'integration_id': integration_id,
-                'health_status': health_status,
-                'connection_test': connection_test,
-                'last_sync_status': last_sync_status,
-                'error_rate': error_rate,
-                'checked_at': datetime.utcnow()
+                "integration_id": integration_id,
+                "health_status": health_status,
+                "connection_test": connection_test,
+                "last_sync_status": last_sync_status,
+                "error_rate": error_rate,
+                "checked_at": datetime.utcnow(),
             }
 
         except Exception as e:
             logger.error(f"Failed to check integration health: {e}")
-            return {'status': 'error', 'error': str(e)}
+            return {"status": "error", "error": str(e)}
 
     @time_operation("data_mapping_creation")
-    async def create_data_mapping(self, integration_id: str, source_field: str,
-                                  target_field: str, transformation_rules: Dict[str, Any]) -> Optional[DataMapping]:
+    async def create_data_mapping(
+        self,
+        integration_id: str,
+        source_field: str,
+        target_field: str,
+        transformation_rules: Dict[str, Any],
+    ) -> Optional[DataMapping]:
         """Create a data mapping configuration."""
         try:
             mapping_id = f"map_{uuid.uuid4().hex[:12]}"
@@ -353,7 +376,7 @@ class IntegrationService:
                 integration_id=integration_id,
                 source_field=source_field,
                 target_field=target_field,
-                transformation_rules=transformation_rules
+                transformation_rules=transformation_rules,
             )
 
             # Store mapping
@@ -365,7 +388,9 @@ class IntegrationService:
             logger.error(f"Failed to create data mapping: {e}")
             return None
 
-    async def get_integration_dashboard_data(self, guild_id: Optional[int] = None) -> Dict[str, Any]:
+    async def get_integration_dashboard_data(
+        self, guild_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Get data for the integration dashboard."""
         try:
             # Get all integrations
@@ -384,16 +409,17 @@ class IntegrationService:
             type_distribution = {}
             for integration in integrations:
                 int_type = integration.integration_type.value
-                type_distribution[int_type] = type_distribution.get(
-                    int_type, 0) + 1
+                type_distribution[int_type] = type_distribution.get(int_type, 0) + 1
 
             return {
-                'total_integrations': len(integrations),
-                'active_integrations': len([i for i in integrations if i.status == IntegrationStatus.ACTIVE]),
-                'sync_statistics': sync_stats,
-                'health_summary': health_summary,
-                'recent_jobs': recent_jobs,
-                'type_distribution': type_distribution
+                "total_integrations": len(integrations),
+                "active_integrations": len(
+                    [i for i in integrations if i.status == IntegrationStatus.ACTIVE]
+                ),
+                "sync_statistics": sync_stats,
+                "health_summary": health_summary,
+                "recent_jobs": recent_jobs,
+                "type_distribution": type_distribution,
             }
 
         except Exception as e:
@@ -401,45 +427,52 @@ class IntegrationService:
             return {}
 
     @time_operation("bulk_data_sync")
-    async def bulk_sync_data(self, integration_id: str, data_types: List[str],
-                             sync_direction: SyncDirection) -> Dict[str, Any]:
+    async def bulk_sync_data(
+        self, integration_id: str, data_types: List[str], sync_direction: SyncDirection
+    ) -> Dict[str, Any]:
         """Perform bulk data synchronization for multiple data types."""
         try:
             results = {
-                'total_jobs': len(data_types),
-                'successful_jobs': 0,
-                'failed_jobs': 0,
-                'jobs': []
+                "total_jobs": len(data_types),
+                "successful_jobs": 0,
+                "failed_jobs": 0,
+                "jobs": [],
             }
 
             for data_type in data_types:
                 try:
-                    sync_job = await self.sync_data(integration_id, data_type, sync_direction)
+                    sync_job = await self.sync_data(
+                        integration_id, data_type, sync_direction
+                    )
                     if sync_job and sync_job.status == "completed":
-                        results['successful_jobs'] += 1
+                        results["successful_jobs"] += 1
                     else:
-                        results['failed_jobs'] += 1
+                        results["failed_jobs"] += 1
 
-                    results['jobs'].append({
-                        'data_type': data_type,
-                        'job_id': sync_job.job_id if sync_job else None,
-                        'status': sync_job.status if sync_job else 'failed'
-                    })
+                    results["jobs"].append(
+                        {
+                            "data_type": data_type,
+                            "job_id": sync_job.job_id if sync_job else None,
+                            "status": sync_job.status if sync_job else "failed",
+                        }
+                    )
 
                 except Exception as e:
-                    results['failed_jobs'] += 1
-                    results['jobs'].append({
-                        'data_type': data_type,
-                        'job_id': None,
-                        'status': 'failed',
-                        'error': str(e)
-                    })
+                    results["failed_jobs"] += 1
+                    results["jobs"].append(
+                        {
+                            "data_type": data_type,
+                            "job_id": None,
+                            "status": "failed",
+                            "error": str(e),
+                        }
+                    )
 
             return results
 
         except Exception as e:
             logger.error(f"Failed to perform bulk sync: {e}")
-            return {'total_jobs': 0, 'successful_jobs': 0, 'failed_jobs': 0, 'jobs': []}
+            return {"total_jobs": 0, "successful_jobs": 0, "failed_jobs": 0, "jobs": []}
 
     async def get_prebuilt_connectors(self) -> Dict[str, Dict[str, Any]]:
         """Get available pre-built connectors."""
@@ -471,20 +504,23 @@ class IntegrationService:
             VALUES (:integration_id, :integration_type, :name, :provider, :status, :config_data, :credentials, :sync_settings, :created_at, :updated_at, :last_sync, :health_status)
             """
 
-            await self.db_manager.execute(query, {
-                'integration_id': integration.integration_id,
-                'integration_type': integration.integration_type.value,
-                'name': integration.name,
-                'provider': integration.provider,
-                'status': integration.status.value,
-                'config_data': json.dumps(integration.config_data),
-                'credentials': json.dumps(integration.credentials),
-                'sync_settings': json.dumps(integration.sync_settings),
-                'created_at': integration.created_at,
-                'updated_at': integration.updated_at,
-                'last_sync': integration.last_sync,
-                'health_status': integration.health_status
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "integration_id": integration.integration_id,
+                    "integration_type": integration.integration_type.value,
+                    "name": integration.name,
+                    "provider": integration.provider,
+                    "status": integration.status.value,
+                    "config_data": json.dumps(integration.config_data),
+                    "credentials": json.dumps(integration.credentials),
+                    "sync_settings": json.dumps(integration.sync_settings),
+                    "created_at": integration.created_at,
+                    "updated_at": integration.updated_at,
+                    "last_sync": integration.last_sync,
+                    "health_status": integration.health_status,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store integration: {e}")
@@ -499,35 +535,42 @@ class IntegrationService:
             WHERE integration_id = :integration_id
             """
 
-            await self.db_manager.execute(query, {
-                'integration_id': integration.integration_id,
-                'status': integration.status.value,
-                'config_data': json.dumps(integration.config_data),
-                'credentials': json.dumps(integration.credentials),
-                'sync_settings': json.dumps(integration.sync_settings),
-                'updated_at': integration.updated_at,
-                'last_sync': integration.last_sync,
-                'health_status': integration.health_status
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "integration_id": integration.integration_id,
+                    "status": integration.status.value,
+                    "config_data": json.dumps(integration.config_data),
+                    "credentials": json.dumps(integration.credentials),
+                    "sync_settings": json.dumps(integration.sync_settings),
+                    "updated_at": integration.updated_at,
+                    "last_sync": integration.last_sync,
+                    "health_status": integration.health_status,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to update integration: {e}")
 
-    async def _test_integration_connection(self, integration: IntegrationConfig) -> Dict[str, Any]:
+    async def _test_integration_connection(
+        self, integration: IntegrationConfig
+    ) -> Dict[str, Any]:
         """Test connection to external system."""
         try:
             # Get connector for provider
-            connector = self.prebuilt_connectors.get(
-                integration.provider.lower())
+            connector = self.prebuilt_connectors.get(integration.provider.lower())
             if not connector:
-                return {'success': False, 'error': f'No connector available for {integration.provider}'}
+                return {
+                    "success": False,
+                    "error": f"No connector available for {integration.provider}",
+                }
 
             # Test connection based on provider
-            if integration.provider.lower() == 'salesforce':
+            if integration.provider.lower() == "salesforce":
                 return await self._test_salesforce_connection(integration)
-            elif integration.provider.lower() == 'hubspot':
+            elif integration.provider.lower() == "hubspot":
                 return await self._test_hubspot_connection(integration)
-            elif integration.provider.lower() == 'stripe':
+            elif integration.provider.lower() == "stripe":
                 return await self._test_stripe_connection(integration)
             else:
                 # Generic connection test
@@ -535,91 +578,141 @@ class IntegrationService:
 
         except Exception as e:
             logger.error(f"Failed to test integration connection: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _sync_outbound_data(self, integration: IntegrationConfig, data_type: str,
-                                  data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _sync_outbound_data(
+        self,
+        integration: IntegrationConfig,
+        data_type: str,
+        data: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """Sync data outbound to external system."""
         try:
             # Get data mapping
-            mappings = await self._get_data_mappings(integration.integration_id, data_type)
+            mappings = await self._get_data_mappings(
+                integration.integration_id, data_type
+            )
 
             # Transform data using mappings
-            transformed_data = await self._transform_data(data, mappings, 'outbound')
+            transformed_data = await self._transform_data(data, mappings, "outbound")
 
             # Send data to external system
-            if integration.provider.lower() == 'salesforce':
-                result = await self._send_to_salesforce(integration, data_type, transformed_data)
-            elif integration.provider.lower() == 'hubspot':
-                result = await self._send_to_hubspot(integration, data_type, transformed_data)
-            elif integration.provider.lower() == 'stripe':
-                result = await self._send_to_stripe(integration, data_type, transformed_data)
+            if integration.provider.lower() == "salesforce":
+                result = await self._send_to_salesforce(
+                    integration, data_type, transformed_data
+                )
+            elif integration.provider.lower() == "hubspot":
+                result = await self._send_to_hubspot(
+                    integration, data_type, transformed_data
+                )
+            elif integration.provider.lower() == "stripe":
+                result = await self._send_to_stripe(
+                    integration, data_type, transformed_data
+                )
             else:
-                result = await self._send_to_generic_system(integration, data_type, transformed_data)
+                result = await self._send_to_generic_system(
+                    integration, data_type, transformed_data
+                )
 
             return result
 
         except Exception as e:
             logger.error(f"Failed to sync outbound data: {e}")
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _sync_inbound_data(self, integration: IntegrationConfig, data_type: str) -> Dict[str, Any]:
+    async def _sync_inbound_data(
+        self, integration: IntegrationConfig, data_type: str
+    ) -> Dict[str, Any]:
         """Sync data inbound from external system."""
         try:
             # Get data from external system
-            if integration.provider.lower() == 'salesforce':
+            if integration.provider.lower() == "salesforce":
                 external_data = await self._get_from_salesforce(integration, data_type)
-            elif integration.provider.lower() == 'hubspot':
+            elif integration.provider.lower() == "hubspot":
                 external_data = await self._get_from_hubspot(integration, data_type)
-            elif integration.provider.lower() == 'stripe':
+            elif integration.provider.lower() == "stripe":
                 external_data = await self._get_from_stripe(integration, data_type)
             else:
-                external_data = await self._get_from_generic_system(integration, data_type)
+                external_data = await self._get_from_generic_system(
+                    integration, data_type
+                )
 
-            if not external_data.get('success', False):
+            if not external_data.get("success", False):
                 return external_data
 
             # Get data mappings
-            mappings = await self._get_data_mappings(integration.integration_id, data_type)
+            mappings = await self._get_data_mappings(
+                integration.integration_id, data_type
+            )
 
             # Transform data
-            transformed_data = await self._transform_data(external_data['data'], mappings, 'inbound')
+            transformed_data = await self._transform_data(
+                external_data["data"], mappings, "inbound"
+            )
 
             # Store in local database
             stored_count = await self._store_local_data(data_type, transformed_data)
 
             return {
-                'success': True,
-                'processed': len(external_data['data']),
-                'successful': stored_count,
-                'failed': len(external_data['data']) - stored_count
+                "success": True,
+                "processed": len(external_data["data"]),
+                "successful": stored_count,
+                "failed": len(external_data["data"]) - stored_count,
             }
 
         except Exception as e:
             logger.error(f"Failed to sync inbound data: {e}")
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _sync_bidirectional_data(self, integration: IntegrationConfig, data_type: str,
-                                       data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _sync_bidirectional_data(
+        self,
+        integration: IntegrationConfig,
+        data_type: str,
+        data: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """Sync data bidirectionally with external system."""
         try:
             # Sync outbound first
-            outbound_result = await self._sync_outbound_data(integration, data_type, data)
+            outbound_result = await self._sync_outbound_data(
+                integration, data_type, data
+            )
 
             # Sync inbound
             inbound_result = await self._sync_inbound_data(integration, data_type)
 
             # Combine results
             return {
-                'success': outbound_result.get('success', False) and inbound_result.get('success', False),
-                'processed': outbound_result.get('processed', 0) + inbound_result.get('processed', 0),
-                'successful': outbound_result.get('successful', 0) + inbound_result.get('successful', 0),
-                'failed': outbound_result.get('failed', 0) + inbound_result.get('failed', 0)
+                "success": outbound_result.get("success", False)
+                and inbound_result.get("success", False),
+                "processed": outbound_result.get("processed", 0)
+                + inbound_result.get("processed", 0),
+                "successful": outbound_result.get("successful", 0)
+                + inbound_result.get("successful", 0),
+                "failed": outbound_result.get("failed", 0)
+                + inbound_result.get("failed", 0),
             }
 
         except Exception as e:
             logger.error(f"Failed to sync bidirectional data: {e}")
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
     async def _store_sync_job(self, sync_job: SyncJob):
         """Store sync job in database."""
@@ -630,19 +723,22 @@ class IntegrationService:
             VALUES (:job_id, :integration_id, :sync_direction, :data_type, :status, :records_processed, :records_successful, :records_failed, :started_at, :completed_at, :error_details)
             """
 
-            await self.db_manager.execute(query, {
-                'job_id': sync_job.job_id,
-                'integration_id': sync_job.integration_id,
-                'sync_direction': sync_job.sync_direction.value,
-                'data_type': sync_job.data_type,
-                'status': sync_job.status,
-                'records_processed': sync_job.records_processed,
-                'records_successful': sync_job.records_successful,
-                'records_failed': sync_job.records_failed,
-                'started_at': sync_job.started_at,
-                'completed_at': sync_job.completed_at,
-                'error_details': sync_job.error_details
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "job_id": sync_job.job_id,
+                    "integration_id": sync_job.integration_id,
+                    "sync_direction": sync_job.sync_direction.value,
+                    "data_type": sync_job.data_type,
+                    "status": sync_job.status,
+                    "records_processed": sync_job.records_processed,
+                    "records_successful": sync_job.records_successful,
+                    "records_failed": sync_job.records_failed,
+                    "started_at": sync_job.started_at,
+                    "completed_at": sync_job.completed_at,
+                    "error_details": sync_job.error_details,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store sync job: {e}")
@@ -657,15 +753,18 @@ class IntegrationService:
             WHERE job_id = :job_id
             """
 
-            await self.db_manager.execute(query, {
-                'job_id': sync_job.job_id,
-                'status': sync_job.status,
-                'records_processed': sync_job.records_processed,
-                'records_successful': sync_job.records_successful,
-                'records_failed': sync_job.records_failed,
-                'completed_at': sync_job.completed_at,
-                'error_details': sync_job.error_details
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "job_id": sync_job.job_id,
+                    "status": sync_job.status,
+                    "records_processed": sync_job.records_processed,
+                    "records_successful": sync_job.records_successful,
+                    "records_failed": sync_job.records_failed,
+                    "completed_at": sync_job.completed_at,
+                    "error_details": sync_job.error_details,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to update sync job: {e}")
@@ -681,23 +780,25 @@ class IntegrationService:
             LIMIT 1
             """
 
-            result = await self.db_manager.fetch_one(query, {'integration_id': integration_id})
+            result = await self.db_manager.fetch_one(
+                query, {"integration_id": integration_id}
+            )
 
             if result:
                 return {
-                    'status': result['status'],
-                    'processed': result['records_processed'],
-                    'successful': result['records_successful'],
-                    'failed': result['records_failed'],
-                    'failed': result['status'] == 'failed',
-                    'error': result['error_details']
+                    "status": result["status"],
+                    "processed": result["records_processed"],
+                    "successful": result["records_successful"],
+                    "failed": result["records_failed"],
+                    "failed": result["status"] == "failed",
+                    "error": result["error_details"],
                 }
 
-            return {'status': 'unknown', 'failed': False}
+            return {"status": "unknown", "failed": False}
 
         except Exception as e:
             logger.error(f"Failed to check last sync status: {e}")
-            return {'status': 'error', 'failed': True, 'error': str(e)}
+            return {"status": "error", "failed": True, "error": str(e)}
 
     async def _calculate_error_rate(self, integration_id: str) -> float:
         """Calculate error rate for an integration."""
@@ -711,10 +812,12 @@ class IntegrationService:
             AND started_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
             """
 
-            result = await self.db_manager.fetch_one(query, {'integration_id': integration_id})
+            result = await self.db_manager.fetch_one(
+                query, {"integration_id": integration_id}
+            )
 
-            if result and result['total_jobs'] > 0:
-                return result['failed_jobs'] / result['total_jobs']
+            if result and result["total_jobs"] > 0:
+                return result["failed_jobs"] / result["total_jobs"]
 
             return 0.0
 
@@ -731,14 +834,17 @@ class IntegrationService:
             VALUES (:mapping_id, :integration_id, :source_field, :target_field, :transformation_rules, :is_active)
             """
 
-            await self.db_manager.execute(query, {
-                'mapping_id': mapping.mapping_id,
-                'integration_id': mapping.integration_id,
-                'source_field': mapping.source_field,
-                'target_field': mapping.target_field,
-                'transformation_rules': json.dumps(mapping.transformation_rules),
-                'is_active': mapping.is_active
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "mapping_id": mapping.mapping_id,
+                    "integration_id": mapping.integration_id,
+                    "source_field": mapping.source_field,
+                    "target_field": mapping.target_field,
+                    "transformation_rules": json.dumps(mapping.transformation_rules),
+                    "is_active": mapping.is_active,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store data mapping: {e}")
@@ -761,12 +867,16 @@ class IntegrationService:
 
             if result:
                 return {
-                    'total_jobs': result['total_jobs'],
-                    'successful_jobs': result['successful_jobs'],
-                    'failed_jobs': result['failed_jobs'],
-                    'success_rate': result['successful_jobs'] / result['total_jobs'] if result['total_jobs'] > 0 else 0,
-                    'total_records_processed': result['total_records_processed'] or 0,
-                    'total_records_successful': result['total_records_successful'] or 0
+                    "total_jobs": result["total_jobs"],
+                    "successful_jobs": result["successful_jobs"],
+                    "failed_jobs": result["failed_jobs"],
+                    "success_rate": (
+                        result["successful_jobs"] / result["total_jobs"]
+                        if result["total_jobs"] > 0
+                        else 0
+                    ),
+                    "total_records_processed": result["total_records_processed"] or 0,
+                    "total_records_successful": result["total_records_successful"] or 0,
                 }
 
             return {}
@@ -778,8 +888,7 @@ class IntegrationService:
     async def _get_health_summary(self) -> Dict[str, Any]:
         """Get health status summary."""
         try:
-            health_counts = {'healthy': 0, 'degraded': 0,
-                             'unhealthy': 0, 'unknown': 0}
+            health_counts = {"healthy": 0, "degraded": 0, "unhealthy": 0, "unknown": 0}
 
             for integration in self.integrations.values():
                 health_counts[integration.health_status] += 1
@@ -806,7 +915,9 @@ class IntegrationService:
             logger.error(f"Failed to get recent sync jobs: {e}")
             return []
 
-    async def _get_data_mappings(self, integration_id: str, data_type: str) -> List[DataMapping]:
+    async def _get_data_mappings(
+        self, integration_id: str, data_type: str
+    ) -> List[DataMapping]:
         """Get data mappings for an integration and data type."""
         try:
             query = """
@@ -814,14 +925,18 @@ class IntegrationService:
             WHERE integration_id = :integration_id AND is_active = TRUE
             """
 
-            results = await self.db_manager.fetch_all(query, {'integration_id': integration_id})
+            results = await self.db_manager.fetch_all(
+                query, {"integration_id": integration_id}
+            )
             return [DataMapping(**row) for row in results]
 
         except Exception as e:
             logger.error(f"Failed to get data mappings: {e}")
             return []
 
-    async def _transform_data(self, data: Any, mappings: List[DataMapping], direction: str) -> Any:
+    async def _transform_data(
+        self, data: Any, mappings: List[DataMapping], direction: str
+    ) -> Any:
         """Transform data using mappings."""
         try:
             # This would implement data transformation logic
@@ -844,114 +959,162 @@ class IntegrationService:
             return 0
 
     # Provider-specific connection test methods
-    async def _test_salesforce_connection(self, integration: IntegrationConfig) -> Dict[str, Any]:
+    async def _test_salesforce_connection(
+        self, integration: IntegrationConfig
+    ) -> Dict[str, Any]:
         """Test Salesforce connection."""
         try:
             # This would implement Salesforce connection test
-            return {'success': True, 'message': 'Salesforce connection successful'}
+            return {"success": True, "message": "Salesforce connection successful"}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _test_hubspot_connection(self, integration: IntegrationConfig) -> Dict[str, Any]:
+    async def _test_hubspot_connection(
+        self, integration: IntegrationConfig
+    ) -> Dict[str, Any]:
         """Test HubSpot connection."""
         try:
             # This would implement HubSpot connection test
-            return {'success': True, 'message': 'HubSpot connection successful'}
+            return {"success": True, "message": "HubSpot connection successful"}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _test_stripe_connection(self, integration: IntegrationConfig) -> Dict[str, Any]:
+    async def _test_stripe_connection(
+        self, integration: IntegrationConfig
+    ) -> Dict[str, Any]:
         """Test Stripe connection."""
         try:
             # This would implement Stripe connection test
-            return {'success': True, 'message': 'Stripe connection successful'}
+            return {"success": True, "message": "Stripe connection successful"}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _test_generic_connection(self, integration: IntegrationConfig) -> Dict[str, Any]:
+    async def _test_generic_connection(
+        self, integration: IntegrationConfig
+    ) -> Dict[str, Any]:
         """Test generic connection."""
         try:
             # This would implement generic connection test
-            return {'success': True, 'message': 'Generic connection successful'}
+            return {"success": True, "message": "Generic connection successful"}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     # Provider-specific data sync methods
-    async def _send_to_salesforce(self, integration: IntegrationConfig, data_type: str, data: Any) -> Dict[str, Any]:
+    async def _send_to_salesforce(
+        self, integration: IntegrationConfig, data_type: str, data: Any
+    ) -> Dict[str, Any]:
         """Send data to Salesforce."""
         try:
             # This would implement Salesforce data sending
-            return {'success': True, 'processed': 1, 'successful': 1, 'failed': 0}
+            return {"success": True, "processed": 1, "successful": 1, "failed": 0}
 
         except Exception as e:
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _send_to_hubspot(self, integration: IntegrationConfig, data_type: str, data: Any) -> Dict[str, Any]:
+    async def _send_to_hubspot(
+        self, integration: IntegrationConfig, data_type: str, data: Any
+    ) -> Dict[str, Any]:
         """Send data to HubSpot."""
         try:
             # This would implement HubSpot data sending
-            return {'success': True, 'processed': 1, 'successful': 1, 'failed': 0}
+            return {"success": True, "processed": 1, "successful": 1, "failed": 0}
 
         except Exception as e:
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _send_to_stripe(self, integration: IntegrationConfig, data_type: str, data: Any) -> Dict[str, Any]:
+    async def _send_to_stripe(
+        self, integration: IntegrationConfig, data_type: str, data: Any
+    ) -> Dict[str, Any]:
         """Send data to Stripe."""
         try:
             # This would implement Stripe data sending
-            return {'success': True, 'processed': 1, 'successful': 1, 'failed': 0}
+            return {"success": True, "processed": 1, "successful": 1, "failed": 0}
 
         except Exception as e:
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _send_to_generic_system(self, integration: IntegrationConfig, data_type: str, data: Any) -> Dict[str, Any]:
+    async def _send_to_generic_system(
+        self, integration: IntegrationConfig, data_type: str, data: Any
+    ) -> Dict[str, Any]:
         """Send data to generic system."""
         try:
             # This would implement generic data sending
-            return {'success': True, 'processed': 1, 'successful': 1, 'failed': 0}
+            return {"success": True, "processed": 1, "successful": 1, "failed": 0}
 
         except Exception as e:
-            return {'success': False, 'error': str(e), 'processed': 0, 'successful': 0, 'failed': 1}
+            return {
+                "success": False,
+                "error": str(e),
+                "processed": 0,
+                "successful": 0,
+                "failed": 1,
+            }
 
-    async def _get_from_salesforce(self, integration: IntegrationConfig, data_type: str) -> Dict[str, Any]:
+    async def _get_from_salesforce(
+        self, integration: IntegrationConfig, data_type: str
+    ) -> Dict[str, Any]:
         """Get data from Salesforce."""
         try:
             # This would implement Salesforce data retrieval
-            return {'success': True, 'data': []}
+            return {"success": True, "data": []}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _get_from_hubspot(self, integration: IntegrationConfig, data_type: str) -> Dict[str, Any]:
+    async def _get_from_hubspot(
+        self, integration: IntegrationConfig, data_type: str
+    ) -> Dict[str, Any]:
         """Get data from HubSpot."""
         try:
             # This would implement HubSpot data retrieval
-            return {'success': True, 'data': []}
+            return {"success": True, "data": []}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _get_from_stripe(self, integration: IntegrationConfig, data_type: str) -> Dict[str, Any]:
+    async def _get_from_stripe(
+        self, integration: IntegrationConfig, data_type: str
+    ) -> Dict[str, Any]:
         """Get data from Stripe."""
         try:
             # This would implement Stripe data retrieval
-            return {'success': True, 'data': []}
+            return {"success": True, "data": []}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _get_from_generic_system(self, integration: IntegrationConfig, data_type: str) -> Dict[str, Any]:
+    async def _get_from_generic_system(
+        self, integration: IntegrationConfig, data_type: str
+    ) -> Dict[str, Any]:
         """Get data from generic system."""
         try:
             # This would implement generic data retrieval
-            return {'success': True, 'data': []}
+            return {"success": True, "data": []}
 
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     async def _sync_monitoring(self):
         """Background task for sync monitoring."""
@@ -1002,25 +1165,21 @@ class IntegrationService:
             # Get integrations with scheduled syncs
             for integration in self.integrations.values():
                 if integration.status == IntegrationStatus.ACTIVE:
-                    sync_interval = integration.sync_settings.get(
-                        'interval', 'daily')
+                    sync_interval = integration.sync_settings.get("interval", "daily")
                     last_sync = integration.last_sync
 
                     if last_sync:
-                        interval_minutes = self.sync_intervals.get(
-                            sync_interval, 1440)
-                        next_sync = last_sync + \
-                            timedelta(minutes=interval_minutes)
+                        interval_minutes = self.sync_intervals.get(sync_interval, 1440)
+                        next_sync = last_sync + timedelta(minutes=interval_minutes)
 
                         if datetime.utcnow() >= next_sync:
                             # Trigger sync
-                            data_types = integration.sync_settings.get(
-                                'data_types', [])
+                            data_types = integration.sync_settings.get("data_types", [])
                             for data_type in data_types:
                                 await self.sync_data(
                                     integration.integration_id,
                                     data_type,
-                                    SyncDirection.BIDIRECTIONAL
+                                    SyncDirection.BIDIRECTIONAL,
                                 )
 
         except Exception as e:
@@ -1043,7 +1202,8 @@ class IntegrationService:
 
             for row in results:
                 logger.warning(
-                    f"Slow sync detected for integration {row['integration_id']}: {row['avg_duration']} minutes")
+                    f"Slow sync detected for integration {row['integration_id']}: {row['avg_duration']} minutes"
+                )
 
         except Exception as e:
             logger.error(f"Failed to monitor sync performance: {e}")
@@ -1064,9 +1224,9 @@ class IntegrationService:
             for row in results:
                 # Retry the sync
                 await self.sync_data(
-                    row['integration_id'],
-                    row['data_type'],
-                    SyncDirection(row['sync_direction'])
+                    row["integration_id"],
+                    row["data_type"],
+                    SyncDirection(row["sync_direction"]),
                 )
 
         except Exception as e:
@@ -1088,7 +1248,7 @@ class IntegrationService:
                 "cache_hits": stats.get("hits", 0),
                 "cache_misses": stats.get("misses", 0),
                 "cache_size": stats.get("size", 0),
-                "cache_ttl": stats.get("ttl", 0)
+                "cache_ttl": stats.get("ttl", 0),
             }
         except Exception as e:
             logger.error(f"Error getting integration cache stats: {e}")
@@ -1101,6 +1261,7 @@ class IntegrationService:
         await self.cache_manager.disconnect()
         self.integrations.clear()
         self.connectors.clear()
+
 
 # Integration service is now complete with comprehensive enterprise integration capabilities
 #

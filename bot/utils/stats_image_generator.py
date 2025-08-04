@@ -266,7 +266,9 @@ class StatsImageGenerator:
             logger.error(f"Error generating guild stats image: {str(e)}")
             return self._generate_fallback_guild_image(stats)
 
-    def _load_profile_image(self, profile_image_url: str, stats: Dict) -> Optional[Image.Image]:
+    def _load_profile_image(
+        self, profile_image_url: str, stats: Dict
+    ) -> Optional[Image.Image]:
         """Load profile image from various sources with fallbacks."""
         import os
         from io import BytesIO
@@ -290,15 +292,23 @@ class StatsImageGenerator:
                     profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
                     logger.info(f"Loaded profile image from local path: {local_path}")
                     return profile_img
-                elif profile_image_url.startswith("http://") or profile_image_url.startswith("https://"):
+                elif profile_image_url.startswith(
+                    "http://"
+                ) or profile_image_url.startswith("https://"):
                     response = requests.get(profile_image_url, timeout=10)
                     if response.status_code == 200:
-                        profile_img = Image.open(BytesIO(response.content)).convert("RGBA")
+                        profile_img = Image.open(BytesIO(response.content)).convert(
+                            "RGBA"
+                        )
                         profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
-                        logger.info(f"Loaded profile image from URL: {profile_image_url}")
+                        logger.info(
+                            f"Loaded profile image from URL: {profile_image_url}"
+                        )
                         return profile_img
             except Exception as e:
-                logger.warning(f"Failed to load profile image from {profile_image_url}: {e}")
+                logger.warning(
+                    f"Failed to load profile image from {profile_image_url}: {e}"
+                )
 
         # Fallback: Try guild default image
         if stats.get("guild_id"):
@@ -356,13 +366,29 @@ class StatsImageGenerator:
 
         if total_bets > 0:
             win_rate = (wins / total_bets) * 100
-            ax1.pie([wins, losses], labels=['Wins', 'Losses'],
-                    colors=['#00ff00', '#ff0000'], autopct='%1.1f%%')
-            ax1.set_title('Win/Loss Ratio', color='white', fontsize=14, fontweight='bold')
+            ax1.pie(
+                [wins, losses],
+                labels=["Wins", "Losses"],
+                colors=["#00ff00", "#ff0000"],
+                autopct="%1.1f%%",
+            )
+            ax1.set_title(
+                "Win/Loss Ratio", color="white", fontsize=14, fontweight="bold"
+            )
         else:
-            ax1.text(0.5, 0.5, 'No bets yet', ha='center', va='center',
-                    transform=ax1.transAxes, color='white', fontsize=12)
-            ax1.set_title('Win/Loss Ratio', color='white', fontsize=14, fontweight='bold')
+            ax1.text(
+                0.5,
+                0.5,
+                "No bets yet",
+                ha="center",
+                va="center",
+                transform=ax1.transAxes,
+                color="white",
+                fontsize=12,
+            )
+            ax1.set_title(
+                "Win/Loss Ratio", color="white", fontsize=14, fontweight="bold"
+            )
 
         # Chart 2: Monthly Performance
         monthly_stats = stats.get("monthly_stats", {})
@@ -370,39 +396,73 @@ class StatsImageGenerator:
             months = list(monthly_stats.keys())
             profits = [monthly_stats[month].get("profit", 0) for month in months]
 
-            colors = ['#00ff00' if p >= 0 else '#ff0000' for p in profits]
+            colors = ["#00ff00" if p >= 0 else "#ff0000" for p in profits]
             ax2.bar(months, profits, color=colors)
-            ax2.set_title('Monthly Performance', color='white', fontsize=14, fontweight='bold')
-            ax2.set_ylabel('Profit/Loss', color='white')
-            ax2.tick_params(colors='white')
+            ax2.set_title(
+                "Monthly Performance", color="white", fontsize=14, fontweight="bold"
+            )
+            ax2.set_ylabel("Profit/Loss", color="white")
+            ax2.tick_params(colors="white")
         else:
-            ax2.text(0.5, 0.5, 'No monthly data', ha='center', va='center',
-                    transform=ax2.transAxes, color='white', fontsize=12)
-            ax2.set_title('Monthly Performance', color='white', fontsize=14, fontweight='bold')
+            ax2.text(
+                0.5,
+                0.5,
+                "No monthly data",
+                ha="center",
+                va="center",
+                transform=ax2.transAxes,
+                color="white",
+                fontsize=12,
+            )
+            ax2.set_title(
+                "Monthly Performance", color="white", fontsize=14, fontweight="bold"
+            )
 
         # Chart 3: Bet Type Distribution
         bet_types = stats.get("bet_types", {})
         if bet_types:
             types = list(bet_types.keys())
             counts = list(bet_types.values())
-            ax3.pie(counts, labels=types, autopct='%1.1f%%')
-            ax3.set_title('Bet Type Distribution', color='white', fontsize=14, fontweight='bold')
+            ax3.pie(counts, labels=types, autopct="%1.1f%%")
+            ax3.set_title(
+                "Bet Type Distribution", color="white", fontsize=14, fontweight="bold"
+            )
         else:
-            ax3.text(0.5, 0.5, 'No bet type data', ha='center', va='center',
-                    transform=ax3.transAxes, color='white', fontsize=12)
-            ax3.set_title('Bet Type Distribution', color='white', fontsize=14, fontweight='bold')
+            ax3.text(
+                0.5,
+                0.5,
+                "No bet type data",
+                ha="center",
+                va="center",
+                transform=ax3.transAxes,
+                color="white",
+                fontsize=12,
+            )
+            ax3.set_title(
+                "Bet Type Distribution", color="white", fontsize=14, fontweight="bold"
+            )
 
         # Chart 4: Profit Trend
         profit_history = stats.get("profit_history", [])
         if profit_history:
-            ax4.plot(range(len(profit_history)), profit_history, color='#00ff00', linewidth=2)
-            ax4.set_title('Profit Trend', color='white', fontsize=14, fontweight='bold')
-            ax4.set_ylabel('Profit', color='white')
-            ax4.tick_params(colors='white')
+            ax4.plot(
+                range(len(profit_history)), profit_history, color="#00ff00", linewidth=2
+            )
+            ax4.set_title("Profit Trend", color="white", fontsize=14, fontweight="bold")
+            ax4.set_ylabel("Profit", color="white")
+            ax4.tick_params(colors="white")
         else:
-            ax4.text(0.5, 0.5, 'No trend data', ha='center', va='center',
-                    transform=ax4.transAxes, color='white', fontsize=12)
-            ax4.set_title('Profit Trend', color='white', fontsize=14, fontweight='bold')
+            ax4.text(
+                0.5,
+                0.5,
+                "No trend data",
+                ha="center",
+                va="center",
+                transform=ax4.transAxes,
+                color="white",
+                fontsize=12,
+            )
+            ax4.set_title("Profit Trend", color="white", fontsize=14, fontweight="bold")
 
     def _add_profile_image_to_figure(self, fig, profile_img: Image.Image):
         """Add profile image to the figure."""
@@ -413,7 +473,7 @@ class StatsImageGenerator:
             # Create a new axes for the profile image (top left)
             ax_profile = fig.add_axes([0.02, 0.85, 0.15, 0.15])
             ax_profile.imshow(profile_array)
-            ax_profile.axis('off')
+            ax_profile.axis("off")
 
     def _add_stats_text(self, fig, stats: Dict, username: str):
         """Add statistical text information to the figure."""
@@ -430,8 +490,14 @@ Best Month: {stats.get('best_month', 'N/A')}
         """.strip()
 
         # Add text box
-        fig.text(0.02, 0.02, stats_text, fontsize=12, color='white',
-                bbox=dict(boxstyle="round,pad=0.5", facecolor='#333333', alpha=0.8))
+        fig.text(
+            0.02,
+            0.02,
+            stats_text,
+            fontsize=12,
+            color="white",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="#333333", alpha=0.8),
+        )
 
     async def generate_capper_stats_image(
         self, stats: Dict, username: str, profile_image_url: str = None

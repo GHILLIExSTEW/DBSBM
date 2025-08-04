@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class QueryCacheConfig:
     """Configuration for query caching."""
+
     enabled: bool = True
     ttl: int = 600  # 10 minutes
     key_prefix: str = "db_query"
@@ -29,6 +30,7 @@ class QueryCacheConfig:
 @dataclass
 class QueryPerformance:
     """Query performance metrics."""
+
     query: str
     execution_time: float
     cache_hit: bool
@@ -50,6 +52,7 @@ class DatabaseQueryService:
 
     def cache_query(self, ttl: Optional[int] = None, key_prefix: Optional[str] = None):
         """Decorator for caching database query results."""
+
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -57,8 +60,7 @@ class DatabaseQueryService:
                     return await func(*args, **kwargs)
 
                 # Generate cache key
-                cache_key = self._generate_cache_key(
-                    func, args, kwargs, key_prefix)
+                cache_key = self._generate_cache_key(func, args, kwargs, key_prefix)
 
                 # Try to get from cache
                 cached_result = await self._get_cached_result(cache_key)
@@ -78,12 +80,17 @@ class DatabaseQueryService:
 
                     # Record performance
                     self._record_query_performance(
-                        func.__name__, execution_time, False, len(
-                            result) if isinstance(result, list) else 1
+                        func.__name__,
+                        execution_time,
+                        False,
+                        len(result) if isinstance(result, list) else 1,
                     )
 
                     # Log slow queries
-                    if self.config.enable_slow_query_logging and execution_time > self.config.slow_query_threshold:
+                    if (
+                        self.config.enable_slow_query_logging
+                        and execution_time > self.config.slow_query_threshold
+                    ):
                         logger.warning(
                             f"Slow query in {func.__name__}: {execution_time:.3f}s"
                         )
@@ -92,15 +99,24 @@ class DatabaseQueryService:
                 except Exception as e:
                     execution_time = time.time() - start_time
                     self._record_query_performance(
-                        func.__name__, execution_time, False, 0, success=False, error_message=str(e)
+                        func.__name__,
+                        execution_time,
+                        False,
+                        0,
+                        success=False,
+                        error_message=str(e),
                     )
                     raise
 
             return wrapper
+
         return decorator
 
-    def cache_query_with_invalidation(self, invalidation_patterns: List[str], ttl: Optional[int] = None):
+    def cache_query_with_invalidation(
+        self, invalidation_patterns: List[str], ttl: Optional[int] = None
+    ):
         """Decorator for caching queries with automatic cache invalidation."""
+
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -131,23 +147,32 @@ class DatabaseQueryService:
 
                     # Record performance
                     self._record_query_performance(
-                        func.__name__, execution_time, False, len(
-                            result) if isinstance(result, list) else 1
+                        func.__name__,
+                        execution_time,
+                        False,
+                        len(result) if isinstance(result, list) else 1,
                     )
 
                     return result
                 except Exception as e:
                     execution_time = time.time() - start_time
                     self._record_query_performance(
-                        func.__name__, execution_time, False, 0, success=False, error_message=str(e)
+                        func.__name__,
+                        execution_time,
+                        False,
+                        0,
+                        success=False,
+                        error_message=str(e),
                     )
                     raise
 
             return wrapper
+
         return decorator
 
     def monitor_query_performance(self, threshold: Optional[float] = None):
         """Decorator for monitoring query performance."""
+
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -158,8 +183,10 @@ class DatabaseQueryService:
 
                     # Record performance
                     self._record_query_performance(
-                        func.__name__, execution_time, False, len(
-                            result) if isinstance(result, list) else 1
+                        func.__name__,
+                        execution_time,
+                        False,
+                        len(result) if isinstance(result, list) else 1,
                     )
 
                     # Log slow queries
@@ -173,14 +200,22 @@ class DatabaseQueryService:
                 except Exception as e:
                     execution_time = time.time() - start_time
                     self._record_query_performance(
-                        func.__name__, execution_time, False, 0, success=False, error_message=str(e)
+                        func.__name__,
+                        execution_time,
+                        False,
+                        0,
+                        success=False,
+                        error_message=str(e),
                     )
                     raise
 
             return wrapper
+
         return decorator
 
-    def _generate_cache_key(self, func: Callable, args: Tuple, kwargs: Dict, prefix: Optional[str] = None) -> str:
+    def _generate_cache_key(
+        self, func: Callable, args: Tuple, kwargs: Dict, prefix: Optional[str] = None
+    ) -> str:
         """Generate a cache key for a function call."""
         # Create a string representation of the function call
         func_str = f"{func.__module__}.{func.__name__}"
@@ -201,7 +236,9 @@ class DatabaseQueryService:
             logger.warning(f"Error getting cached result: {e}")
             return None
 
-    async def _set_cached_result(self, cache_key: str, result: Any, ttl: Optional[int] = None) -> None:
+    async def _set_cached_result(
+        self, cache_key: str, result: Any, ttl: Optional[int] = None
+    ) -> None:
         """Set cached result in the enhanced cache manager."""
         try:
             ttl = ttl or self.config.ttl
@@ -216,11 +253,17 @@ class DatabaseQueryService:
                 await self.cache_manager.clear_prefix("database_query", pattern)
                 logger.debug(f"Invalidated cache pattern: {pattern}")
             except Exception as e:
-                logger.warning(
-                    f"Error invalidating cache pattern {pattern}: {e}")
+                logger.warning(f"Error invalidating cache pattern {pattern}: {e}")
 
-    def _record_query_performance(self, query_name: str, execution_time: float, cache_hit: bool,
-                                  rows_returned: int, success: bool = True, error_message: Optional[str] = None) -> None:
+    def _record_query_performance(
+        self,
+        query_name: str,
+        execution_time: float,
+        cache_hit: bool,
+        rows_returned: int,
+        success: bool = True,
+        error_message: Optional[str] = None,
+    ) -> None:
         """Record query performance metrics."""
         performance = QueryPerformance(
             query=query_name,
@@ -229,20 +272,27 @@ class DatabaseQueryService:
             rows_returned=rows_returned,
             timestamp=datetime.now(),
             success=success,
-            error_message=error_message
+            error_message=error_message,
         )
 
         self.query_history.append(performance)
 
         # Maintain history size
         if len(self.query_history) > self.max_history_size:
-            self.query_history = self.query_history[-self.max_history_size:]
+            self.query_history = self.query_history[-self.max_history_size :]
 
         # Record in performance monitor
-        record_query(query_name, execution_time, success=success,
-                     error_message=error_message, cache_hit=cache_hit)
+        record_query(
+            query_name,
+            execution_time,
+            success=success,
+            error_message=error_message,
+            cache_hit=cache_hit,
+        )
 
-    async def get_query_stats(self, time_window: Optional[timedelta] = None) -> Dict[str, Any]:
+    async def get_query_stats(
+        self, time_window: Optional[timedelta] = None
+    ) -> Dict[str, Any]:
         """Get query performance statistics."""
         if not self.query_history:
             return {"total_queries": 0}
@@ -251,7 +301,8 @@ class DatabaseQueryService:
         if time_window:
             cutoff_time = datetime.now() - time_window
             recent_queries = [
-                q for q in self.query_history if q.timestamp > cutoff_time]
+                q for q in self.query_history if q.timestamp > cutoff_time
+            ]
         else:
             recent_queries = self.query_history
 
@@ -263,31 +314,39 @@ class DatabaseQueryService:
         successful_queries = len([q for q in recent_queries if q.success])
         failed_queries = total_queries - successful_queries
         cache_hits = len([q for q in recent_queries if q.cache_hit])
-        cache_miss_rate = (total_queries - cache_hits) / \
-            total_queries if total_queries > 0 else 0
+        cache_miss_rate = (
+            (total_queries - cache_hits) / total_queries if total_queries > 0 else 0
+        )
 
-        execution_times = [
-            q.execution_time for q in recent_queries if q.success]
-        avg_execution_time = sum(execution_times) / \
-            len(execution_times) if execution_times else 0
+        execution_times = [q.execution_time for q in recent_queries if q.success]
+        avg_execution_time = (
+            sum(execution_times) / len(execution_times) if execution_times else 0
+        )
         max_execution_time = max(execution_times) if execution_times else 0
         min_execution_time = min(execution_times) if execution_times else 0
 
         slow_queries = len(
-            [q for q in recent_queries if q.execution_time > self.config.slow_query_threshold])
+            [
+                q
+                for q in recent_queries
+                if q.execution_time > self.config.slow_query_threshold
+            ]
+        )
 
         return {
             "total_queries": total_queries,
             "successful_queries": successful_queries,
             "failed_queries": failed_queries,
-            "success_rate": successful_queries / total_queries if total_queries > 0 else 0,
+            "success_rate": (
+                successful_queries / total_queries if total_queries > 0 else 0
+            ),
             "cache_hits": cache_hits,
             "cache_miss_rate": cache_miss_rate,
             "avg_execution_time": avg_execution_time,
             "max_execution_time": max_execution_time,
             "min_execution_time": min_execution_time,
             "slow_queries": slow_queries,
-            "slow_query_threshold": self.config.slow_query_threshold
+            "slow_query_threshold": self.config.slow_query_threshold,
         }
 
     async def get_cache_stats(self) -> Dict[str, Any]:
@@ -300,7 +359,7 @@ class DatabaseQueryService:
                 "cache_size": stats.get("size", 0),
                 "cache_ttl": stats.get("ttl", 0),
                 "query_cache_enabled": self.config.enabled,
-                "default_cache_ttl": self.config.ttl
+                "default_cache_ttl": self.config.ttl,
             }
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
@@ -317,7 +376,10 @@ class DatabaseQueryService:
     async def get_slow_queries(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get the slowest queries from history."""
         slow_queries = [
-            q for q in self.query_history if q.execution_time > self.config.slow_query_threshold]
+            q
+            for q in self.query_history
+            if q.execution_time > self.config.slow_query_threshold
+        ]
         slow_queries.sort(key=lambda x: x.execution_time, reverse=True)
 
         return [
@@ -327,7 +389,7 @@ class DatabaseQueryService:
                 "timestamp": q.timestamp.isoformat(),
                 "success": q.success,
                 "rows_returned": q.rows_returned,
-                "cache_hit": q.cache_hit
+                "cache_hit": q.cache_hit,
             }
             for q in slow_queries[:limit]
         ]
@@ -366,7 +428,9 @@ def cache_query(ttl: Optional[int] = None, key_prefix: Optional[str] = None):
     return query_service.cache_query(ttl=ttl, key_prefix=key_prefix)
 
 
-def cache_query_with_invalidation(invalidation_patterns: List[str], ttl: Optional[int] = None):
+def cache_query_with_invalidation(
+    invalidation_patterns: List[str], ttl: Optional[int] = None
+):
     """Convenience decorator for caching queries with invalidation."""
     return query_service.cache_query_with_invalidation(invalidation_patterns, ttl=ttl)
 

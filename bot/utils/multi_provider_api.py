@@ -3,7 +3,10 @@ Multi-Provider API System
 Handles different API providers for various sports including API-Sports, SportDevs, RapidAPI, etc.
 """
 
-from bot.services.api_response_cache_service import cache_api_response, cache_api_response_with_invalidation
+from bot.services.api_response_cache_service import (
+    cache_api_response,
+    cache_api_response_with_invalidation,
+)
 from bot.data.db_manager import DatabaseManager
 from bot.config.api_settings import API_KEY
 import asyncio
@@ -243,8 +246,7 @@ class MultiProviderRateLimiter:
         async with limiter["lock"]:
             now = datetime.now().timestamp()
             # Remove calls older than 1 minute
-            limiter["calls"] = [
-                call for call in limiter["calls"] if now - call < 60]
+            limiter["calls"] = [call for call in limiter["calls"] if now - call < 60]
 
             if len(limiter["calls"]) >= limiter["limit"]:
                 # Wait until we can make another call
@@ -337,8 +339,7 @@ class MultiProviderAPI:
                 url, headers=headers, params=params
             ) as response:
                 if response.status == 429:  # Rate limit exceeded
-                    logger.warning(
-                        f"Rate limit exceeded for {sport}, waiting...")
+                    logger.warning(f"Rate limit exceeded for {sport}, waiting...")
                     await asyncio.sleep(60)
                     return await self.make_request(
                         sport, endpoint, params, provider_override
@@ -450,8 +451,7 @@ class MultiProviderAPI:
     def _parse_sportdevs_leagues(self, data: Dict, sport: str) -> List[Dict]:
         """Parse SportDevs league response (for Tennis, Esports)."""
         leagues = []
-        tournaments = data if isinstance(
-            data, list) else data.get("tournaments", [])
+        tournaments = data if isinstance(data, list) else data.get("tournaments", [])
         for tournament in tournaments:
             leagues.append(
                 {
@@ -506,8 +506,7 @@ class MultiProviderAPI:
 
         # Convert to list
         leagues = list(tournaments.values())
-        logger.info(
-            f"Parsed {len(leagues)} golf tournaments from {len(events)} events")
+        logger.info(f"Parsed {len(leagues)} golf tournaments from {len(events)} events")
         return leagues
 
     def _parse_rapidapi_darts_leagues(self, data: Dict, sport: str) -> List[Dict]:
@@ -550,8 +549,7 @@ class MultiProviderAPI:
     def _parse_rapidapi_tennis_leagues(self, data: Dict, sport: str) -> List[Dict]:
         """Parse RapidAPI Tennis league response."""
         leagues = []
-        tournaments = data if isinstance(
-            data, list) else data.get("tournaments", [])
+        tournaments = data if isinstance(data, list) else data.get("tournaments", [])
         for tournament in tournaments:
             leagues.append(
                 {
@@ -572,8 +570,7 @@ class MultiProviderAPI:
     def _parse_rapidapi_esports_leagues(self, data: Dict, sport: str) -> List[Dict]:
         """Parse RapidAPI Esports league response."""
         leagues = []
-        tournaments = data if isinstance(
-            data, list) else data.get("tournaments", [])
+        tournaments = data if isinstance(data, list) else data.get("tournaments", [])
         for tournament in tournaments:
             leagues.append(
                 {
@@ -596,8 +593,7 @@ class MultiProviderAPI:
     ) -> Dict:
         """Fetch player data from FlashLive Sports API."""
         try:
-            params = {"sport_id": sport_id,
-                      "player_id": player_id, "locale": locale}
+            params = {"sport_id": sport_id, "player_id": player_id, "locale": locale}
 
             data = await self.make_request("players", "/v1/players/data", params)
             return data
@@ -739,8 +735,7 @@ class MultiProviderAPI:
                 return self._parse_rapidapi_esports_games(data, sport, league)
 
         except Exception as e:
-            logger.error(
-                f"Error fetching games for {sport}/{league['name']}: {e}")
+            logger.error(f"Error fetching games for {sport}/{league['name']}: {e}")
             return []
 
     def _parse_apisports_games(
@@ -794,8 +789,7 @@ class MultiProviderAPI:
                 if isinstance(date_group, dict) and "matches" in date_group:
                     # This is a date group with matches
                     for game in date_group["matches"]:
-                        mapped_game = self._map_rapidapi_darts_game(
-                            game, sport, league)
+                        mapped_game = self._map_rapidapi_darts_game(game, sport, league)
                         if mapped_game:
                             games.append(mapped_game)
                 else:
@@ -809,8 +803,7 @@ class MultiProviderAPI:
             # Handle dictionary response
             matches = data.get("matches", [])
             for game in matches:
-                mapped_game = self._map_rapidapi_darts_game(
-                    game, sport, league)
+                mapped_game = self._map_rapidapi_darts_game(game, sport, league)
                 if mapped_game:
                     games.append(mapped_game)
 
@@ -844,8 +837,7 @@ class MultiProviderAPI:
             # Handle dictionary response
             matches = data.get("matches", [])
             for game in matches:
-                mapped_game = self._map_rapidapi_tennis_game(
-                    game, sport, league)
+                mapped_game = self._map_rapidapi_tennis_game(game, sport, league)
                 if mapped_game:
                     games.append(mapped_game)
 
@@ -879,8 +871,7 @@ class MultiProviderAPI:
             # Handle dictionary response
             matches = data.get("matches", [])
             for game in matches:
-                mapped_game = self._map_rapidapi_esports_game(
-                    game, sport, league)
+                mapped_game = self._map_rapidapi_esports_game(game, sport, league)
                 if mapped_game:
                     games.append(mapped_game)
 
@@ -1316,8 +1307,7 @@ class MultiProviderAPI:
 
                 except Exception as e:
                     results["failed_fetches"] += 1
-                    logger.error(
-                        f"Failed to fetch data for {league['name']}: {e}")
+                    logger.error(f"Failed to fetch data for {league['name']}: {e}")
                     continue
 
         logger.info(f"Multi-provider fetch completed: {results}")
@@ -1350,11 +1340,9 @@ class MultiProviderAPI:
                     start_time = parse_datetime(game_data.get("start_time"))
                     end_time = parse_datetime(game_data.get("end_time"))
 
-                    logger.debug(
-                        f"Original start_time: {game_data.get('start_time')}")
+                    logger.debug(f"Original start_time: {game_data.get('start_time')}")
                     logger.debug(f"Parsed start_time: {start_time}")
-                    logger.debug(
-                        f"Original end_time: {game_data.get('end_time')}")
+                    logger.debug(f"Original end_time: {game_data.get('end_time')}")
                     logger.debug(f"Parsed end_time: {end_time}")
 
                     if await cur.fetchone():
@@ -1362,13 +1350,13 @@ class MultiProviderAPI:
                         await cur.execute(
                             """
                             UPDATE api_games SET
-                                sport = %s, league_id = %s, league_name = %s,
-                                home_team_id = %s, away_team_id = %s,
-                                home_team_name = %s, away_team_name = %s,
-                                start_time = %s, end_time = %s, status = %s,
-                                score = %s, venue = %s, referee = %s, season = %s,
-                                raw_json = %s, fetched_at = %s
-                            WHERE api_game_id = %s
+                                sport = $1, league_id = $2, league_name = $3,
+                                home_team_id = $4, away_team_id = $5,
+                                home_team_name = $6, away_team_name = $7,
+                                start_time = $8, end_time = $9, status = $10,
+                                score = $11, venue = $12, referee = $13, season = $14,
+                                raw_json = $15, fetched_at = $16
+                            WHERE api_game_id = $17
                         """,
                             (
                                 game_data.get("sport"),
@@ -1403,7 +1391,7 @@ class MultiProviderAPI:
                                 away_team_id, home_team_name, away_team_name, start_time,
                                 end_time, status, score, venue, referee, season,
                                 raw_json, fetched_at
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                         """,
                             (
                                 game_data["api_game_id"],

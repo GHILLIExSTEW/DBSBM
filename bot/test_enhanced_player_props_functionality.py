@@ -11,6 +11,7 @@ from pathlib import Path
 # Add the bot directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
+
 async def test_enhanced_player_props():
     """Test the enhanced player props functionality."""
     print("🧪 Testing Enhanced Player Props System...")
@@ -64,11 +65,17 @@ async def test_enhanced_player_props():
 
             # Test search functionality
             results = await player_search.search_players("LeBron", "NBA", limit=3)
-            print(f"✅ Player search test: Found {len(results)} results for 'LeBron' in NBA")
+            print(
+                f"✅ Player search test: Found {len(results)} results for 'LeBron' in NBA"
+            )
 
             # Test popular players
-            popular = await player_search.get_popular_players("NBA", "Los Angeles Lakers", limit=5)
-            print(f"✅ Popular players test: Found {len(popular)} popular Lakers players")
+            popular = await player_search.get_popular_players(
+                "NBA", "Los Angeles Lakers", limit=5
+            )
+            print(
+                f"✅ Popular players test: Found {len(popular)} popular Lakers players"
+            )
 
             await db_manager.close()
 
@@ -116,9 +123,11 @@ async def test_enhanced_player_props():
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
+
 if __name__ == "__main__":
     success = asyncio.run(test_enhanced_player_props())
-    sys.exit(0 if success else 1) 
+    sys.exit(0 if success else 1)

@@ -29,6 +29,7 @@ try:
 except ImportError:
     # Fallback - try to import from parent directory
     import sys
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Add multiple possible paths for different execution contexts
     possible_paths = [
@@ -44,6 +45,7 @@ except ImportError:
         # Final fallback - create mock function for testing
         def get_settings():
             return None
+
 
 logger = logging.getLogger(__name__)
 
@@ -147,13 +149,15 @@ class EnhancedCacheManager:
         }
 
         # Get Redis configuration
-        if self.settings and hasattr(self.settings, 'redis'):
+        if self.settings and hasattr(self.settings, "redis"):
             self._redis_host = self.settings.redis.host
             self._redis_port = self.settings.redis.port
-            self._redis_username = getattr(
-                self.settings.redis, 'username', None)
-            self._redis_password = self.settings.redis.password.get_secret_value(
-            ) if self.settings.redis.password else None
+            self._redis_username = getattr(self.settings.redis, "username", None)
+            self._redis_password = (
+                self.settings.redis.password.get_secret_value()
+                if self.settings.redis.password
+                else None
+            )
             self._redis_db = self.settings.redis.database
         else:
             # Fallback to environment variables
@@ -165,37 +169,35 @@ class EnhancedCacheManager:
 
         # Validate Redis configuration
         if not self._redis_host:
-            logger.warning(
-                "REDIS_HOST not configured, caching will be disabled")
+            logger.warning("REDIS_HOST not configured, caching will be disabled")
             self._enabled = False
         else:
             # Check if Redis is explicitly disabled via environment variable
-            redis_disabled = os.getenv(
-                "REDIS_DISABLED", "false").lower() == "true"
+            redis_disabled = os.getenv("REDIS_DISABLED", "false").lower() == "true"
             if redis_disabled:
                 logger.info(
-                    "Redis is explicitly disabled via REDIS_DISABLED environment variable")
+                    "Redis is explicitly disabled via REDIS_DISABLED environment variable"
+                )
                 self._enabled = False
             else:
                 self._enabled = True
                 logger.info(
-                    f"Enhanced cache manager initialized with Redis Cloud: {self._redis_host}:{self._redis_port}")
+                    f"Enhanced cache manager initialized with Redis Cloud: {self._redis_host}:{self._redis_port}"
+                )
                 if self._redis_username:
                     logger.info(f"Redis username: {self._redis_username}")
 
     async def connect(self) -> bool:
         """Connect to Redis Cloud server with connection pooling and authentication."""
         if not self._enabled:
-            logger.warning(
-                "Caching is disabled due to missing Redis configuration")
+            logger.warning("Caching is disabled due to missing Redis configuration")
             return False
 
         if self._is_connected:
             return True
 
         if not self._circuit_breaker.can_execute():
-            logger.warning(
-                "Circuit breaker is OPEN, skipping connection attempt")
+            logger.warning("Circuit breaker is OPEN, skipping connection attempt")
             return False
 
         # Use a shorter timeout to prevent hanging
@@ -203,30 +205,29 @@ class EnhancedCacheManager:
             try:
                 # Create connection pool with Redis Cloud configuration
                 pool_kwargs = {
-                    'host': self._redis_host,
-                    'port': self._redis_port,
-                    'db': self._redis_db,
-                    'decode_responses': False,  # Keep as bytes for pickle compatibility
-                    'socket_connect_timeout': 5,  # Reduced timeout to prevent hanging
-                    'socket_timeout': 5,  # Reduced timeout to prevent hanging
-                    'retry_on_timeout': True,
-                    'health_check_interval': 30,
-                    'max_connections': 20,
-                    'retry_on_error': [redis.ConnectionError, redis.TimeoutError],
+                    "host": self._redis_host,
+                    "port": self._redis_port,
+                    "db": self._redis_db,
+                    "decode_responses": False,  # Keep as bytes for pickle compatibility
+                    "socket_connect_timeout": 5,  # Reduced timeout to prevent hanging
+                    "socket_timeout": 5,  # Reduced timeout to prevent hanging
+                    "retry_on_timeout": True,
+                    "health_check_interval": 30,
+                    "max_connections": 20,
+                    "retry_on_error": [redis.ConnectionError, redis.TimeoutError],
                 }
 
                 # Add authentication if provided
                 if self._redis_username and self._redis_password:
-                    pool_kwargs['username'] = self._redis_username
-                    pool_kwargs['password'] = self._redis_password
+                    pool_kwargs["username"] = self._redis_username
+                    pool_kwargs["password"] = self._redis_password
                 elif self._redis_password:
-                    pool_kwargs['password'] = self._redis_password
+                    pool_kwargs["password"] = self._redis_password
 
                 self._connection_pool = ConnectionPool(**pool_kwargs)
 
                 # Create Redis client with connection pool
-                self._redis_client = redis.Redis(
-                    connection_pool=self._connection_pool)
+                self._redis_client = redis.Redis(connection_pool=self._connection_pool)
 
                 # Test connection with authentication using asyncio.wait_for to prevent hanging
                 try:
@@ -234,11 +235,11 @@ class EnhancedCacheManager:
                     self._is_connected = True
                     self._circuit_breaker.on_success()
                     logger.info(
-                        f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}")
+                        f"Successfully connected to Redis Cloud: {self._redis_host}:{self._redis_port}"
+                    )
                     return True
                 except asyncio.TimeoutError:
-                    logger.warning(
-                        f"Redis ping timeout on attempt {attempt + 1}")
+                    logger.warning(f"Redis ping timeout on attempt {attempt + 1}")
                     self._circuit_breaker.on_failure()
                     if attempt < self._connection_retries - 1:
                         await asyncio.sleep(self._retry_delay)
@@ -249,14 +250,14 @@ class EnhancedCacheManager:
                 self._circuit_breaker.on_failure()
                 break  # Don't retry authentication errors
             except Exception as e:
-                logger.warning(
-                    f"Redis connection attempt {attempt + 1} failed: {e}")
+                logger.warning(f"Redis connection attempt {attempt + 1} failed: {e}")
                 self._circuit_breaker.on_failure()
                 if attempt < self._connection_retries - 1:
                     await asyncio.sleep(self._retry_delay)
 
         logger.warning(
-            "Failed to connect to Redis Cloud after all retries - continuing with local cache only")
+            "Failed to connect to Redis Cloud after all retries - continuing with local cache only"
+        )
         self._enabled = False
         return False
 
@@ -323,8 +324,7 @@ class EnhancedCacheManager:
                     self._performance_stats["misses"] += 1
                     return None
             except Exception as e:
-                logger.warning(
-                    f"Redis cache error, falling back to local cache: {e}")
+                logger.warning(f"Redis cache error, falling back to local cache: {e}")
                 self._performance_stats["errors"] += 1
 
         # Fallback to local cache
@@ -352,7 +352,9 @@ class EnhancedCacheManager:
 
         return None
 
-    async def set(self, prefix: str, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set(
+        self, prefix: str, key: str, value: Any, ttl: Optional[int] = None
+    ) -> bool:
         """Set a value in cache with optional TTL and local fallback."""
         self._performance_stats["total_operations"] += 1
 
@@ -375,8 +377,7 @@ class EnhancedCacheManager:
 
                 return True
             except Exception as e:
-                logger.warning(
-                    f"Redis cache error, using local cache only: {e}")
+                logger.warning(f"Redis cache error, using local cache only: {e}")
                 self._performance_stats["errors"] += 1
 
         # Fallback to local cache only
@@ -421,7 +422,9 @@ class EnhancedCacheManager:
             self._performance_stats["errors"] += 1
             return [None] * len(keys)
 
-    async def mset(self, prefix: str, data: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+    async def mset(
+        self, prefix: str, data: Dict[str, Any], ttl: Optional[int] = None
+    ) -> bool:
         """Set multiple values in cache efficiently."""
         self._performance_stats["total_operations"] += 1
 
@@ -508,7 +511,8 @@ class EnhancedCacheManager:
             if keys:
                 deleted = await self._redis_client.delete(*keys)
                 logger.info(
-                    f"Cleared {deleted} cache keys with prefix: {prefix}, pattern: {pattern}")
+                    f"Cleared {deleted} cache keys with prefix: {prefix}, pattern: {pattern}"
+                )
                 return deleted
             return 0
         except Exception as e:
@@ -558,7 +562,7 @@ class EnhancedCacheManager:
                 "local_cache": {
                     "size": len(self._local_cache),
                     "ttl_entries": len(self._local_cache_ttl),
-                }
+                },
             }
 
             # Calculate Redis Cloud hit rate
@@ -566,7 +570,9 @@ class EnhancedCacheManager:
             redis_misses = info.get("keyspace_misses", 0)
             redis_total = redis_hits + redis_misses
             if redis_total > 0:
-                stats["redis_cloud_info"]["redis_hit_rate"] = f"{(redis_hits/redis_total)*100:.2f}%"
+                stats["redis_cloud_info"][
+                    "redis_hit_rate"
+                ] = f"{(redis_hits/redis_total)*100:.2f}%"
             else:
                 stats["redis_cloud_info"]["redis_hit_rate"] = "0.00%"
 
@@ -606,9 +612,9 @@ class EnhancedCacheManager:
             try:
                 # Test info command to get Redis Cloud info
                 info = await self._redis_client.info()
-                if 'redis_version' in info:
+                if "redis_version" in info:
                     logger.debug(f"Redis version: {info['redis_version']}")
-                if 'used_memory_human' in info:
+                if "used_memory_human" in info:
                     logger.debug(f"Memory usage: {info['used_memory_human']}")
             except Exception as e:
                 logger.warning(f"Could not get Redis info: {e}")
@@ -621,8 +627,7 @@ class EnhancedCacheManager:
             logger.debug("Redis Cloud health check passed")
             return True
         except redis.AuthenticationError as e:
-            logger.error(
-                f"Redis Cloud authentication failed during health check: {e}")
+            logger.error(f"Redis Cloud authentication failed during health check: {e}")
             self._is_connected = False
             self._circuit_breaker.on_failure()
             return False
@@ -642,11 +647,9 @@ class EnhancedCacheManager:
             try:
                 await func(self)
                 warmed_count += 1
-                logger.info(
-                    f"Successfully warmed cache with function: {func.__name__}")
+                logger.info(f"Successfully warmed cache with function: {func.__name__}")
             except Exception as e:
-                logger.error(
-                    f"Failed to warm cache with function {func.__name__}: {e}")
+                logger.error(f"Failed to warm cache with function {func.__name__}: {e}")
 
         return warmed_count
 
@@ -654,9 +657,10 @@ class EnhancedCacheManager:
 # Global enhanced cache manager instance - use function to avoid import-time execution
 def get_enhanced_cache_manager():
     """Get the global enhanced cache manager instance."""
-    if not hasattr(get_enhanced_cache_manager, '_instance'):
+    if not hasattr(get_enhanced_cache_manager, "_instance"):
         get_enhanced_cache_manager._instance = EnhancedCacheManager()
     return get_enhanced_cache_manager._instance
+
 
 # Convenience functions for common cache operations
 
@@ -667,7 +671,9 @@ async def enhanced_cache_get(prefix: str, key: str) -> Optional[Any]:
     return await cache_manager.get(prefix, key)
 
 
-async def enhanced_cache_set(prefix: str, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+async def enhanced_cache_set(
+    prefix: str, key: str, value: Any, ttl: Optional[int] = None
+) -> bool:
     """Set a value in enhanced cache."""
     cache_manager = get_enhanced_cache_manager()
     return await cache_manager.set(prefix, key, value, ttl)
@@ -679,7 +685,9 @@ async def enhanced_cache_mget(prefix: str, keys: List[str]) -> List[Optional[Any
     return await cache_manager.mget(prefix, keys)
 
 
-async def enhanced_cache_mset(prefix: str, data: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+async def enhanced_cache_mset(
+    prefix: str, data: Dict[str, Any], ttl: Optional[int] = None
+) -> bool:
     """Set multiple values in enhanced cache."""
     cache_manager = get_enhanced_cache_manager()
     return await cache_manager.mset(prefix, data, ttl)
@@ -711,7 +719,9 @@ def enhanced_cache_query(prefix: str = "db_query", ttl: Optional[int] = None):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Generate cache key from function name and arguments
-            cache_key = f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+            cache_key = (
+                f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+            )
 
             # Try to get from cache first
             cached_result = await enhanced_cache_get(prefix, cache_key)
@@ -724,17 +734,22 @@ def enhanced_cache_query(prefix: str = "db_query", ttl: Optional[int] = None):
             return result
 
         return wrapper
+
     return decorator
 
 
-def enhanced_cache_api_response(prefix: str = "api_response", ttl: Optional[int] = None):
+def enhanced_cache_api_response(
+    prefix: str = "api_response", ttl: Optional[int] = None
+):
     """Enhanced decorator to cache API response results."""
 
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Generate cache key from function name and arguments
-            cache_key = f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+            cache_key = (
+                f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+            )
 
             # Try to get from cache first
             cached_result = await enhanced_cache_get(prefix, cache_key)
@@ -747,6 +762,7 @@ def enhanced_cache_api_response(prefix: str = "api_response", ttl: Optional[int]
             return result
 
         return wrapper
+
     return decorator
 
 

@@ -140,8 +140,7 @@ class LeagueDiscovery:
                 url, headers=headers, params=params
             ) as response:
                 if response.status == 429:  # Rate limit exceeded
-                    logger.warning(
-                        f"Rate limit exceeded for {sport}, waiting...")
+                    logger.warning(f"Rate limit exceeded for {sport}, waiting...")
                     await asyncio.sleep(60)
                     return await self._discover_sport_leagues(sport, base_url, season)
 
@@ -177,8 +176,7 @@ class LeagueDiscovery:
             logger.error(f"API request failed for {sport}: {e}")
             return []
         except Exception as e:
-            logger.error(
-                f"Unexpected error discovering leagues for {sport}: {e}")
+            logger.error(f"Unexpected error discovering leagues for {sport}: {e}")
             return []
 
     def generate_league_ids_config(
@@ -204,8 +202,7 @@ class LeagueDiscovery:
     def _create_safe_key(self, league_name: str) -> str:
         """Create a safe key name for the league."""
         # Remove special characters and replace spaces with underscores
-        safe_name = "".join(
-            c for c in league_name if c.isalnum() or c.isspace())
+        safe_name = "".join(c for c in league_name if c.isalnum() or c.isspace())
         safe_name = safe_name.replace(" ", "").replace("&", "And")
 
         # Handle common abbreviations
@@ -327,8 +324,7 @@ async def main():
         await discoverer.update_league_config(discovered_leagues)
 
         # Print summary
-        total_leagues = sum(len(leagues)
-                            for leagues in discovered_leagues.values())
+        total_leagues = sum(len(leagues) for leagues in discovered_leagues.values())
         logger.info(
             f"Discovery complete! Found {total_leagues} leagues across {len(discovered_leagues)} sports"
         )

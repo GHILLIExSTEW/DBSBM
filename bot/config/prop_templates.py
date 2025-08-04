@@ -23,14 +23,14 @@ class PropTemplate:
 # Prop type templates for each league
 PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
     "NBA": {
-                 "points": PropTemplate(
-             label="Points",
-             placeholder="Over/Under X.X Points",
-             unit="points",
-             min_value=0.0,
-             max_value=400.0,
-             decimal_places=1,
-         ),
+        "points": PropTemplate(
+            label="Points",
+            placeholder="Over/Under X.X Points",
+            unit="points",
+            min_value=0.0,
+            max_value=400.0,
+            decimal_places=1,
+        ),
         "rebounds": PropTemplate(
             label="Rebounds",
             placeholder="Over/Under X.X Rebounds",
@@ -728,7 +728,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             placeholder="Over/Under X.X SHO",
             unit="shutouts",
             min_value=0.0,
-                max_value=2.0,
+            max_value=2.0,
             decimal_places=0,
         ),
         "saves": PropTemplate(
@@ -818,7 +818,7 @@ PROP_TEMPLATES: Dict[str, Dict[str, PropTemplate]] = {
             placeholder="Over/Under X.X PPA",
             unit="assists",
             min_value=0.0,
-                    max_value=6.0,
+            max_value=6.0,
             decimal_places=1,
         ),
         "power_play_points": PropTemplate(

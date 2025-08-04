@@ -40,26 +40,27 @@ async def test_db_connection():
         },
     ):
         # Mock the module-level imports
-        with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), \
-             patch("bot.data.db_manager.MYSQL_USER", "test_user"), \
-             patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), \
-             patch("bot.data.db_manager.MYSQL_DB", "test_db"):
-            
+        with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), patch(
+            "bot.data.db_manager.MYSQL_USER", "test_user"
+        ), patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), patch(
+            "bot.data.db_manager.MYSQL_DB", "test_db"
+        ):
+
             # Initialize database manager
             db_manager = DatabaseManager()
-            
+
             # Test connection
             try:
                 await db_manager.connect()
                 print("✅ Database connection successful")
-                
+
                 # Test a simple query
                 result = await db_manager.fetch_one("SELECT 1 as test")
                 if result:
                     print("✅ Database query successful")
                 else:
                     print("❌ Database query failed")
-                    
+
             except Exception as e:
                 print(f"❌ Database connection failed: {e}")
                 raise

@@ -1,1 +1,0 @@
-2025-07-30 22:16:28,988 [ERROR] webapp: Error connecting to MySQL: 2003 (HY000): Can't connect to MySQL server on 'localhost:3306' (10061)

@@ -514,7 +514,7 @@ async def database_recovery_strategy(
 
         try:
             # Get database manager from context or global
-            db_manager = context.get('db_manager')
+            db_manager = context.get("db_manager")
             if not db_manager:
                 logger.warning("No database manager available for recovery")
                 return False
@@ -553,21 +553,23 @@ async def api_recovery_strategy(
 
         try:
             # Implement exponential backoff
-            retry_count = context.get('retry_count', 0)
-            max_retries = context.get('max_retries', 3)
+            retry_count = context.get("retry_count", 0)
+            max_retries = context.get("max_retries", 3)
 
             if retry_count >= max_retries:
                 logger.warning(f"Max retries ({max_retries}) exceeded for API recovery")
                 return False
 
             # Calculate backoff delay
-            backoff_delay = min(2 ** retry_count, 60)  # Cap at 60 seconds
-            logger.info(f"Waiting {backoff_delay} seconds before retry {retry_count + 1}")
+            backoff_delay = min(2**retry_count, 60)  # Cap at 60 seconds
+            logger.info(
+                f"Waiting {backoff_delay} seconds before retry {retry_count + 1}"
+            )
 
             await asyncio.sleep(backoff_delay)
 
             # Update retry count in context
-            context['retry_count'] = retry_count + 1
+            context["retry_count"] = retry_count + 1
 
             logger.info(f"API recovery attempt {retry_count + 1} completed")
             return True  # Allow retry
@@ -609,9 +611,9 @@ async def memory_cleanup_strategy(
             logger.warning("High memory usage detected, clearing caches...")
 
             # Clear any caches in context
-            if 'cache_manager' in context:
-                cache_manager = context['cache_manager']
-                if hasattr(cache_manager, 'clear_all'):
+            if "cache_manager" in context:
+                cache_manager = context["cache_manager"]
+                if hasattr(cache_manager, "clear_all"):
                     await cache_manager.clear_all()
                     logger.info("Cache cleared")
 
@@ -641,8 +643,8 @@ async def connection_recovery_strategy(
             await asyncio.sleep(2)
 
             # Try to reinitialize connections
-            if 'db_manager' in context:
-                db_manager = context['db_manager']
+            if "db_manager" in context:
+                db_manager = context["db_manager"]
                 await db_manager.close()
                 await asyncio.sleep(1)
                 await db_manager.connect()

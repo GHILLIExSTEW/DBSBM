@@ -35,18 +35,20 @@ def test_missing_sports():
     ):
         # Check if RAPIDAPI_KEY is available
         rapidapi_key = os.getenv("RAPIDAPI_KEY")
-        
+
         if not rapidapi_key:
             logger.error("❌ RAPIDAPI_KEY not found in environment variables!")
             logger.error("This is required for darts, tennis, and golf APIs")
             assert False, "RAPIDAPI_KEY not found in environment variables"
-        
+
         logger.info("✅ RAPIDAPI_KEY found in environment variables")
         logger.info("This enables darts, tennis, and golf APIs")
-        
+
         # Test that the key is properly set
-        assert rapidapi_key == "test_rapidapi_key", "RAPIDAPI_KEY should be set to test value"
-        
+        assert (
+            rapidapi_key == "test_rapidapi_key"
+        ), "RAPIDAPI_KEY should be set to test value"
+
         logger.info("✅ Missing sports test completed successfully")
 
 

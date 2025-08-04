@@ -347,9 +347,7 @@ class TeamSeasonSelect(View):
 
         # Add large faded league logo as background with enhanced styling (matching league schedule)
         try:
-            league_logo_path = (
-                f"bot/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
-            )
+            league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
             if os.path.exists(league_logo_path):
                 league_logo = Image.open(league_logo_path)
                 # Resize to be large and centered
@@ -366,12 +364,24 @@ class TeamSeasonSelect(View):
 
         # Load enhanced fonts with better sizing (matching league schedule)
         try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
-            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
-            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
-            time_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 18)
+            title_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 48
+            )
+            subtitle_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 32
+            )
+            header_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
+            )
+            text_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
+            )
+            small_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 18
+            )
+            time_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 18
+            )
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
@@ -386,7 +396,7 @@ class TeamSeasonSelect(View):
         # Add logos first (top row) - matching league schedule styling
         try:
             # --- Bot Logo ---
-            ptp_logo_path = "bot/static/logos/default_image.webp"
+            ptp_logo_path = "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
             if os.path.exists(ptp_logo_path):
                 ptp_logo = Image.open(ptp_logo_path)
                 ptp_logo = ptp_logo.resize((70, 70))  # Slightly larger
@@ -407,10 +417,10 @@ class TeamSeasonSelect(View):
             # --- Guild Logo ---
             if guild:
                 guild_logo_paths = [
-                    f"bot/static/guilds/{guild.id}/default_image.webp",
-                    f"bot/static/guilds/{guild.id}/background_image.webp",
-                    f"bot/static/guilds/{guild.id}/logo.webp",
-                    f"bot/static/guilds/{guild.id}/guild_logo.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/default_image.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/background_image.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/logo.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/guild_logo.webp",
                 ]
                 guild_logo_loaded = False
                 for guild_logo_path in guild_logo_paths:
@@ -752,9 +762,11 @@ class WeekSelect(View):
 
             # Load fonts
             try:
-                header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
+                header_font = ImageFont.truetype(
+                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
+                )
                 text_font = ImageFont.truetype(
-                    "bot/assets/fonts/Roboto-Regular.ttf", 24
+                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
                 )
             except:
                 header_font = ImageFont.load_default()
@@ -784,11 +796,21 @@ class WeekSelect(View):
 
         # Load fonts with smaller sizing to fit all games
         try:
-            header_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 36)
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 24)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 18)
-            small_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 16)
-            time_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 16)
+            header_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
+            )
+            title_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 24
+            )
+            text_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 18
+            )
+            small_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 16
+            )
+            time_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 16
+            )
         except:
             header_font = ImageFont.load_default()
             title_font = ImageFont.load_default()
@@ -980,7 +1002,7 @@ class NCAAWeekSelect(View):
             # Add placeholder text
             try:
                 text_font = ImageFont.truetype(
-                    "bot/assets/fonts/Roboto-Regular.ttf", 32
+                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 32
                 )
             except:
                 text_font = ImageFont.load_default()
@@ -1036,9 +1058,15 @@ class ScheduleCog(commands.Cog):
 
         # Load enhanced fonts with better sizing
         try:
-            title_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 48)
-            subtitle_font = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
-            text_font = ImageFont.truetype("bot/assets/fonts/Roboto-Regular.ttf", 24)
+            title_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 48
+            )
+            subtitle_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 32
+            )
+            text_font = ImageFont.truetype(
+                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
+            )
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
@@ -1046,9 +1074,7 @@ class ScheduleCog(commands.Cog):
 
         # Add large faded league logo as background with enhanced styling
         try:
-            league_logo_path = (
-                f"bot/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
-            )
+            league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
             if os.path.exists(league_logo_path):
                 league_logo = Image.open(league_logo_path)
                 # Resize to be large and centered
@@ -1070,7 +1096,7 @@ class ScheduleCog(commands.Cog):
         # Add logos first (top row)
         try:
             # --- Bot Logo ---
-            ptp_logo_path = "bot/static/logos/default_image.webp"
+            ptp_logo_path = "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
             if os.path.exists(ptp_logo_path):
                 ptp_logo = Image.open(ptp_logo_path)
                 ptp_logo = ptp_logo.resize((70, 70))  # Slightly larger
@@ -1102,10 +1128,10 @@ class ScheduleCog(commands.Cog):
             # --- Guild Logo ---
             if guild:
                 guild_logo_paths = [
-                    f"bot/static/guilds/{guild.id}/default_image.webp",
-                    f"bot/static/guilds/{guild.id}/background_image.webp",
-                    f"bot/static/guilds/{guild.id}/logo.webp",
-                    f"bot/static/guilds/{guild.id}/guild_logo.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/default_image.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/background_image.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/logo.webp",
+                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/guild_logo.webp",
                 ]
                 guild_logo_loaded = False
                 for guild_logo_path in guild_logo_paths:

@@ -36,15 +36,19 @@ class EnhancedPlayerPropsCog(commands.Cog):
     @require_registered_guild()
     async def playerprops(self, interaction: discord.Interaction):
         """Enhanced player props command with search and validation."""
-        logger.debug(f"PlayerProps command invoked by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.debug(
+            f"PlayerProps command invoked by user {interaction.user.id} in guild {interaction.guild_id}"
+        )
         logger.info(f"User {interaction.user.id} started player props workflow")
-        
+
         try:
             # Check if user is in allowed channel
             from commands.betting import is_allowed_command_channel
 
             if not await is_allowed_command_channel(interaction):
-                logger.debug(f"User {interaction.user.id} not in allowed channel for player props")
+                logger.debug(
+                    f"User {interaction.user.id} not in allowed channel for player props"
+                )
                 return
 
             # Create the player props workflow view
@@ -68,7 +72,9 @@ class EnhancedPlayerPropsCog(commands.Cog):
             logger.debug("Player props workflow started successfully")
 
         except Exception as e:
-            logger.exception(f"Error in playerprops command for user {interaction.user.id}: {e}")
+            logger.exception(
+                f"Error in playerprops command for user {interaction.user.id}: {e}"
+            )
             await interaction.response.send_message(
                 f"❌ **Error:** {str(e)}", ephemeral=True
             )
@@ -87,7 +93,9 @@ class SportSelect(Select):
         )
 
     async def callback(self, interaction: Interaction):
-        logger.debug(f"PlayerProps SportSelect callback triggered by user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.debug(
+            f"PlayerProps SportSelect callback triggered by user {interaction.user.id} in guild {interaction.guild_id}"
+        )
         value = self.values[0]
         logger.debug(f"Selected sport: {value}")
         self.parent_view.bet_details["sport"] = value
@@ -116,9 +124,13 @@ class PlayerPropsWorkflowView(View):
         self._stopped = False
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
-        logger.debug(f"Starting player props workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}")
-        logger.info(f"Player props workflow initiated by user {interaction_that_triggered_workflow_start.user.id}")
-        
+        logger.debug(
+            f"Starting player props workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}"
+        )
+        logger.info(
+            f"Player props workflow initiated by user {interaction_that_triggered_workflow_start.user.id}"
+        )
+
         # Initialize bet details
         self.bet_details = {
             "user_id": interaction_that_triggered_workflow_start.user.id,
@@ -127,14 +139,18 @@ class PlayerPropsWorkflowView(View):
             "current_step": 1,
         }
         logger.debug(f"Initialized player props bet details: {self.bet_details}")
-        
+
         # Start with sport selection
-        await self._handle_step_1_sport_selection(interaction_that_triggered_workflow_start)
+        await self._handle_step_1_sport_selection(
+            interaction_that_triggered_workflow_start
+        )
 
     async def go_next(self, interaction: Interaction):
-        logger.debug(f"PlayerProps go_next called for user {interaction.user.id} in guild {interaction.guild_id}")
+        logger.debug(
+            f"PlayerProps go_next called for user {interaction.user.id} in guild {interaction.guild_id}"
+        )
         logger.debug(f"Current step: {self.current_step}")
-        
+
         try:
             if self.current_step == 1:
                 logger.debug("Handling step 1: Sport selection")
@@ -153,10 +169,16 @@ class PlayerPropsWorkflowView(View):
                 await self._handle_step_5_player_prop_modal(interaction)
             else:
                 logger.error(f"Invalid step number: {self.current_step}")
-                await interaction.response.send_message("❌ Error: Invalid workflow step.", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ Error: Invalid workflow step.", ephemeral=True
+                )
         except Exception as e:
-            logger.exception(f"Error in PlayerProps go_next for step {self.current_step}: {e}")
-            await interaction.response.send_message("❌ Error occurred during workflow step.", ephemeral=True)
+            logger.exception(
+                f"Error in PlayerProps go_next for step {self.current_step}: {e}"
+            )
+            await interaction.response.send_message(
+                "❌ Error occurred during workflow step.", ephemeral=True
+            )
 
     async def _handle_step_1_sport_selection(self, interaction: Interaction):
         """Handles the sport selection step."""
@@ -184,9 +206,7 @@ class PlayerPropsWorkflowView(View):
         logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
 
         try:
-            games = await get_normalized_games_for_dropdown(
-                self.bot.db_manager, league
-            )
+            games = await get_normalized_games_for_dropdown(self.bot.db_manager, league)
 
             if not games:
                 await self.edit_message(
@@ -372,7 +392,7 @@ class PlayerPropsWorkflowView(View):
             )
             # Always use 1 unit for preview images
             preview_units = 1.0
-            
+
             bet_slip_image_bytes = generator.generate_player_prop_bet_image(
                 player_name=player_name,
                 team_name=team_name,
@@ -413,18 +433,16 @@ class PlayerPropsWorkflowView(View):
             file_to_send = File(
                 self.preview_image_bytes, filename="player_prop_preview_units.webp"
             )
-            
+
             # Send ephemeral message with preview
             await self.original_interaction.followup.send(
                 "**Preview of your player prop bet with 1 unit:**",
                 file=file_to_send,
-                ephemeral=True
+                ephemeral=True,
             )
 
         # Update main message without file
-        await self.edit_message(
-            content=self.get_content(), view=self
-        )
+        await self.edit_message(content=self.get_content(), view=self)
 
     def stop(self):
         """Stop the workflow."""

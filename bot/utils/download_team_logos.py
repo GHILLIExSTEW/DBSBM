@@ -52,11 +52,11 @@ logging.basicConfig(
 # CSV_FILE_PATH: betting-bot/data/team_logos.csv
 CSV_FILE_PATH = os.path.join(BASE_DIR, "data", "team_logos.csv")
 
-# STATIC_DIR for saving logos: betting-bot/static/
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+# STATIC_DIR for saving logos: StaticFiles/DBSBM/static/
+STATIC_DIR = os.path.join(BASE_DIR, "../../../StaticFiles/DBSBM/static")
 SAVE_BASE_PATH = os.path.join(
     STATIC_DIR, "logos", "teams"
-)  # This will be static/logos/teams/
+)  # This will be StaticFiles/DBSBM/static/logos/teams/
 
 REQUEST_DELAY_SECONDS = 0.25
 DOWNLOAD_TIMEOUT_SECONDS = 15

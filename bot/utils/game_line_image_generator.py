@@ -17,8 +17,11 @@ def generate_player_prop_bet_image(
 
     # Load fonts
     font_regular = ImageFont.truetype(
-        "bot/assets/fonts/Roboto-Regular.ttf", 24)
-    font_bold = ImageFont.truetype("bot/assets/fonts/Roboto-Bold.ttf", 32)
+        "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
+    )
+    font_bold = ImageFont.truetype(
+        "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 32
+    )
 
     # Create a blank image
     image_width, image_height = 800, 400
@@ -26,8 +29,7 @@ def generate_player_prop_bet_image(
     draw = ImageDraw.Draw(image)
 
     # Draw team name
-    team_name_width, team_name_height = draw.textsize(
-        team_name, font=font_bold)
+    team_name_width, team_name_height = draw.textsize(team_name, font=font_bold)
     draw.text(
         ((image_width - team_name_width) / 2, 20),
         team_name,
@@ -73,13 +75,15 @@ def generate_player_prop_bet_image(
     if sport_type == "Individual Player":
         player_img = Image.open(player_picture_path).resize((100, 100))
         image.paste(player_img, (50, 100))
-        default_sport_path = f"bot/static/logos/default_{sport}.webp"
+        default_sport_path = (
+            f"../../../StaticFiles/DBSBM/static/logos/default_{sport}.webp"
+        )
         if os.path.exists(default_sport_path):
             right_img = Image.open(default_sport_path).resize((100, 100))
         else:
-            right_img = Image.open("bot/static/logos/default_image.webp").resize(
-                (100, 100)
-            )
+            right_img = Image.open(
+                "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
+            ).resize((100, 100))
         image.paste(right_img, (650, 100))
     else:
         # Team-based: show both images as before
@@ -89,8 +93,7 @@ def generate_player_prop_bet_image(
         image.paste(player_picture, (650, 100))
 
     # Draw player name
-    player_name_width, player_name_height = draw.textsize(
-        player_name, font=font_bold)
+    player_name_width, player_name_height = draw.textsize(player_name, font=font_bold)
     draw.text(
         ((image_width - player_name_width) / 2, 220),
         player_name,
@@ -105,8 +108,7 @@ def generate_player_prop_bet_image(
 
     draw.text((50, 300), line_text, font=font_regular, fill="white")
     draw.text((50, 340), units_text, font=font_regular, fill="white")
-    draw.text((image_width - 250, 340), footer_text,
-              font=font_regular, fill="white")
+    draw.text((image_width - 250, 340), footer_text, font=font_regular, fill="white")
 
     # Save the image
     if output_path:
@@ -157,24 +159,30 @@ class GameLineImageGenerator:
         risk_font_size = RISK_FONT_SIZE
         footer_font_size = FOOTER_FONT_SIZE
 
-        font_dir = "bot/assets/fonts"
+        font_dir = "../../../StaticFiles/DBSBM/assets/fonts"
         fonts = {
-            'bold': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
-            'bold_team': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", team_font_size),
-            'vs': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", vs_font_size),
-            'line': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", line_font_size),
-            'odds': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
-            'risk': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
-            'footer': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", footer_font_size)
+            "bold": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
+            "bold_team": ImageFont.truetype(
+                f"{font_dir}/Roboto-Bold.ttf", team_font_size
+            ),
+            "vs": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", vs_font_size),
+            "line": ImageFont.truetype(
+                f"{font_dir}/Roboto-Regular.ttf", line_font_size
+            ),
+            "odds": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
+            "risk": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
+            "footer": ImageFont.truetype(
+                f"{font_dir}/Roboto-Regular.ttf", footer_font_size
+            ),
         }
 
         return {
-            'image_width': image_width,
-            'image_height': image_height,
-            'bg_color': bg_color,
-            'padding': padding,
-            'logo_size': logo_size,
-            'fonts': fonts
+            "image_width": image_width,
+            "image_height": image_height,
+            "bg_color": bg_color,
+            "padding": padding,
+            "logo_size": logo_size,
+            "fonts": fonts,
         }
 
     def _find_league_logo(self, league):
@@ -223,7 +231,7 @@ class GameLineImageGenerator:
 
         # Try to find the logo file
         for logo_file in logo_file_variants:
-            logo_path = f"bot/static/logos/leagues/{sport_category}/{logo_file}"
+            logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{sport_category}/{logo_file}"
             if os.path.exists(logo_path):
                 return logo_path
 
@@ -237,16 +245,18 @@ class GameLineImageGenerator:
             try:
                 logo = Image.open(logo_path).convert("RGBA")
                 logo = logo.resize(logo_display_size, Image.Resampling.LANCZOS)
-                image.paste(logo, (params['padding'], params['padding']), logo)
-                text_x = params['padding'] + logo_display_size[0] + 10
+                image.paste(logo, (params["padding"], params["padding"]), logo)
+                text_x = params["padding"] + logo_display_size[0] + 10
             except Exception as e:
                 logger.warning(f"Failed to load logo {logo_path}: {e}")
-                text_x = params['padding']
+                text_x = params["padding"]
         else:
-            text_x = params['padding']
+            text_x = params["padding"]
 
         # Create header text with fallback
-        def create_header_text_with_fallback(league_name, font, max_width, logo_width=0):
+        def create_header_text_with_fallback(
+            league_name, font, max_width, logo_width=0
+        ):
             """Create header text with fallback for long league names."""
             text = league_name
             bbox = draw.textbbox((0, 0), text, font=font)
@@ -270,21 +280,27 @@ class GameLineImageGenerator:
 
             return text
 
-        max_text_width = params['image_width'] - text_x - params['padding']
+        max_text_width = params["image_width"] - text_x - params["padding"]
         header_text = create_header_text_with_fallback(
-            league, params['fonts']['bold'], max_text_width, logo_display_size[0]
+            league, params["fonts"]["bold"], max_text_width, logo_display_size[0]
         )
 
         # Calculate text position
-        bbox = draw.textbbox((0, 0), header_text, font=params['fonts']['bold'])
+        bbox = draw.textbbox((0, 0), header_text, font=params["fonts"]["bold"])
         text_height = bbox[3] - bbox[1]
-        text_y = params['padding'] + (logo_display_size[1] - text_height) // 2
+        text_y = params["padding"] + (logo_display_size[1] - text_height) // 2
 
         # Draw header text
-        draw.text((text_x, text_y), header_text, fill=(
-            255, 255, 255), font=params['fonts']['bold'])
+        draw.text(
+            (text_x, text_y),
+            header_text,
+            fill=(255, 255, 255),
+            font=params["fonts"]["bold"],
+        )
 
-    def _create_teams_section(self, image, draw, params, home_team, away_team, selected_team):
+    def _create_teams_section(
+        self, image, draw, params, home_team, away_team, selected_team
+    ):
         """Create the teams section with logos and names."""
         # Load team logos
         home_logo = self._load_team_logo(home_team, league)
@@ -292,11 +308,19 @@ class GameLineImageGenerator:
 
         # Draw teams section
         self.draw_teams_section(
-            image, draw, params['image_width'],
-            home_team, away_team, home_logo, away_logo, selected_team
+            image,
+            draw,
+            params["image_width"],
+            home_team,
+            away_team,
+            home_logo,
+            away_logo,
+            selected_team,
         )
 
-    def _create_bet_details_section(self, draw, params, line, odds, units, units_display_mode, display_as_risk):
+    def _create_bet_details_section(
+        self, draw, params, line, odds, units, units_display_mode, display_as_risk
+    ):
         """Create the bet details section with line, odds, and units."""
         # Calculate positions
         line_y = 200
@@ -305,44 +329,66 @@ class GameLineImageGenerator:
 
         # Draw line
         line_text = f"Line: {line}"
-        draw.text((params['padding'], line_y), line_text, fill=(
-            255, 255, 255), font=params['fonts']['line'])
+        draw.text(
+            (params["padding"], line_y),
+            line_text,
+            fill=(255, 255, 255),
+            font=params["fonts"]["line"],
+        )
 
         # Draw odds
         odds_text = f"Odds: {odds}"
-        draw.text((params['padding'], odds_y), odds_text, fill=(
-            255, 255, 255), font=params['fonts']['odds'])
+        draw.text(
+            (params["padding"], odds_y),
+            odds_text,
+            fill=(255, 255, 255),
+            font=params["fonts"]["odds"],
+        )
 
         # Draw units/risk
         if display_as_risk:
             risk_text = f"Risk: {units} units"
-            draw.text((params['padding'], units_y), risk_text, fill=(
-                255, 255, 255), font=params['fonts']['risk'])
+            draw.text(
+                (params["padding"], units_y),
+                risk_text,
+                fill=(255, 255, 255),
+                font=params["fonts"]["risk"],
+            )
         else:
             units_text = f"Units: {units}"
-            draw.text((params['padding'], units_y), units_text, fill=(
-                255, 255, 255), font=params['fonts']['line'])
+            draw.text(
+                (params["padding"], units_y),
+                units_text,
+                fill=(255, 255, 255),
+                font=params["fonts"]["line"],
+            )
 
     def _create_footer_section(self, draw, params, bet_id, timestamp):
         """Create the footer section with bet ID and timestamp."""
-        footer_y = params['image_height'] - 50
+        footer_y = params["image_height"] - 50
 
         # Draw bet ID if provided
         if bet_id:
             bet_id_text = f"Bet ID: {bet_id}"
-            draw.text((params['padding'], footer_y), bet_id_text, fill=(
-                200, 200, 200), font=params['fonts']['footer'])
+            draw.text(
+                (params["padding"], footer_y),
+                bet_id_text,
+                fill=(200, 200, 200),
+                font=params["fonts"]["footer"],
+            )
 
         # Draw timestamp
         if timestamp:
             timestamp_text = f"Created: {timestamp}"
-            bbox = draw.textbbox((0, 0), timestamp_text,
-                                 font=params['fonts']['footer'])
+            bbox = draw.textbbox((0, 0), timestamp_text, font=params["fonts"]["footer"])
             text_width = bbox[2] - bbox[0]
-            timestamp_x = params['image_width'] - \
-                text_width - params['padding']
-            draw.text((timestamp_x, footer_y), timestamp_text, fill=(
-                200, 200, 200), font=params['fonts']['footer'])
+            timestamp_x = params["image_width"] - text_width - params["padding"]
+            draw.text(
+                (timestamp_x, footer_y),
+                timestamp_text,
+                fill=(200, 200, 200),
+                font=params["fonts"]["footer"],
+            )
 
     def generate_bet_slip_image(
         self,
@@ -368,7 +414,8 @@ class GameLineImageGenerator:
 
         # Create base image
         image = Image.new(
-            "RGB", (params['image_width'], params['image_height']), params['bg_color'])
+            "RGB", (params["image_width"], params["image_height"]), params["bg_color"]
+        )
         draw = ImageDraw.Draw(image)
 
         # Find league logo
@@ -379,11 +426,13 @@ class GameLineImageGenerator:
 
         # Create teams section
         self._create_teams_section(
-            image, draw, params, home_team, away_team, selected_team)
+            image, draw, params, home_team, away_team, selected_team
+        )
 
         # Create bet details section
         self._create_bet_details_section(
-            draw, params, line, odds, units, units_display_mode, display_as_risk)
+            draw, params, line, odds, units, units_display_mode, display_as_risk
+        )
 
         # Create footer section
         self._create_footer_section(draw, params, bet_id, timestamp)
@@ -413,8 +462,7 @@ class GameLineImageGenerator:
         logo_size = (120, 120)
         text_y_offset = logo_size[1] + 8
         team_name_font_large = self.fonts["font_b_24"]
-        team_name_font_small = self.fonts.get(
-            "font_b_18", self.fonts["font_b_24"])
+        team_name_font_small = self.fonts.get("font_b_18", self.fonts["font_b_24"])
         vs_font = self.fonts["font_b_28"]
         green_color = "#00FF00"  # Bright green
         white_color = "white"
@@ -432,8 +480,7 @@ class GameLineImageGenerator:
         vs_h = bbox_vs[3] - bbox_vs[1]
         vs_x = center_x - vs_w // 2
         vs_y = y_base + logo_size[1] // 2 - vs_h // 2
-        draw.text((vs_x, vs_y), vs_text, font=vs_font,
-                  fill=vs_color, anchor="lt")
+        draw.text((vs_x, vs_y), vs_text, font=vs_font, fill=vs_color, anchor="lt")
 
         # Draw home team section
         if home_logo:
@@ -449,8 +496,7 @@ class GameLineImageGenerator:
                         home_logo_resized,
                     )
                 else:
-                    img.paste(home_logo_resized,
-                              (int(home_logo_x), int(y_base)))
+                    img.paste(home_logo_resized, (int(home_logo_x), int(y_base)))
             except Exception as e:
                 pass  # Silently handle logo errors
 
@@ -493,8 +539,7 @@ class GameLineImageGenerator:
                         away_logo_resized,
                     )
                 else:
-                    img.paste(away_logo_resized,
-                              (int(away_logo_x), int(y_base)))
+                    img.paste(away_logo_resized, (int(away_logo_x), int(y_base)))
             except Exception as e:
                 pass  # Silently handle logo errors
 
@@ -525,12 +570,13 @@ class GameLineImageGenerator:
 
         # Special handling for manual entry
         if league.upper() == "MANUAL":
-            default_logo_path = "bot/static/logos/default_image.webp"
+            default_logo_path = (
+                "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
+            )
             if os.path.exists(default_logo_path):
                 return Image.open(default_logo_path)
             else:
-                logger.warning(
-                    f"Default logo not found at {default_logo_path}")
+                logger.warning(f"Default logo not found at {default_logo_path}")
                 return None
         # Special handling for individual sports - use specific logos
         elif league.lower() in ["darts", "tennis", "golf", "f1"] or any(
@@ -548,8 +594,10 @@ class GameLineImageGenerator:
 
             # For individual sports, use [sport]_all.webp for the selected team and default_[sport].webp for opponent
             # This will be handled in the calling code based on selected_team
-            sport_all_path = f"bot/static/logos/{sport}_all.webp"
-            default_sport_path = f"bot/static/logos/default_{sport}.webp"
+            sport_all_path = f"../../../StaticFiles/DBSBM/static/logos/{sport}_all.webp"
+            default_sport_path = (
+                f"../../../StaticFiles/DBSBM/static/logos/default_{sport}.webp"
+            )
 
             if os.path.exists(sport_all_path):
                 return Image.open(sport_all_path)

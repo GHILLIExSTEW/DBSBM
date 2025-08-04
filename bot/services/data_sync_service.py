@@ -7,7 +7,12 @@ from typing import Any, Dict, List, Optional
 
 from bot.services.game_service import GameService
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
+from bot.utils.enhanced_cache_manager import (
+    enhanced_cache_get,
+    enhanced_cache_set,
+    enhanced_cache_delete,
+    get_enhanced_cache_manager,
+)
 from bot.utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
@@ -33,11 +38,11 @@ class DataSyncService:
 
         # Sync configuration
         self.config = {
-            'sync_interval': 300,  # 5 minutes
-            'max_games_per_sync': 100,
-            'retry_attempts': 3,
-            'retry_delay': 30,  # seconds
-            'batch_size': 50,
+            "sync_interval": 300,  # 5 minutes
+            "max_games_per_sync": 100,
+            "retry_attempts": 3,
+            "retry_delay": 30,  # seconds
+            "batch_size": 50,
         }
 
         logger.info("DataSyncService initialized")
@@ -71,47 +76,49 @@ class DataSyncService:
         while self._is_running:
             try:
                 await self.sync_all_data()
-                await asyncio.sleep(self.config['sync_interval'])
+                await asyncio.sleep(self.config["sync_interval"])
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error in periodic sync: {e}")
-                await asyncio.sleep(self.config['retry_delay'])
+                await asyncio.sleep(self.config["retry_delay"])
 
     async def sync_all_data(self) -> Dict[str, Any]:
         """Synchronize all data types."""
         try:
             sync_results = {
-                'games_synced': 0,
-                'teams_synced': 0,
-                'leagues_synced': 0,
-                'errors': [],
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "games_synced": 0,
+                "teams_synced": 0,
+                "leagues_synced": 0,
+                "errors": [],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             # Sync games
             try:
                 games_synced = await self.sync_games()
-                sync_results['games_synced'] = games_synced
+                sync_results["games_synced"] = games_synced
             except Exception as e:
-                sync_results['errors'].append(f"Game sync error: {e}")
+                sync_results["errors"].append(f"Game sync error: {e}")
 
             # Sync teams
             try:
                 teams_synced = await self.sync_teams()
-                sync_results['teams_synced'] = teams_synced
+                sync_results["teams_synced"] = teams_synced
             except Exception as e:
-                sync_results['errors'].append(f"Team sync error: {e}")
+                sync_results["errors"].append(f"Team sync error: {e}")
 
             # Sync leagues
             try:
                 leagues_synced = await self.sync_leagues()
-                sync_results['leagues_synced'] = leagues_synced
+                sync_results["leagues_synced"] = leagues_synced
             except Exception as e:
-                sync_results['errors'].append(f"League sync error: {e}")
+                sync_results["errors"].append(f"League sync error: {e}")
 
             # Cache sync results
-            await enhanced_cache_set("sync_status", "last_sync", sync_results, ttl=CACHE_TTLS['sync_status'])
+            await enhanced_cache_set(
+                "sync_status", "last_sync", sync_results, ttl=CACHE_TTLS["sync_status"]
+            )
 
             logger.info(f"Data sync completed: {sync_results}")
             return sync_results
@@ -132,10 +139,12 @@ class DataSyncService:
                 WHERE start_time > NOW()
                 AND start_time < DATE_ADD(NOW(), INTERVAL 72 HOUR)
                 ORDER BY start_time ASC
-                LIMIT %s
+                LIMIT $1
             """
 
-            upcoming_games = await self.db_manager.fetch_all(query, (self.config['max_games_per_sync'],))
+            upcoming_games = await self.db_manager.fetch_all(
+                query, (self.config["max_games_per_sync"],)
+            )
 
             if not upcoming_games:
                 logger.info("No upcoming games to sync")
@@ -168,10 +177,12 @@ class DataSyncService:
                 FROM api_games
                 WHERE away_team_name IS NOT NULL
                 ORDER BY team_name
-                LIMIT %s
+                LIMIT $1
             """
 
-            teams = await self.db_manager.fetch_all(query, (self.config.get('max_teams_per_sync', 100),))
+            teams = await self.db_manager.fetch_all(
+                query, (self.config.get("max_teams_per_sync", 100),)
+            )
 
             if not teams:
                 logger.info("No teams to sync")
@@ -200,10 +211,12 @@ class DataSyncService:
                 FROM api_games
                 WHERE sport IS NOT NULL AND league_id IS NOT NULL
                 ORDER BY sport, league_name
-                LIMIT %s
+                LIMIT $1
             """
 
-            leagues = await self.db_manager.fetch_all(query, (self.config.get('max_leagues_per_sync', 50),))
+            leagues = await self.db_manager.fetch_all(
+                query, (self.config.get("max_leagues_per_sync", 50),)
+            )
 
             if not leagues:
                 logger.info("No leagues to sync")
@@ -227,8 +240,7 @@ class DataSyncService:
         try:
             # Check if game already exists
             existing_game = await self.db_manager.fetch_one(
-                "SELECT id FROM api_games WHERE game_id = %s",
-                game_data.get('id')
+                "SELECT id FROM api_games WHERE game_id = %s", game_data.get("id")
             )
 
             if existing_game:
@@ -236,17 +248,17 @@ class DataSyncService:
                 await self.db_manager.execute(
                     """
                     UPDATE api_games
-                    SET home_team = %s, away_team = %s, game_time = %s,
-                        league = %s, sport = %s, status = %s, updated_at = UTC_TIMESTAMP()
-                    WHERE game_id = %s
+                    SET home_team = $1, away_team = $2, game_time = $3,
+                        league = $4, sport = $5, status = $6, updated_at = UTC_TIMESTAMP()
+                    WHERE game_id = $7
                     """,
-                    game_data.get('home_team'),
-                    game_data.get('away_team'),
-                    game_data.get('game_time'),
-                    game_data.get('league'),
-                    game_data.get('sport'),
-                    game_data.get('status'),
-                    game_data.get('id')
+                    game_data.get("home_team"),
+                    game_data.get("away_team"),
+                    game_data.get("game_time"),
+                    game_data.get("league"),
+                    game_data.get("sport"),
+                    game_data.get("status"),
+                    game_data.get("id"),
                 )
             else:
                 # Insert new game
@@ -254,15 +266,15 @@ class DataSyncService:
                     """
                     INSERT INTO api_games
                     (game_id, home_team, away_team, game_time, league, sport, status, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, UTC_TIMESTAMP(), UTC_TIMESTAMP())
                     """,
-                    game_data.get('id'),
-                    game_data.get('home_team'),
-                    game_data.get('away_team'),
-                    game_data.get('game_time'),
-                    game_data.get('league'),
-                    game_data.get('sport'),
-                    game_data.get('status')
+                    game_data.get("id"),
+                    game_data.get("home_team"),
+                    game_data.get("away_team"),
+                    game_data.get("game_time"),
+                    game_data.get("league"),
+                    game_data.get("sport"),
+                    game_data.get("status"),
                 )
 
             return True
@@ -276,8 +288,7 @@ class DataSyncService:
         try:
             # Check if team already exists
             existing_team = await self.db_manager.fetch_one(
-                "SELECT id FROM teams WHERE team_id = %s",
-                team_data.get('id')
+                "SELECT id FROM teams WHERE team_id = %s", team_data.get("id")
             )
 
             if existing_team:
@@ -285,13 +296,13 @@ class DataSyncService:
                 await self.db_manager.execute(
                     """
                     UPDATE teams
-                    SET name = %s, league = %s, sport = %s, updated_at = UTC_TIMESTAMP()
-                    WHERE team_id = %s
+                    SET name = $1, league = $2, sport = $3, updated_at = UTC_TIMESTAMP()
+                    WHERE team_id = $4
                     """,
-                    team_data.get('name'),
-                    team_data.get('league'),
-                    team_data.get('sport'),
-                    team_data.get('id')
+                    team_data.get("name"),
+                    team_data.get("league"),
+                    team_data.get("sport"),
+                    team_data.get("id"),
                 )
             else:
                 # Insert new team
@@ -299,12 +310,12 @@ class DataSyncService:
                     """
                     INSERT INTO teams
                     (team_id, name, league, sport, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, UTC_TIMESTAMP(), UTC_TIMESTAMP())
                     """,
-                    team_data.get('id'),
-                    team_data.get('name'),
-                    team_data.get('league'),
-                    team_data.get('sport')
+                    team_data.get("id"),
+                    team_data.get("name"),
+                    team_data.get("league"),
+                    team_data.get("sport"),
                 )
 
             return True
@@ -318,8 +329,7 @@ class DataSyncService:
         try:
             # Check if league already exists
             existing_league = await self.db_manager.fetch_one(
-                "SELECT id FROM leagues WHERE league_id = %s",
-                league_data.get('id')
+                "SELECT id FROM leagues WHERE league_id = %s", league_data.get("id")
             )
 
             if existing_league:
@@ -327,13 +337,13 @@ class DataSyncService:
                 await self.db_manager.execute(
                     """
                     UPDATE leagues
-                    SET name = %s, sport = %s, country = %s, updated_at = UTC_TIMESTAMP()
-                    WHERE league_id = %s
+                    SET name = $1, sport = $2, country = $3, updated_at = UTC_TIMESTAMP()
+                    WHERE league_id = $4
                     """,
-                    league_data.get('name'),
-                    league_data.get('sport'),
-                    league_data.get('country'),
-                    league_data.get('id')
+                    league_data.get("name"),
+                    league_data.get("sport"),
+                    league_data.get("country"),
+                    league_data.get("id"),
                 )
             else:
                 # Insert new league
@@ -341,12 +351,12 @@ class DataSyncService:
                     """
                     INSERT INTO leagues
                     (league_id, name, sport, country, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, UTC_TIMESTAMP(), UTC_TIMESTAMP())
                     """,
-                    league_data.get('id'),
-                    league_data.get('name'),
-                    league_data.get('sport'),
-                    league_data.get('country')
+                    league_data.get("id"),
+                    league_data.get("name"),
+                    league_data.get("sport"),
+                    league_data.get("country"),
                 )
 
             return True
@@ -363,11 +373,11 @@ class DataSyncService:
                 return cached_status
 
             return {
-                'games_synced': 0,
-                'teams_synced': 0,
-                'leagues_synced': 0,
-                'errors': [],
-                'timestamp': None
+                "games_synced": 0,
+                "teams_synced": 0,
+                "leagues_synced": 0,
+                "errors": [],
+                "timestamp": None,
             }
 
         except Exception as e:

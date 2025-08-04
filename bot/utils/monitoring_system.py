@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Metric:
     """A single metric measurement."""
+
     name: str
     value: float
     timestamp: datetime
@@ -31,6 +32,7 @@ class Metric:
 @dataclass
 class Alert:
     """An alert condition."""
+
     name: str
     condition: str
     threshold: float
@@ -48,31 +50,38 @@ class MetricsCollector:
         self.gauges = defaultdict(float)
         self.histograms = defaultdict(list)
 
-    def record_metric(self, name: str, value: float, tags: Optional[Dict[str, str]] = None, metadata: Optional[Dict[str, Any]] = None):
+    def record_metric(
+        self,
+        name: str,
+        value: float,
+        tags: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
         """Record a metric."""
         metric = Metric(
             name=name,
             value=value,
             timestamp=datetime.utcnow(),
             tags=tags or {},
-            metadata=metadata
+            metadata=metadata,
         )
         self.metrics.append(metric)
 
         # Update counters and gauges
-        if name.startswith('counter.'):
+        if name.startswith("counter."):
             self.counters[name] += int(value)
-        elif name.startswith('gauge.'):
+        elif name.startswith("gauge."):
             self.gauges[name] = value
-        elif name.startswith('histogram.'):
+        elif name.startswith("histogram."):
             self.histograms[name].append(value)
 
-    def get_metric_summary(self, name: str, window: timedelta = timedelta(hours=1)) -> Dict[str, Any]:
+    def get_metric_summary(
+        self, name: str, window: timedelta = timedelta(hours=1)
+    ) -> Dict[str, Any]:
         """Get summary statistics for a metric."""
         cutoff = datetime.utcnow() - window
         relevant_metrics = [
-            m for m in self.metrics
-            if m.name == name and m.timestamp >= cutoff
+            m for m in self.metrics if m.name == name and m.timestamp >= cutoff
         ]
 
         if not relevant_metrics:
@@ -84,7 +93,7 @@ class MetricsCollector:
             "min": min(values),
             "max": max(values),
             "avg": sum(values) / len(values),
-            "sum": sum(values)
+            "sum": sum(values),
         }
 
     def get_all_metrics(self, window: timedelta = timedelta(hours=1)) -> Dict[str, Any]:
@@ -107,7 +116,7 @@ class MetricsCollector:
                 "max": max(values),
                 "avg": sum(values) / len(values),
                 "sum": sum(values),
-                "latest": values[-1] if values else 0
+                "latest": values[-1] if values else 0,
             }
 
         return dict(summaries)
@@ -140,11 +149,14 @@ class AlertManager:
 
             # Get current metric value
             metric_summary = metrics_collector.get_metric_summary(
-                alert.condition.split('.')[1])
-            current_value = metric_summary.get('latest', 0)
+                alert.condition.split(".")[1]
+            )
+            current_value = metric_summary.get("latest", 0)
 
             # Check threshold
-            if self._evaluate_condition(current_value, alert.condition, alert.threshold):
+            if self._evaluate_condition(
+                current_value, alert.condition, alert.threshold
+            ):
                 self.last_triggered[alert_name] = time.time()
 
                 triggered_alert = {
@@ -153,7 +165,7 @@ class AlertManager:
                     "condition": alert.condition,
                     "threshold": alert.threshold,
                     "current_value": current_value,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
 
                 triggered_alerts.append(triggered_alert)
@@ -161,21 +173,24 @@ class AlertManager:
 
                 # Log alert
                 logger.warning(
-                    f"Alert triggered: {alert_name} - {alert.condition} = {current_value} (threshold: {alert.threshold})")
+                    f"Alert triggered: {alert_name} - {alert.condition} = {current_value} (threshold: {alert.threshold})"
+                )
 
         return triggered_alerts
 
-    def _evaluate_condition(self, value: float, condition: str, threshold: float) -> bool:
+    def _evaluate_condition(
+        self, value: float, condition: str, threshold: float
+    ) -> bool:
         """Evaluate an alert condition."""
-        if '>' in condition:
+        if ">" in condition:
             return value > threshold
-        elif '<' in condition:
+        elif "<" in condition:
             return value < threshold
-        elif '>=' in condition:
+        elif ">=" in condition:
             return value >= threshold
-        elif '<=' in condition:
+        elif "<=" in condition:
             return value <= threshold
-        elif '==' in condition:
+        elif "==" in condition:
             return value == threshold
         else:
             return False
@@ -188,65 +203,71 @@ class PerformanceMonitor:
         self.metrics_collector = metrics_collector
         self.start_time = time.time()
 
-    def record_api_call(self, endpoint: str, response_time: float, status_code: int, success: bool):
+    def record_api_call(
+        self, endpoint: str, response_time: float, status_code: int, success: bool
+    ):
         """Record an API call metric."""
         tags = {
             "endpoint": endpoint,
             "status_code": str(status_code),
-            "success": str(success)
+            "success": str(success),
         }
 
-        self.metrics_collector.record_metric(
-            "api.response_time", response_time, tags)
+        self.metrics_collector.record_metric("api.response_time", response_time, tags)
         self.metrics_collector.record_metric("api.calls", 1, tags)
 
         if not success:
             self.metrics_collector.record_metric("api.errors", 1, tags)
 
-    def record_database_query(self, query_type: str, response_time: float, success: bool):
+    def record_database_query(
+        self, query_type: str, response_time: float, success: bool
+    ):
         """Record a database query metric."""
-        tags = {
-            "query_type": query_type,
-            "success": str(success)
-        }
+        tags = {"query_type": query_type, "success": str(success)}
 
-        self.metrics_collector.record_metric(
-            "db.query_time", response_time, tags)
+        self.metrics_collector.record_metric("db.query_time", response_time, tags)
         self.metrics_collector.record_metric("db.queries", 1, tags)
 
         if not success:
             self.metrics_collector.record_metric("db.errors", 1, tags)
 
-    def record_cache_operation(self, operation: str, response_time: float, success: bool):
+    def record_cache_operation(
+        self, operation: str, response_time: float, success: bool
+    ):
         """Record a cache operation metric."""
-        tags = {
-            "operation": operation,
-            "success": str(success)
-        }
+        tags = {"operation": operation, "success": str(success)}
 
         self.metrics_collector.record_metric(
-            "cache.operation_time", response_time, tags)
+            "cache.operation_time", response_time, tags
+        )
         self.metrics_collector.record_metric("cache.operations", 1, tags)
 
         if not success:
             self.metrics_collector.record_metric("cache.errors", 1, tags)
 
-    def record_business_metric(self, metric_name: str, value: float, category: str = "general"):
+    def record_business_metric(
+        self, metric_name: str, value: float, category: str = "general"
+    ):
         """Record a business metric."""
         tags = {"category": category}
-        self.metrics_collector.record_metric(
-            f"business.{metric_name}", value, tags)
+        self.metrics_collector.record_metric(f"business.{metric_name}", value, tags)
 
-    def record_error(self, error_type: str, error_message: str, context: Optional[Dict[str, Any]] = None):
+    def record_error(
+        self,
+        error_type: str,
+        error_message: str,
+        context: Optional[Dict[str, Any]] = None,
+    ):
         """Record an error metric."""
         tags = {
             "error_type": error_type,
-            "context": json.dumps(context) if context else "none"
+            "context": json.dumps(context) if context else "none",
         }
 
         self.metrics_collector.record_metric("errors.count", 1, tags)
         self.metrics_collector.record_metric(
-            "errors.types", 1, {"error_type": error_type})
+            "errors.types", 1, {"error_type": error_type}
+        )
 
 
 class BusinessIntelligence:
@@ -255,7 +276,9 @@ class BusinessIntelligence:
     def __init__(self, metrics_collector: MetricsCollector):
         self.metrics_collector = metrics_collector
 
-    def get_user_activity_summary(self, window: timedelta = timedelta(days=1)) -> Dict[str, Any]:
+    def get_user_activity_summary(
+        self, window: timedelta = timedelta(days=1)
+    ) -> Dict[str, Any]:
         """Get user activity summary."""
         metrics = self.metrics_collector.get_all_metrics(window)
 
@@ -265,23 +288,31 @@ class BusinessIntelligence:
             "active_guilds": metrics.get("business.active_guilds", {}).get("latest", 0),
             "total_bets": metrics.get("business.total_bets", {}).get("sum", 0),
             "total_volume": metrics.get("business.bet_volume", {}).get("sum", 0),
-            "win_rate": metrics.get("business.win_rate", {}).get("latest", 0)
+            "win_rate": metrics.get("business.win_rate", {}).get("latest", 0),
         }
 
-    def get_performance_summary(self, window: timedelta = timedelta(hours=1)) -> Dict[str, Any]:
+    def get_performance_summary(
+        self, window: timedelta = timedelta(hours=1)
+    ) -> Dict[str, Any]:
         """Get system performance summary."""
         metrics = self.metrics_collector.get_all_metrics(window)
 
         return {
             "api_response_time_avg": metrics.get("api.response_time", {}).get("avg", 0),
-            "api_error_rate": self._calculate_error_rate("api.calls", "api.errors", metrics),
+            "api_error_rate": self._calculate_error_rate(
+                "api.calls", "api.errors", metrics
+            ),
             "db_query_time_avg": metrics.get("db.query_time", {}).get("avg", 0),
-            "db_error_rate": self._calculate_error_rate("db.queries", "db.errors", metrics),
+            "db_error_rate": self._calculate_error_rate(
+                "db.queries", "db.errors", metrics
+            ),
             "cache_hit_rate": metrics.get("cache.hit_rate", {}).get("latest", 0),
-            "error_rate": metrics.get("errors.count", {}).get("sum", 0)
+            "error_rate": metrics.get("errors.count", {}).get("sum", 0),
         }
 
-    def _calculate_error_rate(self, total_metric: str, error_metric: str, metrics: Dict[str, Any]) -> float:
+    def _calculate_error_rate(
+        self, total_metric: str, error_metric: str, metrics: Dict[str, Any]
+    ) -> float:
         """Calculate error rate from metrics."""
         total = metrics.get(total_metric, {}).get("sum", 0)
         errors = metrics.get(error_metric, {}).get("sum", 0)
@@ -299,8 +330,7 @@ class MonitoringSystem:
         self.metrics_collector = MetricsCollector()
         self.alert_manager = AlertManager()
         self.performance_monitor = PerformanceMonitor(self.metrics_collector)
-        self.business_intelligence = BusinessIntelligence(
-            self.metrics_collector)
+        self.business_intelligence = BusinessIntelligence(self.metrics_collector)
 
         # Set up default alerts
         self._setup_default_alerts()
@@ -309,13 +339,13 @@ class MonitoringSystem:
         """Set up default alert conditions."""
         default_alerts = [
             Alert("high_error_rate", "errors.count", 10, "critical"),
-            Alert("slow_api_response", "api.response_time",
-                  2000, "warning"),  # 2 seconds
-            Alert("slow_db_queries", "db.query_time",
-                  1000, "warning"),  # 1 second
+            Alert(
+                "slow_api_response", "api.response_time", 2000, "warning"
+            ),  # 2 seconds
+            Alert("slow_db_queries", "db.query_time", 1000, "warning"),  # 1 second
             Alert("low_cache_hit_rate", "cache.hit_rate", 80, "warning"),  # 80%
             Alert("high_memory_usage", "system.memory_usage", 90, "critical"),
-            Alert("high_disk_usage", "system.disk_usage", 90, "critical")
+            Alert("high_disk_usage", "system.disk_usage", 90, "critical"),
         ]
 
         for alert in default_alerts:
@@ -328,29 +358,30 @@ class MonitoringSystem:
 
             # Memory metrics
             memory = psutil.virtual_memory()
+            self.metrics_collector.record_metric("system.memory_usage", memory.percent)
             self.metrics_collector.record_metric(
-                "system.memory_usage", memory.percent)
-            self.metrics_collector.record_metric(
-                "system.memory_available", memory.available / (1024**3))
+                "system.memory_available", memory.available / (1024**3)
+            )
 
             # Disk metrics
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
+            self.metrics_collector.record_metric("system.disk_usage", disk.percent)
             self.metrics_collector.record_metric(
-                "system.disk_usage", disk.percent)
-            self.metrics_collector.record_metric(
-                "system.disk_free", disk.free / (1024**3))
+                "system.disk_free", disk.free / (1024**3)
+            )
 
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
-            self.metrics_collector.record_metric(
-                "system.cpu_usage", cpu_percent)
+            self.metrics_collector.record_metric("system.cpu_usage", cpu_percent)
 
             # Process metrics
             process = psutil.Process()
             self.metrics_collector.record_metric(
-                "system.process_memory", process.memory_info().rss / (1024**2))
+                "system.process_memory", process.memory_info().rss / (1024**2)
+            )
             self.metrics_collector.record_metric(
-                "system.process_cpu", process.cpu_percent())
+                "system.process_cpu", process.cpu_percent()
+            )
 
         except Exception as e:
             logger.error(f"Error recording system metrics: {e}")
@@ -371,8 +402,7 @@ class MonitoringSystem:
         active_alerts = self.check_alerts()
 
         # Get system metrics
-        system_metrics = self.metrics_collector.get_all_metrics(
-            timedelta(minutes=5))
+        system_metrics = self.metrics_collector.get_all_metrics(timedelta(minutes=5))
 
         return {
             "timestamp": datetime.utcnow().isoformat(),
@@ -380,7 +410,7 @@ class MonitoringSystem:
             "business": business,
             "alerts": active_alerts,
             "system_metrics": system_metrics,
-            "overall_status": "healthy" if not active_alerts else "degraded"
+            "overall_status": "healthy" if not active_alerts else "degraded",
         }
 
     async def start_monitoring_loop(self, interval: int = 60):
@@ -401,9 +431,11 @@ class MonitoringSystem:
                 health_report = self.get_health_report()
 
                 # Log summary
-                logger.info(f"Monitoring summary: {health_report['overall_status']} - "
-                            f"API avg: {health_report['performance']['api_response_time_avg']:.2f}ms, "
-                            f"Errors: {health_report['performance']['error_rate']}")
+                logger.info(
+                    f"Monitoring summary: {health_report['overall_status']} - "
+                    f"API avg: {health_report['performance']['api_response_time_avg']:.2f}ms, "
+                    f"Errors: {health_report['performance']['error_rate']}"
+                )
 
                 await asyncio.sleep(interval)
 
@@ -421,31 +453,40 @@ def get_monitoring_system() -> MonitoringSystem:
     return monitoring_system
 
 
-def record_api_call(endpoint: str, response_time: float, status_code: int, success: bool):
+def record_api_call(
+    endpoint: str, response_time: float, status_code: int, success: bool
+):
     """Record an API call metric."""
     monitoring_system.performance_monitor.record_api_call(
-        endpoint, response_time, status_code, success)
+        endpoint, response_time, status_code, success
+    )
 
 
 def record_database_query(query_type: str, response_time: float, success: bool):
     """Record a database query metric."""
     monitoring_system.performance_monitor.record_database_query(
-        query_type, response_time, success)
+        query_type, response_time, success
+    )
 
 
 def record_cache_operation(operation: str, response_time: float, success: bool):
     """Record a cache operation metric."""
     monitoring_system.performance_monitor.record_cache_operation(
-        operation, response_time, success)
+        operation, response_time, success
+    )
 
 
 def record_business_metric(metric_name: str, value: float, category: str = "general"):
     """Record a business metric."""
     monitoring_system.performance_monitor.record_business_metric(
-        metric_name, value, category)
+        metric_name, value, category
+    )
 
 
-def record_error(error_type: str, error_message: str, context: Optional[Dict[str, Any]] = None):
+def record_error(
+    error_type: str, error_message: str, context: Optional[Dict[str, Any]] = None
+):
     """Record an error metric."""
     monitoring_system.performance_monitor.record_error(
-        error_type, error_message, context)
+        error_type, error_message, context
+    )

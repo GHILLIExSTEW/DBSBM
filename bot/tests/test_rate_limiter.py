@@ -115,8 +115,7 @@ class TestRateLimiter:
         old_time = time.time() - 120
         for action in ["bet_placement", "stats_query"]:
             rate_limiter.user_requests[(user_id, action)].appendleft(
-                RateLimitEntry(timestamp=old_time,
-                               user_id=user_id, action=action)
+                RateLimitEntry(timestamp=old_time, user_id=user_id, action=action)
             )
 
         # Clean up all old entries
@@ -124,8 +123,7 @@ class TestRateLimiter:
 
         # Should only have recent entries
         for action in ["bet_placement", "stats_query"]:
-            current_requests = len(
-                rate_limiter.user_requests[(user_id, action)])
+            current_requests = len(rate_limiter.user_requests[(user_id, action)])
             assert current_requests == 3
 
     def test_get_user_stats(self, rate_limiter):
@@ -189,9 +187,7 @@ class TestRateLimiter:
 
         # Should be able to make requests again
         for action in ["bet_placement", "stats_query"]:
-            is_allowed = asyncio.run(
-                rate_limiter.is_allowed(user_id, action)
-            )
+            is_allowed = asyncio.run(rate_limiter.is_allowed(user_id, action))
             assert is_allowed is True
 
 
@@ -231,8 +227,7 @@ class TestRateLimitDecorator:
         result = await test_func(mock_interaction)
 
         assert result == "success"
-        mock_rate_limiter.is_allowed.assert_called_once_with(
-            123456789, "test_action")
+        mock_rate_limiter.is_allowed.assert_called_once_with(123456789, "test_action")
 
     @pytest.mark.asyncio
     async def test_decorator_blocks_request(self, decorator, mock_rate_limiter):
@@ -254,8 +249,7 @@ class TestRateLimitDecorator:
             await test_func(mock_interaction)
 
         assert "Rate limit exceeded" in str(exc_info.value)
-        mock_rate_limiter.is_allowed.assert_called_once_with(
-            123456789, "test_action")
+        mock_rate_limiter.is_allowed.assert_called_once_with(123456789, "test_action")
 
     @pytest.mark.asyncio
     async def test_decorator_no_user_id(self, decorator, mock_rate_limiter):
@@ -307,8 +301,7 @@ class TestGlobalRateLimiter:
             result = await test_func(mock_interaction)
 
             assert result == "success"
-            mock_limiter.is_allowed.assert_called_once_with(
-                123456789, "test_action")
+            mock_limiter.is_allowed.assert_called_once_with(123456789, "test_action")
 
 
 class TestRateLimitExceededError:

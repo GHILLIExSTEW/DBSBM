@@ -20,6 +20,7 @@ except ImportError:
     # Fallback - try to import from parent directory
     import sys
     import os
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Add multiple possible paths for different execution contexts
     possible_paths = [
@@ -40,7 +41,12 @@ except ImportError:
             return []
 
         def get_logging_config():
-            return {"level": "INFO", "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s", "file": None}
+            return {
+                "level": "INFO",
+                "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+                "file": None,
+            }
+
 
 # Try to import with bot prefix first, then without
 try:
@@ -75,16 +81,18 @@ except ImportError:
 # Use new centralized logging configuration
 try:
     from bot.utils.logging_config import auto_configure_logging
+
     auto_configure_logging()
 except ImportError:
     try:
         from utils.logging_config import auto_configure_logging
+
         auto_configure_logging()
     except ImportError:
         # Fallback to basic logging setup with DEBUG level for more verbose output
         logging.basicConfig(
             level=logging.DEBUG,
-            format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         )
 
 # Set Discord library to DEBUG level for more connection details
@@ -102,7 +110,9 @@ logger.setLevel(logging.DEBUG)
 # Database and system integration services can be very verbose
 logging.getLogger("bot.data.db_manager").setLevel(logging.INFO)
 logging.getLogger("bot.services.system_integration_service").setLevel(logging.INFO)
-logging.getLogger("bot.services.experimental_systems_integration").setLevel(logging.INFO)
+logging.getLogger("bot.services.experimental_systems_integration").setLevel(
+    logging.INFO
+)
 logging.getLogger("bot.services.integration_service").setLevel(logging.INFO)
 logging.getLogger("bot.utils.enhanced_cache_manager").setLevel(logging.INFO)
 
@@ -112,7 +122,7 @@ root_logger = logging.getLogger()
 if not root_logger.handlers:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
@@ -129,8 +139,7 @@ else:
         load_dotenv(dotenv_path=PARENT_DOTENV_PATH)
         print(f"Loaded environment variables from: {PARENT_DOTENV_PATH}")
     else:
-        print(
-            f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
+        print(f"WARNING: .env file not found at {DOTENV_PATH} or {PARENT_DOTENV_PATH}")
 
 # Validate configuration
 try:
@@ -138,7 +147,8 @@ try:
     if validation_errors:
         logger.warning(f"Configuration validation errors: {validation_errors}")
         logger.warning(
-            "Some features may not work correctly without proper configuration")
+            "Some features may not work correctly without proper configuration"
+        )
     else:
         logger.info("Configuration validation passed")
 except Exception as e:
@@ -181,10 +191,10 @@ except ImportError:
 REQUIRED_ENV_VARS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "API_KEY": os.getenv("API_KEY"),
-    "MYSQL_HOST": os.getenv("MYSQL_HOST"),
-    "MYSQL_USER": os.getenv("MYSQL_USER"),
-    "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
-    "MYSQL_DB": os.getenv("MYSQL_DB"),
+    "POSTGRES_HOST": os.getenv("POSTGRES_HOST"),
+    "POSTGRES_USER": os.getenv("POSTGRES_USER"),
+    "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+    "POSTGRES_DB": os.getenv("POSTGRES_DB"),
     "TEST_GUILD_ID": os.getenv("TEST_GUILD_ID"),
 }
 
@@ -195,17 +205,14 @@ try:
         from utils.environment_validator import validate_environment
 
     if not validate_environment():
-        logger.critical(
-            "Environment validation failed. Please check your .env file.")
+        logger.critical("Environment validation failed. Please check your .env file.")
         sys.exit("Environment validation failed")
 except ImportError:
     # Fallback to basic validation if environment validator is not available
-    missing_vars = [key for key,
-                    value in REQUIRED_ENV_VARS.items() if not value]
+    missing_vars = [key for key, value in REQUIRED_ENV_VARS.items() if not value]
     if missing_vars:
         logger.critical(
-            "Missing required environment variables: %s", ", ".join(
-                missing_vars)
+            "Missing required environment variables: %s", ", ".join(missing_vars)
         )
         sys.exit("Missing required environment variables")
 
@@ -215,14 +222,11 @@ TEST_GUILD_ID = (
     if REQUIRED_ENV_VARS["TEST_GUILD_ID"]
     else None
 )
-logger.info(
-    f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
+logger.info(f"Loaded TEST_GUILD_ID: {TEST_GUILD_ID} (type: {type(TEST_GUILD_ID)})")
 
 # --- Path for the logo download script and flag file ---
-LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(
-    BASE_DIR, "utils", "download_team_logos.py")
-LOGO_DOWNLOAD_FLAG_FILE = os.path.join(
-    BASE_DIR, "data", ".logos_downloaded_flag")
+LOGO_DOWNLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, "utils", "download_team_logos.py")
+LOGO_DOWNLOAD_FLAG_FILE = os.path.join(BASE_DIR, "data", ".logos_downloaded_flag")
 
 
 async def run_one_time_logo_download():
@@ -238,8 +242,7 @@ async def run_one_time_logo_download():
             return
 
         try:
-            logger.info("Executing %s to download logos...",
-                        LOGO_DOWNLOAD_SCRIPT_PATH)
+            logger.info("Executing %s to download logos...", LOGO_DOWNLOAD_SCRIPT_PATH)
             process = await asyncio.create_subprocess_exec(
                 sys.executable,
                 LOGO_DOWNLOAD_SCRIPT_PATH,
@@ -252,13 +255,11 @@ async def run_one_time_logo_download():
             if stdout:
                 logger.info("Logo Script STDOUT:\n%s", stdout.decode().strip())
             if stderr:
-                logger.warning("Logo Script STDERR:\n%s",
-                               stderr.decode().strip())
+                logger.warning("Logo Script STDERR:\n%s", stderr.decode().strip())
 
             if process.returncode == 0:
                 logger.info("Logo download script finished (Return Code: 0).")
-                os.makedirs(os.path.dirname(
-                    LOGO_DOWNLOAD_FLAG_FILE), exist_ok=True)
+                os.makedirs(os.path.dirname(LOGO_DOWNLOAD_FLAG_FILE), exist_ok=True)
                 with open(LOGO_DOWNLOAD_FLAG_FILE, "w") as f:
                     f.write(datetime.now(timezone.utc).isoformat())
                 logger.info("Created flag file: %s", LOGO_DOWNLOAD_FLAG_FILE)
@@ -314,23 +315,20 @@ async def run_one_time_player_data_download():
             stdout, stderr = await process.communicate()
 
             if stdout:
-                logger.info("Player Data Script STDOUT:\n%s",
-                            stdout.decode().strip())
+                logger.info("Player Data Script STDOUT:\n%s", stdout.decode().strip())
             if stderr:
                 logger.warning(
                     "Player Data Script STDERR:\n%s", stderr.decode().strip()
                 )
 
             if process.returncode == 0:
-                logger.info(
-                    "Player data download script finished (Return Code: 0).")
+                logger.info("Player data download script finished (Return Code: 0).")
                 os.makedirs(
                     os.path.dirname(PLAYER_DATA_DOWNLOAD_FLAG_FILE), exist_ok=True
                 )
                 with open(PLAYER_DATA_DOWNLOAD_FLAG_FILE, "w") as f:
                     f.write(datetime.now(timezone.utc).isoformat())
-                logger.info("Created flag file: %s",
-                            PLAYER_DATA_DOWNLOAD_FLAG_FILE)
+                logger.info("Created flag file: %s", PLAYER_DATA_DOWNLOAD_FLAG_FILE)
             else:
                 logger.error(
                     "Player data download script failed. Return code: %d",
@@ -372,10 +370,8 @@ class BettingBot(commands.Bot):
         self.game_service.set_data_sync_service(self.data_sync_service)
         self.data_sync_service.game_service = self.game_service
         self.bet_slip_generators = {}
-        self.webapp_process = None
         self.fetcher_process = None
-        self.live_game_channel_service = LiveGameChannelService(
-            self, self.db_manager)
+        self.live_game_channel_service = LiveGameChannelService(self, self.db_manager)
         self.platinum_service = PlatinumService(self.db_manager, self)
         self.predictive_service = PredictiveService(self.db_manager)
         self.statistics_service = StatisticsService(self.db_manager)
@@ -601,8 +597,7 @@ class BettingBot(commands.Bot):
                     )
 
                 # Log all available commands
-                global_commands = [
-                    cmd.name for cmd in self.tree.get_commands()]
+                global_commands = [cmd.name for cmd in self.tree.get_commands()]
                 logger.info("Final global commands: %s", global_commands)
 
                 return True
@@ -615,103 +610,16 @@ class BettingBot(commands.Bot):
         logger.error("Failed to sync commands after %d attempts.", retries)
         return False
 
-    def start_flask_webapp(self):
-        """Start the Flask webapp as a subprocess with enhanced monitoring for PebbleHost."""
-        if self.webapp_process is None or self.webapp_process.poll() is not None:
-            webapp_log_path = os.path.join(BASE_DIR, "logs", "webapp.log")
-            os.makedirs(os.path.dirname(webapp_log_path), exist_ok=True)
-
-            # Prepare environment variables for the webapp
-            env = os.environ.copy()
-            env["PYTHONUNBUFFERED"] = "1"
-            env["FLASK_ENV"] = "production"
-            env["FLASK_DEBUG"] = "0"
-
-            # Add any webapp-specific environment variables
-            webapp_port = os.getenv("WEBAPP_PORT", "25594")
-            env["WEBAPP_PORT"] = webapp_port
-
-            try:
-                with open(webapp_log_path, "a") as log_file:
-                    # Get the correct path to webapp.py (it's in the root directory)
-                    webapp_path = os.path.join(
-                        os.path.dirname(BASE_DIR), "webapp.py")
-
-                    if not os.path.exists(webapp_path):
-                        logger.error(f"webapp.py not found at {webapp_path}")
-                        return
-
-                    self.webapp_process = subprocess.Popen(
-                        [
-                            sys.executable,
-                            webapp_path,
-                        ],
-                        stdout=log_file,
-                        stderr=log_file,
-                        text=True,
-                        bufsize=1,
-                        env=env,
-                        # Set working directory to project root where webapp.py is located
-                        cwd=os.path.dirname(BASE_DIR),
-                    )
-                logger.info(
-                    "Started Flask web server (webapp.py) as a subprocess with PID %d, logging to %s",
-                    self.webapp_process.pid,
-                    webapp_log_path,
-                )
-
-                # Create monitoring task if not already running
-                if not hasattr(self, "_webapp_monitor_task"):
-                    self._webapp_monitor_task = asyncio.create_task(
-                        self._monitor_webapp(webapp_log_path)
-                    )
-                    logger.info("Created webapp monitoring task")
-
-            except Exception as e:
-                logger.error("Failed to start Flask webapp: %s",
-                             e, exc_info=True)
-                self.webapp_process = None
-
-    async def _monitor_webapp(self, log_path: str):
-        """Monitor the webapp process and restart it if it crashes."""
-        while True:
-            try:
-                if self.webapp_process is None:
-                    logger.warning(
-                        "Webapp process is None, attempting to restart...")
-                    self.start_flask_webapp()
-                    await asyncio.sleep(10)  # Wait before checking again
-                    continue
-
-                # Check if process is still running
-                if self.webapp_process.poll() is not None:
-                    logger.warning(
-                        "Webapp process (PID %d) has stopped with return code %d. Restarting...",
-                        self.webapp_process.pid,
-                        self.webapp_process.returncode,
-                    )
-                    self.webapp_process = None
-                    self.start_flask_webapp()
-                    await asyncio.sleep(5)  # Wait before checking again
-                else:
-                    # Process is running, check every 30 seconds
-                    await asyncio.sleep(30)
-
-            except Exception as e:
-                logger.error("Error in webapp monitoring: %s",
-                             e, exc_info=True)
-                await asyncio.sleep(10)  # Wait before retrying
-
     def start_fetcher(self):
         """Start the fetcher process and monitor its status."""
         if self.fetcher_process is None or self.fetcher_process.poll() is not None:
             # Use the new fetcher logger system
             from bot.utils.fetcher_logger import get_fetcher_logger
+
             fetcher_logger = get_fetcher_logger()
             fetcher_log_path = fetcher_logger.get_current_log_path()
             os.makedirs(os.path.dirname(fetcher_log_path), exist_ok=True)
-            logger.info(
-                "Setting up fetcher process with log at: %s", fetcher_log_path)
+            logger.info("Setting up fetcher process with log at: %s", fetcher_log_path)
 
             with open(fetcher_log_path, "a") as log_file:
                 # Prepare environment variables
@@ -722,13 +630,13 @@ class BettingBot(commands.Bot):
                 # Critical environment variables for fetcher
                 required_vars = {
                     "API_KEY": os.getenv("API_KEY"),
-                    "MYSQL_HOST": os.getenv("MYSQL_HOST"),
-                    "MYSQL_PORT": os.getenv("MYSQL_PORT", "3306"),
-                    "MYSQL_USER": os.getenv("MYSQL_USER"),
-                    "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
-                    "MYSQL_DB": os.getenv("MYSQL_DB"),
-                    "MYSQL_POOL_MIN_SIZE": os.getenv("MYSQL_POOL_MIN_SIZE", "1"),
-                    "MYSQL_POOL_MAX_SIZE": os.getenv("MYSQL_POOL_MAX_SIZE", "10"),
+                    "POSTGRES_HOST": os.getenv("POSTGRES_HOST"),
+                    "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+                    "POSTGRES_USER": os.getenv("POSTGRES_USER"),
+                    "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+                    "POSTGRES_DB": os.getenv("POSTGRES_DB"),
+                    "POSTGRES_POOL_MIN_SIZE": os.getenv("POSTGRES_POOL_MIN_SIZE", "1"),
+                    "POSTGRES_POOL_MAX_SIZE": os.getenv("POSTGRES_POOL_MAX_SIZE", "10"),
                 }
 
                 # Validate all required variables are present
@@ -755,8 +663,10 @@ class BettingBot(commands.Bot):
                     # Start the fetcher process with the validated environment
                     logger.info("Starting fetcher process...")
                     self.fetcher_process = subprocess.Popen(
-                        [sys.executable, os.path.join(
-                            BASE_DIR, "utils", "comprehensive_fetcher.py")],
+                        [
+                            sys.executable,
+                            os.path.join(BASE_DIR, "utils", "comprehensive_fetcher.py"),
+                        ],
                         stdout=log_file,
                         stderr=log_file,
                         text=True,
@@ -817,8 +727,7 @@ class BettingBot(commands.Bot):
                     try:
                         with open(log_path, "r") as f:
                             lines = f.readlines()
-                            last_lines = lines[-20:] if len(
-                                lines) > 20 else lines
+                            last_lines = lines[-20:] if len(lines) > 20 else lines
                             logger.error(
                                 "Last few lines from %s:\n%s",
                                 os.path.basename(log_path),
@@ -863,7 +772,9 @@ class BettingBot(commands.Bot):
             else:
                 logger.info("Step 1a: Database connection successful")
         except Exception as e:
-            logger.warning(f"Database connection failed: {e}. Bot will continue without database.")
+            logger.warning(
+                f"Database connection failed: {e}. Bot will continue without database."
+            )
 
         # Initialize database schema
         try:
@@ -875,19 +786,20 @@ class BettingBot(commands.Bot):
             # Don't exit, just log the error and continue
 
         # Only load extensions if we're not in scheduler mode and extensions haven't been loaded yet
-        if not os.getenv("SCHEDULER_MODE") and not hasattr(self, '_extensions_loaded'):
+        if not os.getenv("SCHEDULER_MODE") and not hasattr(self, "_extensions_loaded"):
             logger.info("Step 1c: Loading extensions...")
             await self.load_extensions()
             self._extensions_loaded = True
             commands_list = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Registered commands: %s", commands_list)
-        elif hasattr(self, '_extensions_loaded'):
+        elif hasattr(self, "_extensions_loaded"):
             logger.info("Step 1c: Extensions already loaded, skipping...")
         else:
             logger.info("Step 1c: Skipping extension loading (scheduler mode)")
 
         logger.info(
-            "Step 1: Minimal initialization completed - Discord connection ready")
+            "Step 1: Minimal initialization completed - Discord connection ready"
+        )
 
     async def on_ready(self):
         """Called when the bot is ready - initialize heavy components here."""
@@ -907,20 +819,21 @@ class BettingBot(commands.Bot):
                 # Try simple sync first
                 simple_success = await self.sync_commands_simple()
                 if simple_success:
-                    global_commands = [
-                        cmd.name for cmd in self.tree.get_commands()]
+                    global_commands = [cmd.name for cmd in self.tree.get_commands()]
                     logger.info(
-                        "Commands synced successfully with simple sync: %s", global_commands)
+                        "Commands synced successfully with simple sync: %s",
+                        global_commands,
+                    )
                 else:
-                    logger.warning(
-                        "Simple sync failed, trying complex sync...")
+                    logger.warning("Simple sync failed, trying complex sync...")
                     # Fall back to complex sync
                     success = await self.sync_commands_with_retry()
                     if success:
-                        global_commands = [
-                            cmd.name for cmd in self.tree.get_commands()]
+                        global_commands = [cmd.name for cmd in self.tree.get_commands()]
                         logger.info(
-                            "Commands synced successfully with complex sync: %s", global_commands)
+                            "Commands synced successfully with complex sync: %s",
+                            global_commands,
+                        )
                     else:
                         logger.error("Failed to sync commands after retries")
                         # Final fallback: try simple global sync
@@ -928,14 +841,13 @@ class BettingBot(commands.Bot):
                         try:
                             synced = await self.tree.sync()
                             synced_names = [cmd.name for cmd in synced]
-                            logger.info(
-                                "Fallback sync successful: %s", synced_names)
+                            logger.info("Fallback sync successful: %s", synced_names)
                         except Exception as fallback_error:
                             logger.error(
-                                "Fallback sync also failed: %s", fallback_error)
+                                "Fallback sync also failed: %s", fallback_error
+                            )
             except Exception as e:
-                logger.error("Failed to sync command tree: %s",
-                             e, exc_info=True)
+                logger.error("Failed to sync command tree: %s", e, exc_info=True)
                 # Fallback: try simple global sync
                 logger.info("Attempting fallback global sync...")
                 try:
@@ -943,8 +855,7 @@ class BettingBot(commands.Bot):
                     synced_names = [cmd.name for cmd in synced]
                     logger.info("Fallback sync successful: %s", synced_names)
                 except Exception as fallback_error:
-                    logger.error("Fallback sync also failed: %s",
-                                 fallback_error)
+                    logger.error("Fallback sync also failed: %s", fallback_error)
 
         # Now that we're connected to Discord, initialize heavy components in background
         logger.info("Starting background initialization...")
@@ -976,7 +887,7 @@ class BettingBot(commands.Bot):
             #     logger.error(
             #         f"Failed to initialize community engagement services: {e}")
             #     self.community_analytics_service = None
-            
+
             # Community engagement services are disabled
             self.community_analytics_service = None
             logger.info("Community engagement services disabled")
@@ -1000,8 +911,10 @@ class BettingBot(commands.Bot):
             try:
                 logger.info("Step 3c: Initializing ML service...")
                 from bot.services.real_ml_service import RealMLService
+
                 self.real_ml_service = RealMLService(
-                    self.db_manager, self.sports_api, self.predictive_service)
+                    self.db_manager, self.sports_api, self.predictive_service
+                )
                 logger.info("Real ML service initialized")
             except Exception as e:
                 logger.error(f"Failed to initialize real ML service: {e}")
@@ -1013,16 +926,18 @@ class BettingBot(commands.Bot):
 
             # Initialize system integration service
             try:
-                logger.info(
-                    "Step 3d: Initializing system integration service...")
-                from bot.services.system_integration_service import SystemIntegrationService
+                logger.info("Step 3d: Initializing system integration service...")
+                from bot.services.system_integration_service import (
+                    SystemIntegrationService,
+                )
+
                 self.system_integration_service = SystemIntegrationService(
-                    self.db_manager)
+                    self.db_manager
+                )
                 service_starts.append(self.system_integration_service.start())
                 logger.info("System integration service initialized")
             except Exception as e:
-                logger.error(
-                    f"Failed to initialize system integration service: {e}")
+                logger.error(f"Failed to initialize system integration service: {e}")
                 self.system_integration_service = None
 
             # Initialize rate limiter
@@ -1065,59 +980,64 @@ class BettingBot(commands.Bot):
                     logger.error(
                         "Error starting %s: %s", service_name, result, exc_info=True
                     )
-            logger.info(
-                "Services startup initiated, including LiveGameChannelService.")
+            logger.info("Services startup initiated, including LiveGameChannelService.")
 
-            # Only start webapp and fetcher if not in scheduler mode
+            # Only start fetcher if not in scheduler mode
             if not os.getenv("SCHEDULER_MODE"):
-                logger.info("Step 4: Starting webapp and fetcher...")
-                self.start_flask_webapp()
+                logger.info("Step 4: Starting fetcher...")
                 self.start_fetcher()
-                logger.info(
-                    "Bot background initialization completed successfully")
+                logger.info("Bot background initialization completed successfully")
             else:
                 logger.info(
-                    "Bot background initialization completed successfully in scheduler mode")
+                    "Bot background initialization completed successfully in scheduler mode"
+                )
 
             # Display health status
             try:
-                logger.info("🏥 Running health status check...")
+                logger.info("Running health status check...")
                 # Add a small delay to ensure all services are properly initialized
                 await asyncio.sleep(2)
                 from bot.utils.health_checker import run_system_health_check
-                
+
                 try:
-                    health_results = await asyncio.wait_for(run_system_health_check(), timeout=10.0)
-                    
+                    health_results = await asyncio.wait_for(
+                        run_system_health_check(), timeout=10.0
+                    )
+
                     if health_results:
-                        logger.info("📊 HEALTH STATUS:")
+                        logger.info("HEALTH STATUS:")
                         # Debug: Log the structure of health_results
-                        logger.debug(f"Health results structure: {list(health_results.keys())}")
+                        logger.debug(
+                            f"Health results structure: {list(health_results.keys())}"
+                        )
                         # Extract services from the health report structure
-                        services = health_results.get('services', {})
+                        services = health_results.get("services", {})
                         logger.debug(f"Services found: {list(services.keys())}")
                         for service, result in services.items():
                             if isinstance(result, dict):
-                                status = result.get('status', 'unknown')
-                                response_time = result.get('response_time', 0)
-                                if status == 'healthy':
+                                status = result.get("status", "unknown")
+                                response_time = result.get("response_time", 0)
+                                if status == "healthy":
                                     logger.info(
-                                        f"  ✅ {service}: Healthy ({response_time:.2f}s)")
-                                elif status == 'degraded':
+                                        f"  [OK] {service}: Healthy ({response_time:.2f}s)"
+                                    )
+                                elif status == "degraded":
                                     logger.warning(
-                                        f"  ⚠️ {service}: Degraded ({response_time:.2f}s)")
+                                        f"  [WARN] {service}: Degraded ({response_time:.2f}s)"
+                                    )
                                 else:
                                     logger.error(
-                                        f"  ❌ {service}: Unhealthy ({response_time:.2f}s)")
+                                        f"  [ERROR] {service}: Unhealthy ({response_time:.2f}s)"
+                                    )
                     else:
                         logger.warning("Health check returned no results")
-                        
+
                 except asyncio.TimeoutError:
                     logger.error("Health check timed out after 10 seconds")
                 except Exception as health_check_error:
                     logger.error(f"Health check execution failed: {health_check_error}")
                     # Don't let health check failures crash the bot
-                    
+
             except Exception as e:
                 logger.error(f"Health check setup failed: {e}")
                 # Don't let health check failures crash the bot
@@ -1141,8 +1061,7 @@ class BettingBot(commands.Bot):
             self.tree.clear_commands(guild=guild_obj)
             self.tree.add_command(setup_command, guild=guild_obj)
             await self.tree.sync(guild=guild_obj)
-            logger.info(
-                f"Successfully synced setup command to new guild {guild.id}")
+            logger.info(f"Successfully synced setup command to new guild {guild.id}")
         except Exception as e:
             logger.error(
                 f"Failed to sync setup command to new guild {guild.id}: {e}",
@@ -1171,9 +1090,11 @@ class BettingBot(commands.Bot):
         if payload.user_id == self.user.id:
             return
         if hasattr(self, "bet_service"):
+            # Convert emoji to safe string representation to avoid encoding issues
+            emoji_str = str(payload.emoji).encode('unicode_escape').decode('ascii') if payload.emoji else 'None'
             logger.debug(
                 "Processing reaction add: %s by %s on bot message %s",
-                payload.emoji,
+                emoji_str,
                 payload.user_id,
                 payload.message_id,
             )
@@ -1187,14 +1108,15 @@ class BettingBot(commands.Bot):
             and hasattr(self.bet_service, "pending_reactions")
             and payload.message_id in self.bet_service.pending_reactions
         ):
+            # Convert emoji to safe string representation to avoid encoding issues
+            emoji_str = str(payload.emoji).encode('unicode_escape').decode('ascii') if payload.emoji else 'None'
             logger.debug(
                 "Processing reaction remove: %s by %s on bot message %s",
-                payload.emoji,
+                emoji_str,
                 payload.user_id,
                 payload.message_id,
             )
-            asyncio.create_task(
-                self.bet_service.on_raw_reaction_remove(payload))
+            asyncio.create_task(self.bet_service.on_raw_reaction_remove(payload))
 
     async def on_interaction(self, interaction: discord.Interaction):
         command_name = interaction.command.name if interaction.command else "N/A"
@@ -1239,8 +1161,7 @@ class BettingBot(commands.Bot):
             except asyncio.TimeoutError:
                 logger.warning("Timeout while waiting for services to stop")
             except Exception as e:
-                logger.error("Error during service shutdown: %s",
-                             e, exc_info=True)
+                logger.error("Error during service shutdown: %s", e, exc_info=True)
             logger.info("Services stopped.")
 
             if self.db_manager:
@@ -1249,39 +1170,17 @@ class BettingBot(commands.Bot):
                     await asyncio.wait_for(self.db_manager.close(), timeout=5.0)
                     logger.info("Database connection pool closed.")
                 except asyncio.TimeoutError:
-                    logger.warning(
-                        "Timeout while closing database connection pool")
+                    logger.warning("Timeout while closing database connection pool")
                 except Exception as e:
                     logger.error(
                         "Error closing database connection pool: %s", e, exc_info=True
                     )
 
-            # Stop webapp monitoring task
-            if hasattr(self, "_webapp_monitor_task") and not self._webapp_monitor_task.done():
-                self._webapp_monitor_task.cancel()
-                try:
-                    await self._webapp_monitor_task
-                except asyncio.CancelledError:
-                    pass
-                logger.info("Stopped webapp monitoring task.")
-
-            # Stop webapp process
-            if self.webapp_process and self.webapp_process.poll() is None:
-                try:
-                    self.webapp_process.send_signal(signal.SIGINT)
-                    self.webapp_process.wait(timeout=5)
-                    logger.info("Stopped Flask web server subprocess.")
-                except Exception as e:
-                    logger.error("Error stopping webapp process: %s", e)
-                    try:
-                        self.webapp_process.terminate()
-                        self.webapp_process.wait(timeout=3)
-                    except Exception as e2:
-                        logger.error(
-                            "Error terminating webapp process: %s", e2)
-
             # Stop fetcher monitoring task
-            if hasattr(self, "_fetcher_monitor_task") and not self._fetcher_monitor_task.done():
+            if (
+                hasattr(self, "_fetcher_monitor_task")
+                and not self._fetcher_monitor_task.done()
+            ):
                 self._fetcher_monitor_task.cancel()
                 try:
                     await self._fetcher_monitor_task
@@ -1301,8 +1200,7 @@ class BettingBot(commands.Bot):
                         self.fetcher_process.terminate()
                         self.fetcher_process.wait(timeout=3)
                     except Exception as e2:
-                        logger.error(
-                            "Error terminating fetcher process: %s", e2)
+                        logger.error("Error terminating fetcher process: %s", e2)
         except Exception as e:
             logger.exception("Error during shutdown: %s", e)
         finally:
@@ -1310,8 +1208,7 @@ class BettingBot(commands.Bot):
             try:
                 await super().close()
             except Exception as e:
-                logger.error("Error closing Discord client: %s",
-                             e, exc_info=True)
+                logger.error("Error closing Discord client: %s", e, exc_info=True)
             logger.info("Bot shutdown complete.")
 
 
@@ -1367,8 +1264,7 @@ class ManualSyncCog(commands.Cog):
     async def synccommands(self, ctx):
         """Manually sync commands to the test guild."""
         test_guild_id = (
-            int(os.getenv("TEST_GUILD_ID")) if os.getenv(
-                "TEST_GUILD_ID") else None
+            int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
         )
         if test_guild_id:
             await ctx.bot.tree.sync(guild=discord.Object(id=test_guild_id))
@@ -1418,19 +1314,16 @@ class ManualSyncCog(commands.Cog):
                 logger.error(
                     "Error starting %s: %s", service_name, result, exc_info=True
                 )
-        logger.info(
-            "Services startup initiated, including LiveGameChannelService.")
+        logger.info("Services startup initiated, including LiveGameChannelService.")
         # Register the manual sync cog
         self.add_cog(ManualSyncCog(self))
         if not os.getenv("SCHEDULER_MODE"):
-            self.start_flask_webapp()
             self.start_fetcher()
             logger.info(
                 "Bot setup_hook completed successfully - commands will be synced in on_ready"
             )
         else:
-            logger.info(
-                "Bot setup_hook completed successfully in scheduler mode")
+            logger.info("Bot setup_hook completed successfully in scheduler mode")
 
 
 # --- Main Execution ---
@@ -1441,30 +1334,39 @@ async def run_bot():
     retry_delay = 5
 
     # Enhanced debug output
-    logger.debug("🚀 Starting bot initialization process...")
+    logger.debug("Starting bot initialization process...")
     logger.debug(f"Current working directory: {os.getcwd()}")
     logger.debug(f"Python version: {sys.version}")
     logger.debug(f"Discord.py version: {discord.__version__}")
     logger.debug(f"aiohttp version: {aiohttp.__version__}")
-    
+
     # Check environment variables
-    logger.debug("🔍 Checking environment variables...")
-    env_vars = ["DISCORD_TOKEN", "API_KEY", "MYSQL_HOST", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DB"]
+    logger.debug("Checking environment variables...")
+    env_vars = [
+        "DISCORD_TOKEN",
+        "API_KEY",
+        "POSTGRES_HOST",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+    ]
     for var in env_vars:
         value = os.getenv(var)
         if value:
             # Mask sensitive values
             if "TOKEN" in var or "PASSWORD" in var or "KEY" in var:
-                masked_value = value[:10] + "..." + value[-5:] if len(value) > 15 else "***"
-                logger.debug(f"✅ {var}: {masked_value}")
+                masked_value = (
+                    value[:10] + "..." + value[-5:] if len(value) > 15 else "***"
+                )
+                logger.debug(f"[OK] {var}: {masked_value}")
             else:
-                logger.debug(f"✅ {var}: {value}")
+                logger.debug(f"[OK] {var}: {value}")
         else:
-            logger.warning(f"⚠️ {var}: NOT SET")
+            logger.warning(f"[WARN] {var}: NOT SET")
 
     # Run startup checks first (non-blocking)
     try:
-        logger.info("🔍 Running startup checks...")
+        logger.info("Running startup checks...")
         try:
             from startup_checks import DBSBMStartupChecker
         except ImportError:
@@ -1474,15 +1376,14 @@ async def run_bot():
         # Run startup checks with timeout but don't block startup
         try:
             await asyncio.wait_for(checker.run_all_checks(), timeout=15.0)
-            logger.info("✅ Startup checks completed")
+            logger.info("[OK] Startup checks completed")
         except asyncio.TimeoutError:
-            logger.warning(
-                "⚠️ Startup checks timed out after 15 seconds, continuing...")
+            logger.warning("[WARN] Startup checks timed out after 15 seconds, continuing...")
         except Exception as e:
-            logger.warning(f"⚠️ Startup checks failed: {e}")
+            logger.warning(f"[WARN] Startup checks failed: {e}")
             logger.info("Continuing with bot startup...")
     except Exception as e:
-        logger.warning(f"⚠️ Startup checks failed: {e}")
+        logger.warning(f"[WARN] Startup checks failed: {e}")
         logger.info("Continuing with bot startup...")
 
     while retry_count < max_retries:
@@ -1495,22 +1396,30 @@ async def run_bot():
 
             # Step 1: Initialize core components first (skip since setup_hook will handle this)
             logger.info("Step 1: Core components will be initialized in setup_hook...")
-            logger.info("✅ Core components initialization skipped (will be handled by Discord)")
+            logger.info(
+                "✅ Core components initialization skipped (will be handled by Discord)"
+            )
 
             # Step 2: Connect to Discord with extended timeout and retry logic
             logger.info("Step 2: Connecting to Discord...")
 
             # Validate Discord token first
             discord_token = os.getenv("DISCORD_TOKEN")
-            logger.debug(f"Discord token length: {len(discord_token) if discord_token else 0}")
-            logger.debug(f"Discord token starts with MT: {discord_token.startswith('MT') if discord_token else False}")
-            
+            logger.debug(
+                f"Discord token length: {len(discord_token) if discord_token else 0}"
+            )
+            logger.debug(
+                f"Discord token starts with MT: {discord_token.startswith('MT') if discord_token else False}"
+            )
+
             if not discord_token:
                 logger.critical("❌ DISCORD_TOKEN environment variable is not set")
                 raise RuntimeError("DISCORD_TOKEN environment variable is not set")
-            
+
             if not discord_token.startswith("MT") or len(discord_token) < 50:
-                logger.critical(f"❌ DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})")
+                logger.critical(
+                    f"❌ DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})"
+                )
                 raise RuntimeError("DISCORD_TOKEN format appears invalid")
 
             # Log bot configuration
@@ -1523,22 +1432,28 @@ async def run_bot():
             for attempt in range(3):
                 try:
                     logger.info(f"🔄 Discord connection attempt {attempt + 1}/3...")
-                    logger.debug(f"Starting Discord connection with token: {discord_token[:10]}...{discord_token[-5:]}")
+                    logger.debug(
+                        f"Starting Discord connection with token: {discord_token[:10]}...{discord_token[-5:]}"
+                    )
 
                     # Use a more conservative timeout for Discord connection
                     start_time = datetime.now()
                     await asyncio.wait_for(
                         bot.start(discord_token),
-                        timeout=300.0  # 5 minutes for Discord connection
+                        timeout=300.0,  # 5 minutes for Discord connection
                     )
                     end_time = datetime.now()
                     connection_time = (end_time - start_time).total_seconds()
-                    logger.info(f"✅ Bot started successfully in {connection_time:.2f} seconds")
+                    logger.info(
+                        f"✅ Bot started successfully in {connection_time:.2f} seconds"
+                    )
                     connection_success = True
                     break
 
                 except asyncio.TimeoutError:
-                    logger.warning(f"⏰ Discord connection attempt {attempt + 1} timed out after 5 minutes")
+                    logger.warning(
+                        f"⏰ Discord connection attempt {attempt + 1} timed out after 5 minutes"
+                    )
                     if attempt < 2:  # Don't sleep after last attempt
                         logger.debug("Waiting 10 seconds before next attempt...")
                         await asyncio.sleep(10)
@@ -1547,7 +1462,9 @@ async def run_bot():
                     raise RuntimeError("Discord login failed - check your bot token")
                 except discord.PrivilegedIntentsRequired as e:
                     logger.critical(f"❌ Privileged intents required: {e}")
-                    raise RuntimeError("Enable required intents in Discord Developer Portal")
+                    raise RuntimeError(
+                        "Enable required intents in Discord Developer Portal"
+                    )
                 except discord.HTTPException as e:
                     logger.error(f"❌ Discord HTTP error on attempt {attempt + 1}: {e}")
                     if attempt < 2:
@@ -1557,7 +1474,9 @@ async def run_bot():
                     if attempt < 2:
                         await asyncio.sleep(10)
                 except Exception as e:
-                    logger.error(f"❌ Discord connection attempt {attempt + 1} failed: {e}")
+                    logger.error(
+                        f"❌ Discord connection attempt {attempt + 1} failed: {e}"
+                    )
                     logger.debug(f"Exception type: {type(e).__name__}")
                     logger.debug(f"Exception details: {str(e)}")
                     if attempt < 2:
@@ -1568,8 +1487,7 @@ async def run_bot():
             else:
                 logger.error("❌ All Discord connection attempts failed")
                 await bot.close()
-                raise RuntimeError(
-                    "Discord connection failed after all attempts")
+                raise RuntimeError("Discord connection failed after all attempts")
 
         except discord.LoginFailure:
             logger.critical(

@@ -94,11 +94,13 @@ class ParlayBetWorkflowView(View):
         """Add a leg to the parlay."""
         logger.debug(f"Adding leg to parlay for user {modal_interaction.user.id}")
         logger.debug(f"Leg details: {leg_details}")
-        
+
         try:
             # Validate leg details
             if not validate_bet_details(leg_details):
-                logger.error(f"Invalid leg details for user {modal_interaction.user.id}")
+                logger.error(
+                    f"Invalid leg details for user {modal_interaction.user.id}"
+                )
                 await modal_interaction.response.send_message(
                     "❌ Invalid leg details. Please try again.", ephemeral=True
                 )
@@ -140,16 +142,22 @@ class ParlayBetWorkflowView(View):
             )
 
     async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
-        logger.debug(f"Starting parlay workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}")
-        logger.info(f"Parlay workflow initiated by user {interaction_that_triggered_workflow_start.user.id}")
-        
+        logger.debug(
+            f"Starting parlay workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}"
+        )
+        logger.info(
+            f"Parlay workflow initiated by user {interaction_that_triggered_workflow_start.user.id}"
+        )
+
         try:
             # Initialize workflow state
             self.current_step = "sport_selection"
             logger.debug(f"Initialized parlay workflow with step: {self.current_step}")
-            
+
             # Start with sport selection
-            await self._handle_sport_selection(interaction_that_triggered_workflow_start)
+            await self._handle_sport_selection(
+                interaction_that_triggered_workflow_start
+            )
             logger.debug("Parlay workflow sport selection completed")
         except Exception as e:
             logger.exception(f"Error starting parlay workflow: {e}")
@@ -354,15 +362,17 @@ class ParlayBetWorkflowView(View):
         await interaction.response.send_modal(modal)
         self.current_step = "units_selection"
 
-    async def _handle_units_selection(self, interaction: Interaction, units: float = None):
+    async def _handle_units_selection(
+        self, interaction: Interaction, units: float = None
+    ):
         """Handle units selection."""
         if units is not None:
             # Update units and generate preview
             self.units = units
-            
+
             # Generate preview image with 1 unit
             await self._generate_parlay_preview(interaction)
-            
+
             # Create units selection view
             view = View(timeout=300)
             view.add_item(UnitsSelect(self))
@@ -414,7 +424,9 @@ class ParlayBetWorkflowView(View):
                     if channel_id:
                         try:
                             cid = int(channel_id)
-                            channel = self.bot.get_channel(cid) or await self.bot.fetch_channel(cid)
+                            channel = self.bot.get_channel(
+                                cid
+                            ) or await self.bot.fetch_channel(cid)
                             if (
                                 isinstance(channel, discord.TextChannel)
                                 and channel.permissions_for(guild.me).send_messages
@@ -496,15 +508,16 @@ class ParlayBetWorkflowView(View):
                 units=bet_data["units"],
                 bet_id=bet_data.get("bet_id"),
                 bet_datetime=bet_data["timestamp"],
-                finalized=True
+                finalized=True,
             )
 
             if image_bytes:
                 # Convert bytes to BytesIO for Discord File
                 import io
+
                 image_buffer = io.BytesIO(image_bytes)
                 image_buffer.seek(0)
-                
+
                 # Create file
                 file = File(image_buffer, filename=f"parlay_bet_{self.workflow_id}.png")
 
@@ -546,10 +559,10 @@ class ParlayBetWorkflowView(View):
         try:
             # Always use 1 unit for preview
             preview_units = 1.0
-            
+
             # Generate preview image
             generator = await self.get_bet_slip_generator()
-            
+
             # Create bet slip data for preview
             bet_data = {
                 "legs": self.legs,
@@ -559,40 +572,41 @@ class ParlayBetWorkflowView(View):
                 "user": interaction.user,
                 "timestamp": datetime.now(timezone.utc),
             }
-            
+
             # Generate image
             image_bytes = generator.generate_parlay_preview(
                 legs=bet_data["legs"],
                 total_odds=bet_data["total_odds"],
-                units=bet_data["units"]
+                units=bet_data["units"],
             )
-            
+
             if image_bytes:
                 # Convert bytes to BytesIO for Discord File
                 import io
+
                 image_buffer = io.BytesIO(image_bytes)
                 image_buffer.seek(0)
-                
+
                 # Create file
-                file = File(image_buffer, filename=f"parlay_preview_{self.workflow_id}.png")
-                
+                file = File(
+                    image_buffer, filename=f"parlay_preview_{self.workflow_id}.png"
+                )
+
                 # Send ephemeral message with preview
                 await interaction.followup.send(
                     "**Preview of your parlay bet with 1 unit:**",
                     file=file,
-                    ephemeral=True
+                    ephemeral=True,
                 )
             else:
                 await interaction.followup.send(
-                    "❌ Error generating preview image.",
-                    ephemeral=True
+                    "❌ Error generating preview image.", ephemeral=True
                 )
-                
+
         except Exception as e:
             logger.error(f"Error generating parlay preview: {e}")
             await interaction.followup.send(
-                "❌ Error generating preview image.",
-                ephemeral=True
+                "❌ Error generating preview image.", ephemeral=True
             )
 
     async def cleanup(self):

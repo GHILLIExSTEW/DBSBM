@@ -21,7 +21,7 @@ def test_dynamic_title_sizing():
     draw = ImageDraw.Draw(image)
 
     # Load font
-    font_dir = "bot/assets/fonts"
+    font_dir = "../../../../StaticFiles/DBSBM/assets/fonts"
     font_bold = ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", 36)
 
     # Test the dynamic sizing logic

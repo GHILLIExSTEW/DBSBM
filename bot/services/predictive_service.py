@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 class ModelType(Enum):
     """Types of machine learning models."""
+
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
     FORECASTING = "forecasting"
@@ -49,6 +50,7 @@ class ModelType(Enum):
 
 class ModelStatus(Enum):
     """Status of machine learning models."""
+
     TRAINING = "training"
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -58,6 +60,7 @@ class ModelStatus(Enum):
 
 class PredictionType(Enum):
     """Types of predictions."""
+
     BET_OUTCOME = "bet_outcome"
     USER_BEHAVIOR = "user_behavior"
     REVENUE_FORECAST = "revenue_forecast"
@@ -69,6 +72,7 @@ class PredictionType(Enum):
 @dataclass
 class MLModel:
     """Machine learning model data structure."""
+
     model_id: str
     name: str
     description: str
@@ -89,6 +93,7 @@ class MLModel:
 @dataclass
 class Prediction:
     """Prediction data structure."""
+
     prediction_id: str
     model_id: str
     prediction_type: PredictionType
@@ -103,6 +108,7 @@ class Prediction:
 @dataclass
 class ModelPerformance:
     """Model performance data structure."""
+
     performance_id: str
     model_id: str
     metric_name: str
@@ -115,6 +121,7 @@ class ModelPerformance:
 @dataclass
 class FeatureImportance:
     """Feature importance data structure."""
+
     feature_name: str
     importance_score: float
     rank: int
@@ -133,57 +140,82 @@ class PredictiveService:
 
         # Predictive configuration
         self.config = {
-            'auto_training_enabled': True,
-            'model_monitoring_enabled': True,
-            'feature_engineering_enabled': True,
-            'a_b_testing_enabled': True,
-            'real_time_prediction_enabled': True
+            "auto_training_enabled": True,
+            "model_monitoring_enabled": True,
+            "feature_engineering_enabled": True,
+            "a_b_testing_enabled": True,
+            "real_time_prediction_enabled": True,
         }
 
         # Pre-built model templates
         self.model_templates = {
-            'bet_outcome_predictor': {
-                'name': 'Bet Outcome Predictor',
-                'description': 'Predicts the outcome of sports bets',
-                'model_type': ModelType.CLASSIFICATION,
-                'features': ['odds', 'team_stats', 'player_stats', 'historical_performance', 'weather', 'venue'],
-                'target_variable': 'outcome',
-                'algorithm': 'random_forest'
+            "bet_outcome_predictor": {
+                "name": "Bet Outcome Predictor",
+                "description": "Predicts the outcome of sports bets",
+                "model_type": ModelType.CLASSIFICATION,
+                "features": [
+                    "odds",
+                    "team_stats",
+                    "player_stats",
+                    "historical_performance",
+                    "weather",
+                    "venue",
+                ],
+                "target_variable": "outcome",
+                "algorithm": "random_forest",
             },
-            'user_churn_predictor': {
-                'name': 'User Churn Predictor',
-                'description': 'Predicts user churn probability',
-                'model_type': ModelType.CLASSIFICATION,
-                'features': ['activity_frequency', 'betting_history', 'engagement_metrics', 'support_tickets', 'account_age'],
-                'target_variable': 'churn_probability',
-                'algorithm': 'gradient_boosting'
+            "user_churn_predictor": {
+                "name": "User Churn Predictor",
+                "description": "Predicts user churn probability",
+                "model_type": ModelType.CLASSIFICATION,
+                "features": [
+                    "activity_frequency",
+                    "betting_history",
+                    "engagement_metrics",
+                    "support_tickets",
+                    "account_age",
+                ],
+                "target_variable": "churn_probability",
+                "algorithm": "gradient_boosting",
             },
-            'revenue_forecaster': {
-                'name': 'Revenue Forecaster',
-                'description': 'Forecasts future revenue',
-                'model_type': ModelType.FORECASTING,
-                'features': ['historical_revenue', 'user_growth', 'seasonal_factors', 'marketing_spend', 'market_conditions'],
-                'target_variable': 'revenue',
-                'algorithm': 'time_series'
+            "revenue_forecaster": {
+                "name": "Revenue Forecaster",
+                "description": "Forecasts future revenue",
+                "model_type": ModelType.FORECASTING,
+                "features": [
+                    "historical_revenue",
+                    "user_growth",
+                    "seasonal_factors",
+                    "marketing_spend",
+                    "market_conditions",
+                ],
+                "target_variable": "revenue",
+                "algorithm": "time_series",
             },
-            'risk_assessor': {
-                'name': 'Risk Assessor',
-                'description': 'Assesses betting risk',
-                'model_type': ModelType.REGRESSION,
-                'features': ['bet_amount', 'user_history', 'odds', 'market_volatility', 'external_factors'],
-                'target_variable': 'risk_score',
-                'algorithm': 'neural_network'
-            }
+            "risk_assessor": {
+                "name": "Risk Assessor",
+                "description": "Assesses betting risk",
+                "model_type": ModelType.REGRESSION,
+                "features": [
+                    "bet_amount",
+                    "user_history",
+                    "odds",
+                    "market_volatility",
+                    "external_factors",
+                ],
+                "target_variable": "risk_score",
+                "algorithm": "neural_network",
+            },
         }
 
         # Model performance thresholds
         self.performance_thresholds = {
-            'accuracy': 0.75,
-            'precision': 0.70,
-            'recall': 0.70,
-            'f1_score': 0.70,
-            'mae': 0.10,
-            'rmse': 0.15
+            "accuracy": 0.75,
+            "precision": 0.70,
+            "recall": 0.70,
+            "f1_score": 0.70,
+            "mae": 0.10,
+            "rmse": 0.15,
         }
 
     async def initialize(self):
@@ -211,8 +243,7 @@ class PredictiveService:
             await self.initialize()
             logger.info("PredictiveService started successfully")
         except Exception as e:
-            logger.error(
-                f"Failed to start PredictiveService: {e}", exc_info=True)
+            logger.error(f"Failed to start PredictiveService: {e}", exc_info=True)
             raise RuntimeError(f"Could not start PredictiveService: {str(e)}")
 
     async def stop(self):
@@ -222,14 +253,19 @@ class PredictiveService:
             await self.cleanup()
             logger.info("PredictiveService stopped successfully")
         except Exception as e:
-            logger.error(
-                f"Failed to stop PredictiveService: {e}", exc_info=True)
+            logger.error(f"Failed to stop PredictiveService: {e}", exc_info=True)
             raise RuntimeError(f"Could not stop PredictiveService: {str(e)}")
 
     @time_operation("model_training")
-    async def train_model(self, model_name: str, model_type: ModelType, features: List[str],
-                          target_variable: str, training_data: List[Dict[str, Any]],
-                          config: Dict[str, Any]) -> Optional[MLModel]:
+    async def train_model(
+        self,
+        model_name: str,
+        model_type: ModelType,
+        features: List[str],
+        target_variable: str,
+        training_data: List[Dict[str, Any]],
+        config: Dict[str, Any],
+    ) -> Optional[MLModel]:
         """Train a new machine learning model."""
         try:
             model_id = f"model_{uuid.uuid4().hex[:12]}"
@@ -239,7 +275,7 @@ class PredictiveService:
             model = MLModel(
                 model_id=model_id,
                 name=model_name,
-                description=config.get('description', f'{model_name} model'),
+                description=config.get("description", f"{model_name} model"),
                 model_type=model_type,
                 version=version,
                 status=ModelStatus.TRAINING,
@@ -249,7 +285,7 @@ class PredictiveService:
                 target_variable=target_variable,
                 performance_metrics={},
                 created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                updated_at=datetime.utcnow(),
             )
 
             # Store model metadata
@@ -258,10 +294,10 @@ class PredictiveService:
             # Train the model
             training_result = await self._train_ml_model(model, training_data)
 
-            if training_result['success']:
+            if training_result["success"]:
                 model.status = ModelStatus.ACTIVE
                 model.trained_at = datetime.utcnow()
-                model.performance_metrics = training_result['metrics']
+                model.performance_metrics = training_result["metrics"]
                 await self._update_model(model)
 
                 # Cache model
@@ -273,8 +309,7 @@ class PredictiveService:
             else:
                 model.status = ModelStatus.ERROR
                 await self._update_model(model)
-                logger.error(
-                    f"Model training failed: {training_result['error']}")
+                logger.error(f"Model training failed: {training_result['error']}")
                 return None
 
         except Exception as e:
@@ -282,9 +317,14 @@ class PredictiveService:
             return None
 
     @time_operation("prediction_generation")
-    async def generate_prediction(self, model_id: str, input_data: Dict[str, Any],
-                                  prediction_type: PredictionType, user_id: Optional[int] = None,
-                                  guild_id: Optional[int] = None) -> Optional[Prediction]:
+    async def generate_prediction(
+        self,
+        model_id: str,
+        input_data: Dict[str, Any],
+        prediction_type: PredictionType,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+    ) -> Optional[Prediction]:
         """Generate a prediction using a trained model."""
         try:
             model = self.active_models.get(model_id)
@@ -293,26 +333,29 @@ class PredictiveService:
                 return None
 
             # Validate input data
-            validation_result = await self._validate_input_data(input_data, model.features)
-            if not validation_result['valid']:
+            validation_result = await self._validate_input_data(
+                input_data, model.features
+            )
+            if not validation_result["valid"]:
                 logger.error(
-                    f"Input data validation failed: {validation_result['errors']}")
+                    f"Input data validation failed: {validation_result['errors']}"
+                )
                 return None
 
             # Generate prediction
             prediction_result = await self._generate_ml_prediction(model, input_data)
 
-            if prediction_result['success']:
+            if prediction_result["success"]:
                 prediction = Prediction(
                     prediction_id=f"pred_{uuid.uuid4().hex[:12]}",
                     model_id=model_id,
                     prediction_type=prediction_type,
                     input_data=input_data,
-                    prediction_result=prediction_result['result'],
-                    confidence_score=prediction_result['confidence'],
+                    prediction_result=prediction_result["result"],
+                    confidence_score=prediction_result["confidence"],
                     created_at=datetime.utcnow(),
                     user_id=user_id,
-                    guild_id=guild_id
+                    guild_id=guild_id,
                 )
 
                 # Store prediction
@@ -320,14 +363,14 @@ class PredictiveService:
 
                 # Cache prediction
                 cache_key = f"pred_{model_id}_{hash(str(input_data))}"
-                cache_manager.set(cache_key, prediction,
-                                  ttl=3600)  # Cache for 1 hour
+                cache_manager.set(cache_key, prediction, ttl=3600)  # Cache for 1 hour
 
                 record_metric("predictions_generated", 1)
                 return prediction
             else:
                 logger.error(
-                    f"Prediction generation failed: {prediction_result['error']}")
+                    f"Prediction generation failed: {prediction_result['error']}"
+                )
                 return None
 
         except Exception as e:
@@ -335,24 +378,26 @@ class PredictiveService:
             return None
 
     @time_operation("model_evaluation")
-    async def evaluate_model(self, model_id: str, test_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def evaluate_model(
+        self, model_id: str, test_data: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Evaluate a model's performance."""
         try:
             model = self.models.get(model_id)
             if not model:
-                return {'success': False, 'error': 'Model not found'}
+                return {"success": False, "error": "Model not found"}
 
             # Evaluate model
             evaluation_result = await self._evaluate_ml_model(model, test_data)
 
-            if evaluation_result['success']:
+            if evaluation_result["success"]:
                 # Update model performance metrics
-                model.performance_metrics = evaluation_result['metrics']
+                model.performance_metrics = evaluation_result["metrics"]
                 model.updated_at = datetime.utcnow()
                 await self._update_model(model)
 
                 # Store performance metrics
-                for metric_name, metric_value in evaluation_result['metrics'].items():
+                for metric_name, metric_value in evaluation_result["metrics"].items():
                     performance = ModelPerformance(
                         performance_id=f"perf_{uuid.uuid4().hex[:12]}",
                         model_id=model_id,
@@ -360,7 +405,7 @@ class PredictiveService:
                         metric_value=metric_value,
                         timestamp=datetime.utcnow(),
                         dataset_size=len(test_data),
-                        evaluation_type='test'
+                        evaluation_type="test",
                     )
                     await self._store_model_performance(performance)
 
@@ -370,10 +415,12 @@ class PredictiveService:
 
         except Exception as e:
             logger.error(f"Failed to evaluate model: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     @time_operation("feature_importance_analysis")
-    async def analyze_feature_importance(self, model_id: str) -> List[FeatureImportance]:
+    async def analyze_feature_importance(
+        self, model_id: str
+    ) -> List[FeatureImportance]:
         """Analyze feature importance for a model."""
         try:
             model = self.models.get(model_id)
@@ -383,15 +430,17 @@ class PredictiveService:
             # Get feature importance
             importance_result = await self._get_feature_importance(model)
 
-            if importance_result['success']:
+            if importance_result["success"]:
                 feature_importances = []
-                for i, (feature_name, importance_score) in enumerate(importance_result['importances']):
+                for i, (feature_name, importance_score) in enumerate(
+                    importance_result["importances"]
+                ):
                     feature_importance = FeatureImportance(
                         feature_name=feature_name,
                         importance_score=importance_score,
                         rank=i + 1,
                         model_id=model_id,
-                        calculated_at=datetime.utcnow()
+                        calculated_at=datetime.utcnow(),
                     )
                     feature_importances.append(feature_importance)
 
@@ -401,22 +450,25 @@ class PredictiveService:
                 return feature_importances
             else:
                 logger.error(
-                    f"Feature importance analysis failed: {importance_result['error']}")
+                    f"Feature importance analysis failed: {importance_result['error']}"
+                )
                 return []
 
         except Exception as e:
             logger.error(f"Failed to analyze feature importance: {e}")
             return []
 
-    async def get_predictive_dashboard_data(self, guild_id: Optional[int] = None) -> Dict[str, Any]:
+    async def get_predictive_dashboard_data(
+        self, guild_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Get data for the predictive analytics dashboard."""
         try:
             # Get model statistics
             model_stats = {
-                'total_models': len(self.models),
-                'active_models': len(self.active_models),
-                'models_by_type': {},
-                'models_by_status': {}
+                "total_models": len(self.models),
+                "active_models": len(self.active_models),
+                "models_by_type": {},
+                "models_by_status": {},
             }
 
             # Group models by type and status
@@ -424,13 +476,13 @@ class PredictiveService:
                 model_type = model.model_type.value
                 model_status = model.status.value
 
-                if model_type not in model_stats['models_by_type']:
-                    model_stats['models_by_type'][model_type] = 0
-                model_stats['models_by_type'][model_type] += 1
+                if model_type not in model_stats["models_by_type"]:
+                    model_stats["models_by_type"][model_type] = 0
+                model_stats["models_by_type"][model_type] += 1
 
-                if model_status not in model_stats['models_by_status']:
-                    model_stats['models_by_status'][model_status] = 0
-                model_stats['models_by_status'][model_status] += 1
+                if model_status not in model_stats["models_by_status"]:
+                    model_stats["models_by_status"][model_status] = 0
+                model_stats["models_by_status"][model_status] += 1
 
             # Get recent predictions
             recent_predictions = await self._get_recent_predictions()
@@ -442,10 +494,10 @@ class PredictiveService:
             accuracy_trends = await self._get_prediction_accuracy_trends()
 
             return {
-                'model_statistics': model_stats,
-                'recent_predictions': recent_predictions,
-                'performance_summary': performance_summary,
-                'accuracy_trends': accuracy_trends
+                "model_statistics": model_stats,
+                "recent_predictions": recent_predictions,
+                "performance_summary": performance_summary,
+                "accuracy_trends": accuracy_trends,
             }
 
         except Exception as e:
@@ -453,8 +505,12 @@ class PredictiveService:
             return {}
 
     @time_operation("batch_prediction")
-    async def generate_batch_predictions(self, model_id: str, input_data_list: List[Dict[str, Any]],
-                                         prediction_type: PredictionType) -> List[Prediction]:
+    async def generate_batch_predictions(
+        self,
+        model_id: str,
+        input_data_list: List[Dict[str, Any]],
+        prediction_type: PredictionType,
+    ) -> List[Prediction]:
         """Generate predictions for multiple inputs."""
         try:
             predictions = []
@@ -485,14 +541,13 @@ class PredictiveService:
 
             # Validate model performance
             if not await self._validate_model_performance(model):
-                logger.error(
-                    f"Model {model_id} does not meet performance requirements")
+                logger.error(f"Model {model_id} does not meet performance requirements")
                 return False
 
             # Deploy model
             deployment_result = await self._deploy_ml_model(model)
 
-            if deployment_result['success']:
+            if deployment_result["success"]:
                 model.status = ModelStatus.ACTIVE
                 model.deployed_at = datetime.utcnow()
                 await self._update_model(model)
@@ -502,8 +557,7 @@ class PredictiveService:
 
                 return True
             else:
-                logger.error(
-                    f"Model deployment failed: {deployment_result['error']}")
+                logger.error(f"Model deployment failed: {deployment_result['error']}")
                 return False
 
         except Exception as e:
@@ -539,23 +593,26 @@ class PredictiveService:
             VALUES (:model_id, :name, :description, :model_type, :version, :status, :model_path, :config, :features, :target_variable, :performance_metrics, :created_at, :updated_at, :trained_at, :deployed_at)
             """
 
-            await self.db_manager.execute(query, {
-                'model_id': model.model_id,
-                'name': model.name,
-                'description': model.description,
-                'model_type': model.model_type.value,
-                'version': model.version,
-                'status': model.status.value,
-                'model_path': model.model_path,
-                'config': json.dumps(model.config),
-                'features': json.dumps(model.features),
-                'target_variable': model.target_variable,
-                'performance_metrics': json.dumps(model.performance_metrics),
-                'created_at': model.created_at,
-                'updated_at': model.updated_at,
-                'trained_at': model.trained_at,
-                'deployed_at': model.deployed_at
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "model_id": model.model_id,
+                    "name": model.name,
+                    "description": model.description,
+                    "model_type": model.model_type.value,
+                    "version": model.version,
+                    "status": model.status.value,
+                    "model_path": model.model_path,
+                    "config": json.dumps(model.config),
+                    "features": json.dumps(model.features),
+                    "target_variable": model.target_variable,
+                    "performance_metrics": json.dumps(model.performance_metrics),
+                    "created_at": model.created_at,
+                    "updated_at": model.updated_at,
+                    "trained_at": model.trained_at,
+                    "deployed_at": model.deployed_at,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store model: {e}")
@@ -569,14 +626,17 @@ class PredictiveService:
             WHERE model_id = :model_id
             """
 
-            await self.db_manager.execute(query, {
-                'model_id': model.model_id,
-                'status': model.status.value,
-                'performance_metrics': json.dumps(model.performance_metrics),
-                'updated_at': model.updated_at,
-                'trained_at': model.trained_at,
-                'deployed_at': model.deployed_at
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "model_id": model.model_id,
+                    "status": model.status.value,
+                    "performance_metrics": json.dumps(model.performance_metrics),
+                    "updated_at": model.updated_at,
+                    "trained_at": model.trained_at,
+                    "deployed_at": model.deployed_at,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to update model: {e}")
@@ -590,17 +650,20 @@ class PredictiveService:
             VALUES (:prediction_id, :model_id, :prediction_type, :input_data, :prediction_result, :confidence_score, :created_at, :user_id, :guild_id)
             """
 
-            await self.db_manager.execute(query, {
-                'prediction_id': prediction.prediction_id,
-                'model_id': prediction.model_id,
-                'prediction_type': prediction.prediction_type.value,
-                'input_data': json.dumps(prediction.input_data),
-                'prediction_result': json.dumps(prediction.prediction_result),
-                'confidence_score': prediction.confidence_score,
-                'created_at': prediction.created_at,
-                'user_id': prediction.user_id,
-                'guild_id': prediction.guild_id
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "prediction_id": prediction.prediction_id,
+                    "model_id": prediction.model_id,
+                    "prediction_type": prediction.prediction_type.value,
+                    "input_data": json.dumps(prediction.input_data),
+                    "prediction_result": json.dumps(prediction.prediction_result),
+                    "confidence_score": prediction.confidence_score,
+                    "created_at": prediction.created_at,
+                    "user_id": prediction.user_id,
+                    "guild_id": prediction.guild_id,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store prediction: {e}")
@@ -614,15 +677,18 @@ class PredictiveService:
             VALUES (:performance_id, :model_id, :metric_name, :metric_value, :timestamp, :dataset_size, :evaluation_type)
             """
 
-            await self.db_manager.execute(query, {
-                'performance_id': performance.performance_id,
-                'model_id': performance.model_id,
-                'metric_name': performance.metric_name,
-                'metric_value': performance.metric_value,
-                'timestamp': performance.timestamp,
-                'dataset_size': performance.dataset_size,
-                'evaluation_type': performance.evaluation_type
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "performance_id": performance.performance_id,
+                    "model_id": performance.model_id,
+                    "metric_name": performance.metric_name,
+                    "metric_value": performance.metric_value,
+                    "timestamp": performance.timestamp,
+                    "dataset_size": performance.dataset_size,
+                    "evaluation_type": performance.evaluation_type,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store model performance: {e}")
@@ -636,18 +702,23 @@ class PredictiveService:
             VALUES (:feature_name, :importance_score, :rank, :model_id, :calculated_at)
             """
 
-            await self.db_manager.execute(query, {
-                'feature_name': feature_importance.feature_name,
-                'importance_score': feature_importance.importance_score,
-                'rank': feature_importance.rank,
-                'model_id': feature_importance.model_id,
-                'calculated_at': feature_importance.calculated_at
-            })
+            await self.db_manager.execute(
+                query,
+                {
+                    "feature_name": feature_importance.feature_name,
+                    "importance_score": feature_importance.importance_score,
+                    "rank": feature_importance.rank,
+                    "model_id": feature_importance.model_id,
+                    "calculated_at": feature_importance.calculated_at,
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to store feature importance: {e}")
 
-    async def _validate_input_data(self, input_data: Dict[str, Any], required_features: List[str]) -> Dict[str, Any]:
+    async def _validate_input_data(
+        self, input_data: Dict[str, Any], required_features: List[str]
+    ) -> Dict[str, Any]:
         """Validate input data for prediction."""
         try:
             errors = []
@@ -662,14 +733,11 @@ class PredictiveService:
                 if not isinstance(value, (int, float, str, bool)):
                     errors.append(f"Invalid data type for feature {feature}")
 
-            return {
-                'valid': len(errors) == 0,
-                'errors': errors
-            }
+            return {"valid": len(errors) == 0, "errors": errors}
 
         except Exception as e:
             logger.error(f"Failed to validate input data: {e}")
-            return {'valid': False, 'errors': [str(e)]}
+            return {"valid": False, "errors": [str(e)]}
 
     async def _get_recent_predictions(self) -> List[Dict[str, Any]]:
         """Get recent predictions."""
@@ -691,10 +759,10 @@ class PredictiveService:
         """Get model performance summary."""
         try:
             summary = {
-                'total_models': len(self.models),
-                'average_accuracy': 0.0,
-                'best_performing_model': None,
-                'models_needing_retraining': []
+                "total_models": len(self.models),
+                "average_accuracy": 0.0,
+                "best_performing_model": None,
+                "models_needing_retraining": [],
             }
 
             if self.models:
@@ -705,7 +773,7 @@ class PredictiveService:
                 for model in self.models.values():
                     if model.performance_metrics is None:
                         model.performance_metrics = {}
-                    accuracy = model.performance_metrics.get('accuracy', 0.0)
+                    accuracy = model.performance_metrics.get("accuracy", 0.0)
                     accuracies.append(accuracy)
 
                     if accuracy > best_accuracy:
@@ -713,11 +781,11 @@ class PredictiveService:
                         best_model = model.name
 
                     # Check if model needs retraining
-                    if accuracy < self.performance_thresholds.get('accuracy', 0.75):
-                        summary['models_needing_retraining'].append(model.name)
+                    if accuracy < self.performance_thresholds.get("accuracy", 0.75):
+                        summary["models_needing_retraining"].append(model.name)
 
-                summary['average_accuracy'] = sum(accuracies) / len(accuracies)
-                summary['best_performing_model'] = best_model
+                summary["average_accuracy"] = sum(accuracies) / len(accuracies)
+                summary["best_performing_model"] = best_model
 
             return summary
 
@@ -744,26 +812,30 @@ class PredictiveService:
             return []
 
     # ML model training and prediction methods (stubs for implementation)
-    async def _train_ml_model(self, model: MLModel, training_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _train_ml_model(
+        self, model: MLModel, training_data: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Train a machine learning model."""
         try:
             # This would implement actual model training
             # For now, return mock results
             return {
-                'success': True,
-                'metrics': {
-                    'accuracy': 0.85,
-                    'precision': 0.82,
-                    'recall': 0.80,
-                    'f1_score': 0.81
-                }
+                "success": True,
+                "metrics": {
+                    "accuracy": 0.85,
+                    "precision": 0.82,
+                    "recall": 0.80,
+                    "f1_score": 0.81,
+                },
             }
 
         except Exception as e:
             logger.error(f"Failed to train ML model: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _generate_ml_prediction(self, model: MLModel, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_ml_prediction(
+        self, model: MLModel, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate prediction using ML model."""
         try:
             # This would implement actual prediction
@@ -771,33 +843,35 @@ class PredictiveService:
             import random
 
             return {
-                'success': True,
-                'result': random.choice(['win', 'loss', 'draw']),
-                'confidence': random.uniform(0.6, 0.95)
+                "success": True,
+                "result": random.choice(["win", "loss", "draw"]),
+                "confidence": random.uniform(0.6, 0.95),
             }
 
         except Exception as e:
             logger.error(f"Failed to generate ML prediction: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
-    async def _evaluate_ml_model(self, model: MLModel, test_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _evaluate_ml_model(
+        self, model: MLModel, test_data: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Evaluate ML model performance."""
         try:
             # This would implement actual model evaluation
             # For now, return mock results
             return {
-                'success': True,
-                'metrics': {
-                    'accuracy': 0.83,
-                    'precision': 0.81,
-                    'recall': 0.79,
-                    'f1_score': 0.80
-                }
+                "success": True,
+                "metrics": {
+                    "accuracy": 0.83,
+                    "precision": 0.81,
+                    "recall": 0.79,
+                    "f1_score": 0.80,
+                },
             }
 
         except Exception as e:
             logger.error(f"Failed to evaluate ML model: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     async def _get_feature_importance(self, model: MLModel) -> Dict[str, Any]:
         """Get feature importance for model."""
@@ -805,30 +879,27 @@ class PredictiveService:
             # This would implement actual feature importance calculation
             # For now, return mock results
             importances = [
-                ('odds', 0.25),
-                ('team_stats', 0.20),
-                ('historical_performance', 0.18),
-                ('player_stats', 0.15),
-                ('weather', 0.12),
-                ('venue', 0.10)
+                ("odds", 0.25),
+                ("team_stats", 0.20),
+                ("historical_performance", 0.18),
+                ("player_stats", 0.15),
+                ("weather", 0.12),
+                ("venue", 0.10),
             ]
 
-            return {
-                'success': True,
-                'importances': importances
-            }
+            return {"success": True, "importances": importances}
 
         except Exception as e:
             logger.error(f"Failed to get feature importance: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     async def _validate_model_performance(self, model: MLModel) -> bool:
         """Validate if model meets performance requirements."""
         try:
             if model.performance_metrics is None:
                 model.performance_metrics = {}
-            accuracy = model.performance_metrics.get('accuracy', 0.0)
-            return accuracy >= self.performance_thresholds.get('accuracy', 0.75)
+            accuracy = model.performance_metrics.get("accuracy", 0.0)
+            return accuracy >= self.performance_thresholds.get("accuracy", 0.75)
 
         except Exception as e:
             logger.error(f"Failed to validate model performance: {e}")
@@ -839,11 +910,11 @@ class PredictiveService:
         try:
             # This would implement actual model deployment
             # For now, return mock results
-            return {'success': True}
+            return {"success": True}
 
         except Exception as e:
             logger.error(f"Failed to deploy ML model: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     async def _model_monitoring(self):
         """Background task for model monitoring."""
@@ -902,8 +973,8 @@ class PredictiveService:
             # Check performance degradation
             if model.performance_metrics is None:
                 model.performance_metrics = {}
-            accuracy = model.performance_metrics.get('accuracy', 0.0)
-            return accuracy < self.performance_thresholds.get('accuracy', 0.75)
+            accuracy = model.performance_metrics.get("accuracy", 0.0)
+            return accuracy < self.performance_thresholds.get("accuracy", 0.75)
 
         except Exception as e:
             logger.error(f"Failed to check if model should be retrained: {e}")
@@ -932,6 +1003,7 @@ class PredictiveService:
         self.models.clear()
         self.active_models.clear()
         self.prediction_cache.clear()
+
 
 # Predictive service is now complete with comprehensive predictive analytics capabilities
 #

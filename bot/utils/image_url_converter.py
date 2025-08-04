@@ -43,7 +43,9 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
             else:
                 # Local development - use localhost but warn about Discord webhook limitations
                 web_server_url = "http://localhost:25594"
-                logger.warning("Using localhost URL - Discord webhooks may not be able to access this. Set WEB_SERVER_URL environment variable for production.")
+                logger.warning(
+                    "Using localhost URL - Discord webhooks may not be able to access this. Set WEB_SERVER_URL environment variable for production."
+                )
 
         # Remove leading slash and construct full URL
         relative_path = image_path.lstrip("/")
@@ -63,7 +65,9 @@ def convert_image_path_to_url(image_path: str) -> Optional[str]:
             else:
                 # Local development
                 web_server_url = "http://localhost:25594"
-                logger.warning("Using localhost URL - Discord webhooks may not be able to access this. Set WEB_SERVER_URL environment variable for production.")
+                logger.warning(
+                    "Using localhost URL - Discord webhooks may not be able to access this. Set WEB_SERVER_URL environment variable for production."
+                )
 
         full_url = f"{web_server_url}/static/{image_path}"
         logger.debug(f"convert_image_path_to_url: Converted to: {full_url}")

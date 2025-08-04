@@ -8,7 +8,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
+from bot.utils.enhanced_cache_manager import (
+    enhanced_cache_get,
+    enhanced_cache_set,
+    enhanced_cache_delete,
+    get_enhanced_cache_manager,
+)
 from bot.utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
@@ -37,12 +42,12 @@ class AnalyticsService:
 
         # Analytics configuration
         self.config = {
-            'event_batch_size': 100,
-            'event_flush_interval': 60,  # seconds
-            'pattern_analysis_interval': 300,  # seconds
-            'metrics_cache_ttl': 300,  # seconds
-            'max_patterns_per_user': 50,
-            'min_confidence_score': 0.6
+            "event_batch_size": 100,
+            "event_flush_interval": 60,  # seconds
+            "pattern_analysis_interval": 300,  # seconds
+            "metrics_cache_ttl": 300,  # seconds
+            "max_patterns_per_user": 50,
+            "min_confidence_score": 0.6,
         }
 
         logger.info("AnalyticsService initialized")
@@ -77,13 +82,15 @@ class AnalyticsService:
             try:
                 # Process events in batches
                 events = []
-                while len(events) < self.config['event_batch_size'] and self.event_queue:
+                while (
+                    len(events) < self.config["event_batch_size"] and self.event_queue
+                ):
                     events.append(self.event_queue.popleft())
 
                 if events:
                     await self._analyze_events(events)
 
-                await asyncio.sleep(self.config['event_flush_interval'])
+                await asyncio.sleep(self.config["event_flush_interval"])
 
             except asyncio.CancelledError:
                 break
@@ -95,12 +102,12 @@ class AnalyticsService:
         """Analyze a batch of events."""
         try:
             for event in events:
-                event_type = event.get('type')
-                if event_type == 'bet_placed':
+                event_type = event.get("type")
+                if event_type == "bet_placed":
                     await self._analyze_betting_pattern(event)
-                elif event_type == 'user_activity':
+                elif event_type == "user_activity":
                     await self._analyze_user_behavior(event)
-                elif event_type == 'game_result':
+                elif event_type == "game_result":
                     await self._analyze_game_outcome(event)
 
         except Exception as e:
@@ -109,8 +116,8 @@ class AnalyticsService:
     async def _analyze_betting_pattern(self, event: Dict):
         """Analyze betting patterns from events."""
         try:
-            user_id = event.get('user_id')
-            bet_data = event.get('bet_data', {})
+            user_id = event.get("user_id")
+            bet_data = event.get("bet_data", {})
 
             # Cache betting pattern analysis
             cache_key = f"betting_pattern:{user_id}"
@@ -120,23 +127,35 @@ class AnalyticsService:
                 patterns = cached_patterns
             else:
                 patterns = await self._get_user_betting_patterns(user_id)
-                await enhanced_cache_set("analytics_data", cache_key, patterns, ttl=ANALYTICS_CACHE_TTLS["betting_patterns"])
+                await enhanced_cache_set(
+                    "analytics_data",
+                    cache_key,
+                    patterns,
+                    ttl=ANALYTICS_CACHE_TTLS["betting_patterns"],
+                )
 
             # Update patterns with new event
-            patterns.append({
-                'timestamp': event.get('timestamp'),
-                'bet_type': bet_data.get('type'),
-                'amount': bet_data.get('amount'),
-                'odds': bet_data.get('odds'),
-                'sport': bet_data.get('sport')
-            })
+            patterns.append(
+                {
+                    "timestamp": event.get("timestamp"),
+                    "bet_type": bet_data.get("type"),
+                    "amount": bet_data.get("amount"),
+                    "odds": bet_data.get("odds"),
+                    "sport": bet_data.get("sport"),
+                }
+            )
 
             # Keep only recent patterns
-            if len(patterns) > self.config['max_patterns_per_user']:
-                patterns = patterns[-self.config['max_patterns_per_user']:]
+            if len(patterns) > self.config["max_patterns_per_user"]:
+                patterns = patterns[-self.config["max_patterns_per_user"] :]
 
             # Update cache
-            await enhanced_cache_set("analytics_data", cache_key, patterns, ttl=ANALYTICS_CACHE_TTLS["betting_patterns"])
+            await enhanced_cache_set(
+                "analytics_data",
+                cache_key,
+                patterns,
+                ttl=ANALYTICS_CACHE_TTLS["betting_patterns"],
+            )
 
         except Exception as e:
             logger.error(f"Error analyzing betting pattern: {e}")
@@ -144,8 +163,8 @@ class AnalyticsService:
     async def _analyze_user_behavior(self, event: Dict):
         """Analyze user behavior patterns."""
         try:
-            user_id = event.get('user_id')
-            activity_type = event.get('activity_type')
+            user_id = event.get("user_id")
+            activity_type = event.get("activity_type")
 
             # Cache user behavior analysis
             cache_key = f"user_behavior:{user_id}"
@@ -153,28 +172,35 @@ class AnalyticsService:
 
             if not cached_behavior:
                 cached_behavior = {
-                    'activity_count': 0,
-                    'last_activity': None,
-                    'favorite_sports': {},
-                    'peak_hours': {}
+                    "activity_count": 0,
+                    "last_activity": None,
+                    "favorite_sports": {},
+                    "peak_hours": {},
                 }
 
             # Update behavior data
-            cached_behavior['activity_count'] += 1
-            cached_behavior['last_activity'] = event.get('timestamp')
+            cached_behavior["activity_count"] += 1
+            cached_behavior["last_activity"] = event.get("timestamp")
 
             # Track favorite sports
-            sport = event.get('sport')
+            sport = event.get("sport")
             if sport:
-                cached_behavior['favorite_sports'][sport] = cached_behavior['favorite_sports'].get(
-                    sport, 0) + 1
+                cached_behavior["favorite_sports"][sport] = (
+                    cached_behavior["favorite_sports"].get(sport, 0) + 1
+                )
 
             # Track peak hours
-            hour = datetime.fromisoformat(event.get('timestamp')).hour
-            cached_behavior['peak_hours'][hour] = cached_behavior['peak_hours'].get(
-                hour, 0) + 1
+            hour = datetime.fromisoformat(event.get("timestamp")).hour
+            cached_behavior["peak_hours"][hour] = (
+                cached_behavior["peak_hours"].get(hour, 0) + 1
+            )
 
-            await enhanced_cache_set("analytics_data", cache_key, cached_behavior, ttl=ANALYTICS_CACHE_TTLS["user_metrics"])
+            await enhanced_cache_set(
+                "analytics_data",
+                cache_key,
+                cached_behavior,
+                ttl=ANALYTICS_CACHE_TTLS["user_metrics"],
+            )
 
         except Exception as e:
             logger.error(f"Error analyzing user behavior: {e}")
@@ -182,23 +208,29 @@ class AnalyticsService:
     async def _analyze_game_outcome(self, event: Dict):
         """Analyze game outcome patterns."""
         try:
-            game_id = event.get('game_id')
-            outcome = event.get('outcome')
+            game_id = event.get("game_id")
+            outcome = event.get("outcome")
 
             # Cache game outcome analysis
             cache_key = f"game_outcome:{game_id}"
-            await enhanced_cache_set("analytics_data", cache_key, {
-                'outcome': outcome,
-                'timestamp': event.get('timestamp'),
-                'affected_bets': event.get('affected_bets', [])
-            }, ttl=ANALYTICS_CACHE_TTLS["trend_analysis"])
+            await enhanced_cache_set(
+                "analytics_data",
+                cache_key,
+                {
+                    "outcome": outcome,
+                    "timestamp": event.get("timestamp"),
+                    "affected_bets": event.get("affected_bets", []),
+                },
+                ttl=ANALYTICS_CACHE_TTLS["trend_analysis"],
+            )
 
         except Exception as e:
             logger.error(f"Error analyzing game outcome: {e}")
 
     @time_operation("analytics_get_user_metrics")
-    async def get_user_metrics(self, user_id: int, guild_id: int,
-                               time_range: str = "30d") -> Dict[str, Any]:
+    async def get_user_metrics(
+        self, user_id: int, guild_id: int, time_range: str = "30d"
+    ) -> Dict[str, Any]:
         """Get comprehensive user metrics."""
         try:
             # Check cache first
@@ -214,23 +246,34 @@ class AnalyticsService:
             start_date = self._get_start_date(time_range)
 
             # Get user betting data
-            betting_data = await self._get_user_betting_data(user_id, guild_id, start_date, end_date)
+            betting_data = await self._get_user_betting_data(
+                user_id, guild_id, start_date, end_date
+            )
 
             # Calculate metrics
             metrics = {
-                'total_bets': len(betting_data),
-                'total_volume': sum(bet['amount'] for bet in betting_data),
-                'win_rate': self._calculate_win_rate(betting_data),
-                'avg_bet_size': self._calculate_avg_bet_size(betting_data),
-                'favorite_sports': self._get_favorite_sports(betting_data),
-                'betting_trends': await self._analyze_betting_trends(user_id, guild_id, start_date, end_date),
-                'engagement_score': await self._calculate_engagement_score(user_id, guild_id, start_date, end_date),
-                'risk_profile': self._calculate_risk_profile(betting_data),
-                'performance_rank': await self._get_performance_rank(user_id, guild_id)
+                "total_bets": len(betting_data),
+                "total_volume": sum(bet["amount"] for bet in betting_data),
+                "win_rate": self._calculate_win_rate(betting_data),
+                "avg_bet_size": self._calculate_avg_bet_size(betting_data),
+                "favorite_sports": self._get_favorite_sports(betting_data),
+                "betting_trends": await self._analyze_betting_trends(
+                    user_id, guild_id, start_date, end_date
+                ),
+                "engagement_score": await self._calculate_engagement_score(
+                    user_id, guild_id, start_date, end_date
+                ),
+                "risk_profile": self._calculate_risk_profile(betting_data),
+                "performance_rank": await self._get_performance_rank(user_id, guild_id),
             }
 
             # Cache the results
-            await enhanced_cache_set("analytics_data", cache_key, metrics, ttl=self.config['metrics_cache_ttl'])
+            await enhanced_cache_set(
+                "analytics_data",
+                cache_key,
+                metrics,
+                ttl=self.config["metrics_cache_ttl"],
+            )
 
             return metrics
 
@@ -239,7 +282,9 @@ class AnalyticsService:
             return {}
 
     @time_operation("analytics_get_guild_metrics")
-    async def get_guild_metrics(self, guild_id: int, time_range: str = "30d") -> Dict[str, Any]:
+    async def get_guild_metrics(
+        self, guild_id: int, time_range: str = "30d"
+    ) -> Dict[str, Any]:
         """Get comprehensive guild metrics."""
         try:
             # Check cache first
@@ -255,21 +300,30 @@ class AnalyticsService:
             start_date = self._get_start_date(time_range)
 
             # Get guild betting data
-            betting_data = await self._get_guild_betting_data(guild_id, start_date, end_date)
+            betting_data = await self._get_guild_betting_data(
+                guild_id, start_date, end_date
+            )
 
             # Calculate metrics
             metrics = {
-                'total_bets': len(betting_data),
-                'total_volume': sum(bet['amount'] for bet in betting_data),
-                'active_users': len(set(bet['user_id'] for bet in betting_data)),
-                'avg_bet_size': self._calculate_avg_bet_size(betting_data),
-                'popular_sports': self._get_popular_sports(betting_data),
-                'revenue_metrics': self._calculate_revenue_metrics(betting_data),
-                'user_engagement': await self._calculate_guild_engagement(guild_id, start_date, end_date)
+                "total_bets": len(betting_data),
+                "total_volume": sum(bet["amount"] for bet in betting_data),
+                "active_users": len(set(bet["user_id"] for bet in betting_data)),
+                "avg_bet_size": self._calculate_avg_bet_size(betting_data),
+                "popular_sports": self._get_popular_sports(betting_data),
+                "revenue_metrics": self._calculate_revenue_metrics(betting_data),
+                "user_engagement": await self._calculate_guild_engagement(
+                    guild_id, start_date, end_date
+                ),
             }
 
             # Cache the results
-            await enhanced_cache_set("analytics_data", cache_key, metrics, ttl=self.config['metrics_cache_ttl'])
+            await enhanced_cache_set(
+                "analytics_data",
+                cache_key,
+                metrics,
+                ttl=self.config["metrics_cache_ttl"],
+            )
 
             return metrics
 
@@ -277,8 +331,9 @@ class AnalyticsService:
             logger.error(f"Error getting guild metrics: {e}")
             return {}
 
-    async def _get_user_betting_data(self, user_id: int, guild_id: int,
-                                     start_date: datetime, end_date: datetime) -> List[Dict]:
+    async def _get_user_betting_data(
+        self, user_id: int, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> List[Dict]:
         """Get user betting data from database."""
         try:
             query = """
@@ -288,13 +343,16 @@ class AnalyticsService:
                 AND created_at BETWEEN %s AND %s
                 ORDER BY created_at DESC
             """
-            return await self.db_manager.fetch_all(query, user_id, guild_id, start_date, end_date)
+            return await self.db_manager.fetch_all(
+                query, user_id, guild_id, start_date, end_date
+            )
         except Exception as e:
             logger.error(f"Error getting user betting data: {e}")
             return []
 
-    async def _get_guild_betting_data(self, guild_id: int,
-                                      start_date: datetime, end_date: datetime) -> List[Dict]:
+    async def _get_guild_betting_data(
+        self, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> List[Dict]:
         """Get guild betting data from database."""
         try:
             query = """
@@ -304,7 +362,9 @@ class AnalyticsService:
                 AND created_at BETWEEN %s AND %s
                 ORDER BY created_at DESC
             """
-            return await self.db_manager.fetch_all(query, guild_id, start_date, end_date)
+            return await self.db_manager.fetch_all(
+                query, guild_id, start_date, end_date
+            )
         except Exception as e:
             logger.error(f"Error getting guild betting data: {e}")
             return []
@@ -327,11 +387,12 @@ class AnalyticsService:
             return 0.0
 
         completed_bets = [
-            bet for bet in betting_data if bet['status'] in ['won', 'lost']]
+            bet for bet in betting_data if bet["status"] in ["won", "lost"]
+        ]
         if not completed_bets:
             return 0.0
 
-        won_bets = [bet for bet in completed_bets if bet['status'] == 'won']
+        won_bets = [bet for bet in completed_bets if bet["status"] == "won"]
         return len(won_bets) / len(completed_bets)
 
     def _calculate_avg_bet_size(self, betting_data: List[Dict]) -> float:
@@ -339,7 +400,7 @@ class AnalyticsService:
         if not betting_data:
             return 0.0
 
-        total_amount = sum(bet['amount'] for bet in betting_data)
+        total_amount = sum(bet["amount"] for bet in betting_data)
         return total_amount / len(betting_data)
 
     def _get_favorite_sports(self, betting_data: List[Dict]) -> Dict[str, int]:
@@ -347,7 +408,7 @@ class AnalyticsService:
         sport_counts = {}
         for bet in betting_data:
             # Extract sport from game_id or other field
-            sport = bet.get('sport', 'Unknown')
+            sport = bet.get("sport", "Unknown")
             sport_counts[sport] = sport_counts.get(sport, 0) + 1
         return sport_counts
 
@@ -355,7 +416,7 @@ class AnalyticsService:
         """Get popular sports in guild."""
         sport_counts = {}
         for bet in betting_data:
-            sport = bet.get('sport', 'Unknown')
+            sport = bet.get("sport", "Unknown")
             sport_counts[sport] = sport_counts.get(sport, 0) + 1
         return sport_counts
 
@@ -365,7 +426,7 @@ class AnalyticsService:
             return "Unknown"
 
         avg_bet_size = self._calculate_avg_bet_size(betting_data)
-        total_volume = sum(bet['amount'] for bet in betting_data)
+        total_volume = sum(bet["amount"] for bet in betting_data)
 
         if avg_bet_size > 100 or total_volume > 1000:
             return "High Risk"
@@ -374,22 +435,24 @@ class AnalyticsService:
         else:
             return "Low Risk"
 
-    async def _analyze_betting_trends(self, user_id: int, guild_id: int,
-                                      start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _analyze_betting_trends(
+        self, user_id: int, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Analyze betting trends for a user."""
         try:
             # This would implement trend analysis logic
             return {
-                'trend_direction': 'stable',
-                'volume_change': 0.0,
-                'frequency_change': 0.0
+                "trend_direction": "stable",
+                "volume_change": 0.0,
+                "frequency_change": 0.0,
             }
         except Exception as e:
             logger.error(f"Error analyzing betting trends: {e}")
             return {}
 
-    async def _calculate_engagement_score(self, user_id: int, guild_id: int,
-                                          start_date: datetime, end_date: datetime) -> float:
+    async def _calculate_engagement_score(
+        self, user_id: int, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> float:
         """Calculate user engagement score."""
         try:
             # This would implement engagement scoring logic
@@ -407,38 +470,35 @@ class AnalyticsService:
             logger.error(f"Error getting performance rank: {e}")
             return 0
 
-    async def _calculate_revenue_metrics(self, betting_data: List[Dict]) -> Dict[str, float]:
+    async def _calculate_revenue_metrics(
+        self, betting_data: List[Dict]
+    ) -> Dict[str, float]:
         """Calculate revenue metrics for guild."""
         try:
-            total_volume = sum(bet['amount'] for bet in betting_data)
+            total_volume = sum(bet["amount"] for bet in betting_data)
             completed_bets = [
-                bet for bet in betting_data if bet['status'] in ['won', 'lost']]
+                bet for bet in betting_data if bet["status"] in ["won", "lost"]
+            ]
 
             if not completed_bets:
-                return {'total_revenue': 0.0, 'avg_revenue_per_bet': 0.0}
+                return {"total_revenue": 0.0, "avg_revenue_per_bet": 0.0}
 
             # Simple revenue calculation (this would be more complex in practice)
             revenue = total_volume * 0.05  # 5% commission
             avg_revenue = revenue / len(completed_bets)
 
-            return {
-                'total_revenue': revenue,
-                'avg_revenue_per_bet': avg_revenue
-            }
+            return {"total_revenue": revenue, "avg_revenue_per_bet": avg_revenue}
         except Exception as e:
             logger.error(f"Error calculating revenue metrics: {e}")
-            return {'total_revenue': 0.0, 'avg_revenue_per_bet': 0.0}
+            return {"total_revenue": 0.0, "avg_revenue_per_bet": 0.0}
 
-    async def _calculate_guild_engagement(self, guild_id: int,
-                                          start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _calculate_guild_engagement(
+        self, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Calculate guild engagement metrics."""
         try:
             # This would implement guild engagement analysis
-            return {
-                'active_users': 0,
-                'avg_bets_per_user': 0.0,
-                'retention_rate': 0.0
-            }
+            return {"active_users": 0, "avg_bets_per_user": 0.0, "retention_rate": 0.0}
         except Exception as e:
             logger.error(f"Error calculating guild engagement: {e}")
             return {}
@@ -452,19 +512,27 @@ class AnalyticsService:
             logger.error(f"Error getting user betting patterns: {e}")
             return []
 
-    async def clear_analytics_cache(self, user_id: Optional[int] = None, guild_id: Optional[int] = None):
+    async def clear_analytics_cache(
+        self, user_id: Optional[int] = None, guild_id: Optional[int] = None
+    ):
         """Clear analytics cache for specific user or guild."""
         try:
             if user_id:
                 # Clear user-specific cache
                 await enhanced_cache_delete("analytics_data", f"user_metrics:{user_id}")
-                await enhanced_cache_delete("analytics_data", f"user_behavior:{user_id}")
-                await enhanced_cache_delete("analytics_data", f"betting_pattern:{user_id}")
+                await enhanced_cache_delete(
+                    "analytics_data", f"user_behavior:{user_id}"
+                )
+                await enhanced_cache_delete(
+                    "analytics_data", f"betting_pattern:{user_id}"
+                )
                 logger.info(f"Cleared analytics cache for user {user_id}")
 
             if guild_id:
                 # Clear guild-specific cache
-                await enhanced_cache_delete("analytics_data", f"guild_metrics:{guild_id}")
+                await enhanced_cache_delete(
+                    "analytics_data", f"guild_metrics:{guild_id}"
+                )
                 logger.info(f"Cleared analytics cache for guild {guild_id}")
 
             if not user_id and not guild_id:

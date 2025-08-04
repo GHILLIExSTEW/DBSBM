@@ -31,7 +31,7 @@ async def test_rapidapi_esports():
             leagues_response = await api.discover_leagues("esports")
 
             # Handle APIResponse object
-            if hasattr(leagues_response, 'data'):
+            if hasattr(leagues_response, "data"):
                 leagues = leagues_response.data
             else:
                 leagues = leagues_response
@@ -39,8 +39,7 @@ async def test_rapidapi_esports():
             logger.info(f"Found {len(leagues)} esports leagues")
 
             for league in leagues[:5]:  # Show first 5 leagues
-                logger.info(
-                    f"  - {league.get('name')} (ID: {league.get('id')})")
+                logger.info(f"  - {league.get('name')} (ID: {league.get('id')})")
 
             if not leagues:
                 logger.warning("No esports leagues found")
@@ -55,7 +54,7 @@ async def test_rapidapi_esports():
             games_response = await api.fetch_games("esports", first_league, today)
 
             # Handle APIResponse object
-            if hasattr(games_response, 'data'):
+            if hasattr(games_response, "data"):
                 games = games_response.data
             else:
                 games = games_response
@@ -85,13 +84,12 @@ async def test_rapidapi_esports():
                 )
 
                 # Handle APIResponse object
-                if hasattr(data_response, 'data'):
+                if hasattr(data_response, "data"):
                     data = data_response.data
                 else:
                     data = data_response
 
-                logger.info(
-                    f"Direct API call successful, response type: {type(data)}")
+                logger.info(f"Direct API call successful, response type: {type(data)}")
                 if isinstance(data, dict):
                     logger.info(f"Response keys: {list(data.keys())}")
                 elif isinstance(data, list):

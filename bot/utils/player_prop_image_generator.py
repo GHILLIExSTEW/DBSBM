@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class PlayerPropImageGenerator:
-    def __init__(self, font_dir="bot/assets/fonts", guild_id=None):
+    def __init__(
+        self, font_dir="../../../StaticFiles/DBSBM/assets/fonts", guild_id=None
+    ):
         self.font_dir = font_dir
         self.guild_id = guild_id
         self.font_regular = ImageFont.truetype(
@@ -186,24 +188,32 @@ class PlayerPropImageGenerator:
         risk_font_size = 24
         footer_font_size = 18
 
-        font_dir = "bot/assets/fonts"
+        font_dir = "../../../StaticFiles/DBSBM/assets/fonts"
         fonts = {
-            'bold': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
-            'bold_team': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", team_font_size),
-            'bold_player': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", player_font_size),
-            'line': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", line_font_size),
-            'odds': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
-            'risk': ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
-            'footer': ImageFont.truetype(f"{font_dir}/Roboto-Regular.ttf", footer_font_size)
+            "bold": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
+            "bold_team": ImageFont.truetype(
+                f"{font_dir}/Roboto-Bold.ttf", team_font_size
+            ),
+            "bold_player": ImageFont.truetype(
+                f"{font_dir}/Roboto-Bold.ttf", player_font_size
+            ),
+            "line": ImageFont.truetype(
+                f"{font_dir}/Roboto-Regular.ttf", line_font_size
+            ),
+            "odds": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
+            "risk": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
+            "footer": ImageFont.truetype(
+                f"{font_dir}/Roboto-Regular.ttf", footer_font_size
+            ),
         }
 
         return {
-            'image_width': image_width,
-            'image_height': image_height,
-            'bg_color': bg_color,
-            'padding': padding,
-            'logo_size': logo_size,
-            'fonts': fonts
+            "image_width": image_width,
+            "image_height": image_height,
+            "bg_color": bg_color,
+            "padding": padding,
+            "logo_size": logo_size,
+            "fonts": fonts,
         }
 
     @staticmethod
@@ -215,10 +225,11 @@ class PlayerPropImageGenerator:
         league_lower = league.lower()
         sport_category = get_sport_category_for_path(league_upper)
 
-        league_logo_path = f"bot/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.webp"
+        league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.webp"
 
         try:
             from PIL import Image
+
             league_logo_original = Image.open(league_logo_path).convert("RGBA")
             league_logo_original.thumbnail((45, 45), Image.Resampling.LANCZOS)
             return league_logo_original
@@ -232,10 +243,13 @@ class PlayerPropImageGenerator:
 
         # Get proper league display name
         from bot.config.leagues import LEAGUE_CONFIG
+
         league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league.upper())
 
         # Dynamic header text sizing
-        def create_header_text_with_fallback(league_name, font, max_width, logo_width=0):
+        def create_header_text_with_fallback(
+            league_name, font, max_width, logo_width=0
+        ):
             """Create header text that fits within the available width."""
             # Start with full text
             full_text = f"{league_name} - Player Prop"
@@ -269,17 +283,20 @@ class PlayerPropImageGenerator:
 
         # Calculate available width for text
         logo_space = logo_display_size[0] + 15 if league_logo else 0
-        available_text_width = params['image_width'] - 48 - logo_space
+        available_text_width = params["image_width"] - 48 - logo_space
 
         header_text = create_header_text_with_fallback(
-            league_display_name, params['fonts']['bold'], available_text_width, logo_space
+            league_display_name,
+            params["fonts"]["bold"],
+            available_text_width,
+            logo_space,
         )
 
         # Calculate text position
-        header_w, header_h = params['fonts']['bold'].getbbox(header_text)[2:]
+        header_w, header_h = params["fonts"]["bold"].getbbox(header_text)[2:]
         block_h = max(logo_display_size[1], header_h)
         block_w = logo_display_size[0] + 15 + header_w if league_logo else header_w
-        block_x = (params['image_width'] - block_w) // 2
+        block_x = (params["image_width"] - block_w) // 2
         block_y = 25
 
         if league_logo:
@@ -294,10 +311,25 @@ class PlayerPropImageGenerator:
             text_x = block_x
             text_y = block_y
 
-        draw.text((text_x, text_y), header_text, font=params['fonts']['bold'], fill="white", anchor="lt")
+        draw.text(
+            (text_x, text_y),
+            header_text,
+            font=params["fonts"]["bold"],
+            fill="white",
+            anchor="lt",
+        )
 
     @staticmethod
-    def _create_player_prop_teams_section(image, draw, params, home_team, away_team, player_name, player_image, player_team):
+    def _create_player_prop_teams_section(
+        image,
+        draw,
+        params,
+        home_team,
+        away_team,
+        player_name,
+        player_image,
+        player_team,
+    ):
         """Create the teams section for player prop images."""
         # Load team logos
         home_logo = PlayerPropImageGenerator._load_team_logo(home_team, league)
@@ -305,12 +337,24 @@ class PlayerPropImageGenerator:
 
         # Draw teams section using existing method
         PlayerPropImageGenerator.draw_player_prop_section(
-            image, draw, params['image_width'], True, home_logo, away_logo,
-            player_name, player_image, player_team, home_team, away_team, False
+            image,
+            draw,
+            params["image_width"],
+            True,
+            home_logo,
+            away_logo,
+            player_name,
+            player_image,
+            player_team,
+            home_team,
+            away_team,
+            False,
         )
 
     @staticmethod
-    def _create_player_prop_bet_details_section(draw, params, line, prop_type, odds, units, units_display_mode, display_as_risk):
+    def _create_player_prop_bet_details_section(
+        draw, params, line, prop_type, odds, units, units_display_mode, display_as_risk
+    ):
         """Create the bet details section for player prop images."""
         # Calculate positions
         line_y = 200
@@ -319,38 +363,68 @@ class PlayerPropImageGenerator:
 
         # Draw line
         line_text = f"{prop_type}: {line}"
-        draw.text((params['padding'], line_y), line_text, fill=(255, 255, 255), font=params['fonts']['line'])
+        draw.text(
+            (params["padding"], line_y),
+            line_text,
+            fill=(255, 255, 255),
+            font=params["fonts"]["line"],
+        )
 
         # Draw odds if provided
         if odds:
             odds_text = f"Odds: {odds}"
-            draw.text((params['padding'], odds_y), odds_text, fill=(255, 255, 255), font=params['fonts']['odds'])
+            draw.text(
+                (params["padding"], odds_y),
+                odds_text,
+                fill=(255, 255, 255),
+                font=params["fonts"]["odds"],
+            )
 
         # Draw units/risk
         if display_as_risk:
             risk_text = f"Risk: {units} units"
-            draw.text((params['padding'], units_y), risk_text, fill=(255, 255, 255), font=params['fonts']['risk'])
+            draw.text(
+                (params["padding"], units_y),
+                risk_text,
+                fill=(255, 255, 255),
+                font=params["fonts"]["risk"],
+            )
         else:
             units_text = f"Units: {units}"
-            draw.text((params['padding'], units_y), units_text, fill=(255, 255, 255), font=params['fonts']['line'])
+            draw.text(
+                (params["padding"], units_y),
+                units_text,
+                fill=(255, 255, 255),
+                font=params["fonts"]["line"],
+            )
 
     @staticmethod
     def _create_player_prop_footer_section(draw, params, bet_id, timestamp):
         """Create the footer section for player prop images."""
-        footer_y = params['image_height'] - 50
+        footer_y = params["image_height"] - 50
 
         # Draw bet ID if provided
         if bet_id:
             bet_id_text = f"Bet ID: {bet_id}"
-            draw.text((params['padding'], footer_y), bet_id_text, fill=(200, 200, 200), font=params['fonts']['footer'])
+            draw.text(
+                (params["padding"], footer_y),
+                bet_id_text,
+                fill=(200, 200, 200),
+                font=params["fonts"]["footer"],
+            )
 
         # Draw timestamp
         if timestamp:
             timestamp_text = f"Created: {timestamp}"
-            bbox = draw.textbbox((0, 0), timestamp_text, font=params['fonts']['footer'])
+            bbox = draw.textbbox((0, 0), timestamp_text, font=params["fonts"]["footer"])
             text_width = bbox[2] - bbox[0]
-            timestamp_x = params['image_width'] - text_width - params['padding']
-            draw.text((timestamp_x, footer_y), timestamp_text, fill=(200, 200, 200), font=params['fonts']['footer'])
+            timestamp_x = params["image_width"] - text_width - params["padding"]
+            draw.text(
+                (timestamp_x, footer_y),
+                timestamp_text,
+                fill=(200, 200, 200),
+                font=params["fonts"]["footer"],
+            )
 
     @staticmethod
     def generate_player_prop_bet_image(
@@ -375,30 +449,52 @@ class PlayerPropImageGenerator:
         params = PlayerPropImageGenerator._setup_player_prop_image_parameters()
 
         # Create base image
-        image = Image.new("RGB", (params['image_width'], params['image_height']), params['bg_color'])
+        image = Image.new(
+            "RGB", (params["image_width"], params["image_height"]), params["bg_color"]
+        )
         draw = ImageDraw.Draw(image)
 
         # Find league logo
         league_logo = PlayerPropImageGenerator._find_league_logo_for_player_prop(league)
 
         # Create header section
-        PlayerPropImageGenerator._create_player_prop_header_section(image, draw, params, league, league_logo)
+        PlayerPropImageGenerator._create_player_prop_header_section(
+            image, draw, params, league, league_logo
+        )
 
         # Load player image
-        player_image = PlayerPropImageGenerator._load_player_image(player_name, team_name, league, guild_id)
+        player_image = PlayerPropImageGenerator._load_player_image(
+            player_name, team_name, league, guild_id
+        )
 
         # Create teams section
         PlayerPropImageGenerator._create_player_prop_teams_section(
-            image, draw, params, home_team, away_team, player_name, player_image, team_name
+            image,
+            draw,
+            params,
+            home_team,
+            away_team,
+            player_name,
+            player_image,
+            team_name,
         )
 
         # Create bet details section
         PlayerPropImageGenerator._create_player_prop_bet_details_section(
-            draw, params, line, prop_type, odds, units, units_display_mode, display_as_risk
+            draw,
+            params,
+            line,
+            prop_type,
+            odds,
+            units,
+            units_display_mode,
+            display_as_risk,
         )
 
         # Create footer section
-        PlayerPropImageGenerator._create_player_prop_footer_section(draw, params, bet_id, timestamp)
+        PlayerPropImageGenerator._create_player_prop_footer_section(
+            draw, params, bet_id, timestamp
+        )
 
         # Save or return the image
         if output_path:

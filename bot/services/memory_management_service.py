@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class MemoryThreshold(Enum):
     """Memory threshold levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -30,6 +31,7 @@ class MemoryThreshold(Enum):
 @dataclass
 class MemorySnapshot:
     """Represents a memory usage snapshot."""
+
     timestamp: datetime
     total_memory_mb: float
     available_memory_mb: float
@@ -44,6 +46,7 @@ class MemorySnapshot:
 @dataclass
 class MemoryLeak:
     """Represents a detected memory leak."""
+
     object_type: str
     count: int
     size_bytes: int
@@ -56,11 +59,13 @@ class MemoryLeak:
 class MemoryManager:
     """Comprehensive memory management service."""
 
-    def __init__(self,
-                 monitoring_interval: int = 30,
-                 gc_threshold: int = 700,
-                 memory_thresholds: Optional[Dict[str, float]] = None,
-                 enable_tracemalloc: bool = True):
+    def __init__(
+        self,
+        monitoring_interval: int = 30,
+        gc_threshold: int = 700,
+        memory_thresholds: Optional[Dict[str, float]] = None,
+        enable_tracemalloc: bool = True,
+    ):
         """Initialize the memory manager."""
         self.monitoring_interval = monitoring_interval
         self.gc_threshold = gc_threshold
@@ -71,7 +76,7 @@ class MemoryManager:
             "low": 50.0,
             "medium": 70.0,
             "high": 85.0,
-            "critical": 95.0
+            "critical": 95.0,
         }
 
         # Monitoring state
@@ -146,7 +151,9 @@ class MemoryManager:
 
             # Get garbage collection stats
             gc_stats = gc.get_stats()
-            gc_collections = {stat['collections']: stat['collections'] for stat in gc_stats}
+            gc_collections = {
+                stat["collections"]: stat["collections"] for stat in gc_stats
+            }
 
             # Determine threshold level
             threshold = self._get_memory_threshold(memory.percent)
@@ -160,7 +167,7 @@ class MemoryManager:
                 process_memory_mb=process_memory,
                 gc_objects=len(gc.get_objects()),
                 gc_collections=gc_collections,
-                threshold=threshold
+                threshold=threshold,
             )
 
             with self._lock:
@@ -168,7 +175,9 @@ class MemoryManager:
 
             # Log if memory usage is high
             if memory.percent > self.memory_thresholds["high"]:
-                logger.warning(f"High memory usage: {memory.percent:.1f}% ({process_memory:.1f}MB)")
+                logger.warning(
+                    f"High memory usage: {memory.percent:.1f}% ({process_memory:.1f}MB)"
+                )
 
         except Exception as e:
             logger.error(f"Error taking memory snapshot: {e}")
@@ -191,8 +200,13 @@ class MemoryManager:
 
         latest_snapshot = self.snapshots[-1]
 
-        if latest_snapshot.threshold in [MemoryThreshold.HIGH, MemoryThreshold.CRITICAL]:
-            logger.warning(f"Memory threshold {latest_snapshot.threshold.value} exceeded: {latest_snapshot.memory_percent:.1f}%")
+        if latest_snapshot.threshold in [
+            MemoryThreshold.HIGH,
+            MemoryThreshold.CRITICAL,
+        ]:
+            logger.warning(
+                f"Memory threshold {latest_snapshot.threshold.value} exceeded: {latest_snapshot.memory_percent:.1f}%"
+            )
             await self._trigger_memory_cleanup(latest_snapshot.threshold)
 
     async def _detect_memory_leaks(self) -> None:
@@ -204,9 +218,9 @@ class MemoryManager:
             # Get current tracemalloc snapshot
             current_snapshot = tracemalloc.take_snapshot()
 
-            if hasattr(self, '_previous_snapshot') and self._previous_snapshot:
+            if hasattr(self, "_previous_snapshot") and self._previous_snapshot:
                 # Compare with previous snapshot
-                stats = current_snapshot.compare_to(self._previous_snapshot, 'lineno')
+                stats = current_snapshot.compare_to(self._previous_snapshot, "lineno")
 
                 for stat in stats[:10]:  # Top 10 changes
                     if stat.size_diff > 1024 * 1024:  # 1MB threshold
@@ -227,7 +241,9 @@ class MemoryManager:
                 leak.count += 1
                 leak.size_bytes += stat.size_diff
                 leak.last_updated = datetime.now()
-                leak.growth_rate = leak.size_bytes / max(1, (leak.last_updated - leak.first_detected).total_seconds())
+                leak.growth_rate = leak.size_bytes / max(
+                    1, (leak.last_updated - leak.first_detected).total_seconds()
+                )
             else:
                 leak = MemoryLeak(
                     object_type=str(stat.traceback),
@@ -236,11 +252,13 @@ class MemoryManager:
                     first_detected=datetime.now(),
                     last_updated=datetime.now(),
                     growth_rate=stat.size_diff,
-                    severity="medium" if stat.size_diff < 10 * 1024 * 1024 else "high"
+                    severity="medium" if stat.size_diff < 10 * 1024 * 1024 else "high",
                 )
                 self.memory_leaks[leak_key] = leak
 
-                logger.warning(f"Potential memory leak detected: {stat.size_diff / 1024 / 1024:.2f}MB")
+                logger.warning(
+                    f"Potential memory leak detected: {stat.size_diff / 1024 / 1024:.2f}MB"
+                )
 
     async def _trigger_memory_cleanup(self, threshold: MemoryThreshold) -> None:
         """Trigger memory cleanup based on threshold."""
@@ -273,31 +291,39 @@ class MemoryManager:
                 return {"status": "insufficient_data"}
 
             recent_snapshots = list(self.snapshots)[-10:]
-            avg_memory_percent = sum(s.memory_percent for s in recent_snapshots) / len(recent_snapshots)
+            avg_memory_percent = sum(s.memory_percent for s in recent_snapshots) / len(
+                recent_snapshots
+            )
 
             # Adjust GC threshold based on memory pressure
             if avg_memory_percent > self.memory_thresholds["high"]:
                 new_threshold = max(100, self.gc_threshold - 100)
                 gc.set_threshold(new_threshold)
                 self.gc_threshold = new_threshold
-                logger.info(f"Reduced GC threshold to {new_threshold} due to high memory pressure")
+                logger.info(
+                    f"Reduced GC threshold to {new_threshold} due to high memory pressure"
+                )
             elif avg_memory_percent < self.memory_thresholds["low"]:
                 new_threshold = min(1000, self.gc_threshold + 100)
                 gc.set_threshold(new_threshold)
                 self.gc_threshold = new_threshold
-                logger.info(f"Increased GC threshold to {new_threshold} due to low memory pressure")
+                logger.info(
+                    f"Increased GC threshold to {new_threshold} due to low memory pressure"
+                )
 
             return {
                 "status": "optimized",
                 "new_threshold": self.gc_threshold,
-                "avg_memory_percent": avg_memory_percent
+                "avg_memory_percent": avg_memory_percent,
             }
 
         except Exception as e:
             logger.error(f"Error optimizing garbage collection: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_memory_stats(self, time_window: Optional[timedelta] = None) -> Dict[str, Any]:
+    def get_memory_stats(
+        self, time_window: Optional[timedelta] = None
+    ) -> Dict[str, Any]:
         """Get memory usage statistics."""
         with self._lock:
             if not self.snapshots:
@@ -306,7 +332,9 @@ class MemoryManager:
             # Filter snapshots by time window
             if time_window:
                 cutoff_time = datetime.now() - time_window
-                filtered_snapshots = [s for s in self.snapshots if s.timestamp >= cutoff_time]
+                filtered_snapshots = [
+                    s for s in self.snapshots if s.timestamp >= cutoff_time
+                ]
             else:
                 filtered_snapshots = list(self.snapshots)
 
@@ -327,7 +355,7 @@ class MemoryManager:
                 "snapshot_count": len(filtered_snapshots),
                 "gc_threshold": self.gc_threshold,
                 "gc_stats": dict(self.gc_stats),
-                "cleanup_stats": dict(self.cleanup_stats)
+                "cleanup_stats": dict(self.cleanup_stats),
             }
 
     def get_memory_leaks(self) -> List[Dict[str, Any]]:
@@ -341,7 +369,7 @@ class MemoryManager:
                     "growth_rate_mb_per_second": leak.growth_rate / 1024 / 1024,
                     "severity": leak.severity,
                     "first_detected": leak.first_detected.isoformat(),
-                    "last_updated": leak.last_updated.isoformat()
+                    "last_updated": leak.last_updated.isoformat(),
                 }
                 for leak in self.memory_leaks.values()
             ]
@@ -370,7 +398,7 @@ class MemoryManager:
             return {
                 "objects_freed": collected,
                 "cleanup_time_seconds": cleanup_time,
-                "aggressive": aggressive
+                "aggressive": aggressive,
             }
 
         except Exception as e:
@@ -381,7 +409,7 @@ class MemoryManager:
         """Clear various caches."""
         try:
             # Clear cache manager
-            if hasattr(cache_manager, 'clear_all'):
+            if hasattr(cache_manager, "clear_all"):
                 await cache_manager.clear_all()
                 logger.info("Cache manager cleared")
 
@@ -398,7 +426,8 @@ class MemoryManager:
 
             with self._lock:
                 old_leaks = [
-                    key for key, leak in self.memory_leaks.items()
+                    key
+                    for key, leak in self.memory_leaks.items()
                     if leak.last_updated < cutoff_time
                 ]
 
@@ -421,13 +450,17 @@ class MemoryManager:
             threshold = self._get_memory_threshold(memory.percent)
 
             return {
-                "status": "healthy" if threshold in [MemoryThreshold.LOW, MemoryThreshold.MEDIUM] else "warning",
+                "status": (
+                    "healthy"
+                    if threshold in [MemoryThreshold.LOW, MemoryThreshold.MEDIUM]
+                    else "warning"
+                ),
                 "memory_percent": memory.percent,
                 "process_memory_mb": process_memory,
                 "threshold": threshold.value,
                 "is_monitoring": self.is_monitoring,
                 "snapshot_count": len(self.snapshots),
-                "leak_count": len(self.memory_leaks)
+                "leak_count": len(self.memory_leaks),
             }
 
         except Exception as e:
@@ -456,6 +489,7 @@ async def get_memory_manager() -> MemoryManager:
 
 def memory_monitor(threshold: MemoryThreshold = MemoryThreshold.HIGH):
     """Decorator to monitor memory usage of functions."""
+
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             manager = await get_memory_manager()
@@ -463,7 +497,9 @@ def memory_monitor(threshold: MemoryThreshold = MemoryThreshold.HIGH):
             # Check memory before execution
             memory = psutil.virtual_memory()
             if memory.percent > manager.memory_thresholds[threshold.value]:
-                logger.warning(f"High memory usage before {func.__name__}: {memory.percent:.1f}%")
+                logger.warning(
+                    f"High memory usage before {func.__name__}: {memory.percent:.1f}%"
+                )
 
             try:
                 result = await func(*args, **kwargs)
@@ -472,7 +508,9 @@ def memory_monitor(threshold: MemoryThreshold = MemoryThreshold.HIGH):
                 # Check memory after execution
                 memory = psutil.virtual_memory()
                 if memory.percent > manager.memory_thresholds[threshold.value]:
-                    logger.warning(f"High memory usage after {func.__name__}: {memory.percent:.1f}%")
+                    logger.warning(
+                        f"High memory usage after {func.__name__}: {memory.percent:.1f}%"
+                    )
 
         def sync_wrapper(*args, **kwargs):
             manager = memory_manager  # Use sync access for sync functions
@@ -480,7 +518,9 @@ def memory_monitor(threshold: MemoryThreshold = MemoryThreshold.HIGH):
             # Check memory before execution
             memory = psutil.virtual_memory()
             if memory.percent > manager.memory_thresholds[threshold.value]:
-                logger.warning(f"High memory usage before {func.__name__}: {memory.percent:.1f}%")
+                logger.warning(
+                    f"High memory usage before {func.__name__}: {memory.percent:.1f}%"
+                )
 
             try:
                 result = func(*args, **kwargs)
@@ -489,7 +529,10 @@ def memory_monitor(threshold: MemoryThreshold = MemoryThreshold.HIGH):
                 # Check memory after execution
                 memory = psutil.virtual_memory()
                 if memory.percent > manager.memory_thresholds[threshold.value]:
-                    logger.warning(f"High memory usage after {func.__name__}: {memory.percent:.1f}%")
+                    logger.warning(
+                        f"High memory usage after {func.__name__}: {memory.percent:.1f}%"
+                    )
 
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+
     return decorator

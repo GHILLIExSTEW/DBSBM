@@ -22,20 +22,22 @@ logger = logging.getLogger(__name__)
 
 # AI-specific cache TTLs
 AI_CACHE_TTLS = {
-    'ai_models': 3600,              # 1 hour
-    'ai_predictions': 1800,          # 30 minutes
-    'ai_insights': 7200,             # 2 hours
-    'ai_recommendations': 900,       # 15 minutes
-    'ai_analytics': 3600,            # 1 hour
-    'ai_training': 1800,             # 30 minutes
-    'ai_evaluation': 3600,           # 1 hour
-    'ai_deployment': 7200,           # 2 hours
-    'ai_monitoring': 300,            # 5 minutes
-    'ai_performance': 1800,          # 30 minutes
+    "ai_models": 3600,  # 1 hour
+    "ai_predictions": 1800,  # 30 minutes
+    "ai_insights": 7200,  # 2 hours
+    "ai_recommendations": 900,  # 15 minutes
+    "ai_analytics": 3600,  # 1 hour
+    "ai_training": 1800,  # 30 minutes
+    "ai_evaluation": 3600,  # 1 hour
+    "ai_deployment": 7200,  # 2 hours
+    "ai_monitoring": 300,  # 5 minutes
+    "ai_performance": 1800,  # 30 minutes
 }
+
 
 class ModelType(Enum):
     """AI model types."""
+
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
     CLUSTERING = "clustering"
@@ -43,25 +45,31 @@ class ModelType(Enum):
     NLP = "nlp"
     COMPUTER_VISION = "computer_vision"
 
+
 class ModelStatus(Enum):
     """AI model status."""
+
     TRAINING = "training"
     READY = "ready"
     DEPLOYED = "deployed"
     FAILED = "failed"
     ARCHIVED = "archived"
 
+
 class PredictionType(Enum):
     """AI prediction types."""
+
     BET_OUTCOME = "bet_outcome"
     USER_BEHAVIOR = "user_behavior"
     MARKET_TRENDS = "market_trends"
     RISK_ASSESSMENT = "risk_assessment"
     FRAUD_DETECTION = "fraud_detection"
 
+
 @dataclass
 class AIModel:
     """AI model configuration."""
+
     id: int
     tenant_id: int
     name: str
@@ -73,9 +81,11 @@ class AIModel:
     created_at: datetime
     updated_at: datetime
 
+
 @dataclass
 class AIPrediction:
     """AI prediction result."""
+
     id: int
     tenant_id: int
     model_id: int
@@ -85,9 +95,11 @@ class AIPrediction:
     confidence: float
     created_at: datetime
 
+
 @dataclass
 class AIInsight:
     """AI insight result."""
+
     id: int
     tenant_id: int
     insight_type: str
@@ -97,9 +109,11 @@ class AIInsight:
     confidence: float
     created_at: datetime
 
+
 @dataclass
 class AIRecommendation:
     """AI recommendation result."""
+
     id: int
     tenant_id: int
     user_id: int
@@ -109,6 +123,7 @@ class AIRecommendation:
     data: Dict[str, Any]
     priority: float
     created_at: datetime
+
 
 class AIService:
     """AI service for artificial intelligence and machine learning capabilities."""
@@ -146,8 +161,13 @@ class AIService:
         logger.info("AI service stopped")
 
     @time_operation("ai_create_model")
-    async def create_model(self, tenant_id: int, name: str, model_type: ModelType,
-                          parameters: Dict[str, Any]) -> Optional[AIModel]:
+    async def create_model(
+        self,
+        tenant_id: int,
+        name: str,
+        model_type: ModelType,
+        parameters: Dict[str, Any],
+    ) -> Optional[AIModel]:
         """Create a new AI model."""
         try:
             query = """
@@ -157,15 +177,18 @@ class AIService:
                     :parameters, :metrics, NOW(), NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'name': name,
-                'model_type': model_type.value,
-                'version': '1.0.0',
-                'status': ModelStatus.TRAINING.value,
-                'parameters': json.dumps(parameters),
-                'metrics': json.dumps({})
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "name": name,
+                    "model_type": model_type.value,
+                    "version": "1.0.0",
+                    "status": ModelStatus.TRAINING.value,
+                    "parameters": json.dumps(parameters),
+                    "metrics": json.dumps({}),
+                },
+            )
 
             model_id = result.lastrowid
 
@@ -198,40 +221,42 @@ class AIService:
             SELECT * FROM ai_models WHERE id = :model_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'model_id': model_id})
+            result = await self.db_manager.fetch_one(query, {"model_id": model_id})
 
             if not result:
                 return None
 
             model = AIModel(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                name=result['name'],
-                model_type=ModelType(result['model_type']),
-                version=result['version'],
-                status=ModelStatus(result['status']),
-                parameters=json.loads(result['parameters']) if result['parameters'] else {},
-                metrics=json.loads(result['metrics']) if result['metrics'] else {},
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                name=result["name"],
+                model_type=ModelType(result["model_type"]),
+                version=result["version"],
+                status=ModelStatus(result["status"]),
+                parameters=(
+                    json.loads(result["parameters"]) if result["parameters"] else {}
+                ),
+                metrics=json.loads(result["metrics"]) if result["metrics"] else {},
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache model
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': model.id,
-                    'tenant_id': model.tenant_id,
-                    'name': model.name,
-                    'model_type': model.model_type.value,
-                    'version': model.version,
-                    'status': model.status.value,
-                    'parameters': model.parameters,
-                    'metrics': model.metrics,
-                    'created_at': model.created_at.isoformat(),
-                    'updated_at': model.updated_at.isoformat()
+                    "id": model.id,
+                    "tenant_id": model.tenant_id,
+                    "name": model.name,
+                    "model_type": model.model_type.value,
+                    "version": model.version,
+                    "status": model.status.value,
+                    "parameters": model.parameters,
+                    "metrics": model.metrics,
+                    "created_at": model.created_at.isoformat(),
+                    "updated_at": model.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['ai_models']
+                ttl=self.cache_ttls["ai_models"],
             )
 
             return model
@@ -241,11 +266,15 @@ class AIService:
             return None
 
     @time_operation("ai_get_models")
-    async def get_models_by_tenant(self, tenant_id: int, model_type: Optional[ModelType] = None) -> List[AIModel]:
+    async def get_models_by_tenant(
+        self, tenant_id: int, model_type: Optional[ModelType] = None
+    ) -> List[AIModel]:
         """Get AI models for a tenant."""
         try:
             # Try to get from cache first
-            cache_key = f"ai_models:{tenant_id}:{model_type.value if model_type else 'all'}"
+            cache_key = (
+                f"ai_models:{tenant_id}:{model_type.value if model_type else 'all'}"
+            )
             cached_models = await self.cache_manager.enhanced_cache_get(cache_key)
 
             if cached_models:
@@ -253,46 +282,51 @@ class AIService:
 
             # Build query
             query = "SELECT * FROM ai_models WHERE tenant_id = :tenant_id"
-            params = {'tenant_id': tenant_id}
+            params = {"tenant_id": tenant_id}
 
             if model_type:
                 query += " AND model_type = :model_type"
-                params['model_type'] = model_type.value
+                params["model_type"] = model_type.value
 
             results = await self.db_manager.fetch_all(query, params)
 
             models = []
             for row in results:
                 model = AIModel(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    name=row['name'],
-                    model_type=ModelType(row['model_type']),
-                    version=row['version'],
-                    status=ModelStatus(row['status']),
-                    parameters=json.loads(row['parameters']) if row['parameters'] else {},
-                    metrics=json.loads(row['metrics']) if row['metrics'] else {},
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    name=row["name"],
+                    model_type=ModelType(row["model_type"]),
+                    version=row["version"],
+                    status=ModelStatus(row["status"]),
+                    parameters=(
+                        json.loads(row["parameters"]) if row["parameters"] else {}
+                    ),
+                    metrics=json.loads(row["metrics"]) if row["metrics"] else {},
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 models.append(model)
 
             # Cache models
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': m.id,
-                    'tenant_id': m.tenant_id,
-                    'name': m.name,
-                    'model_type': m.model_type.value,
-                    'version': m.version,
-                    'status': m.status.value,
-                    'parameters': m.parameters,
-                    'metrics': m.metrics,
-                    'created_at': m.created_at.isoformat(),
-                    'updated_at': m.updated_at.isoformat()
-                } for m in models],
-                ttl=self.cache_ttls['ai_models']
+                [
+                    {
+                        "id": m.id,
+                        "tenant_id": m.tenant_id,
+                        "name": m.name,
+                        "model_type": m.model_type.value,
+                        "version": m.version,
+                        "status": m.status.value,
+                        "parameters": m.parameters,
+                        "metrics": m.metrics,
+                        "created_at": m.created_at.isoformat(),
+                        "updated_at": m.updated_at.isoformat(),
+                    }
+                    for m in models
+                ],
+                ttl=self.cache_ttls["ai_models"],
             )
 
             return models
@@ -302,8 +336,9 @@ class AIService:
             return []
 
     @time_operation("ai_make_prediction")
-    async def make_prediction(self, model_id: int, prediction_type: PredictionType,
-                            input_data: Dict[str, Any]) -> Optional[AIPrediction]:
+    async def make_prediction(
+        self, model_id: int, prediction_type: PredictionType, input_data: Dict[str, Any]
+    ) -> Optional[AIPrediction]:
         """Make a prediction using an AI model."""
         try:
             # Get model
@@ -319,7 +354,9 @@ class AIService:
                 return AIPrediction(**cached_prediction)
 
             # Make prediction
-            output_data, confidence = await self._make_model_prediction(model, input_data)
+            output_data, confidence = await self._make_model_prediction(
+                model, input_data
+            )
 
             # Create prediction record
             query = """
@@ -329,14 +366,17 @@ class AIService:
                     :output_data, :confidence, NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': model.tenant_id,
-                'model_id': model_id,
-                'prediction_type': prediction_type.value,
-                'input_data': json.dumps(input_data),
-                'output_data': json.dumps(output_data),
-                'confidence': confidence
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": model.tenant_id,
+                    "model_id": model_id,
+                    "prediction_type": prediction_type.value,
+                    "input_data": json.dumps(input_data),
+                    "output_data": json.dumps(output_data),
+                    "confidence": confidence,
+                },
+            )
 
             prediction_id = result.lastrowid
 
@@ -348,23 +388,23 @@ class AIService:
                 input_data=input_data,
                 output_data=output_data,
                 confidence=confidence,
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
 
             # Cache prediction
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': prediction.id,
-                    'tenant_id': prediction.tenant_id,
-                    'model_id': prediction.model_id,
-                    'prediction_type': prediction.prediction_type.value,
-                    'input_data': prediction.input_data,
-                    'output_data': prediction.output_data,
-                    'confidence': prediction.confidence,
-                    'created_at': prediction.created_at.isoformat()
+                    "id": prediction.id,
+                    "tenant_id": prediction.tenant_id,
+                    "model_id": prediction.model_id,
+                    "prediction_type": prediction.prediction_type.value,
+                    "input_data": prediction.input_data,
+                    "output_data": prediction.output_data,
+                    "confidence": prediction.confidence,
+                    "created_at": prediction.created_at.isoformat(),
                 },
-                ttl=self.cache_ttls['ai_predictions']
+                ttl=self.cache_ttls["ai_predictions"],
             )
 
             record_metric("ai_predictions_made", 1)
@@ -375,7 +415,9 @@ class AIService:
             return None
 
     @time_operation("ai_generate_insight")
-    async def generate_insight(self, tenant_id: int, insight_type: str, data: Dict[str, Any]) -> Optional[AIInsight]:
+    async def generate_insight(
+        self, tenant_id: int, insight_type: str, data: Dict[str, Any]
+    ) -> Optional[AIInsight]:
         """Generate an AI insight."""
         try:
             # Try to get from cache first
@@ -396,14 +438,17 @@ class AIService:
                     :data, :confidence, NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'insight_type': insight_type,
-                'title': insight_data['title'],
-                'description': insight_data['description'],
-                'data': json.dumps(insight_data['data']),
-                'confidence': insight_data['confidence']
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "insight_type": insight_type,
+                    "title": insight_data["title"],
+                    "description": insight_data["description"],
+                    "data": json.dumps(insight_data["data"]),
+                    "confidence": insight_data["confidence"],
+                },
+            )
 
             insight_id = result.lastrowid
 
@@ -411,27 +456,27 @@ class AIService:
                 id=insight_id,
                 tenant_id=tenant_id,
                 insight_type=insight_type,
-                title=insight_data['title'],
-                description=insight_data['description'],
-                data=insight_data['data'],
-                confidence=insight_data['confidence'],
-                created_at=datetime.utcnow()
+                title=insight_data["title"],
+                description=insight_data["description"],
+                data=insight_data["data"],
+                confidence=insight_data["confidence"],
+                created_at=datetime.utcnow(),
             )
 
             # Cache insight
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': insight.id,
-                    'tenant_id': insight.tenant_id,
-                    'insight_type': insight.insight_type,
-                    'title': insight.title,
-                    'description': insight.description,
-                    'data': insight.data,
-                    'confidence': insight.confidence,
-                    'created_at': insight.created_at.isoformat()
+                    "id": insight.id,
+                    "tenant_id": insight.tenant_id,
+                    "insight_type": insight.insight_type,
+                    "title": insight.title,
+                    "description": insight.description,
+                    "data": insight.data,
+                    "confidence": insight.confidence,
+                    "created_at": insight.created_at.isoformat(),
                 },
-                ttl=self.cache_ttls['ai_insights']
+                ttl=self.cache_ttls["ai_insights"],
             )
 
             return insight
@@ -441,19 +486,28 @@ class AIService:
             return None
 
     @time_operation("ai_generate_recommendation")
-    async def generate_recommendation(self, tenant_id: int, user_id: int, recommendation_type: str,
-                                    data: Dict[str, Any]) -> Optional[AIRecommendation]:
+    async def generate_recommendation(
+        self,
+        tenant_id: int,
+        user_id: int,
+        recommendation_type: str,
+        data: Dict[str, Any],
+    ) -> Optional[AIRecommendation]:
         """Generate an AI recommendation."""
         try:
             # Try to get from cache first
             cache_key = f"ai_recommendation:{tenant_id}:{user_id}:{recommendation_type}:{hashlib.md5(str(data).encode()).hexdigest()}"
-            cached_recommendation = await self.cache_manager.enhanced_cache_get(cache_key)
+            cached_recommendation = await self.cache_manager.enhanced_cache_get(
+                cache_key
+            )
 
             if cached_recommendation:
                 return AIRecommendation(**cached_recommendation)
 
             # Generate recommendation
-            recommendation_data = await self._generate_recommendation_data(recommendation_type, data)
+            recommendation_data = await self._generate_recommendation_data(
+                recommendation_type, data
+            )
 
             # Create recommendation record
             query = """
@@ -463,15 +517,18 @@ class AIService:
                     :description, :data, :priority, NOW())
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'user_id': user_id,
-                'recommendation_type': recommendation_type,
-                'title': recommendation_data['title'],
-                'description': recommendation_data['description'],
-                'data': json.dumps(recommendation_data['data']),
-                'priority': recommendation_data['priority']
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "recommendation_type": recommendation_type,
+                    "title": recommendation_data["title"],
+                    "description": recommendation_data["description"],
+                    "data": json.dumps(recommendation_data["data"]),
+                    "priority": recommendation_data["priority"],
+                },
+            )
 
             recommendation_id = result.lastrowid
 
@@ -480,28 +537,28 @@ class AIService:
                 tenant_id=tenant_id,
                 user_id=user_id,
                 recommendation_type=recommendation_type,
-                title=recommendation_data['title'],
-                description=recommendation_data['description'],
-                data=recommendation_data['data'],
-                priority=recommendation_data['priority'],
-                created_at=datetime.utcnow()
+                title=recommendation_data["title"],
+                description=recommendation_data["description"],
+                data=recommendation_data["data"],
+                priority=recommendation_data["priority"],
+                created_at=datetime.utcnow(),
             )
 
             # Cache recommendation
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': recommendation.id,
-                    'tenant_id': recommendation.tenant_id,
-                    'user_id': recommendation.user_id,
-                    'recommendation_type': recommendation.recommendation_type,
-                    'title': recommendation.title,
-                    'description': recommendation.description,
-                    'data': recommendation.data,
-                    'priority': recommendation.priority,
-                    'created_at': recommendation.created_at.isoformat()
+                    "id": recommendation.id,
+                    "tenant_id": recommendation.tenant_id,
+                    "user_id": recommendation.user_id,
+                    "recommendation_type": recommendation.recommendation_type,
+                    "title": recommendation.title,
+                    "description": recommendation.description,
+                    "data": recommendation.data,
+                    "priority": recommendation.priority,
+                    "created_at": recommendation.created_at.isoformat(),
                 },
-                ttl=self.cache_ttls['ai_recommendations']
+                ttl=self.cache_ttls["ai_recommendations"],
             )
 
             return recommendation
@@ -533,10 +590,9 @@ class AIService:
             GROUP BY model_type, status
             """
 
-            model_results = await self.db_manager.fetch_all(model_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            model_results = await self.db_manager.fetch_all(
+                model_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             # Get prediction statistics
             prediction_query = """
@@ -550,33 +606,42 @@ class AIService:
             GROUP BY prediction_type
             """
 
-            prediction_results = await self.db_manager.fetch_all(prediction_query, {
-                'tenant_id': tenant_id,
-                'days': days
-            })
+            prediction_results = await self.db_manager.fetch_all(
+                prediction_query, {"tenant_id": tenant_id, "days": days}
+            )
 
             analytics = {
-                'model_statistics': {
-                    'by_type': {row['model_type']: row['count'] for row in model_results},
-                    'by_status': {row['status']: row['count'] for row in model_results},
-                    'total_models': sum(row['count'] for row in model_results)
+                "model_statistics": {
+                    "by_type": {
+                        row["model_type"]: row["count"] for row in model_results
+                    },
+                    "by_status": {row["status"]: row["count"] for row in model_results},
+                    "total_models": sum(row["count"] for row in model_results),
                 },
-                'prediction_statistics': {
-                    'by_type': {row['prediction_type']: {'count': row['count'], 'avg_confidence': row['avg_confidence']} for row in prediction_results},
-                    'total_predictions': sum(row['count'] for row in prediction_results)
+                "prediction_statistics": {
+                    "by_type": {
+                        row["prediction_type"]: {
+                            "count": row["count"],
+                            "avg_confidence": row["avg_confidence"],
+                        }
+                        for row in prediction_results
+                    },
+                    "total_predictions": sum(
+                        row["count"] for row in prediction_results
+                    ),
                 },
-                'period': {
-                    'days': days,
-                    'start_date': (datetime.utcnow() - timedelta(days=days)).isoformat(),
-                    'end_date': datetime.utcnow().isoformat()
-                }
+                "period": {
+                    "days": days,
+                    "start_date": (
+                        datetime.utcnow() - timedelta(days=days)
+                    ).isoformat(),
+                    "end_date": datetime.utcnow().isoformat(),
+                },
             }
 
             # Cache analytics
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                analytics,
-                ttl=self.cache_ttls['ai_analytics']
+                cache_key, analytics, ttl=self.cache_ttls["ai_analytics"]
             )
 
             return analytics

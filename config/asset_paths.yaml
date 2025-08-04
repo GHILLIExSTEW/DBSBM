@@ -1,5 +1,5 @@
 # Base directory structure
-base_dir: "${PROJECT_ROOT}"
+base_dir: "${PROJECT_ROOT}/../../../StaticFiles/DBSBM"
 assets_dir: "${base_dir}/assets"
 font_dir: "${assets_dir}/fonts"
 # logo_dir: "${assets_dir}/logos"

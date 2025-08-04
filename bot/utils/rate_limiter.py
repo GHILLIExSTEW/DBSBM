@@ -102,9 +102,7 @@ class RateLimiter:
             f"Rate limiter initialized with {len(self.limits)} limit configurations"
         )
 
-    async def is_allowed(
-        self, user_id: int, action: str
-    ) -> bool:
+    async def is_allowed(self, user_id: int, action: str) -> bool:
         """
         Check if a user action is allowed.
 
@@ -138,11 +136,7 @@ class RateLimiter:
 
             # Add current request
             self.user_requests[key].append(
-                RateLimitEntry(
-                    timestamp=time.time(),
-                    user_id=user_id,
-                    action=action
-                )
+                RateLimitEntry(timestamp=time.time(), user_id=user_id, action=action)
             )
 
             self.stats["total_requests"] += 1
@@ -192,11 +186,7 @@ class RateLimiter:
 
             # Add current request
             self.user_requests[key].append(
-                RateLimitEntry(
-                    timestamp=time.time(),
-                    user_id=user_id,
-                    action=action
-                )
+                RateLimitEntry(timestamp=time.time(), user_id=user_id, action=action)
             )
 
             self.stats["total_requests"] += 1
@@ -284,8 +274,7 @@ class RateLimiter:
             key = (user_id, action)
             if key in self.user_requests:
                 del self.user_requests[key]
-                logger.info(
-                    f"Reset rate limit for user {user_id}, action '{action}'")
+                logger.info(f"Reset rate limit for user {user_id}, action '{action}'")
         else:
             # Reset all actions for the user
             keys_to_remove = [
@@ -406,12 +395,15 @@ if __name__ == "__main__":
 
         # Should allow first 5 requests
         for i in range(5):
-            allowed, retry_after = await limiter.is_allowed_with_retry(user_id, "bet_placement")
-            print(
-                f"Request {i+1}: Allowed={allowed}, Retry after={retry_after}")
+            allowed, retry_after = await limiter.is_allowed_with_retry(
+                user_id, "bet_placement"
+            )
+            print(f"Request {i+1}: Allowed={allowed}, Retry after={retry_after}")
 
         # 6th request should be rate limited
-        allowed, retry_after = await limiter.is_allowed_with_retry(user_id, "bet_placement")
+        allowed, retry_after = await limiter.is_allowed_with_retry(
+            user_id, "bet_placement"
+        )
         print(f"Request 6: Allowed={allowed}, Retry after={retry_after}")
 
         # Test user stats

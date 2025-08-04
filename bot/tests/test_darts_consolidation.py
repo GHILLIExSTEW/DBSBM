@@ -38,11 +38,12 @@ async def test_darts_consolidation():
         },
     ):
         # Mock the module-level imports
-        with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), \
-             patch("bot.data.db_manager.MYSQL_USER", "test_user"), \
-             patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), \
-             patch("bot.data.db_manager.MYSQL_DB", "test_db"):
-            
+        with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), patch(
+            "bot.data.db_manager.MYSQL_USER", "test_user"
+        ), patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), patch(
+            "bot.data.db_manager.MYSQL_DB", "test_db"
+        ):
+
             # Initialize database manager
             logger.info("Initializing database manager...")
             db_manager = DatabaseManager()
@@ -60,7 +61,7 @@ async def test_darts_consolidation():
                     darts_response = await api.discover_leagues("darts")
 
                     # Handle APIResponse object
-                    if hasattr(darts_response, 'data'):
+                    if hasattr(darts_response, "data"):
                         darts_leagues = darts_response.data
                     else:
                         darts_leagues = darts_response
@@ -68,10 +69,14 @@ async def test_darts_consolidation():
                     if darts_leagues:
                         logger.info(f"Found {len(darts_leagues)} darts leagues:")
                         for league in darts_leagues[:10]:  # Show first 10
-                            logger.info(f"  - {league.get('name')} (ID: {league.get('id')})")
+                            logger.info(
+                                f"  - {league.get('name')} (ID: {league.get('id')})"
+                            )
 
                     # Test the fetch_all_leagues_data method to see consolidation
-                    logger.info("Testing fetch_all_leagues_data to see consolidation...")
+                    logger.info(
+                        "Testing fetch_all_leagues_data to see consolidation..."
+                    )
                     results = await api.fetch_all_leagues_data(
                         date=datetime.now().strftime("%Y-%m-%d"), next_days=1
                     )
@@ -96,7 +101,9 @@ async def test_darts_consolidation():
 
                             logger.info("Darts games in database by league name:")
                             for league_count in league_counts:
-                                logger.info(f"  {league_count[0]}: {league_count[1]} games")
+                                logger.info(
+                                    f"  {league_count[0]}: {league_count[1]} games"
+                                )
 
                             # Check total darts games
                             await cur.execute(

@@ -63,7 +63,7 @@ class CommunityAnalyticsService:
         try:
             query = """
                 INSERT INTO community_metrics (guild_id, metric_type, metric_value, recorded_at)
-                VALUES (%s, %s, %s, %s)
+                VALUES ($1, $2, $3, $4)
             """
             await self.db_manager.execute(
                 query, (guild_id, metric_type, value, datetime.utcnow())
@@ -84,8 +84,8 @@ class CommunityAnalyticsService:
                     COUNT(*) as data_points,
                     SUM(metric_value) as total_value
                 FROM community_metrics
-                WHERE guild_id = %s
-                AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE guild_id = $1
+                AND recorded_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
                 GROUP BY metric_type
                 ORDER BY avg_value DESC
             """
@@ -120,7 +120,7 @@ class CommunityAnalyticsService:
         try:
             query = """
                 INSERT INTO user_metrics (guild_id, user_id, metric_type, metric_value, recorded_at)
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES ($1, $2, $3, $4, $5)
                 ON DUPLICATE KEY UPDATE
                 metric_value = metric_value + VALUES(metric_value),
                 recorded_at = VALUES(recorded_at)
@@ -139,7 +139,7 @@ class CommunityAnalyticsService:
                 SELECT COUNT(*) as reaction_count
                 FROM bet_reactions br
                 JOIN bets b ON br.bet_serial = b.bet_serial
-                WHERE b.guild_id = %s AND br.user_id = %s
+                WHERE b.guild_id = $1 AND br.user_id = $2
             """
             result = await self.db_manager.fetch_one(query, (guild_id, user_id))
             reaction_count = result["reaction_count"] if result else 0
@@ -167,7 +167,7 @@ class CommunityAnalyticsService:
             query = """
                 SELECT COUNT(*) as count
                 FROM community_achievements
-                WHERE guild_id = %s AND user_id = %s AND achievement_type = %s
+                WHERE guild_id = $1 AND user_id = $2 AND achievement_type = $3
             """
             result = await self.db_manager.fetch_one(
                 query, (guild_id, user_id, achievement_type)
@@ -180,7 +180,7 @@ class CommunityAnalyticsService:
 
                 insert_query = """
                     INSERT INTO community_achievements (guild_id, user_id, achievement_type, achievement_name, earned_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5)
                 """
                 await self.db_manager.execute(
                     insert_query,
@@ -225,26 +225,32 @@ class CommunityAnalyticsService:
             # Get main chat channel from guild settings
             guild_settings = await self.db_manager.fetch_one(
                 "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = %s",
-                (guild_id,)
+                (guild_id,),
             )
 
             channel = None
             if guild_settings and guild_settings.get("main_chat_channel_id"):
                 # Use the configured main chat channel
                 channel = self.bot.get_channel(guild_settings["main_chat_channel_id"])
-                logger.info(f"Using configured main chat channel {guild_settings['main_chat_channel_id']} for achievement notification")
+                logger.info(
+                    f"Using configured main chat channel {guild_settings['main_chat_channel_id']} for achievement notification"
+                )
 
             if not channel:
                 # Fallback: try to find channel by name "main-chat"
                 channel = discord.utils.get(guild.channels, name="main-chat")
                 if channel:
-                    logger.info("Using 'main-chat' channel for achievement notification")
+                    logger.info(
+                        "Using 'main-chat' channel for achievement notification"
+                    )
 
             if not channel:
                 # Fallback: try to find channel by name "general-chat"
                 channel = discord.utils.get(guild.channels, name="general-chat")
                 if channel:
-                    logger.info("Using 'general-chat' channel for achievement notification")
+                    logger.info(
+                        "Using 'general-chat' channel for achievement notification"
+                    )
 
             if not channel:
                 # Final fallback: use first text channel
@@ -252,7 +258,9 @@ class CommunityAnalyticsService:
                     guild.channels, type=discord.ChannelType.text
                 )
                 if channel:
-                    logger.info(f"Using fallback text channel {channel.name} for achievement notification")
+                    logger.info(
+                        f"Using fallback text channel {channel.name} for achievement notification"
+                    )
 
             if channel:
                 embed = discord.Embed(
@@ -270,10 +278,14 @@ class CommunityAnalyticsService:
                 embed.set_thumbnail(url=user.display_avatar.url)
 
                 await channel.send(embed=embed)
-                logger.info(f"Sent achievement notification to channel {channel.name} for user {user_id}")
+                logger.info(
+                    f"Sent achievement notification to channel {channel.name} for user {user_id}"
+                )
 
             else:
-                logger.warning(f"Could not find any suitable channel for achievement notification in guild {guild_id}")
+                logger.warning(
+                    f"Could not find any suitable channel for achievement notification in guild {guild_id}"
+                )
 
         except Exception as e:
             logger.error(f"Failed to notify achievement: {e}")
@@ -284,7 +296,7 @@ class CommunityAnalyticsService:
             query = """
                 SELECT achievement_type, achievement_name, earned_at
                 FROM community_achievements
-                WHERE guild_id = %s AND user_id = %s
+                WHERE guild_id = $1 AND user_id = $2
                 ORDER BY earned_at DESC
             """
             return await self.db_manager.fetch_all(query, (guild_id, user_id))
@@ -305,10 +317,10 @@ class CommunityAnalyticsService:
                         COUNT(DISTINCT br.bet_serial) as bets_reacted_to
                     FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s
+                    WHERE b.guild_id = $1
                     GROUP BY br.user_id
                     ORDER BY reaction_count DESC
-                    LIMIT %s
+                    LIMIT $2
                 """
                 results = await self.db_manager.fetch_all(query, (guild_id, limit))
                 return [
@@ -322,10 +334,10 @@ class CommunityAnalyticsService:
                         user_id,
                         COUNT(*) as achievement_count
                     FROM community_achievements
-                    WHERE guild_id = %s
+                    WHERE guild_id = $1
                     GROUP BY user_id
                     ORDER BY achievement_count DESC
-                    LIMIT %s
+                    LIMIT $2
                 """
                 results = await self.db_manager.fetch_all(query, (guild_id, limit))
                 return [
@@ -339,11 +351,11 @@ class CommunityAnalyticsService:
                         user_id,
                         SUM(metric_value) as helpful_score
                     FROM user_metrics
-                    WHERE guild_id = %s
+                    WHERE guild_id = $1
                     AND metric_type IN ('help_requests_answered', 'encouragements_given', 'thanks_received')
                     GROUP BY user_id
                     ORDER BY helpful_score DESC
-                    LIMIT %s
+                    LIMIT $2
                 """
                 results = await self.db_manager.fetch_all(query, (guild_id, limit))
                 return [
@@ -372,8 +384,8 @@ class CommunityAnalyticsService:
             query = """
                 SELECT user_id, achievement_name, earned_at
                 FROM community_achievements
-                WHERE guild_id = %s
-                AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE guild_id = $1
+                AND earned_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
                 ORDER BY earned_at DESC
                 LIMIT 10
             """
@@ -420,7 +432,7 @@ class CommunityAnalyticsService:
             query = """
                 SELECT SUM(metric_value) as total_commands
                 FROM user_metrics
-                WHERE guild_id = %s AND user_id = %s AND metric_type = 'total_community_commands'
+                WHERE guild_id = $1 AND user_id = $2 AND metric_type = 'total_community_commands'
             """
             result = await self.db_manager.fetch_one(query, (guild_id, user_id))
             total_commands = (
@@ -459,8 +471,8 @@ class CommunityAnalyticsService:
                 SELECT COUNT(*) as total_reactions
                 FROM bet_reactions br
                 JOIN bets b ON br.bet_serial = b.bet_serial
-                WHERE b.guild_id = %s
-                AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE b.guild_id = $1
+                AND br.created_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
             """
             reactions_result = await self.db_manager.fetch_one(
                 reactions_query, (guild_id, days)
@@ -473,8 +485,8 @@ class CommunityAnalyticsService:
             achievements_query = """
                 SELECT COUNT(*) as total_achievements
                 FROM community_achievements
-                WHERE guild_id = %s
-                AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE guild_id = $1
+                AND earned_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
             """
             achievements_result = await self.db_manager.fetch_one(
                 achievements_query, (guild_id, days)
@@ -488,13 +500,13 @@ class CommunityAnalyticsService:
                 SELECT COUNT(DISTINCT user_id) as active_users
                 FROM (
                     SELECT user_id FROM user_metrics
-                    WHERE guild_id = %s
-                    AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                    WHERE guild_id = $1
+                    AND recorded_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
                     UNION
                     SELECT br.user_id FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s
-                    AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                    WHERE b.guild_id = $3
+                    AND br.created_at >= DATE_SUB(NOW(), INTERVAL $4 DAY)
                 ) as active_users
             """
             active_users_result = await self.db_manager.fetch_one(
@@ -508,9 +520,9 @@ class CommunityAnalyticsService:
             commands_query = """
                 SELECT SUM(metric_value) as community_commands
                 FROM community_metrics
-                WHERE guild_id = %s
-                AND metric_type LIKE %s
-                AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE guild_id = $1
+                AND metric_type LIKE $2
+                AND recorded_at >= DATE_SUB(NOW(), INTERVAL $3 DAY)
             """
             commands_result = await self.db_manager.fetch_one(
                 commands_query, (guild_id, "command_%", days)

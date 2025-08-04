@@ -25,6 +25,7 @@ try:
     from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
     from opentelemetry.instrumentation.mysql import MySQLInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
+
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
     OPENTELEMETRY_AVAILABLE = False
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 class TraceLevel(Enum):
     """Trace levels for different types of operations."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -58,6 +60,7 @@ class TraceLevel(Enum):
 @dataclass
 class TraceSpan:
     """Represents a trace span."""
+
     span_id: str
     trace_id: str
     parent_span_id: Optional[str]
@@ -76,6 +79,7 @@ class TraceSpan:
 @dataclass
 class TraceContext:
     """Trace context for propagating trace information."""
+
     trace_id: str
     span_id: str
     parent_span_id: Optional[str] = None
@@ -139,9 +143,14 @@ class DistributedTracing:
             logger.error(f"Failed to setup OpenTelemetry: {e}")
             self.enabled = False
 
-    def start_span(self, name: str, attributes: Optional[Dict[str, Any]] = None,
-                   user_id: Optional[int] = None, guild_id: Optional[int] = None,
-                   trace_level: TraceLevel = TraceLevel.MEDIUM) -> str:
+    def start_span(
+        self,
+        name: str,
+        attributes: Optional[Dict[str, Any]] = None,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+        trace_level: TraceLevel = TraceLevel.MEDIUM,
+    ) -> str:
         """Start a new trace span."""
         if not self.enabled:
             return str(uuid.uuid4())
@@ -170,7 +179,7 @@ class DistributedTracing:
                 attributes=span_attributes,
                 user_id=user_id,
                 guild_id=guild_id,
-                service_name=self.service_name
+                service_name=self.service_name,
             )
 
             # Store active span
@@ -187,8 +196,12 @@ class DistributedTracing:
             logger.error(f"Failed to start span: {e}")
             return str(uuid.uuid4())
 
-    def end_span(self, span_id: str, status: str = "ok",
-                 attributes: Optional[Dict[str, Any]] = None) -> None:
+    def end_span(
+        self,
+        span_id: str,
+        status: str = "ok",
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """End a trace span."""
         if not self.enabled or span_id not in self.active_spans:
             return
@@ -214,7 +227,9 @@ class DistributedTracing:
             # Update trace span record
             trace_span = self.active_spans[span_id]
             trace_span.end_time = datetime.now()
-            trace_span.duration_ms = (trace_span.end_time - trace_span.start_time).total_seconds() * 1000
+            trace_span.duration_ms = (
+                trace_span.end_time - trace_span.start_time
+            ).total_seconds() * 1000
             trace_span.status = status
 
             if attributes:
@@ -226,7 +241,9 @@ class DistributedTracing:
         except Exception as e:
             logger.error(f"Failed to end span: {e}")
 
-    def add_event(self, span_id: str, name: str, attributes: Optional[Dict[str, Any]] = None) -> None:
+    def add_event(
+        self, span_id: str, name: str, attributes: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Add an event to a span."""
         if not self.enabled or span_id not in self.active_spans:
             return
@@ -242,7 +259,7 @@ class DistributedTracing:
             event = {
                 "name": name,
                 "timestamp": datetime.now().isoformat(),
-                "attributes": attributes or {}
+                "attributes": attributes or {},
             }
             trace_span.events.append(event)
 
@@ -268,9 +285,14 @@ class DistributedTracing:
             logger.error(f"Failed to add attribute to span: {e}")
 
     @asynccontextmanager
-    async def trace_span(self, name: str, attributes: Optional[Dict[str, Any]] = None,
-                        user_id: Optional[int] = None, guild_id: Optional[int] = None,
-                        trace_level: TraceLevel = TraceLevel.MEDIUM):
+    async def trace_span(
+        self,
+        name: str,
+        attributes: Optional[Dict[str, Any]] = None,
+        user_id: Optional[int] = None,
+        guild_id: Optional[int] = None,
+        trace_level: TraceLevel = TraceLevel.MEDIUM,
+    ):
         """Context manager for tracing spans."""
         span_id = self.start_span(name, attributes, user_id, guild_id, trace_level)
         try:
@@ -282,25 +304,38 @@ class DistributedTracing:
         else:
             self.end_span(span_id, "ok")
 
-    def trace_function(self, name: Optional[str] = None, trace_level: TraceLevel = TraceLevel.MEDIUM):
+    def trace_function(
+        self, name: Optional[str] = None, trace_level: TraceLevel = TraceLevel.MEDIUM
+    ):
         """Decorator to trace function execution."""
+
         def decorator(func):
             func_name = name or func.__name__
 
             async def async_wrapper(*args, **kwargs):
                 # Extract user_id and guild_id from kwargs
-                user_id = kwargs.get('user_id')
-                guild_id = kwargs.get('guild_id')
+                user_id = kwargs.get("user_id")
+                guild_id = kwargs.get("guild_id")
 
-                async with self.trace_span(func_name, user_id=user_id, guild_id=guild_id, trace_level=trace_level):
+                async with self.trace_span(
+                    func_name,
+                    user_id=user_id,
+                    guild_id=guild_id,
+                    trace_level=trace_level,
+                ):
                     return await func(*args, **kwargs)
 
             def sync_wrapper(*args, **kwargs):
                 # Extract user_id and guild_id from kwargs
-                user_id = kwargs.get('user_id')
-                guild_id = kwargs.get('guild_id')
+                user_id = kwargs.get("user_id")
+                guild_id = kwargs.get("guild_id")
 
-                span_id = self.start_span(func_name, user_id=user_id, guild_id=guild_id, trace_level=trace_level)
+                span_id = self.start_span(
+                    func_name,
+                    user_id=user_id,
+                    guild_id=guild_id,
+                    trace_level=trace_level,
+                )
                 try:
                     result = func(*args, **kwargs)
                     self.end_span(span_id, "ok")
@@ -311,6 +346,7 @@ class DistributedTracing:
                     raise
 
             return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+
         return decorator
 
     def get_trace_context(self) -> Optional[TraceContext]:
@@ -325,7 +361,7 @@ class DistributedTracing:
                 return TraceContext(
                     trace_id=str(context.trace_id),
                     span_id=str(context.span_id),
-                    service_name=self.service_name
+                    service_name=self.service_name,
                 )
         except Exception as e:
             logger.error(f"Failed to get trace context: {e}")
@@ -359,9 +395,7 @@ class DistributedTracing:
 
             if trace_id and span_id:
                 return TraceContext(
-                    trace_id=trace_id,
-                    span_id=span_id,
-                    service_name=service_name
+                    trace_id=trace_id, span_id=span_id, service_name=service_name
                 )
         except Exception as e:
             logger.error(f"Failed to extract trace context: {e}")
@@ -403,10 +437,10 @@ class DistributedTracing:
                     "duration_ms": span.duration_ms,
                     "status": span.status,
                     "attributes": span.attributes,
-                    "events": span.events
+                    "events": span.events,
                 }
                 for span in spans
-            ]
+            ],
         }
 
     def get_recent_traces(self, hours: int = 24) -> List[Dict[str, Any]]:
@@ -432,11 +466,12 @@ class DistributedTracing:
                 "export_timestamp": datetime.now().isoformat(),
                 "service_name": self.service_name,
                 "trace_count": len(traces),
-                "traces": traces
+                "traces": traces,
             }
 
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 import json
+
                 json.dump(export_data, f, indent=2, default=str)
 
             logger.info(f"Traces exported to {file_path}")
@@ -474,7 +509,7 @@ class DistributedTracing:
             "trace_count": len(self.traces),
             "total_spans": total_spans,
             "active_spans": active_spans,
-            "sampling_rate": self.sampling_rate
+            "sampling_rate": self.sampling_rate,
         }
 
 
@@ -482,7 +517,9 @@ class DistributedTracing:
 distributed_tracing = DistributedTracing()
 
 
-def trace_function(name: Optional[str] = None, trace_level: TraceLevel = TraceLevel.MEDIUM):
+def trace_function(
+    name: Optional[str] = None, trace_level: TraceLevel = TraceLevel.MEDIUM
+):
     """Decorator to trace function execution."""
     return distributed_tracing.trace_function(name, trace_level)
 

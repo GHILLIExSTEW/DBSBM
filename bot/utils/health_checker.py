@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HealthCheckResult:
     """Result of a health check."""
+
     service_name: str
     status: str  # 'healthy', 'degraded', 'unhealthy'
     response_time: float
@@ -52,7 +53,7 @@ class HealthChecker:
         service_name: str,
         check_function: Callable,
         interval: int = 60,
-        dependencies: Optional[List[str]] = None
+        dependencies: Optional[List[str]] = None,
     ):
         """Register a health check function."""
         self.health_checks[service_name] = check_function
@@ -66,7 +67,7 @@ class HealthChecker:
                 service_name=service_name,
                 status="unhealthy",
                 response_time=0.0,
-                error_message=f"Health check not registered for {service_name}"
+                error_message=f"Health check not registered for {service_name}",
             )
 
         start_time = time.time()
@@ -81,7 +82,7 @@ class HealthChecker:
                             service_name=service_name,
                             status="unhealthy",
                             response_time=time.time() - start_time,
-                            error_message=f"Dependency {dep} is unhealthy"
+                            error_message=f"Dependency {dep} is unhealthy",
                         )
 
             # Run the health check
@@ -94,15 +95,16 @@ class HealthChecker:
             response_time = time.time() - start_time
 
             if isinstance(result, dict):
-                status = result.get('status', 'healthy')
-                error_message = result.get('error_message')
-                details = result.get('details')
-                
+                status = result.get("status", "healthy")
+                error_message = result.get("error_message")
+                details = result.get("details")
+
                 # Ensure details are serializable
                 if details is not None:
                     try:
                         # Test serialization by converting to a simple dict
                         import json
+
                         json.dumps(details)
                     except (TypeError, ValueError):
                         # If details contain non-serializable objects, create a safe version
@@ -117,7 +119,7 @@ class HealthChecker:
                                 safe_details[key] = str(value)
                         details = safe_details
             else:
-                status = 'healthy' if result else 'unhealthy'
+                status = "healthy" if result else "unhealthy"
                 error_message = None
                 details = None
 
@@ -126,7 +128,7 @@ class HealthChecker:
                 status=status,
                 response_time=response_time,
                 error_message=error_message,
-                details=details
+                details=details,
             )
 
         except Exception as e:
@@ -135,7 +137,7 @@ class HealthChecker:
                 service_name=service_name,
                 status="unhealthy",
                 response_time=response_time,
-                error_message=str(e)
+                error_message=str(e),
             )
 
         self.last_results[service_name] = health_result
@@ -165,23 +167,23 @@ class HealthChecker:
         else:
             return "healthy"
 
-    def generate_health_report(self, results: Dict[str, HealthCheckResult]) -> Dict[str, Any]:
+    def generate_health_report(
+        self, results: Dict[str, HealthCheckResult]
+    ) -> Dict[str, Any]:
         """Generate a comprehensive health report."""
         overall_status = self.get_overall_status(results)
 
         # Calculate statistics
         total_checks = len(results)
-        healthy_checks = len(
-            [r for r in results.values() if r.status == "healthy"])
-        degraded_checks = len(
-            [r for r in results.values() if r.status == "degraded"])
-        unhealthy_checks = len(
-            [r for r in results.values() if r.status == "unhealthy"])
+        healthy_checks = len([r for r in results.values() if r.status == "healthy"])
+        degraded_checks = len([r for r in results.values() if r.status == "degraded"])
+        unhealthy_checks = len([r for r in results.values() if r.status == "unhealthy"])
 
         # Calculate average response time
         response_times = [r.response_time for r in results.values()]
-        avg_response_time = sum(response_times) / \
-            len(response_times) if response_times else 0
+        avg_response_time = (
+            sum(response_times) / len(response_times) if response_times else 0
+        )
 
         # Create services dict with serializable data
         services_dict = {}
@@ -189,21 +191,26 @@ class HealthChecker:
             try:
                 # Convert result to dict and ensure it's serializable
                 result_dict = asdict(result)
-                
+
                 # Test serialization
                 import json
+
                 json.dumps(result_dict)
                 services_dict[service_name] = result_dict
             except (TypeError, ValueError) as e:
                 # If serialization fails, create a safe version
-                logger.warning(f"Health check result for {service_name} contains non-serializable data: {e}")
+                logger.warning(
+                    f"Health check result for {service_name} contains non-serializable data: {e}"
+                )
                 safe_result = {
                     "service_name": result.service_name,
                     "status": result.status,
                     "response_time": result.response_time,
                     "error_message": result.error_message,
-                    "timestamp": result.timestamp.isoformat() if result.timestamp else None,
-                    "details": str(result.details) if result.details else None
+                    "timestamp": (
+                        result.timestamp.isoformat() if result.timestamp else None
+                    ),
+                    "details": str(result.details) if result.details else None,
                 }
                 services_dict[service_name] = safe_result
 
@@ -215,10 +222,12 @@ class HealthChecker:
                 "healthy": healthy_checks,
                 "degraded": degraded_checks,
                 "unhealthy": unhealthy_checks,
-                "health_percentage": (healthy_checks / total_checks * 100) if total_checks > 0 else 0
+                "health_percentage": (
+                    (healthy_checks / total_checks * 100) if total_checks > 0 else 0
+                ),
             },
             "average_response_time": avg_response_time,
-            "services": services_dict
+            "services": services_dict,
         }
 
         return report
@@ -235,7 +244,7 @@ async def check_database_health() -> Dict[str, Any]:
             return {
                 "status": "unhealthy",
                 "error_message": "Database manager not available",
-                "response_time": 0.0
+                "response_time": 0.0,
             }
 
         db_manager = get_db_manager()
@@ -245,8 +254,7 @@ async def check_database_health() -> Dict[str, Any]:
         try:
             # Use a shorter timeout for startup checks
             pool = await asyncio.wait_for(
-                db_manager.connect(),
-                timeout=5.0  # Reduced timeout for startup
+                db_manager.connect(), timeout=5.0  # Reduced timeout for startup
             )
             response_time = time.time() - start_time
 
@@ -254,7 +262,7 @@ async def check_database_health() -> Dict[str, Any]:
                 return {
                     "status": "degraded",
                     "error_message": "Database connection failed",
-                    "response_time": response_time
+                    "response_time": response_time,
                 }
 
             # Test simple query with timeout
@@ -269,43 +277,47 @@ async def check_database_health() -> Dict[str, Any]:
                         # Get pool size safely
                         pool_size = "unknown"
                         try:
-                            if hasattr(db_manager, '_pool') and db_manager._pool:
-                                pool_size = str(len(db_manager._pool)) if hasattr(db_manager._pool, '__len__') else "unknown"
+                            if hasattr(db_manager, "_pool") and db_manager._pool:
+                                pool_size = (
+                                    str(len(db_manager._pool))
+                                    if hasattr(db_manager._pool, "__len__")
+                                    else "unknown"
+                                )
                         except Exception:
                             pool_size = "unknown"
-                        
+
                         return {
                             "status": "healthy",
                             "response_time": response_time,
                             "details": {
                                 "connection_pool_size": pool_size,
-                                "active_connections": "unknown"
-                            }
+                                "active_connections": "unknown",
+                            },
                         }
                     else:
                         return {
                             "status": "degraded",
                             "error_message": "Database query test failed",
-                            "response_time": response_time
+                            "response_time": response_time,
                         }
         except asyncio.TimeoutError:
             return {
                 "status": "degraded",
                 "error_message": "Database connection timeout",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
         except Exception as db_error:
             return {
                 "status": "degraded",
                 "error_message": f"Database connection error: {str(db_error)}",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
 
     except Exception as e:
         return {
             "status": "degraded",
             "error_message": f"Database health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -319,7 +331,7 @@ async def check_cache_health() -> Dict[str, Any]:
             return {
                 "status": "unhealthy",
                 "error_message": "Cache manager not available",
-                "response_time": 0.0
+                "response_time": 0.0,
             }
 
         enhanced_cache_manager = get_enhanced_cache_manager()
@@ -330,7 +342,7 @@ async def check_cache_health() -> Dict[str, Any]:
             # Use shorter timeout for startup checks
             is_healthy = await asyncio.wait_for(
                 enhanced_cache_manager.health_check(),
-                timeout=5.0  # Reduced timeout for startup
+                timeout=5.0,  # Reduced timeout for startup
             )
             response_time = time.time() - start_time
 
@@ -338,7 +350,7 @@ async def check_cache_health() -> Dict[str, Any]:
                 return {
                     "status": "degraded",
                     "error_message": "Cache connection failed",
-                    "response_time": response_time
+                    "response_time": response_time,
                 }
 
             # Test cache operations with timeouts
@@ -348,25 +360,22 @@ async def check_cache_health() -> Dict[str, Any]:
             # Test set operation with timeout
             start_time = time.time()
             set_success = await asyncio.wait_for(
-                enhanced_cache_manager.set(
-                    "db_query", test_key, test_value, ttl=10),
-                timeout=3.0
+                enhanced_cache_manager.set("db_query", test_key, test_value, ttl=10),
+                timeout=3.0,
             )
             set_time = time.time() - start_time
 
             # Test get operation with timeout
             start_time = time.time()
             retrieved_value = await asyncio.wait_for(
-                enhanced_cache_manager.get("db_query", test_key),
-                timeout=3.0
+                enhanced_cache_manager.get("db_query", test_key), timeout=3.0
             )
             get_time = time.time() - start_time
 
             # Test delete operation with timeout
             start_time = time.time()
             delete_success = await asyncio.wait_for(
-                enhanced_cache_manager.delete("db_query", test_key),
-                timeout=3.0
+                enhanced_cache_manager.delete("db_query", test_key), timeout=3.0
             )
             delete_time = time.time() - start_time
 
@@ -374,11 +383,16 @@ async def check_cache_health() -> Dict[str, Any]:
                 # Get circuit breaker state safely
                 circuit_breaker_state = "unknown"
                 try:
-                    if hasattr(enhanced_cache_manager, '_circuit_breaker') and enhanced_cache_manager._circuit_breaker:
-                        circuit_breaker_state = str(enhanced_cache_manager._circuit_breaker.state)
+                    if (
+                        hasattr(enhanced_cache_manager, "_circuit_breaker")
+                        and enhanced_cache_manager._circuit_breaker
+                    ):
+                        circuit_breaker_state = str(
+                            enhanced_cache_manager._circuit_breaker.state
+                        )
                 except Exception:
                     circuit_breaker_state = "unknown"
-                
+
                 return {
                     "status": "healthy",
                     "response_time": (set_time + get_time + delete_time) / 3,
@@ -386,33 +400,33 @@ async def check_cache_health() -> Dict[str, Any]:
                         "set_time": set_time,
                         "get_time": get_time,
                         "delete_time": delete_time,
-                        "circuit_breaker_state": circuit_breaker_state
-                    }
+                        "circuit_breaker_state": circuit_breaker_state,
+                    },
                 }
             else:
                 return {
                     "status": "degraded",
                     "error_message": "Cache operations failed",
-                    "response_time": (set_time + get_time + delete_time) / 3
+                    "response_time": (set_time + get_time + delete_time) / 3,
                 }
         except asyncio.TimeoutError:
             return {
                 "status": "degraded",
                 "error_message": "Cache connection timeout",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
         except Exception as cache_error:
             return {
                 "status": "degraded",
                 "error_message": f"Cache connection error: {str(cache_error)}",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
 
     except Exception as e:
         return {
             "status": "degraded",
             "error_message": f"Cache health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -426,7 +440,7 @@ async def check_api_health() -> Dict[str, Any]:
             return {
                 "status": "unhealthy",
                 "error_message": "Sports API not available",
-                "response_time": 0.0
+                "response_time": 0.0,
             }
 
         sports_api = SportsAPI()
@@ -438,44 +452,48 @@ async def check_api_health() -> Dict[str, Any]:
             leagues = await asyncio.wait_for(
                 # Use "football" instead of "soccer"
                 sports_api.get_leagues("football"),
-                timeout=10.0  # Reduced timeout for startup
+                timeout=10.0,  # Reduced timeout for startup
             )
             response_time = time.time() - start_time
 
-            if leagues and isinstance(leagues, dict) and leagues.get("status") == "success":
+            if (
+                leagues
+                and isinstance(leagues, dict)
+                and leagues.get("status") == "success"
+            ):
                 return {
                     "status": "healthy",
                     "response_time": response_time,
                     "details": {
                         "leagues_found": len(leagues.get("data", {})),
-                        "api_endpoint": "sports-api"
-                    }
+                        "api_endpoint": "sports-api",
+                    },
                 }
             else:
                 return {
                     "status": "degraded",
                     "error_message": "API returned empty or invalid response",
-                    "response_time": response_time
+                    "response_time": response_time,
                 }
 
         except asyncio.TimeoutError:
             return {
                 "status": "degraded",
                 "error_message": "API call timeout",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
         except Exception as api_error:
             return {
                 "status": "degraded",
                 "error_message": f"API call failed: {str(api_error)}",
-                "response_time": time.time() - start_time
+                "response_time": time.time() - start_time,
             }
 
     except Exception as e:
         return {
             "status": "degraded",
             "error_message": f"API health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -493,21 +511,21 @@ async def check_discord_health() -> Dict[str, Any]:
                 "response_time": 0.0,
                 "details": {
                     "token_configured": True,
-                    "note": "Bot connectivity will be checked when running"
-                }
+                    "note": "Bot connectivity will be checked when running",
+                },
             }
         else:
             return {
                 "status": "degraded",
                 "error_message": "Discord token not configured",
-                "response_time": 0.0
+                "response_time": 0.0,
             }
 
     except Exception as e:
         return {
             "status": "degraded",
             "error_message": f"Discord health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -520,11 +538,11 @@ async def check_memory_health() -> Dict[str, Any]:
             return {
                 "status": "unhealthy",
                 "error_message": "psutil module not available",
-                "response_time": 0.0
+                "response_time": 0.0,
             }
 
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         # Determine status based on usage
         memory_percent = memory.percent
@@ -544,15 +562,15 @@ async def check_memory_health() -> Dict[str, Any]:
                 "memory_usage_percent": memory_percent,
                 "memory_available_gb": memory.available / (1024**3),
                 "disk_usage_percent": disk_percent,
-                "disk_free_gb": disk.free / (1024**3)
-            }
+                "disk_free_gb": disk.free / (1024**3),
+            },
         }
 
     except Exception as e:
         return {
             "status": "unhealthy",
             "error_message": f"Memory health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -561,113 +579,153 @@ async def check_statistics_health() -> Dict[str, Any]:
     try:
         start_time = time.time()
         logger.debug("Starting statistics health check...")
-        
+
         # Simple health check - just verify we can import and instantiate the service
         try:
             logger.debug("Attempting to import StatisticsService...")
             logger.debug("Current sys.path: %s", sys.path)
-            
+
             # Try multiple import paths
             stats_service_class = None
             import_errors = []
-            
+
             # Try bot.services.statistics_service first
             try:
                 from bot.services.statistics_service import StatisticsService
+
                 stats_service_class = StatisticsService
-                logger.debug("StatisticsService imported successfully from bot.services.statistics_service")
+                logger.debug(
+                    "StatisticsService imported successfully from bot.services.statistics_service"
+                )
             except ImportError as e1:
                 import_errors.append(f"bot.services.statistics_service: {e1}")
-                logger.debug(f"Failed to import from bot.services.statistics_service: {e1}")
-                
+                logger.debug(
+                    f"Failed to import from bot.services.statistics_service: {e1}"
+                )
+
                 # Try services.statistics_service
                 try:
                     from services.statistics_service import StatisticsService
+
                     stats_service_class = StatisticsService
-                    logger.debug("StatisticsService imported successfully from services.statistics_service")
+                    logger.debug(
+                        "StatisticsService imported successfully from services.statistics_service"
+                    )
                 except ImportError as e2:
                     import_errors.append(f"services.statistics_service: {e2}")
-                    logger.debug(f"Failed to import from services.statistics_service: {e2}")
-                    
+                    logger.debug(
+                        f"Failed to import from services.statistics_service: {e2}"
+                    )
+
                     # Try direct import
                     try:
                         from statistics_service import StatisticsService
+
                         stats_service_class = StatisticsService
-                        logger.debug("StatisticsService imported successfully from statistics_service")
+                        logger.debug(
+                            "StatisticsService imported successfully from statistics_service"
+                        )
                     except ImportError as e3:
                         import_errors.append(f"statistics_service: {e3}")
                         logger.debug(f"Failed to import from statistics_service: {e3}")
-                        raise ImportError(f"Could not import StatisticsService from any path: {'; '.join(import_errors)}")
-            
+                        raise ImportError(
+                            f"Could not import StatisticsService from any path: {'; '.join(import_errors)}"
+                        )
+
             if stats_service_class is None:
                 raise ImportError("StatisticsService class not found")
-            
+
             # Try to create an instance (this should work even if the service isn't running)
             logger.debug("Attempting to instantiate StatisticsService...")
             try:
                 stats_service = stats_service_class()
                 logger.debug("StatisticsService instantiated successfully")
             except Exception as instantiate_error:
-                logger.error(f"Failed to instantiate StatisticsService: {instantiate_error}")
+                logger.error(
+                    f"Failed to instantiate StatisticsService: {instantiate_error}"
+                )
                 return {
                     "status": "unhealthy",
                     "response_time": time.time() - start_time,
-                    "details": {"error": f"Failed to instantiate service: {str(instantiate_error)}"},
-                    "error_message": f"Statistics service instantiation failed: {str(instantiate_error)}"
+                    "details": {
+                        "error": f"Failed to instantiate service: {str(instantiate_error)}"
+                    },
+                    "error_message": f"Statistics service instantiation failed: {str(instantiate_error)}",
                 }
-            
+
             # Check if the service is running by checking the is_running attribute
-            if hasattr(stats_service, 'is_running') and stats_service.is_running:
+            if hasattr(stats_service, "is_running") and stats_service.is_running:
                 status = "healthy"
                 logger.debug("Statistics service is running")
             else:
                 # Service exists but is not running - this is acceptable for health check
                 status = "healthy"
-                logger.debug("Statistics service exists but is not running (this is normal)")
-            
+                logger.debug(
+                    "Statistics service exists but is not running (this is normal)"
+                )
+
             # Try to get basic system stats if psutil is available
             try:
                 logger.debug("Attempting to import psutil...")
                 import psutil
+
                 logger.debug("psutil imported successfully")
-                
+
                 memory = psutil.virtual_memory()
                 cpu_percent = psutil.cpu_percent(interval=0.1)
-                
+
                 # Create a simple stats dict with only serializable values
                 stats = {
                     "status": status,
-                    "uptime": float(time.time() - getattr(stats_service, 'start_time', time.time())) if hasattr(stats_service, 'start_time') else 0.0,
+                    "uptime": (
+                        float(
+                            time.time()
+                            - getattr(stats_service, "start_time", time.time())
+                        )
+                        if hasattr(stats_service, "start_time")
+                        else 0.0
+                    ),
                     "memory_usage": float(memory.percent),
                     "cpu_usage": float(cpu_percent),
                     "active_connections": 0,
                     "total_requests": 0,
                     "error_rate": 0.0,
-                    "service_running": bool(getattr(stats_service, 'is_running', False))
+                    "service_running": bool(
+                        getattr(stats_service, "is_running", False)
+                    ),
                 }
-                
+
                 # Only mark as degraded if system resources are critically high
                 if stats.get("memory_usage", 0) > 95 or stats.get("cpu_usage", 0) > 95:
                     status = "degraded"
-                    
+
                 logger.debug(f"Statistics health check completed with status: {status}")
-                    
+
             except ImportError as psutil_error:
                 # psutil not available, but service can be instantiated
                 logger.debug(f"psutil not available: {psutil_error}")
                 status = "healthy"  # Still healthy even without psutil
                 stats = {
                     "status": status,
-                    "uptime": float(time.time() - getattr(stats_service, 'start_time', time.time())) if hasattr(stats_service, 'start_time') else 0.0,
+                    "uptime": (
+                        float(
+                            time.time()
+                            - getattr(stats_service, "start_time", time.time())
+                        )
+                        if hasattr(stats_service, "start_time")
+                        else 0.0
+                    ),
                     "memory_usage": 0.0,
                     "cpu_usage": 0.0,
                     "active_connections": 0,
                     "total_requests": 0,
                     "error_rate": 0.0,
-                    "service_running": bool(getattr(stats_service, 'is_running', False)),
-                    "note": "psutil not available, using basic health check"
+                    "service_running": bool(
+                        getattr(stats_service, "is_running", False)
+                    ),
+                    "note": "psutil not available, using basic health check",
                 }
-                
+
         except ImportError as import_error:
             # StatisticsService not available
             logger.error(f"StatisticsService import failed: {import_error}")
@@ -683,17 +741,21 @@ async def check_statistics_health() -> Dict[str, Any]:
                 "total_requests": 0,
                 "error_rate": 0.0,
                 "service_running": False,
-                "note": "Statistics service import failed, but service is known to work correctly"
+                "note": "Statistics service import failed, but service is known to work correctly",
             }
-            
+
         response_time = time.time() - start_time
         logger.debug(f"Statistics health check response time: {response_time:.2f}s")
-        
+
         return {
             "status": status,
             "response_time": response_time,
             "details": stats,
-            "error_message": None if status == "healthy" else "Statistics service health check failed"
+            "error_message": (
+                None
+                if status == "healthy"
+                else "Statistics service health check failed"
+            ),
         }
 
     except Exception as e:
@@ -701,7 +763,7 @@ async def check_statistics_health() -> Dict[str, Any]:
         return {
             "status": "unhealthy",
             "error_message": f"Statistics health check failed: {str(e)}",
-            "response_time": 0.0
+            "response_time": 0.0,
         }
 
 
@@ -713,17 +775,14 @@ health_checker = HealthChecker()
 
 def register_default_health_checks():
     """Register default health checks."""
-    health_checker.register_health_check(
-        "database", check_database_health, interval=30)
-    health_checker.register_health_check(
-        "cache", check_cache_health, interval=30)
+    health_checker.register_health_check("database", check_database_health, interval=30)
+    health_checker.register_health_check("cache", check_cache_health, interval=30)
     health_checker.register_health_check("api", check_api_health, interval=60)
+    health_checker.register_health_check("discord", check_discord_health, interval=30)
+    health_checker.register_health_check("memory", check_memory_health, interval=60)
     health_checker.register_health_check(
-        "discord", check_discord_health, interval=30)
-    health_checker.register_health_check(
-        "memory", check_memory_health, interval=60)
-    health_checker.register_health_check(
-        "statistics", check_statistics_health, interval=60)
+        "statistics", check_statistics_health, interval=60
+    )
 
 
 async def run_system_health_check() -> Dict[str, Any]:
@@ -734,10 +793,11 @@ async def run_system_health_check() -> Dict[str, Any]:
     try:
         results = await health_checker.run_all_health_checks()
         report = health_checker.generate_health_report(results)
-        
+
         # Final safety check - ensure the report is serializable
         try:
             import json
+
             json.dumps(report)
         except (TypeError, ValueError) as e:
             logger.warning(f"Health check report contains non-serializable data: {e}")
@@ -750,13 +810,13 @@ async def run_system_health_check() -> Dict[str, Any]:
                     "healthy": 0,
                     "degraded": 0,
                     "unhealthy": 0,
-                    "health_percentage": 0
+                    "health_percentage": 0,
                 },
                 "average_response_time": 0.0,
                 "services": {},
-                "error": "Health check report contained non-serializable data"
+                "error": "Health check report contained non-serializable data",
             }
-        
+
         return report
     except Exception as e:
         logger.error(f"Health check execution failed: {e}")
@@ -769,11 +829,11 @@ async def run_system_health_check() -> Dict[str, Any]:
                 "healthy": 0,
                 "degraded": 0,
                 "unhealthy": 0,
-                "health_percentage": 0
+                "health_percentage": 0,
             },
             "average_response_time": 0.0,
             "services": {},
-            "error": f"Health check execution failed: {str(e)}"
+            "error": f"Health check execution failed: {str(e)}",
         }
 
 

@@ -14,6 +14,7 @@ from bot.config.asset_paths import BASE_DIR
 # Adjust these paths if your config/utils structure is different
 # relative to the 'bot' root when this module is imported.
 from bot.config.leagues import LEAGUE_CONFIG
+
 # Example, if used directly in modal
 from bot.utils.errors import BetServiceError
 
@@ -41,8 +42,7 @@ logger = logging.getLogger(__name__)
 
 class PlayerPropModal(Modal):
     def __init__(self, bet_details_from_view: Dict[str, Any]):
-        league_key = bet_details_from_view.get(
-            "selected_league_key", "DEFAULT")
+        league_key = bet_details_from_view.get("selected_league_key", "DEFAULT")
         league_conf = LEAGUE_CONFIG.get(league_key, {})
         super().__init__(
             title=f"{league_conf.get('player_label', 'Player')} Prop Bet Details"
@@ -56,8 +56,7 @@ class PlayerPropModal(Modal):
             label=league_conf.get("player_label", "Player"),
             required=True,
             max_length=100,
-            placeholder=league_conf.get(
-                "player_placeholder", "e.g., John Smith"),
+            placeholder=league_conf.get("player_placeholder", "e.g., John Smith"),
             default=bet_details_from_view.get("player_name", ""),
         )
         self.add_item(self.player_input)
@@ -91,8 +90,7 @@ class PlayerPropModal(Modal):
             label="Odds",
             required=True,
             max_length=10,
-            placeholder=league_conf.get(
-                "odds_placeholder", "e.g., -110 or +200"),
+            placeholder=league_conf.get("odds_placeholder", "e.g., -110 or +200"),
             default=bet_details_from_view.get("odds_str", ""),
         )
         self.add_item(self.odds_input)
@@ -190,8 +188,7 @@ class PlayerPropModal(Modal):
                 import io
 
                 self.view_ref.preview_image_bytes = io.BytesIO()
-                bet_slip_image.save(
-                    self.view_ref.preview_image_bytes, format="PNG")
+                bet_slip_image.save(self.view_ref.preview_image_bytes, format="PNG")
                 self.view_ref.preview_image_bytes.seek(0)
             elif hasattr(self.view_ref, "preview_image_bytes"):
                 self.view_ref.preview_image_bytes = None
@@ -232,8 +229,7 @@ class StraightBetDetailsModal(Modal):
 
         # Create fields based on type and manual entry
         if self.is_manual:
-            self._create_manual_entry_fields(
-                selected_league_key, bet_details_from_view)
+            self._create_manual_entry_fields(selected_league_key, bet_details_from_view)
         else:
             self._create_game_line_fields(bet_details_from_view)
 
@@ -304,7 +300,9 @@ class StraightBetDetailsModal(Modal):
         }
         return league_placeholders.get(selected_league_key, "e.g., Opponent Name")
 
-    def _create_individual_sport_fields(self, selected_league_key: str, bet_details_from_view: Dict[str, Any]):
+    def _create_individual_sport_fields(
+        self, selected_league_key: str, bet_details_from_view: Dict[str, Any]
+    ):
         """Create fields for individual sports (darts, tennis, golf, MMA, etc.)."""
         league_conf = self.league_config
         player_label = league_conf.get("participant_label", "Player")
@@ -322,8 +320,7 @@ class StraightBetDetailsModal(Modal):
         self.add_item(self.player_input)
 
         opponent_label = league_conf.get("opponent_label", "Opponent")
-        opponent_placeholder = self._get_opponent_placeholder(
-            selected_league_key)
+        opponent_placeholder = self._get_opponent_placeholder(selected_league_key)
 
         self.opponent_input = TextInput(
             label=opponent_label,
@@ -378,14 +375,17 @@ class StraightBetDetailsModal(Modal):
         )
         self.add_item(self.odds_input)
 
-    def _create_manual_entry_fields(self, selected_league_key: str, bet_details_from_view: Dict[str, Any]):
+    def _create_manual_entry_fields(
+        self, selected_league_key: str, bet_details_from_view: Dict[str, Any]
+    ):
         """Create fields for manual entry based on sport type."""
         sport_type = self.league_config.get("sport_type", "Team Sport")
         is_individual_sport = sport_type == "Individual Player"
 
         if is_individual_sport:
             self._create_individual_sport_fields(
-                selected_league_key, bet_details_from_view)
+                selected_league_key, bet_details_from_view
+            )
         else:
             self._create_team_sport_fields(bet_details_from_view)
 
@@ -442,7 +442,8 @@ class StraightBetDetailsModal(Modal):
 
         try:
             self.view_ref.bet_details["odds"] = float(
-                inputs["odds_str"].replace("+", ""))
+                inputs["odds_str"].replace("+", "")
+            )
         except Exception:
             self.view_ref.bet_details["odds"] = inputs["odds_str"]
 
@@ -520,8 +521,7 @@ class StraightBetDetailsModal(Modal):
     async def on_error(
         self, interaction: discord.Interaction, error: Exception
     ) -> None:
-        logger.error(
-            f"Error in StraightBetDetailsModal: {error}", exc_info=True)
+        logger.error(f"Error in StraightBetDetailsModal: {error}", exc_info=True)
         try:
             # Always try to edit the original ephemeral message instead of sending new ones
             await interaction.response.defer()
@@ -531,8 +531,7 @@ class StraightBetDetailsModal(Modal):
             )
             self.view_ref.stop()
         except Exception as edit_error:
-            logger.error(
-                f"Failed to edit message after modal error: {edit_error}")
+            logger.error(f"Failed to edit message after modal error: {edit_error}")
             # Only as last resort, try to send a followup
             try:
                 if interaction.response.is_done():
@@ -577,23 +576,19 @@ def get_player_image(
             BASE_DIR, "static", "logos", "players", sport_id, team_dir_name
         )
         if not os.path.exists(team_dir):
-            logger.warning(
-                f"[Player Image] Team directory not found: {team_dir}")
+            logger.warning(f"[Player Image] Team directory not found: {team_dir}")
             return None, player_name
         # Get all image files in team directory
         image_files = [f for f in os.listdir(team_dir) if f.endswith(".webp")]
         if not image_files:
-            logger.warning(
-                f"[Player Image] No player images found in: {team_dir}")
+            logger.warning(f"[Player Image] No player images found in: {team_dir}")
             return None, player_name
         # Get full paths
-        candidates = [os.path.splitext(os.path.basename(f))[
-            0] for f in image_files]
+        candidates = [os.path.splitext(os.path.basename(f))[0] for f in image_files]
         # Normalize search name
         search_name = player_name.lower().replace(" ", "_")
         # Fuzzy match
-        matches = difflib.get_close_matches(
-            search_name, candidates, n=1, cutoff=0.6)
+        matches = difflib.get_close_matches(search_name, candidates, n=1, cutoff=0.6)
         if matches:
             best_name = matches[0]
             image_path = os.path.join(team_dir, best_name + ".webp")
@@ -601,8 +596,7 @@ def get_player_image(
             logger.info(f"[Player Image] Using fuzzy match: {best_name}")
             return image_path, display_name
         else:
-            logger.warning(
-                f"[Player Image] No fuzzy match found for '{search_name}'")
+            logger.warning(f"[Player Image] No fuzzy match found for '{search_name}'")
             return None, player_name
     except Exception as e:
         logger.error(f"[Player Image] Error getting player image: {str(e)}")
@@ -616,8 +610,7 @@ class BasePlayerPropModal(Modal):
     def __init__(self, league_key: str, bet_details_from_view: Dict[str, Any]):
         league_conf = LEAGUE_CONFIG.get(league_key, {})
         super().__init__(
-            title=league_conf.get("player_prop_modal_title",
-                                  "Player Prop Bet Details")
+            title=league_conf.get("player_prop_modal_title", "Player Prop Bet Details")
         )
         self.league_key = league_key
         self.league_conf = league_conf
@@ -628,8 +621,7 @@ class BasePlayerPropModal(Modal):
             label=league_conf.get("player_prop_label", "Player Name"),
             required=True,
             max_length=100,
-            placeholder=league_conf.get(
-                "player_prop_placeholder", "e.g., John Smith"),
+            placeholder=league_conf.get("player_prop_placeholder", "e.g., John Smith"),
             default=bet_details_from_view.get("player_name", ""),
         )
         self.add_item(self.player_name_input)
@@ -651,8 +643,7 @@ class BasePlayerPropModal(Modal):
             label=league_conf.get("odds_label", "Odds"),
             required=True,
             max_length=10,
-            placeholder=league_conf.get(
-                "odds_placeholder", "e.g., -110 or +200"),
+            placeholder=league_conf.get("odds_placeholder", "e.g., -110 or +200"),
             default=bet_details_from_view.get("odds_str", ""),
         )
         self.add_item(self.odds_input)
@@ -732,15 +723,23 @@ class ParlayBetDetailsModal(Modal):
         )
         self.add_item(self.units_input)
 
-    def _validate_total_odds(self, total_odds_str: str) -> Tuple[bool, Optional[float], Optional[str]]:
+    def _validate_total_odds(
+        self, total_odds_str: str
+    ) -> Tuple[bool, Optional[float], Optional[str]]:
         """Validate total odds input. Returns (is_valid, odds_value, error_message)."""
         try:
             total_odds = float(total_odds_str)
             return True, total_odds, None
         except ValueError:
-            return False, None, "❌ Invalid total odds format. Please use numbers like +500 or -150."
+            return (
+                False,
+                None,
+                "❌ Invalid total odds format. Please use numbers like +500 or -150.",
+            )
 
-    def _validate_units(self, units_str: str) -> Tuple[bool, Optional[float], Optional[str]]:
+    def _validate_units(
+        self, units_str: str
+    ) -> Tuple[bool, Optional[float], Optional[str]]:
         """Validate units input. Returns (is_valid, units_value, error_message)."""
         try:
             units = float(units_str)
@@ -748,16 +747,24 @@ class ParlayBetDetailsModal(Modal):
                 return False, None, "❌ Units must be greater than 0."
             return True, units, None
         except ValueError:
-            return False, None, "❌ Invalid units format. Please use numbers like 1.0 or 2.5."
+            return (
+                False,
+                None,
+                "❌ Invalid units format. Please use numbers like 1.0 or 2.5.",
+            )
 
-    def _update_bet_details(self, total_odds: float, total_odds_str: str, units: float, units_str: str):
+    def _update_bet_details(
+        self, total_odds: float, total_odds_str: str, units: float, units_str: str
+    ):
         """Update bet details with validated values."""
         self.view_ref.bet_details["total_odds"] = total_odds
         self.view_ref.bet_details["total_odds_str"] = total_odds_str
         self.view_ref.bet_details["units"] = units
         self.view_ref.bet_details["units_str"] = units_str
 
-    async def _generate_parlay_preview_image(self, total_odds: float, units: float) -> bool:
+    async def _generate_parlay_preview_image(
+        self, total_odds: float, units: float
+    ) -> bool:
         """Generate parlay preview image. Returns True if successful."""
         try:
             from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
@@ -810,22 +817,21 @@ class ParlayBetDetailsModal(Modal):
             # Validate total odds
             total_odds_str = self.total_odds_input.value.strip()
             is_valid_odds, total_odds, odds_error = self._validate_total_odds(
-                total_odds_str)
+                total_odds_str
+            )
             if not is_valid_odds:
                 await interaction.response.send_message(odds_error, ephemeral=True)
                 return
 
             # Validate units
             units_str = self.units_input.value.strip()
-            is_valid_units, units, units_error = self._validate_units(
-                units_str)
+            is_valid_units, units, units_error = self._validate_units(units_str)
             if not is_valid_units:
                 await interaction.response.send_message(units_error, ephemeral=True)
                 return
 
             # Update bet details
-            self._update_bet_details(
-                total_odds, total_odds_str, units, units_str)
+            self._update_bet_details(total_odds, total_odds_str, units, units_str)
 
             # Generate preview image
             await self._generate_parlay_preview_image(total_odds, units)
@@ -835,7 +841,8 @@ class ParlayBetDetailsModal(Modal):
 
         except Exception as e:
             logger.error(
-                f"Error in ParlayBetDetailsModal on_submit: {e}", exc_info=True)
+                f"Error in ParlayBetDetailsModal on_submit: {e}", exc_info=True
+            )
             await interaction.response.send_message(
                 "❌ Error processing parlay bet details. Please try again.",
                 ephemeral=True,

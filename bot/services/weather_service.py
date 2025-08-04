@@ -16,6 +16,7 @@ except ImportError:
     # Fallback - try to import from parent directory
     import sys
     import os
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Add multiple possible paths for different execution contexts
     possible_paths = [
@@ -32,6 +33,7 @@ except ImportError:
         def get_settings():
             return None
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,13 +45,17 @@ class WeatherService:
         self.base_url = "http://api.weatherapi.com/v1"
 
         # Handle case where settings might be None
-        if self.settings and hasattr(self.settings, 'api'):
-            self.api_key = self.settings.api.weather_key.get_secret_value(
-            ) if self.settings.api.weather_key else None
+        if self.settings and hasattr(self.settings, "api"):
+            self.api_key = (
+                self.settings.api.weather_key.get_secret_value()
+                if self.settings.api.weather_key
+                else None
+            )
             self.timeout = self.settings.api.timeout
         else:
             # Fallback to environment variables
             import os
+
             self.api_key = os.getenv("WEATHER_API_KEY")
             self.timeout = int(os.getenv("API_TIMEOUT", "30"))
 
@@ -72,10 +78,12 @@ class WeatherService:
             params = {
                 "key": self.api_key,
                 "q": location,
-                "aqi": "no"  # Disable air quality to save API calls
+                "aqi": "no",  # Disable air quality to save API calls
             }
 
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.timeout)
+            ) as session:
                 async with session.get(url, params=params) as response:
                     if response.status == 200:
                         data = await response.json()
@@ -89,7 +97,9 @@ class WeatherService:
             logger.error(f"Error fetching weather for {location}: {e}")
             return None
 
-    async def get_forecast_weather(self, location: str, days: int = 1) -> Optional[Dict]:
+    async def get_forecast_weather(
+        self, location: str, days: int = 1
+    ) -> Optional[Dict]:
         """
         Get weather forecast for a location.
 
@@ -110,10 +120,12 @@ class WeatherService:
                 "key": self.api_key,
                 "q": location,
                 "days": min(days, 14),  # API limit is 14 days
-                "aqi": "no"
+                "aqi": "no",
             }
 
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.timeout)
+            ) as session:
                 async with session.get(url, params=params) as response:
                     if response.status == 200:
                         data = await response.json()
@@ -141,7 +153,7 @@ class WeatherService:
                     "country": location.get("country", ""),
                     "lat": location.get("lat", 0),
                     "lon": location.get("lon", 0),
-                    "localtime": location.get("localtime", "")
+                    "localtime": location.get("localtime", ""),
                 },
                 "current": {
                     "temp_c": current.get("temp_c", 0),
@@ -159,8 +171,8 @@ class WeatherService:
                     "cloud": current.get("cloud", 0),
                     "vis_km": current.get("vis_km", 0),
                     "uv": current.get("uv", 0),
-                    "last_updated": current.get("last_updated", "")
-                }
+                    "last_updated": current.get("last_updated", ""),
+                },
             }
         except Exception as e:
             logger.error(f"Error formatting weather data: {e}")
@@ -179,38 +191,40 @@ class WeatherService:
                 astro = day.get("astro", {})
                 condition = day_data.get("condition", {})
 
-                formatted_forecast.append({
-                    "date": day.get("date", ""),
-                    "temp": {
-                        "max_c": day_data.get("maxtemp_c", 0),
-                        "max_f": day_data.get("maxtemp_f", 0),
-                        "min_c": day_data.get("mintemp_c", 0),
-                        "min_f": day_data.get("mintemp_f", 0),
-                        "avg_c": day_data.get("avgtemp_c", 0),
-                        "avg_f": day_data.get("avgtemp_f", 0)
-                    },
-                    "condition": {
-                        "text": condition.get("text", "Unknown"),
-                        "icon": condition.get("icon", "")
-                    },
-                    "wind": {
-                        "max_mph": day_data.get("maxwind_mph", 0),
-                        "max_kph": day_data.get("maxwind_kph", 0)
-                    },
-                    "precipitation": {
-                        "total_mm": day_data.get("totalprecip_mm", 0),
-                        "total_in": day_data.get("totalprecip_in", 0),
-                        "chance_of_rain": day_data.get("daily_chance_of_rain", 0),
-                        "chance_of_snow": day_data.get("daily_chance_of_snow", 0)
-                    },
-                    "humidity": day_data.get("avghumidity", 0),
-                    "astro": {
-                        "sunrise": astro.get("sunrise", ""),
-                        "sunset": astro.get("sunset", ""),
-                        "moonrise": astro.get("moonrise", ""),
-                        "moonset": astro.get("moonset", "")
+                formatted_forecast.append(
+                    {
+                        "date": day.get("date", ""),
+                        "temp": {
+                            "max_c": day_data.get("maxtemp_c", 0),
+                            "max_f": day_data.get("maxtemp_f", 0),
+                            "min_c": day_data.get("mintemp_c", 0),
+                            "min_f": day_data.get("mintemp_f", 0),
+                            "avg_c": day_data.get("avgtemp_c", 0),
+                            "avg_f": day_data.get("avgtemp_f", 0),
+                        },
+                        "condition": {
+                            "text": condition.get("text", "Unknown"),
+                            "icon": condition.get("icon", ""),
+                        },
+                        "wind": {
+                            "max_mph": day_data.get("maxwind_mph", 0),
+                            "max_kph": day_data.get("maxwind_kph", 0),
+                        },
+                        "precipitation": {
+                            "total_mm": day_data.get("totalprecip_mm", 0),
+                            "total_in": day_data.get("totalprecip_in", 0),
+                            "chance_of_rain": day_data.get("daily_chance_of_rain", 0),
+                            "chance_of_snow": day_data.get("daily_chance_of_snow", 0),
+                        },
+                        "humidity": day_data.get("avghumidity", 0),
+                        "astro": {
+                            "sunrise": astro.get("sunrise", ""),
+                            "sunset": astro.get("sunset", ""),
+                            "moonrise": astro.get("moonrise", ""),
+                            "moonset": astro.get("moonset", ""),
+                        },
                     }
-                })
+                )
 
             return {
                 "location": {
@@ -218,15 +232,17 @@ class WeatherService:
                     "region": location.get("region", ""),
                     "country": location.get("country", ""),
                     "lat": location.get("lat", 0),
-                    "lon": location.get("lon", 0)
+                    "lon": location.get("lon", 0),
                 },
-                "forecast": formatted_forecast
+                "forecast": formatted_forecast,
             }
         except Exception as e:
             logger.error(f"Error formatting forecast data: {e}")
             return {}
 
-    async def get_weather_for_venue(self, venue_name: str, city: str = None) -> Optional[Dict]:
+    async def get_weather_for_venue(
+        self, venue_name: str, city: str = None
+    ) -> Optional[Dict]:
         """
         Get weather for a specific venue.
 
@@ -292,7 +308,9 @@ class WeatherService:
                 message += f"🌧️ **Precipitation:** {precip_mm} mm\n"
 
             message += f"\n📍 **Location:** {location.get('region', '')}, {location.get('country', '')}"
-            message += f"\n🕐 **Last updated:** {current.get('last_updated', 'Unknown')}"
+            message += (
+                f"\n🕐 **Last updated:** {current.get('last_updated', 'Unknown')}"
+            )
 
             return message
 
@@ -300,7 +318,9 @@ class WeatherService:
             logger.error(f"Error formatting weather message: {e}")
             return "❌ Error formatting weather data."
 
-    def format_forecast_message(self, weather_data: Dict, venue_name: str = None) -> str:
+    def format_forecast_message(
+        self, weather_data: Dict, venue_name: str = None
+    ) -> str:
         """Format forecast weather data into a readable Discord message."""
         if not weather_data:
             return "❌ Unable to fetch forecast data."
@@ -321,8 +341,7 @@ class WeatherService:
             if isinstance(forecast, list):
                 forecast_days = forecast[:3]  # Limit to 3 days
             elif isinstance(forecast, dict):
-                forecast_days = forecast.get("forecastday", [])[
-                    :3]  # Limit to 3 days
+                forecast_days = forecast.get("forecastday", [])[:3]  # Limit to 3 days
 
             for i, day in enumerate(forecast_days):
                 # Handle different data structures
@@ -330,8 +349,7 @@ class WeatherService:
                     if "date" in day and "temp" in day:
                         # Formatted structure from _format_forecast_data
                         date = day.get("date", "Unknown")
-                        condition = day.get("condition", {}).get(
-                            "text", "Unknown")
+                        condition = day.get("condition", {}).get("text", "Unknown")
                         temp_data = day.get("temp", {})
                         max_temp_c = temp_data.get("max_c", 0)
                         max_temp_f = temp_data.get("max_f", 0)
@@ -346,8 +364,7 @@ class WeatherService:
                         # Raw API structure
                         date = day.get("date", "Unknown")
                         day_info = day.get("day", {})
-                        condition = day_info.get(
-                            "condition", {}).get("text", "Unknown")
+                        condition = day_info.get("condition", {}).get("text", "Unknown")
                         max_temp_c = day_info.get("maxtemp_c", 0)
                         max_temp_f = day_info.get("maxtemp_f", 0)
                         min_temp_c = day_info.get("mintemp_c", 0)
@@ -361,6 +378,7 @@ class WeatherService:
                 # Format date
                 try:
                     from datetime import datetime
+
                     dt = datetime.strptime(date, "%Y-%m-%d")
                     formatted_date = dt.strftime("%A, %B %d")
                 except:

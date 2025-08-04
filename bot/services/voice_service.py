@@ -9,7 +9,12 @@ import discord
 from discord.ext import commands
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
+from bot.utils.enhanced_cache_manager import (
+    enhanced_cache_get,
+    enhanced_cache_set,
+    enhanced_cache_delete,
+    get_enhanced_cache_manager,
+)
 from bot.utils.errors import VoiceServiceError
 
 logger = logging.getLogger(__name__)
@@ -17,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Cache TTLs for voice service
 VOICE_CACHE_TTLS = {
     "channel_status": 300,  # 5 minutes
-    "user_activity": 600,   # 10 minutes
+    "user_activity": 600,  # 10 minutes
     "guild_settings": 3600,  # 1 hour
 }
 
@@ -34,10 +39,10 @@ class VoiceService:
 
         # Voice service configuration
         self.config = {
-            'check_interval': 300,  # 5 minutes
-            'grace_period': 3600,   # 1 hour
-            'min_activity_time': 300,  # 5 minutes
-            'max_inactive_time': 1800,  # 30 minutes
+            "check_interval": 300,  # 5 minutes
+            "grace_period": 3600,  # 1 hour
+            "min_activity_time": 300,  # 5 minutes
+            "max_inactive_time": 1800,  # 30 minutes
         }
 
         logger.info("VoiceService initialized")
@@ -71,7 +76,7 @@ class VoiceService:
         while self._is_running:
             try:
                 await self.check_voice_activity()
-                await asyncio.sleep(self.config['check_interval'])
+                await asyncio.sleep(self.config["check_interval"])
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -82,28 +87,36 @@ class VoiceService:
         """Check voice channel activity across all guilds."""
         try:
             activity_report = {
-                'guilds_checked': 0,
-                'active_channels': 0,
-                'inactive_channels': 0,
-                'users_tracked': 0,
-                'errors': []
+                "guilds_checked": 0,
+                "active_channels": 0,
+                "inactive_channels": 0,
+                "users_tracked": 0,
+                "errors": [],
             }
 
             for guild in self.bot.guilds:
                 try:
                     guild_activity = await self._check_guild_voice_activity(guild)
-                    activity_report['guilds_checked'] += 1
-                    activity_report['active_channels'] += guild_activity.get(
-                        'active_channels', 0)
-                    activity_report['inactive_channels'] += guild_activity.get(
-                        'inactive_channels', 0)
-                    activity_report['users_tracked'] += guild_activity.get(
-                        'users_tracked', 0)
+                    activity_report["guilds_checked"] += 1
+                    activity_report["active_channels"] += guild_activity.get(
+                        "active_channels", 0
+                    )
+                    activity_report["inactive_channels"] += guild_activity.get(
+                        "inactive_channels", 0
+                    )
+                    activity_report["users_tracked"] += guild_activity.get(
+                        "users_tracked", 0
+                    )
                 except Exception as e:
-                    activity_report['errors'].append(f"Guild {guild.id}: {e}")
+                    activity_report["errors"].append(f"Guild {guild.id}: {e}")
 
             # Cache activity report
-            await enhanced_cache_set("voice_activity", "last_check", activity_report, ttl=VOICE_CACHE_TTLS['channel_status'])
+            await enhanced_cache_set(
+                "voice_activity",
+                "last_check",
+                activity_report,
+                ttl=VOICE_CACHE_TTLS["channel_status"],
+            )
 
             logger.debug(f"Voice activity check completed: {activity_report}")
             return activity_report
@@ -116,25 +129,24 @@ class VoiceService:
         """Check voice activity for a specific guild."""
         try:
             guild_activity = {
-                'guild_id': guild.id,
-                'active_channels': 0,
-                'inactive_channels': 0,
-                'users_tracked': 0,
-                'channels': []
+                "guild_id": guild.id,
+                "active_channels": 0,
+                "inactive_channels": 0,
+                "users_tracked": 0,
+                "channels": [],
             }
 
             for channel in guild.voice_channels:
                 try:
                     channel_activity = await self._check_channel_activity(channel)
-                    guild_activity['channels'].append(channel_activity)
+                    guild_activity["channels"].append(channel_activity)
 
-                    if channel_activity['is_active']:
-                        guild_activity['active_channels'] += 1
+                    if channel_activity["is_active"]:
+                        guild_activity["active_channels"] += 1
                     else:
-                        guild_activity['inactive_channels'] += 1
+                        guild_activity["inactive_channels"] += 1
 
-                    guild_activity['users_tracked'] += len(
-                        channel_activity['users'])
+                    guild_activity["users_tracked"] += len(channel_activity["users"])
 
                 except Exception as e:
                     logger.error(f"Error checking channel {channel.id}: {e}")
@@ -142,11 +154,12 @@ class VoiceService:
             return guild_activity
 
         except Exception as e:
-            logger.error(
-                f"Error checking guild {guild.id} voice activity: {e}")
-            return {'guild_id': guild.id, 'error': str(e)}
+            logger.error(f"Error checking guild {guild.id} voice activity: {e}")
+            return {"guild_id": guild.id, "error": str(e)}
 
-    async def _check_channel_activity(self, channel: discord.VoiceChannel) -> Dict[str, Any]:
+    async def _check_channel_activity(
+        self, channel: discord.VoiceChannel
+    ) -> Dict[str, Any]:
         """Check activity for a specific voice channel."""
         try:
             current_time = datetime.now(timezone.utc)
@@ -155,10 +168,10 @@ class VoiceService:
             for member in channel.members:
                 if not member.bot:
                     user_activity = {
-                        'user_id': member.id,
-                        'username': member.display_name,
-                        'joined_at': current_time,
-                        'is_active': True
+                        "user_id": member.id,
+                        "username": member.display_name,
+                        "joined_at": current_time,
+                        "is_active": True,
                     }
                     users_in_channel.append(user_activity)
 
@@ -167,19 +180,19 @@ class VoiceService:
                         "user_activity",
                         f"{member.id}_{channel.id}",
                         user_activity,
-                        ttl=VOICE_CACHE_TTLS['user_activity']
+                        ttl=VOICE_CACHE_TTLS["user_activity"],
                     )
 
             # Determine if channel is active
             is_active = len(users_in_channel) > 0
 
             channel_activity = {
-                'channel_id': channel.id,
-                'channel_name': channel.name,
-                'is_active': is_active,
-                'user_count': len(users_in_channel),
-                'users': users_in_channel,
-                'checked_at': current_time.isoformat()
+                "channel_id": channel.id,
+                "channel_name": channel.name,
+                "is_active": is_active,
+                "user_count": len(users_in_channel),
+                "users": users_in_channel,
+                "checked_at": current_time.isoformat(),
             }
 
             return channel_activity
@@ -187,10 +200,10 @@ class VoiceService:
         except Exception as e:
             logger.error(f"Error checking channel {channel.id} activity: {e}")
             return {
-                'channel_id': channel.id,
-                'channel_name': channel.name,
-                'is_active': False,
-                'error': str(e)
+                "channel_id": channel.id,
+                "channel_name": channel.name,
+                "is_active": False,
+                "error": str(e),
             }
 
     async def get_user_voice_stats(self, user_id: int, guild_id: int) -> Dict[str, Any]:
@@ -207,15 +220,16 @@ class VoiceService:
                 FROM voice_activity
                 WHERE user_id = %s AND guild_id = %s
                 """,
-                user_id, guild_id
+                user_id,
+                guild_id,
             )
 
             if not voice_stats:
                 return {
-                    'total_sessions': 0,
-                    'total_minutes': 0,
-                    'avg_session_length': 0,
-                    'last_joined': None
+                    "total_sessions": 0,
+                    "total_minutes": 0,
+                    "avg_session_length": 0,
+                    "last_joined": None,
                 }
 
             return voice_stats
@@ -224,7 +238,9 @@ class VoiceService:
             logger.error(f"Error getting voice stats for user {user_id}: {e}")
             return {}
 
-    async def record_voice_activity(self, user_id: int, guild_id: int, channel_id: int, action: str) -> bool:
+    async def record_voice_activity(
+        self, user_id: int, guild_id: int, channel_id: int, action: str
+    ) -> bool:
         """Record voice activity for a user."""
         try:
             current_time = datetime.now(timezone.utc)
@@ -236,7 +252,11 @@ class VoiceService:
                     (user_id, guild_id, channel_id, joined_at, created_at)
                     VALUES (%s, %s, %s, %s, %s)
                     """,
-                    user_id, guild_id, channel_id, current_time, current_time
+                    user_id,
+                    guild_id,
+                    channel_id,
+                    current_time,
+                    current_time,
                 )
             elif action == "leave":
                 await self.db_manager.execute(
@@ -245,7 +265,11 @@ class VoiceService:
                     SET left_at = %s, updated_at = %s
                     WHERE user_id = %s AND guild_id = %s AND channel_id = %s AND left_at IS NULL
                     """,
-                    current_time, current_time, user_id, guild_id, channel_id
+                    current_time,
+                    current_time,
+                    user_id,
+                    guild_id,
+                    channel_id,
                 )
 
             return True
@@ -268,15 +292,15 @@ class VoiceService:
                 FROM voice_activity
                 WHERE guild_id = %s
                 """,
-                guild_id
+                guild_id,
             )
 
             if not guild_stats:
                 return {
-                    'unique_users': 0,
-                    'total_sessions': 0,
-                    'total_minutes': 0,
-                    'avg_session_length': 0
+                    "unique_users": 0,
+                    "total_sessions": 0,
+                    "total_minutes": 0,
+                    "avg_session_length": 0,
                 }
 
             return guild_stats
@@ -296,17 +320,17 @@ class VoiceService:
             for channel in guild.voice_channels:
                 if len(channel.members) > 0:
                     channel_info = {
-                        'channel_id': channel.id,
-                        'channel_name': channel.name,
-                        'user_count': len(channel.members),
-                        'users': [
+                        "channel_id": channel.id,
+                        "channel_name": channel.name,
+                        "user_count": len(channel.members),
+                        "users": [
                             {
-                                'user_id': member.id,
-                                'username': member.display_name,
-                                'is_bot': member.bot
+                                "user_id": member.id,
+                                "username": member.display_name,
+                                "is_bot": member.bot,
                             }
                             for member in channel.members
-                        ]
+                        ],
                     }
                     active_channels.append(channel_info)
 
@@ -324,12 +348,12 @@ class VoiceService:
                 return cached_report
 
             return {
-                'guilds_checked': 0,
-                'active_channels': 0,
-                'inactive_channels': 0,
-                'users_tracked': 0,
-                'errors': [],
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "guilds_checked": 0,
+                "active_channels": 0,
+                "inactive_channels": 0,
+                "users_tracked": 0,
+                "errors": [],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:

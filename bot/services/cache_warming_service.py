@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class WarmingStrategy(Enum):
     """Cache warming strategies."""
+
     ON_STARTUP = "on_startup"
     SCHEDULED = "scheduled"
     ON_DEMAND = "on_demand"
@@ -28,6 +29,7 @@ class WarmingStrategy(Enum):
 @dataclass
 class WarmingTask:
     """Cache warming task configuration."""
+
     name: str
     strategy: WarmingStrategy
     warming_function: Callable
@@ -41,7 +43,9 @@ class WarmingTask:
 class CacheWarmingService:
     """Service for intelligent cache warming strategies."""
 
-    def __init__(self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager):
+    def __init__(
+        self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager
+    ):
         self.db_manager = db_manager
         self.cache_manager = cache_manager
         self.warming_tasks: Dict[str, WarmingTask] = {}
@@ -50,7 +54,7 @@ class CacheWarmingService:
             "successful_warming_runs": 0,
             "failed_warming_runs": 0,
             "total_cache_hits": 0,
-            "total_cache_misses": 0
+            "total_cache_misses": 0,
         }
 
     async def start(self):
@@ -115,7 +119,8 @@ class CacheWarmingService:
             logger.info("Starting cache warming on startup...")
 
             startup_tasks = [
-                task for task in self.warming_tasks.values()
+                task
+                for task in self.warming_tasks.values()
                 if task.strategy == WarmingStrategy.ON_STARTUP and task.is_active
             ]
 
@@ -127,8 +132,7 @@ class CacheWarmingService:
                 success = await self.execute_warming_task(task.name)
                 results[task.name] = success
 
-            logger.info(
-                f"Cache warming on startup completed: {len(results)} tasks")
+            logger.info(f"Cache warming on startup completed: {len(results)} tasks")
             return results
 
         except Exception as e:
@@ -144,7 +148,7 @@ class CacheWarmingService:
                 strategy=WarmingStrategy.ON_STARTUP,
                 warming_function=self._warm_user_data,
                 priority=1,
-                ttl=1800
+                ttl=1800,
             )
             await self.register_warming_task(user_warming_task)
 
@@ -154,7 +158,7 @@ class CacheWarmingService:
                 strategy=WarmingStrategy.ON_STARTUP,
                 warming_function=self._warm_game_data,
                 priority=2,
-                ttl=900
+                ttl=900,
             )
             await self.register_warming_task(game_warming_task)
 
@@ -164,7 +168,7 @@ class CacheWarmingService:
                 strategy=WarmingStrategy.ON_STARTUP,
                 warming_function=self._warm_team_data,
                 priority=3,
-                ttl=7200
+                ttl=7200,
             )
             await self.register_warming_task(team_warming_task)
 
@@ -174,7 +178,7 @@ class CacheWarmingService:
                 strategy=WarmingStrategy.ON_STARTUP,
                 warming_function=self._warm_league_data,
                 priority=4,
-                ttl=14400
+                ttl=14400,
             )
             await self.register_warming_task(league_warming_task)
 
@@ -184,7 +188,7 @@ class CacheWarmingService:
                 strategy=WarmingStrategy.SCHEDULED,
                 warming_function=self._warm_active_user_data,
                 priority=5,
-                ttl=1800
+                ttl=1800,
             )
             await self.register_warming_task(scheduled_user_task)
 
@@ -259,7 +263,9 @@ class CacheWarmingService:
 
             for league in leagues:
                 cache_key = f"league:{league['league_id']}"
-                await self.cache_manager.set("league_data", cache_key, league, ttl=14400)
+                await self.cache_manager.set(
+                    "league_data", cache_key, league, ttl=14400
+                )
 
             logger.info(f"Warmed league data for {len(leagues)} leagues")
 
@@ -283,8 +289,7 @@ class CacheWarmingService:
                 cache_key = f"active_user:{user['user_id']}"
                 await self.cache_manager.set("user_data", cache_key, user, ttl=1800)
 
-            logger.info(
-                f"Warmed active user data for {len(active_users)} users")
+            logger.info(f"Warmed active user data for {len(active_users)} users")
 
         except Exception as e:
             logger.error(f"Failed to warm active user data: {e}")
@@ -294,7 +299,8 @@ class CacheWarmingService:
         while True:
             try:
                 scheduled_tasks = [
-                    task for task in self.warming_tasks.values()
+                    task
+                    for task in self.warming_tasks.values()
                     if task.strategy == WarmingStrategy.SCHEDULED and task.is_active
                 ]
 
@@ -320,7 +326,8 @@ class CacheWarmingService:
                 # If cache miss rate is high, trigger additional warming
                 if cache_stats.get("misses", 0) > cache_stats.get("hits", 0) * 0.3:
                     logger.info(
-                        "High cache miss rate detected, triggering intelligent warming")
+                        "High cache miss rate detected, triggering intelligent warming"
+                    )
                     await self._warm_frequently_accessed_data()
 
                 await asyncio.sleep(1800)  # Check every 30 minutes
@@ -348,17 +355,19 @@ class CacheWarmingService:
             )
 
             for item in frequent_data:
-                if item['data_type'] == 'user':
+                if item["data_type"] == "user":
                     user_data = await self.db_manager.fetch_one(
-                        "SELECT * FROM users WHERE user_id = %s",
-                        (item['id'],)
+                        "SELECT * FROM users WHERE user_id = %s", (item["id"],)
                     )
                     if user_data:
                         cache_key = f"frequent_user:{item['id']}"
-                        await self.cache_manager.set("user_data", cache_key, user_data, ttl=900)
+                        await self.cache_manager.set(
+                            "user_data", cache_key, user_data, ttl=900
+                        )
 
             logger.info(
-                f"Warmed frequently accessed data for {len(frequent_data)} items")
+                f"Warmed frequently accessed data for {len(frequent_data)} items"
+            )
 
         except Exception as e:
             logger.error(f"Failed to warm frequently accessed data: {e}")
@@ -367,9 +376,14 @@ class CacheWarmingService:
         """Get cache warming statistics."""
         return {
             **self.warming_stats,
-            "active_tasks": len([t for t in self.warming_tasks.values() if t.is_active]),
+            "active_tasks": len(
+                [t for t in self.warming_tasks.values() if t.is_active]
+            ),
             "total_tasks": len(self.warming_tasks),
-            "last_warming_run": max([t.last_run for t in self.warming_tasks.values() if t.last_run], default=None)
+            "last_warming_run": max(
+                [t.last_run for t in self.warming_tasks.values() if t.last_run],
+                default=None,
+            ),
         }
 
     async def clear_warming_cache(self):

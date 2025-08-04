@@ -12,7 +12,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
+from bot.utils.enhanced_cache_manager import (
+    enhanced_cache_get,
+    enhanced_cache_set,
+    enhanced_cache_delete,
+    get_enhanced_cache_manager,
+)
 from bot.utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
@@ -40,12 +45,17 @@ class MLService:
 
         # ML configuration
         self.config = {
-            'model_retrain_interval': 86400,  # 24 hours
-            'prediction_cache_ttl': 3600,  # 1 hour
-            'min_training_samples': 100,
-            'max_prediction_horizon': 72,  # hours
-            'confidence_threshold': 0.7,
-            'model_types': ['bet_outcome', 'odds_movement', 'value_bet', 'user_behavior']
+            "model_retrain_interval": 86400,  # 24 hours
+            "prediction_cache_ttl": 3600,  # 1 hour
+            "min_training_samples": 100,
+            "max_prediction_horizon": 72,  # hours
+            "confidence_threshold": 0.7,
+            "model_types": [
+                "bet_outcome",
+                "odds_movement",
+                "value_bet",
+                "user_behavior",
+            ],
         }
 
         logger.info("MLService initialized")
@@ -80,7 +90,7 @@ class MLService:
         while self._is_running:
             try:
                 await self._retrain_models()
-                await asyncio.sleep(self.config['model_retrain_interval'])
+                await asyncio.sleep(self.config["model_retrain_interval"])
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -90,10 +100,14 @@ class MLService:
     async def _load_models(self):
         """Load cached models from storage."""
         try:
-            for model_type in self.config['model_types']:
+            for model_type in self.config["model_types"]:
                 # Try to load from cache first
-                cached_model = await enhanced_cache_get("ml_data", f"model:{model_type}")
-                cached_scaler = await enhanced_cache_get("ml_data", f"scaler:{model_type}")
+                cached_model = await enhanced_cache_get(
+                    "ml_data", f"model:{model_type}"
+                )
+                cached_scaler = await enhanced_cache_get(
+                    "ml_data", f"scaler:{model_type}"
+                )
 
                 if cached_model and cached_scaler:
                     try:
@@ -101,8 +115,7 @@ class MLService:
                         self.scalers[model_type] = pickle.loads(cached_scaler)
                         logger.info(f"Loaded cached model: {model_type}")
                     except Exception as e:
-                        logger.error(
-                            f"Error loading cached model {model_type}: {e}")
+                        logger.error(f"Error loading cached model {model_type}: {e}")
                         # Fall back to training new model
                         await self._train_model(model_type)
                 else:
@@ -117,7 +130,7 @@ class MLService:
         try:
             logger.info("Starting model retraining...")
 
-            for model_type in self.config['model_types']:
+            for model_type in self.config["model_types"]:
                 try:
                     await self._train_model(model_type)
                     logger.info(f"Retrained model: {model_type}")
@@ -133,9 +146,10 @@ class MLService:
             # Get training data
             training_data = await self._get_training_data(model_type)
 
-            if len(training_data) < self.config['min_training_samples']:
+            if len(training_data) < self.config["min_training_samples"]:
                 logger.warning(
-                    f"Insufficient training data for {model_type}: {len(training_data)} samples")
+                    f"Insufficient training data for {model_type}: {len(training_data)} samples"
+                )
                 return
 
             # Prepare features and labels
@@ -157,16 +171,25 @@ class MLService:
             model_bytes = pickle.dumps(model)
             scaler_bytes = pickle.dumps(scaler)
 
-            await enhanced_cache_set("ml_data", f"model:{model_type}", model_bytes, ttl=ML_CACHE_TTLS["model_cache"])
-            await enhanced_cache_set("ml_data", f"scaler:{model_type}", scaler_bytes, ttl=ML_CACHE_TTLS["model_cache"])
+            await enhanced_cache_set(
+                "ml_data",
+                f"model:{model_type}",
+                model_bytes,
+                ttl=ML_CACHE_TTLS["model_cache"],
+            )
+            await enhanced_cache_set(
+                "ml_data",
+                f"scaler:{model_type}",
+                scaler_bytes,
+                ttl=ML_CACHE_TTLS["model_cache"],
+            )
 
             # Store in memory
             self.models[model_type] = model
             self.scalers[model_type] = scaler
 
             # Update model version
-            self.model_versions[model_type] = datetime.now(
-                timezone.utc).isoformat()
+            self.model_versions[model_type] = datetime.now(timezone.utc).isoformat()
 
             logger.info(f"Trained and cached model: {model_type}")
 
@@ -184,7 +207,7 @@ class MLService:
                 return cached_data
 
             # Get data from database based on model type
-            if model_type == 'bet_outcome':
+            if model_type == "bet_outcome":
                 query = """
                     SELECT bet_id, amount, odds, sport, league, created_at, status
                     FROM bets
@@ -193,7 +216,7 @@ class MLService:
                     ORDER BY created_at DESC
                     LIMIT 1000
                 """
-            elif model_type == 'odds_movement':
+            elif model_type == "odds_movement":
                 query = """
                     SELECT game_id, initial_odds, final_odds, sport, league, created_at
                     FROM odds_history
@@ -201,7 +224,7 @@ class MLService:
                     ORDER BY created_at DESC
                     LIMIT 1000
                 """
-            elif model_type == 'value_bet':
+            elif model_type == "value_bet":
                 query = """
                     SELECT bet_id, amount, odds, expected_value, actual_result, sport, league
                     FROM bets
@@ -210,7 +233,7 @@ class MLService:
                     ORDER BY created_at DESC
                     LIMIT 1000
                 """
-            elif model_type == 'user_behavior':
+            elif model_type == "user_behavior":
                 query = """
                     SELECT user_id, bet_count, avg_bet_size, win_rate, favorite_sport, created_at
                     FROM user_analytics
@@ -224,7 +247,9 @@ class MLService:
             data = await self.db_manager.fetch_all(query)
 
             # Cache the training data
-            await enhanced_cache_set("ml_data", cache_key, data, ttl=ML_CACHE_TTLS["training_data"])
+            await enhanced_cache_set(
+                "ml_data", cache_key, data, ttl=ML_CACHE_TTLS["training_data"]
+            )
 
             return data
 
@@ -238,13 +263,13 @@ class MLService:
             if not data:
                 return [], []
 
-            if model_type == 'bet_outcome':
+            if model_type == "bet_outcome":
                 return self._prepare_bet_outcome_features(data)
-            elif model_type == 'odds_movement':
+            elif model_type == "odds_movement":
                 return self._prepare_odds_movement_features(data)
-            elif model_type == 'value_bet':
+            elif model_type == "value_bet":
                 return self._prepare_value_bet_features(data)
-            elif model_type == 'user_behavior':
+            elif model_type == "user_behavior":
                 return self._prepare_user_behavior_features(data)
             else:
                 return [], []
@@ -261,18 +286,17 @@ class MLService:
 
             for row in data:
                 # Extract features
-                amount = float(row.get('amount', 0))
-                odds = float(row.get('odds', 1.0))
-                sport_encoded = hash(row.get('sport', '')
-                                     ) % 100  # Simple encoding
-                league_encoded = hash(row.get('league', '')) % 100
+                amount = float(row.get("amount", 0))
+                odds = float(row.get("odds", 1.0))
+                sport_encoded = hash(row.get("sport", "")) % 100  # Simple encoding
+                league_encoded = hash(row.get("league", "")) % 100
 
                 # Create feature vector
                 feature_vector = [amount, odds, sport_encoded, league_encoded]
                 features.append(feature_vector)
 
                 # Create label (1 for win, 0 for loss)
-                label = 1 if row.get('status') == 'won' else 0
+                label = 1 if row.get("status") == "won" else 0
                 labels.append(label)
 
             return np.array(features), np.array(labels)
@@ -288,17 +312,23 @@ class MLService:
             labels = []
 
             for row in data:
-                initial_odds = float(row.get('initial_odds', 1.0))
-                final_odds = float(row.get('final_odds', 1.0))
-                sport_encoded = hash(row.get('sport', '')) % 100
-                league_encoded = hash(row.get('league', '')) % 100
+                initial_odds = float(row.get("initial_odds", 1.0))
+                final_odds = float(row.get("final_odds", 1.0))
+                sport_encoded = hash(row.get("sport", "")) % 100
+                league_encoded = hash(row.get("league", "")) % 100
 
                 # Calculate odds movement
                 odds_change = final_odds - initial_odds
                 odds_change_percent = (odds_change / initial_odds) * 100
 
-                feature_vector = [initial_odds, final_odds, odds_change,
-                                  odds_change_percent, sport_encoded, league_encoded]
+                feature_vector = [
+                    initial_odds,
+                    final_odds,
+                    odds_change,
+                    odds_change_percent,
+                    sport_encoded,
+                    league_encoded,
+                ]
                 features.append(feature_vector)
 
                 # Label: 1 if odds increased, 0 if decreased
@@ -318,21 +348,27 @@ class MLService:
             labels = []
 
             for row in data:
-                amount = float(row.get('amount', 0))
-                odds = float(row.get('odds', 1.0))
-                expected_value = float(row.get('expected_value', 0))
-                sport_encoded = hash(row.get('sport', '')) % 100
-                league_encoded = hash(row.get('league', '')) % 100
+                amount = float(row.get("amount", 0))
+                odds = float(row.get("odds", 1.0))
+                expected_value = float(row.get("expected_value", 0))
+                sport_encoded = hash(row.get("sport", "")) % 100
+                league_encoded = hash(row.get("league", "")) % 100
 
                 # Calculate value metrics
                 value_ratio = expected_value / amount if amount > 0 else 0
 
-                feature_vector = [amount, odds, expected_value,
-                                  value_ratio, sport_encoded, league_encoded]
+                feature_vector = [
+                    amount,
+                    odds,
+                    expected_value,
+                    value_ratio,
+                    sport_encoded,
+                    league_encoded,
+                ]
                 features.append(feature_vector)
 
                 # Label: 1 if actual result was positive, 0 otherwise
-                label = 1 if row.get('actual_result') == 'positive' else 0
+                label = 1 if row.get("actual_result") == "positive" else 0
                 labels.append(label)
 
             return np.array(features), np.array(labels)
@@ -348,13 +384,12 @@ class MLService:
             labels = []
 
             for row in data:
-                bet_count = int(row.get('bet_count', 0))
-                avg_bet_size = float(row.get('avg_bet_size', 0))
-                win_rate = float(row.get('win_rate', 0))
-                sport_encoded = hash(row.get('favorite_sport', '')) % 100
+                bet_count = int(row.get("bet_count", 0))
+                avg_bet_size = float(row.get("avg_bet_size", 0))
+                win_rate = float(row.get("win_rate", 0))
+                sport_encoded = hash(row.get("favorite_sport", "")) % 100
 
-                feature_vector = [bet_count,
-                                  avg_bet_size, win_rate, sport_encoded]
+                feature_vector = [bet_count, avg_bet_size, win_rate, sport_encoded]
                 features.append(feature_vector)
 
                 # Label: 1 if user is active (bet_count > 5), 0 otherwise
@@ -379,52 +414,62 @@ class MLService:
                 logger.debug("Cache hit for bet outcome prediction")
                 return cached_prediction
 
-            if 'bet_outcome' not in self.models:
-                return {'prediction': 'unknown', 'confidence': 0.0, 'error': 'Model not available'}
+            if "bet_outcome" not in self.models:
+                return {
+                    "prediction": "unknown",
+                    "confidence": 0.0,
+                    "error": "Model not available",
+                }
 
             # Prepare features
             features = self._prepare_bet_prediction_features(bet_data)
             if len(features) == 0:
-                return {'prediction': 'unknown', 'confidence': 0.0, 'error': 'Invalid features'}
+                return {
+                    "prediction": "unknown",
+                    "confidence": 0.0,
+                    "error": "Invalid features",
+                }
 
             # Scale features
-            scaler = self.scalers.get('bet_outcome')
+            scaler = self.scalers.get("bet_outcome")
             if scaler:
                 features_scaled = scaler.transform([features])
             else:
                 features_scaled = [features]
 
             # Make prediction
-            model = self.models['bet_outcome']
+            model = self.models["bet_outcome"]
             prediction_proba = model.predict_proba(features_scaled)[0]
             prediction = model.predict(features_scaled)[0]
 
             confidence = max(prediction_proba)
-            predicted_outcome = 'win' if prediction == 1 else 'loss'
+            predicted_outcome = "win" if prediction == 1 else "loss"
 
             result = {
-                'prediction': predicted_outcome,
-                'confidence': float(confidence),
-                'model_version': self.model_versions.get('bet_outcome', 'unknown'),
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "prediction": predicted_outcome,
+                "confidence": float(confidence),
+                "model_version": self.model_versions.get("bet_outcome", "unknown"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             # Cache the prediction
-            await enhanced_cache_set("ml_data", cache_key, result, ttl=ML_CACHE_TTLS["prediction_cache"])
+            await enhanced_cache_set(
+                "ml_data", cache_key, result, ttl=ML_CACHE_TTLS["prediction_cache"]
+            )
 
             return result
 
         except Exception as e:
             logger.error(f"Error predicting bet outcome: {e}")
-            return {'prediction': 'unknown', 'confidence': 0.0, 'error': str(e)}
+            return {"prediction": "unknown", "confidence": 0.0, "error": str(e)}
 
     def _prepare_bet_prediction_features(self, bet_data: Dict[str, Any]) -> List[float]:
         """Prepare features for bet outcome prediction."""
         try:
-            amount = float(bet_data.get('amount', 0))
-            odds = float(bet_data.get('odds', 1.0))
-            sport = bet_data.get('sport', '')
-            league = bet_data.get('league', '')
+            amount = float(bet_data.get("amount", 0))
+            odds = float(bet_data.get("odds", 1.0))
+            sport = bet_data.get("sport", "")
+            league = bet_data.get("league", "")
 
             sport_encoded = hash(sport) % 100
             league_encoded = hash(league) % 100
@@ -447,51 +492,63 @@ class MLService:
                 logger.debug("Cache hit for odds movement prediction")
                 return cached_prediction
 
-            if 'odds_movement' not in self.models:
-                return {'prediction': 'unknown', 'confidence': 0.0, 'error': 'Model not available'}
+            if "odds_movement" not in self.models:
+                return {
+                    "prediction": "unknown",
+                    "confidence": 0.0,
+                    "error": "Model not available",
+                }
 
             # Prepare features
             features = self._prepare_odds_prediction_features(game_data)
             if len(features) == 0:
-                return {'prediction': 'unknown', 'confidence': 0.0, 'error': 'Invalid features'}
+                return {
+                    "prediction": "unknown",
+                    "confidence": 0.0,
+                    "error": "Invalid features",
+                }
 
             # Scale features
-            scaler = self.scalers.get('odds_movement')
+            scaler = self.scalers.get("odds_movement")
             if scaler:
                 features_scaled = scaler.transform([features])
             else:
                 features_scaled = [features]
 
             # Make prediction
-            model = self.models['odds_movement']
+            model = self.models["odds_movement"]
             prediction_proba = model.predict_proba(features_scaled)[0]
             prediction = model.predict(features_scaled)[0]
 
             confidence = max(prediction_proba)
-            predicted_movement = 'increase' if prediction == 1 else 'decrease'
+            predicted_movement = "increase" if prediction == 1 else "decrease"
 
             result = {
-                'prediction': predicted_movement,
-                'confidence': float(confidence),
-                'model_version': self.model_versions.get('odds_movement', 'unknown'),
-                'timestamp': datetime.now(timezone.utc).isoformat()
+                "prediction": predicted_movement,
+                "confidence": float(confidence),
+                "model_version": self.model_versions.get("odds_movement", "unknown"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             # Cache the prediction
-            await enhanced_cache_set("ml_data", cache_key, result, ttl=ML_CACHE_TTLS["prediction_cache"])
+            await enhanced_cache_set(
+                "ml_data", cache_key, result, ttl=ML_CACHE_TTLS["prediction_cache"]
+            )
 
             return result
 
         except Exception as e:
             logger.error(f"Error predicting odds movement: {e}")
-            return {'prediction': 'unknown', 'confidence': 0.0, 'error': str(e)}
+            return {"prediction": "unknown", "confidence": 0.0, "error": str(e)}
 
-    def _prepare_odds_prediction_features(self, game_data: Dict[str, Any]) -> List[float]:
+    def _prepare_odds_prediction_features(
+        self, game_data: Dict[str, Any]
+    ) -> List[float]:
         """Prepare features for odds movement prediction."""
         try:
-            initial_odds = float(game_data.get('initial_odds', 1.0))
-            sport = game_data.get('sport', '')
-            league = game_data.get('league', '')
+            initial_odds = float(game_data.get("initial_odds", 1.0))
+            sport = game_data.get("sport", "")
+            league = game_data.get("league", "")
 
             sport_encoded = hash(sport) % 100
             league_encoded = hash(league) % 100
@@ -506,15 +563,15 @@ class MLService:
         """Get status of all ML models."""
         try:
             status = {}
-            for model_type in self.config['model_types']:
+            for model_type in self.config["model_types"]:
                 model_available = model_type in self.models
                 scaler_available = model_type in self.scalers
-                version = self.model_versions.get(model_type, 'unknown')
+                version = self.model_versions.get(model_type, "unknown")
 
                 status[model_type] = {
-                    'available': model_available and scaler_available,
-                    'version': version,
-                    'last_trained': version if version != 'unknown' else None
+                    "available": model_available and scaler_available,
+                    "version": version,
+                    "last_trained": version if version != "unknown" else None,
                 }
 
             return status
@@ -534,7 +591,7 @@ class MLService:
                 logger.info(f"Cleared ML cache for model: {model_type}")
             else:
                 # Clear all ML cache
-                for mt in self.config['model_types']:
+                for mt in self.config["model_types"]:
                     await enhanced_cache_delete("ml_data", f"model:{mt}")
                     await enhanced_cache_delete("ml_data", f"scaler:{mt}")
                     await enhanced_cache_delete("ml_data", f"training_data:{mt}")

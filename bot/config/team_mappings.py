@@ -8,4 +8,4 @@ The original large file has been split into separate files by sport/league.
 from .team_mappings import TEAM_MAPPINGS, normalize_team_name
 
 # Re-export for backward compatibility
-__all__ = ['TEAM_MAPPINGS', 'normalize_team_name']
+__all__ = ["TEAM_MAPPINGS", "normalize_team_name"]

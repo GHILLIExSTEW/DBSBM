@@ -135,9 +135,7 @@ class EnhancedPlayerPropImageGenerator:
             bg_color = "#232733"  # Default background
 
             # Create base image
-            img = Image.new(
-                "RGB", (self.base_width, self.base_height), bg_color
-            )
+            img = Image.new("RGB", (self.base_width, self.base_height), bg_color)
             draw = ImageDraw.Draw(img)
 
             # Create card background

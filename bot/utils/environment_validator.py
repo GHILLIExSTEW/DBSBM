@@ -14,16 +14,24 @@ from datetime import datetime
 
 # Import the new centralized configuration
 try:
-    from config.settings import get_settings, validate_settings, get_database_config, get_api_config, get_discord_config
+    from config.settings import (
+        get_settings,
+        validate_settings,
+        get_database_config,
+        get_api_config,
+        get_discord_config,
+    )
 except ImportError:
     # Fallback - try to import from parent directory
     import sys
     import os
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Add multiple possible paths for different execution contexts
     possible_paths = [
-        os.path.dirname(os.path.dirname(
-            os.path.dirname(current_dir))),  # From bot/utils/
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(current_dir))
+        ),  # From bot/utils/
         os.path.dirname(os.path.dirname(current_dir)),  # From bot/
         os.path.dirname(current_dir),  # From utils/
     ]
@@ -31,7 +39,13 @@ except ImportError:
         if path not in sys.path:
             sys.path.insert(0, path)
     try:
-        from config.settings import get_settings, validate_settings, get_database_config, get_api_config, get_discord_config
+        from config.settings import (
+            get_settings,
+            validate_settings,
+            get_database_config,
+            get_api_config,
+            get_discord_config,
+        )
     except ImportError:
         # Final fallback - create mock functions for testing
         def get_settings():
@@ -48,6 +62,7 @@ except ImportError:
 
         def get_discord_config():
             return {}
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,45 +101,50 @@ class EnvironmentValidator:
         errors = []
 
         # Check if we're in a production environment
-        is_production = any([
-            os.getenv("SCHEDULER_MODE"),
-            os.getenv("FLASK_ENV") == "production",
-            "container" in os.getenv("HOSTNAME", "").lower(),
-            "/home/container" in os.getcwd()
-        ])
+        is_production = any(
+            [
+                os.getenv("SCHEDULER_MODE"),
+                os.getenv("FLASK_ENV") == "production",
+                "container" in os.getenv("HOSTNAME", "").lower(),
+                "/home/container" in os.getcwd(),
+            ]
+        )
 
         # Validate centralized configuration
         try:
             from config.settings import validate_settings
+
             config_errors = validate_settings()
             if config_errors:
                 # Don't add centralized config errors to the main errors list
                 # Just log them as warnings since the .env file might be in a different location
                 logger.warning(
-                    f"Centralized configuration validation warnings: {config_errors}")
+                    f"Centralized configuration validation warnings: {config_errors}"
+                )
         except ImportError:
             # If config.settings is not available, skip this validation
             logger.warning(
-                "config.settings not available, skipping centralized validation")
+                "config.settings not available, skipping centralized validation"
+            )
         except Exception as e:
-            logger.warning(
-                f"Centralized configuration validation error: {str(e)}")
+            logger.warning(f"Centralized configuration validation error: {str(e)}")
 
         # For production, be more lenient with connection validations
         if is_production:
-            logger.info(
-                "Production environment detected - using lenient validation")
+            logger.info("Production environment detected - using lenient validation")
 
             # Skip database connection validation in production if it's causing issues
             try:
                 db_valid = asyncio.run(cls.validate_database_connection())
                 if not db_valid[0]:
                     logger.warning(
-                        "Database connection validation failed, but continuing in production")
+                        "Database connection validation failed, but continuing in production"
+                    )
                     # Don't add to errors for production
             except Exception as e:
                 logger.warning(
-                    f"Database connection validation error in production: {str(e)}")
+                    f"Database connection validation error in production: {str(e)}"
+                )
                 # Don't add to errors for production
 
             # Skip Redis connection validation in production
@@ -132,30 +152,36 @@ class EnvironmentValidator:
                 redis_valid = cls.validate_redis_connection()
                 if not redis_valid:
                     logger.warning(
-                        "Redis connection validation failed, but continuing in production")
+                        "Redis connection validation failed, but continuing in production"
+                    )
             except Exception as e:
                 logger.warning(
-                    f"Redis connection validation error in production: {str(e)}")
+                    f"Redis connection validation error in production: {str(e)}"
+                )
 
             # Skip API connection validation in production
             try:
                 api_valid = cls.validate_api_connections()
                 if not api_valid:
                     logger.warning(
-                        "API connection validation failed, but continuing in production")
+                        "API connection validation failed, but continuing in production"
+                    )
             except Exception as e:
                 logger.warning(
-                    f"API connection validation error in production: {str(e)}")
+                    f"API connection validation error in production: {str(e)}"
+                )
 
             # Skip Discord connection validation in production
             try:
                 discord_valid = cls.validate_discord_connection()
                 if not discord_valid:
                     logger.warning(
-                        "Discord connection validation failed, but continuing in production")
+                        "Discord connection validation failed, but continuing in production"
+                    )
             except Exception as e:
                 logger.warning(
-                    f"Discord connection validation error in production: {str(e)}")
+                    f"Discord connection validation error in production: {str(e)}"
+                )
         else:
             # Development environment - do full validation
             # Validate database connection
@@ -163,19 +189,19 @@ class EnvironmentValidator:
                 # Skip database connection validation during testing
                 if "test" in os.getenv("PYTEST_CURRENT_TEST", "").lower():
                     logger.warning(
-                        "Database connection validation skipped during testing")
+                        "Database connection validation skipped during testing"
+                    )
                 else:
                     # Temporarily skip database connection validation to allow bot startup
                     logger.warning(
-                        "Database connection validation temporarily disabled for startup")
+                        "Database connection validation temporarily disabled for startup"
+                    )
                     # db_valid = asyncio.run(cls.validate_database_connection())
                     # if not db_valid[0]:
                     #     errors.append("Database connection validation failed")
             except Exception as e:
-                errors.append(
-                    f"Database connection validation error: {str(e)}")
-                logger.warning(
-                    "Database connection validation skipped due to error")
+                errors.append(f"Database connection validation error: {str(e)}")
+                logger.warning("Database connection validation skipped due to error")
 
             # Validate Redis connection
             try:
@@ -218,15 +244,13 @@ class EnvironmentValidator:
             if is_production:
                 logger.error("Production environment detected. Please check:")
                 logger.error("1. All required environment variables are set")
-                logger.error(
-                    "2. Database and Redis connections are accessible")
-                logger.error(
-                    "3. API keys are valid and have proper permissions")
-                logger.error(
-                    "4. Discord token is valid and bot has proper permissions")
+                logger.error("2. Database and Redis connections are accessible")
+                logger.error("3. API keys are valid and have proper permissions")
+                logger.error("4. Discord token is valid and bot has proper permissions")
             else:
                 logger.error(
-                    "Please check your .env file and ensure all required variables are set.")
+                    "Please check your .env file and ensure all required variables are set."
+                )
 
         return is_valid, errors
 
@@ -243,12 +267,12 @@ class EnvironmentValidator:
 
             # Test connection
             conn = await aiomysql.connect(
-                host=db_config['host'],
-                port=db_config['port'],
-                user=db_config['user'],
-                password=db_config['password'],
-                db=db_config['database'],
-                connect_timeout=10
+                host=db_config["host"],
+                port=db_config["port"],
+                user=db_config["user"],
+                password=db_config["password"],
+                db=db_config["database"],
+                connect_timeout=10,
             )
 
             # Test a simple query
@@ -276,14 +300,14 @@ class EnvironmentValidator:
         try:
             api_config = get_api_config()
 
-            if not api_config['key']:
+            if not api_config["key"]:
                 return False, "API key not configured"
 
             # Test API connection with a simple request
             async with aiohttp.ClientSession() as session:
                 headers = {
-                    'x-rapidapi-host': 'v3.football.api-sports.io',
-                    'x-rapidapi-key': api_config['key']
+                    "x-rapidapi-host": "v3.football.api-sports.io",
+                    "x-rapidapi-key": api_config["key"],
                 }
 
                 # Test with a simple endpoint
@@ -292,7 +316,10 @@ class EnvironmentValidator:
                     if response.status == 200:
                         return True, "API connection successful"
                     else:
-                        return False, f"API request failed with status {response.status}"
+                        return (
+                            False,
+                            f"API request failed with status {response.status}",
+                        )
 
         except Exception as e:
             return False, f"API connection failed: {str(e)}"
@@ -308,22 +335,26 @@ class EnvironmentValidator:
         try:
             discord_config = get_discord_config()
 
-            if not discord_config['token']:
+            if not discord_config["token"]:
                 return False, "Discord token not configured"
 
             # Test Discord API connection
             async with aiohttp.ClientSession() as session:
-                headers = {
-                    'Authorization': f'Bot {discord_config["token"]}'
-                }
+                headers = {"Authorization": f'Bot {discord_config["token"]}'}
 
                 url = "https://discord.com/api/v10/users/@me"
                 async with session.get(url, headers=headers, timeout=10) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return True, f"Discord token valid for bot: {data.get('username', 'Unknown')}"
+                        return (
+                            True,
+                            f"Discord token valid for bot: {data.get('username', 'Unknown')}",
+                        )
                     else:
-                        return False, f"Discord token validation failed with status {response.status}"
+                        return (
+                            False,
+                            f"Discord token validation failed with status {response.status}",
+                        )
 
         except Exception as e:
             return False, f"Discord token validation failed: {str(e)}"
@@ -341,17 +372,17 @@ class EnvironmentValidator:
         # Validate database connection
         logger.info("🔍 Testing database connection...")
         db_result = await cls.validate_database_connection()
-        results['database'] = db_result
+        results["database"] = db_result
 
         # Validate API connection
         logger.info("🔍 Testing API connection...")
         api_result = await cls.validate_api_connection()
-        results['api'] = api_result
+        results["api"] = api_result
 
         # Validate Discord token
         logger.info("🔍 Testing Discord token...")
         discord_result = await cls.validate_discord_token()
-        results['discord'] = discord_result
+        results["discord"] = discord_result
 
         return results
 
@@ -490,8 +521,7 @@ class EnvironmentValidator:
         try:
             discord_token = os.getenv("DISCORD_TOKEN")
             if not discord_token:
-                logger.warning(
-                    "DISCORD_TOKEN not set, skipping Discord validation")
+                logger.warning("DISCORD_TOKEN not set, skipping Discord validation")
                 return True
             # For now, just check if the token is set
             return True

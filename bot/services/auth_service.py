@@ -29,21 +29,22 @@ logger = logging.getLogger(__name__)
 
 # Auth-specific cache TTLs
 AUTH_CACHE_TTLS = {
-    'user_sessions': 3600,      # 1 hour
-    'user_roles': 1800,         # 30 minutes
-    'user_permissions': 1800,   # 30 minutes
-    'mfa_devices': 3600,        # 1 hour
-    'failed_attempts': 300,     # 5 minutes
-    'account_locks': 1800,      # 30 minutes
-    'role_definitions': 7200,   # 2 hours
-    'user_data': 900,           # 15 minutes
-    'session_tokens': 3600,     # 1 hour
-    'auth_events': 1800,        # 30 minutes
+    "user_sessions": 3600,  # 1 hour
+    "user_roles": 1800,  # 30 minutes
+    "user_permissions": 1800,  # 30 minutes
+    "mfa_devices": 3600,  # 1 hour
+    "failed_attempts": 300,  # 5 minutes
+    "account_locks": 1800,  # 30 minutes
+    "role_definitions": 7200,  # 2 hours
+    "user_data": 900,  # 15 minutes
+    "session_tokens": 3600,  # 1 hour
+    "auth_events": 1800,  # 30 minutes
 }
 
 
 class MFAMethod(Enum):
     """Multi-factor authentication methods."""
+
     TOTP = "totp"
     SMS = "sms"
     EMAIL = "email"
@@ -53,6 +54,7 @@ class MFAMethod(Enum):
 
 class AuthStatus(Enum):
     """Authentication status."""
+
     SUCCESS = "success"
     FAILED = "failed"
     LOCKED = "locked"
@@ -64,6 +66,7 @@ class AuthStatus(Enum):
 @dataclass
 class AuthResult:
     """Authentication result."""
+
     status: AuthStatus
     user_id: Optional[int] = None
     message: str = ""
@@ -78,6 +81,7 @@ class AuthResult:
 @dataclass
 class MFADevice:
     """MFA device configuration."""
+
     id: int
     user_id: int
     device_type: MFAMethod
@@ -92,6 +96,7 @@ class MFADevice:
 @dataclass
 class Role:
     """Role definition."""
+
     id: int
     role_name: str
     display_name: str
@@ -104,6 +109,7 @@ class Role:
 @dataclass
 class UserRole:
     """User role assignment."""
+
     id: int
     user_id: int
     role_id: int
@@ -131,8 +137,8 @@ class AuthService:
         # Configuration
         self.max_failed_attempts = 5
         self.lockout_duration = 1800  # 30 minutes
-        self.session_timeout = 3600   # 1 hour
-        self.mfa_timeout = 300        # 5 minutes
+        self.session_timeout = 3600  # 1 hour
+        self.mfa_timeout = 300  # 5 minutes
 
         # Background tasks
         self.cleanup_task = None
@@ -143,8 +149,7 @@ class AuthService:
         try:
             await self._initialize_default_roles()
             self.is_running = True
-            self.cleanup_task = asyncio.create_task(
-                self._cleanup_expired_sessions())
+            self.cleanup_task = asyncio.create_task(self._cleanup_expired_sessions())
             logger.info("Authentication service started successfully")
         except Exception as e:
             logger.error(f"Failed to start authentication service: {e}")
@@ -158,15 +163,21 @@ class AuthService:
         logger.info("Authentication service stopped")
 
     @time_operation("auth_authenticate_user")
-    async def authenticate_user(self, username: str, password: str, ip_address: str,
-                                user_agent: str, guild_id: Optional[int] = None) -> AuthResult:
+    async def authenticate_user(
+        self,
+        username: str,
+        password: str,
+        ip_address: str,
+        user_agent: str,
+        guild_id: Optional[int] = None,
+    ) -> AuthResult:
         """Authenticate a user with username and password."""
         try:
             # Check if account is locked
             if await self._is_account_locked(username):
                 return AuthResult(
                     status=AuthStatus.LOCKED,
-                    message="Account is temporarily locked due to multiple failed attempts"
+                    message="Account is temporarily locked due to multiple failed attempts",
                 )
 
             # Get user from cache or database
@@ -177,87 +188,92 @@ class AuthService:
                 user_data = await self._get_user_by_username(username)
                 if user_data:
                     await self.cache_manager.enhanced_cache_set(
-                        cache_key,
-                        user_data,
-                        ttl=self.cache_ttls['user_data']
+                        cache_key, user_data, ttl=self.cache_ttls["user_data"]
                     )
 
             if not user_data:
                 await self._record_failed_attempt(username, ip_address, user_agent)
                 return AuthResult(
-                    status=AuthStatus.FAILED,
-                    message="Invalid username or password"
+                    status=AuthStatus.FAILED, message="Invalid username or password"
                 )
 
             # Verify password
-            if not await self._verify_password(password, user_data['password_hash']):
+            if not await self._verify_password(password, user_data["password_hash"]):
                 await self._record_failed_attempt(username, ip_address, user_agent)
-                await self._increment_failed_attempts(user_data['id'])
+                await self._increment_failed_attempts(user_data["id"])
                 return AuthResult(
-                    status=AuthStatus.FAILED,
-                    message="Invalid username or password"
+                    status=AuthStatus.FAILED, message="Invalid username or password"
                 )
 
             # Reset failed attempts on successful login
-            await self._reset_failed_attempts(user_data['id'])
+            await self._reset_failed_attempts(user_data["id"])
 
             # Check if MFA is required
-            if await self._is_mfa_required(user_data['id']):
-                primary_mfa = await self._get_primary_mfa_method(user_data['id'])
+            if await self._is_mfa_required(user_data["id"]):
+                primary_mfa = await self._get_primary_mfa_method(user_data["id"])
                 return AuthResult(
                     status=AuthStatus.MFA_REQUIRED,
-                    user_id=user_data['id'],
+                    user_id=user_data["id"],
                     message="Multi-factor authentication required",
                     mfa_required=True,
-                    mfa_method=primary_mfa
+                    mfa_method=primary_mfa,
                 )
 
             # Generate session token
-            session_token = await self._generate_session_token(user_data['id'])
+            session_token = await self._generate_session_token(user_data["id"])
 
             # Get user permissions and roles
-            permissions, roles = await self._get_user_permissions(user_data['id'], guild_id)
+            permissions, roles = await self._get_user_permissions(
+                user_data["id"], guild_id
+            )
 
             # Update last login
-            await self._update_last_login(user_data['id'], ip_address)
-            await self._record_successful_login(user_data['id'], ip_address, user_agent)
+            await self._update_last_login(user_data["id"], ip_address)
+            await self._record_successful_login(user_data["id"], ip_address, user_agent)
 
             # Cache session data
             session_data = {
-                'user_id': user_data['id'],
-                'username': user_data['username'],
-                'permissions': permissions,
-                'roles': roles,
-                'expires_at': datetime.utcnow() + timedelta(seconds=self.session_timeout)
+                "user_id": user_data["id"],
+                "username": user_data["username"],
+                "permissions": permissions,
+                "roles": roles,
+                "expires_at": datetime.utcnow()
+                + timedelta(seconds=self.session_timeout),
             }
 
             await self.cache_manager.enhanced_cache_set(
                 f"session:{session_token}",
                 session_data,
-                ttl=self.cache_ttls['session_tokens']
+                ttl=self.cache_ttls["session_tokens"],
             )
 
             record_metric("auth_successful_logins", 1)
             return AuthResult(
                 status=AuthStatus.SUCCESS,
-                user_id=user_data['id'],
+                user_id=user_data["id"],
                 message="Authentication successful",
                 session_token=session_token,
                 expires_at=datetime.utcnow() + timedelta(seconds=self.session_timeout),
                 permissions=permissions,
-                roles=roles
+                roles=roles,
             )
 
         except Exception as e:
             logger.error(f"Authentication error: {e}")
             return AuthResult(
                 status=AuthStatus.FAILED,
-                message="Authentication failed due to system error"
+                message="Authentication failed due to system error",
             )
 
     @time_operation("auth_verify_mfa")
-    async def verify_mfa(self, user_id: int, mfa_code: str, mfa_method: MFAMethod,
-                         ip_address: str, user_agent: str) -> AuthResult:
+    async def verify_mfa(
+        self,
+        user_id: int,
+        mfa_code: str,
+        mfa_method: MFAMethod,
+        ip_address: str,
+        user_agent: str,
+    ) -> AuthResult:
         """Verify multi-factor authentication code."""
         try:
             # Get MFA device from cache or database
@@ -268,33 +284,39 @@ class AuthService:
                 mfa_device = await self._get_mfa_device(user_id, mfa_method)
                 if mfa_device:
                     mfa_device_data = {
-                        'id': mfa_device.id,
-                        'user_id': mfa_device.user_id,
-                        'device_type': mfa_device.device_type.value,
-                        'device_id': mfa_device.device_id,
-                        'device_name': mfa_device.device_name,
-                        'is_active': mfa_device.is_active,
-                        'created_at': mfa_device.created_at.isoformat(),
-                        'last_used': mfa_device.last_used.isoformat() if mfa_device.last_used else None,
-                        'expires_at': mfa_device.expires_at.isoformat() if mfa_device.expires_at else None
+                        "id": mfa_device.id,
+                        "user_id": mfa_device.user_id,
+                        "device_type": mfa_device.device_type.value,
+                        "device_id": mfa_device.device_id,
+                        "device_name": mfa_device.device_name,
+                        "is_active": mfa_device.is_active,
+                        "created_at": mfa_device.created_at.isoformat(),
+                        "last_used": (
+                            mfa_device.last_used.isoformat()
+                            if mfa_device.last_used
+                            else None
+                        ),
+                        "expires_at": (
+                            mfa_device.expires_at.isoformat()
+                            if mfa_device.expires_at
+                            else None
+                        ),
                     }
                     await self.cache_manager.enhanced_cache_set(
-                        cache_key,
-                        mfa_device_data,
-                        ttl=self.cache_ttls['mfa_devices']
+                        cache_key, mfa_device_data, ttl=self.cache_ttls["mfa_devices"]
                     )
 
             if not mfa_device_data:
                 return AuthResult(
-                    status=AuthStatus.FAILED,
-                    message="MFA device not found"
+                    status=AuthStatus.FAILED, message="MFA device not found"
                 )
 
             # Verify MFA code based on method
             is_valid = False
             if mfa_method == MFAMethod.TOTP:
                 is_valid = self._verify_totp_code(
-                    mfa_code, mfa_device_data['device_id'])
+                    mfa_code, mfa_device_data["device_id"]
+                )
             elif mfa_method == MFAMethod.SMS:
                 is_valid = await self._verify_sms_code(user_id, mfa_code)
             elif mfa_method == MFAMethod.EMAIL:
@@ -302,13 +324,10 @@ class AuthService:
 
             if not is_valid:
                 await self._record_failed_mfa_attempt(user_id, ip_address, user_agent)
-                return AuthResult(
-                    status=AuthStatus.FAILED,
-                    message="Invalid MFA code"
-                )
+                return AuthResult(status=AuthStatus.FAILED, message="Invalid MFA code")
 
             # Update MFA device usage
-            await self._update_mfa_device_usage(mfa_device_data['id'])
+            await self._update_mfa_device_usage(mfa_device_data["id"])
 
             # Generate session token
             session_token = await self._generate_session_token(user_id)
@@ -318,16 +337,17 @@ class AuthService:
 
             # Cache session data
             session_data = {
-                'user_id': user_id,
-                'permissions': permissions,
-                'roles': roles,
-                'expires_at': datetime.utcnow() + timedelta(seconds=self.session_timeout)
+                "user_id": user_id,
+                "permissions": permissions,
+                "roles": roles,
+                "expires_at": datetime.utcnow()
+                + timedelta(seconds=self.session_timeout),
             }
 
             await self.cache_manager.enhanced_cache_set(
                 f"session:{session_token}",
                 session_data,
-                ttl=self.cache_ttls['session_tokens']
+                ttl=self.cache_ttls["session_tokens"],
             )
 
             record_metric("auth_mfa_successful", 1)
@@ -338,67 +358,73 @@ class AuthService:
                 session_token=session_token,
                 expires_at=datetime.utcnow() + timedelta(seconds=self.session_timeout),
                 permissions=permissions,
-                roles=roles
+                roles=roles,
             )
 
         except Exception as e:
             logger.error(f"MFA verification error: {e}")
             return AuthResult(
                 status=AuthStatus.FAILED,
-                message="MFA verification failed due to system error"
+                message="MFA verification failed due to system error",
             )
 
     @time_operation("auth_verify_session")
-    async def verify_session(self, session_token: str, guild_id: Optional[int] = None) -> AuthResult:
+    async def verify_session(
+        self, session_token: str, guild_id: Optional[int] = None
+    ) -> AuthResult:
         """Verify a session token."""
         try:
             # Get session data from cache
-            session_data = await self.cache_manager.enhanced_cache_get(f"session:{session_token}")
+            session_data = await self.cache_manager.enhanced_cache_get(
+                f"session:{session_token}"
+            )
 
             if not session_data:
                 return AuthResult(
                     status=AuthStatus.EXPIRED,
-                    message="Session token expired or invalid"
+                    message="Session token expired or invalid",
                 )
 
             # Check if session is expired
-            expires_at = datetime.fromisoformat(session_data['expires_at'])
+            expires_at = datetime.fromisoformat(session_data["expires_at"])
             if datetime.utcnow() > expires_at:
                 # Remove expired session
-                await self.cache_manager.enhanced_cache_delete(f"session:{session_token}")
+                await self.cache_manager.enhanced_cache_delete(
+                    f"session:{session_token}"
+                )
                 return AuthResult(
-                    status=AuthStatus.EXPIRED,
-                    message="Session token expired"
+                    status=AuthStatus.EXPIRED, message="Session token expired"
                 )
 
             # Get fresh permissions for the specific guild
-            permissions, roles = await self._get_user_permissions(session_data['user_id'], guild_id)
+            permissions, roles = await self._get_user_permissions(
+                session_data["user_id"], guild_id
+            )
 
             # Update session with fresh permissions
-            session_data['permissions'] = permissions
-            session_data['roles'] = roles
+            session_data["permissions"] = permissions
+            session_data["roles"] = roles
 
             await self.cache_manager.enhanced_cache_set(
                 f"session:{session_token}",
                 session_data,
-                ttl=self.cache_ttls['session_tokens']
+                ttl=self.cache_ttls["session_tokens"],
             )
 
             return AuthResult(
                 status=AuthStatus.SUCCESS,
-                user_id=session_data['user_id'],
+                user_id=session_data["user_id"],
                 message="Session verified successfully",
                 session_token=session_token,
                 expires_at=expires_at,
                 permissions=permissions,
-                roles=roles
+                roles=roles,
             )
 
         except Exception as e:
             logger.error(f"Session verification error: {e}")
             return AuthResult(
-                status=AuthStatus.INVALID,
-                message="Session verification failed"
+                status=AuthStatus.INVALID, message="Session verification failed"
             )
 
     @time_operation("auth_logout")
@@ -414,7 +440,9 @@ class AuthService:
             return False
 
     @time_operation("auth_setup_mfa")
-    async def setup_mfa(self, user_id: int, mfa_method: MFAMethod, device_name: str) -> Dict[str, Any]:
+    async def setup_mfa(
+        self, user_id: int, mfa_method: MFAMethod, device_name: str
+    ) -> Dict[str, Any]:
         """Setup multi-factor authentication for a user."""
         try:
             if mfa_method == MFAMethod.TOTP:
@@ -435,8 +463,12 @@ class AuthService:
         """Remove an MFA device for a user."""
         try:
             # Remove from database
-            query = "DELETE FROM mfa_devices WHERE id = :device_id AND user_id = :user_id"
-            await self.db_manager.execute(query, {'device_id': device_id, 'user_id': user_id})
+            query = (
+                "DELETE FROM mfa_devices WHERE id = :device_id AND user_id = :user_id"
+            )
+            await self.db_manager.execute(
+                query, {"device_id": device_id, "user_id": user_id}
+            )
 
             # Clear related cache entries
             await self.cache_manager.clear_cache_by_pattern(f"mfa_device:{user_id}:*")
@@ -447,7 +479,9 @@ class AuthService:
             return False
 
     @time_operation("auth_get_user_roles")
-    async def get_user_roles(self, user_id: int, guild_id: Optional[int] = None) -> List[Role]:
+    async def get_user_roles(
+        self, user_id: int, guild_id: Optional[int] = None
+    ) -> List[Role]:
         """Get roles assigned to a user."""
         try:
             # Try to get cached roles
@@ -466,10 +500,9 @@ class AuthService:
             AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
             """
 
-            results = await self.db_manager.fetch_all(query, {
-                'user_id': user_id,
-                'guild_id': guild_id
-            })
+            results = await self.db_manager.fetch_all(
+                query, {"user_id": user_id, "guild_id": guild_id}
+            )
 
             roles = [Role(**row) for row in results]
 
@@ -477,7 +510,7 @@ class AuthService:
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 [asdict(role) for role in roles],
-                ttl=self.cache_ttls['user_roles']
+                ttl=self.cache_ttls["user_roles"],
             )
 
             return roles
@@ -487,13 +520,23 @@ class AuthService:
             return []
 
     @time_operation("auth_assign_role")
-    async def assign_role(self, user_id: int, role_name: str, assigned_by: int,
-                          guild_id: Optional[int] = None, expires_at: Optional[datetime] = None) -> bool:
+    async def assign_role(
+        self,
+        user_id: int,
+        role_name: str,
+        assigned_by: int,
+        guild_id: Optional[int] = None,
+        expires_at: Optional[datetime] = None,
+    ) -> bool:
         """Assign a role to a user."""
         try:
             # Get role ID
-            role_query = "SELECT id FROM roles WHERE role_name = :role_name AND is_active = 1"
-            role_result = await self.db_manager.fetch_one(role_query, {'role_name': role_name})
+            role_query = (
+                "SELECT id FROM roles WHERE role_name = :role_name AND is_active = 1"
+            )
+            role_result = await self.db_manager.fetch_one(
+                role_query, {"role_name": role_name}
+            )
 
             if not role_result:
                 return False
@@ -506,11 +549,14 @@ class AuthService:
             AND is_active = 1
             """
 
-            existing = await self.db_manager.fetch_one(existing_query, {
-                'user_id': user_id,
-                'role_id': role_result['id'],
-                'guild_id': guild_id
-            })
+            existing = await self.db_manager.fetch_one(
+                existing_query,
+                {
+                    "user_id": user_id,
+                    "role_id": role_result["id"],
+                    "guild_id": guild_id,
+                },
+            )
 
             if existing:
                 return True  # Role already assigned
@@ -521,17 +567,22 @@ class AuthService:
             VALUES (:user_id, :role_id, :guild_id, :assigned_by, NOW(), :expires_at, 1)
             """
 
-            await self.db_manager.execute(insert_query, {
-                'user_id': user_id,
-                'role_id': role_result['id'],
-                'guild_id': guild_id,
-                'assigned_by': assigned_by,
-                'expires_at': expires_at
-            })
+            await self.db_manager.execute(
+                insert_query,
+                {
+                    "user_id": user_id,
+                    "role_id": role_result["id"],
+                    "guild_id": guild_id,
+                    "assigned_by": assigned_by,
+                    "expires_at": expires_at,
+                },
+            )
 
             # Clear related cache
             await self.cache_manager.clear_cache_by_pattern(f"user_roles:{user_id}:*")
-            await self.cache_manager.clear_cache_by_pattern(f"user_permissions:{user_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"user_permissions:{user_id}:*"
+            )
 
             # Log role assignment
             await self._log_role_assignment(user_id, role_name, assigned_by, guild_id)
@@ -543,13 +594,22 @@ class AuthService:
             return False
 
     @time_operation("auth_revoke_role")
-    async def revoke_role(self, user_id: int, role_name: str, revoked_by: int,
-                          guild_id: Optional[int] = None) -> bool:
+    async def revoke_role(
+        self,
+        user_id: int,
+        role_name: str,
+        revoked_by: int,
+        guild_id: Optional[int] = None,
+    ) -> bool:
         """Revoke a role from a user."""
         try:
             # Get role ID
-            role_query = "SELECT id FROM roles WHERE role_name = :role_name AND is_active = 1"
-            role_result = await self.db_manager.fetch_one(role_query, {'role_name': role_name})
+            role_query = (
+                "SELECT id FROM roles WHERE role_name = :role_name AND is_active = 1"
+            )
+            role_result = await self.db_manager.fetch_one(
+                role_query, {"role_name": role_name}
+            )
 
             if not role_result:
                 return False
@@ -563,19 +623,24 @@ class AuthService:
             AND is_active = 1
             """
 
-            result = await self.db_manager.execute(update_query, {
-                'user_id': user_id,
-                'role_id': role_result['id'],
-                'guild_id': guild_id,
-                'revoked_by': revoked_by
-            })
+            result = await self.db_manager.execute(
+                update_query,
+                {
+                    "user_id": user_id,
+                    "role_id": role_result["id"],
+                    "guild_id": guild_id,
+                    "revoked_by": revoked_by,
+                },
+            )
 
             if result.rowcount == 0:
                 return False
 
             # Clear related cache
             await self.cache_manager.clear_cache_by_pattern(f"user_roles:{user_id}:*")
-            await self.cache_manager.clear_cache_by_pattern(f"user_permissions:{user_id}:*")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"user_permissions:{user_id}:*"
+            )
 
             # Log role revocation
             await self._log_role_revocation(user_id, role_name, revoked_by, guild_id)
@@ -587,7 +652,9 @@ class AuthService:
             return False
 
     @time_operation("auth_check_permission")
-    async def check_permission(self, user_id: int, permission: str, guild_id: Optional[int] = None) -> bool:
+    async def check_permission(
+        self, user_id: int, permission: str, guild_id: Optional[int] = None
+    ) -> bool:
         """Check if a user has a specific permission."""
         try:
             permissions, _ = await self._get_user_permissions(user_id, guild_id)
@@ -629,21 +696,58 @@ class AuthService:
         """Initialize default system roles if they don't exist."""
         default_roles = [
             ("admin", "Administrator", "Full system administrator", ["*"]),
-            ("moderator", "Moderator", "Guild moderator", [
-             "guild.manage", "user.manage", "bet.view", "bet.moderate"]),
-            ("user", "User", "Standard user", [
-             "bet.create", "bet.view", "profile.manage"]),
-            ("premium", "Premium User", "Premium user", [
-             "bet.create", "bet.view", "profile.manage", "analytics.view", "ml.predictions"]),
-            ("enterprise", "Enterprise User", "Enterprise user", [
-             "bet.create", "bet.view", "profile.manage", "analytics.view", "ml.predictions", "enterprise.features", "compliance.view"])
+            (
+                "moderator",
+                "Moderator",
+                "Guild moderator",
+                ["guild.manage", "user.manage", "bet.view", "bet.moderate"],
+            ),
+            (
+                "user",
+                "User",
+                "Standard user",
+                ["bet.create", "bet.view", "profile.manage"],
+            ),
+            (
+                "premium",
+                "Premium User",
+                "Premium user",
+                [
+                    "bet.create",
+                    "bet.view",
+                    "profile.manage",
+                    "analytics.view",
+                    "ml.predictions",
+                ],
+            ),
+            (
+                "enterprise",
+                "Enterprise User",
+                "Enterprise user",
+                [
+                    "bet.create",
+                    "bet.view",
+                    "profile.manage",
+                    "analytics.view",
+                    "ml.predictions",
+                    "enterprise.features",
+                    "compliance.view",
+                ],
+            ),
         ]
 
         for role_name, display_name, description, permissions in default_roles:
-            await self._create_role_if_not_exists(role_name, display_name, description, permissions)
+            await self._create_role_if_not_exists(
+                role_name, display_name, description, permissions
+            )
 
-    async def _create_role_if_not_exists(self, role_name: str, display_name: str,
-                                         description: str, permissions: List[str]):
+    async def _create_role_if_not_exists(
+        self,
+        role_name: str,
+        display_name: str,
+        description: str,
+        permissions: List[str],
+    ):
         """Create a role if it doesn't exist."""
         query = "SELECT id FROM roles WHERE role_name = %s"
         existing = await self.db_manager.fetch_one(query, (role_name,))
@@ -653,7 +757,10 @@ class AuthService:
                 INSERT INTO roles (role_name, display_name, description, permissions, is_system_role)
                 VALUES (%s, %s, %s, %s, TRUE)
             """
-            await self.db_manager.execute(insert_query, (role_name, display_name, description, json.dumps(permissions)))
+            await self.db_manager.execute(
+                insert_query,
+                (role_name, display_name, description, json.dumps(permissions)),
+            )
 
     async def _get_user_by_username(self, username: str) -> Optional[Dict]:
         """Get user by username."""
@@ -663,7 +770,9 @@ class AuthService:
     async def _verify_password(self, password: str, password_hash: str) -> bool:
         """Verify password against hash."""
         try:
-            return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+            return bcrypt.checkpw(
+                password.encode("utf-8"), password_hash.encode("utf-8")
+            )
         except Exception:
             return False
 
@@ -677,8 +786,11 @@ class AuthService:
         """
         result = await self.db_manager.fetch_one(query, (username,))
 
-        if result and result['account_locked']:
-            if result['account_locked_until'] and datetime.utcnow() < result['account_locked_until']:
+        if result and result["account_locked"]:
+            if (
+                result["account_locked_until"]
+                and datetime.utcnow() < result["account_locked_until"]
+            ):
                 return True
             else:
                 # Unlock account if lock period has expired
@@ -696,7 +808,9 @@ class AuthService:
         """
         await self.db_manager.execute(query, (username,))
 
-    async def _record_failed_attempt(self, username: str, ip_address: str, user_agent: str):
+    async def _record_failed_attempt(
+        self, username: str, ip_address: str, user_agent: str
+    ):
         """Record a failed login attempt."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
@@ -704,8 +818,11 @@ class AuthService:
             FROM users u WHERE u.username = %s
         """
         event_data = json.dumps(
-            {"username": username, "timestamp": datetime.utcnow().isoformat()})
-        await self.db_manager.execute(query, (ip_address, user_agent, event_data, username))
+            {"username": username, "timestamp": datetime.utcnow().isoformat()}
+        )
+        await self.db_manager.execute(
+            query, (ip_address, user_agent, event_data, username)
+        )
 
     async def _increment_failed_attempts(self, user_id: int):
         """Increment failed login attempts for a user."""
@@ -719,8 +836,15 @@ class AuthService:
                 END
             WHERE user_id = %s
         """
-        await self.db_manager.execute(query, (self.max_failed_attempts, self.max_failed_attempts,
-                                              int(self.lockout_duration / 60), user_id))
+        await self.db_manager.execute(
+            query,
+            (
+                self.max_failed_attempts,
+                self.max_failed_attempts,
+                int(self.lockout_duration / 60),
+                user_id,
+            ),
+        )
 
     async def _reset_failed_attempts(self, user_id: int):
         """Reset failed login attempts for a user."""
@@ -735,7 +859,7 @@ class AuthService:
         """Check if MFA is required for a user."""
         query = "SELECT mfa_enabled FROM user_settings WHERE user_id = %s"
         result = await self.db_manager.fetch_one(query, (user_id,))
-        return result and result['mfa_enabled']
+        return result and result["mfa_enabled"]
 
     async def _get_primary_mfa_method(self, user_id: int) -> Optional[MFAMethod]:
         """Get the primary MFA method for a user."""
@@ -745,27 +869,29 @@ class AuthService:
             ORDER BY created_at ASC LIMIT 1
         """
         result = await self.db_manager.fetch_one(query, (user_id,))
-        return MFAMethod(result['device_type']) if result else None
+        return MFAMethod(result["device_type"]) if result else None
 
     async def _generate_session_token(self, user_id: int) -> str:
         """Generate a new session token."""
         token = secrets.token_urlsafe(32)
         session_data = {
-            'user_id': user_id,
-            'created_at': datetime.utcnow().isoformat(),
-            'expires_at': (datetime.utcnow() + timedelta(seconds=self.session_timeout)).isoformat()
+            "user_id": user_id,
+            "created_at": datetime.utcnow().isoformat(),
+            "expires_at": (
+                datetime.utcnow() + timedelta(seconds=self.session_timeout)
+            ).isoformat(),
         }
 
         # Store session in cache
         await self.cache_manager.enhanced_cache_set(
-            f"session:{token}",
-            session_data,
-            ttl=self.cache_ttls['session_tokens']
+            f"session:{token}", session_data, ttl=self.cache_ttls["session_tokens"]
         )
 
         return token
 
-    async def _get_user_permissions(self, user_id: int, guild_id: Optional[int] = None) -> Tuple[List[str], List[str]]:
+    async def _get_user_permissions(
+        self, user_id: int, guild_id: Optional[int] = None
+    ) -> Tuple[List[str], List[str]]:
         """Get user permissions and roles."""
         query = """
             SELECT DISTINCT r.role_name, r.permissions
@@ -781,8 +907,8 @@ class AuthService:
         roles = []
 
         for row in rows:
-            roles.append(row['role_name'])
-            perms = json.loads(row['permissions'])
+            roles.append(row["role_name"])
+            perms = json.loads(row["permissions"])
             if isinstance(perms, list):
                 permissions.update(perms)
 
@@ -797,16 +923,22 @@ class AuthService:
         """
         await self.db_manager.execute(query, (ip_address, user_id))
 
-    async def _record_successful_login(self, user_id: int, ip_address: str, user_agent: str):
+    async def _record_successful_login(
+        self, user_id: int, ip_address: str, user_agent: str
+    ):
         """Record a successful login."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
             VALUES ('successful_login', %s, %s, %s, %s, 0.0)
         """
         event_data = json.dumps({"timestamp": datetime.utcnow().isoformat()})
-        await self.db_manager.execute(query, (user_id, ip_address, user_agent, event_data))
+        await self.db_manager.execute(
+            query, (user_id, ip_address, user_agent, event_data)
+        )
 
-    async def _get_mfa_device(self, user_id: int, mfa_method: MFAMethod) -> Optional[MFADevice]:
+    async def _get_mfa_device(
+        self, user_id: int, mfa_method: MFAMethod
+    ) -> Optional[MFADevice]:
         """Get MFA device for a user."""
         query = """
             SELECT * FROM mfa_devices
@@ -816,15 +948,15 @@ class AuthService:
 
         if result:
             return MFADevice(
-                id=result['id'],
-                user_id=result['user_id'],
-                device_type=MFAMethod(result['device_type']),
-                device_id=result['device_id'],
-                device_name=result['device_name'],
-                is_active=result['is_active'],
-                created_at=result['created_at'],
-                last_used=result['last_used'],
-                expires_at=result['expires_at']
+                id=result["id"],
+                user_id=result["user_id"],
+                device_type=MFAMethod(result["device_type"]),
+                device_id=result["device_id"],
+                device_name=result["device_name"],
+                is_active=result["is_active"],
+                created_at=result["created_at"],
+                last_used=result["last_used"],
+                expires_at=result["expires_at"],
             )
         return None
 
@@ -851,14 +983,18 @@ class AuthService:
         query = "UPDATE mfa_devices SET last_used = NOW() WHERE id = %s"
         await self.db_manager.execute(query, (device_id,))
 
-    async def _record_failed_mfa_attempt(self, user_id: int, ip_address: str, user_agent: str):
+    async def _record_failed_mfa_attempt(
+        self, user_id: int, ip_address: str, user_agent: str
+    ):
         """Record a failed MFA attempt."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
             VALUES ('failed_mfa', %s, %s, %s, %s, 0.7)
         """
         event_data = json.dumps({"timestamp": datetime.utcnow().isoformat()})
-        await self.db_manager.execute(query, (user_id, ip_address, user_agent, event_data))
+        await self.db_manager.execute(
+            query, (user_id, ip_address, user_agent, event_data)
+        )
 
     async def _setup_totp(self, user_id: int, device_name: str) -> Dict[str, Any]:
         """Setup TOTP MFA."""
@@ -867,8 +1003,7 @@ class AuthService:
 
         # Generate QR code URL
         qr_url = totp.provisioning_uri(
-            name=f"{user_id}@{self.totp_issuer}",
-            issuer_name=self.totp_issuer
+            name=f"{user_id}@{self.totp_issuer}", issuer_name=self.totp_issuer
         )
 
         # Store device
@@ -876,18 +1011,20 @@ class AuthService:
             INSERT INTO mfa_devices (user_id, device_type, device_id, device_name)
             VALUES (%s, %s, %s, %s)
         """
-        await self.db_manager.execute(query, (user_id, MFAMethod.TOTP.value, secret, device_name))
+        await self.db_manager.execute(
+            query, (user_id, MFAMethod.TOTP.value, secret, device_name)
+        )
 
         # Enable MFA for user
         await self.db_manager.execute(
             "UPDATE user_settings SET mfa_enabled = TRUE, mfa_method = %s WHERE user_id = %s",
-            (MFAMethod.TOTP.value, user_id)
+            (MFAMethod.TOTP.value, user_id),
         )
 
         return {
             "secret": secret,
             "qr_url": qr_url,
-            "backup_codes": self._generate_backup_codes()
+            "backup_codes": self._generate_backup_codes(),
         }
 
     async def _setup_sms(self, user_id: int, device_name: str) -> Dict[str, Any]:
@@ -904,30 +1041,38 @@ class AuthService:
         """Generate backup codes for MFA."""
         return [secrets.token_hex(4).upper() for _ in range(10)]
 
-    async def _log_role_assignment(self, user_id: int, role_name: str, assigned_by: int, guild_id: Optional[int]):
+    async def _log_role_assignment(
+        self, user_id: int, role_name: str, assigned_by: int, guild_id: Optional[int]
+    ):
         """Log role assignment for audit."""
         query = """
             INSERT INTO audit_logs (user_id, action_type, resource_type, resource_id, action_data, ip_address)
             VALUES (%s, 'role_assigned', 'role', %s, %s, 'system')
         """
-        action_data = json.dumps({
-            "role_name": role_name,
-            "assigned_by": assigned_by,
-            "guild_id": guild_id,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        action_data = json.dumps(
+            {
+                "role_name": role_name,
+                "assigned_by": assigned_by,
+                "guild_id": guild_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         await self.db_manager.execute(query, (user_id, role_name, action_data))
 
-    async def _log_role_revocation(self, user_id: int, role_name: str, revoked_by: int, guild_id: Optional[int]):
+    async def _log_role_revocation(
+        self, user_id: int, role_name: str, revoked_by: int, guild_id: Optional[int]
+    ):
         """Log role revocation for audit."""
         query = """
             INSERT INTO audit_logs (user_id, action_type, resource_type, resource_id, action_data, ip_address)
             VALUES (%s, 'role_revoked', 'role', %s, %s, 'system')
         """
-        action_data = json.dumps({
-            "role_name": role_name,
-            "revoked_by": revoked_by,
-            "guild_id": guild_id,
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        action_data = json.dumps(
+            {
+                "role_name": role_name,
+                "revoked_by": revoked_by,
+                "guild_id": guild_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         await self.db_manager.execute(query, (user_id, role_name, action_data))

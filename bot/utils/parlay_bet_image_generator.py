@@ -13,7 +13,9 @@ class ParlayBetImageGenerator:
     A class to generate parlay bet slip images styled like the provided example.
     """
 
-    def __init__(self, font_dir="bot/assets/fonts", guild_id=None):
+    def __init__(
+        self, font_dir="../../../StaticFiles/DBSBM/assets/fonts", guild_id=None
+    ):
         self.font_dir = font_dir
         self.guild_id = guild_id
         self.font_regular = ImageFont.truetype(
@@ -225,15 +227,17 @@ class ParlayBetImageGenerator:
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 # Use RGBA image as mask for proper transparency
-                if team_logo.mode == 'RGBA':
+                if team_logo.mode == "RGBA":
                     image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
                 else:
                     image.paste(team_logo, (int(left_margin), int(logo_y)))
             elif opponent_logo:
                 opponent_logo = opponent_logo.convert("RGBA").resize(logo_size)
                 # Use RGBA image as mask for proper transparency
-                if opponent_logo.mode == 'RGBA':
-                    image.paste(opponent_logo, (int(left_margin), int(logo_y)), opponent_logo)
+                if opponent_logo.mode == "RGBA":
+                    image.paste(
+                        opponent_logo, (int(left_margin), int(logo_y)), opponent_logo
+                    )
                 else:
                     image.paste(opponent_logo, (int(left_margin), int(logo_y)))
 
@@ -307,28 +311,34 @@ class ParlayBetImageGenerator:
             # Team (left-aligned) - like home team in game lines
             team_logo = self._load_team_logo(home_team, league)
             player_image = self._load_player_image(player_name, home_team, league)
-            fallback_logo = self._load_team_logo(home_team, league) # Fallback to home team logo
+            fallback_logo = self._load_team_logo(
+                home_team, league
+            )  # Fallback to home team logo
 
             # Team/Opponent/Player/Fallback logo
             if team_logo:
                 team_logo = team_logo.convert("RGBA").resize(logo_size)
                 # Use RGBA image as mask for proper transparency
-                if team_logo.mode == 'RGBA':
+                if team_logo.mode == "RGBA":
                     image.paste(team_logo, (int(left_margin), int(logo_y)), team_logo)
                 else:
                     image.paste(team_logo, (int(left_margin), int(logo_y)))
             elif player_image:
                 player_image = player_image.convert("RGBA").resize(logo_size)
                 # Use RGBA image as mask for proper transparency
-                if player_image.mode == 'RGBA':
-                    image.paste(player_image, (int(left_margin), int(logo_y)), player_image)
+                if player_image.mode == "RGBA":
+                    image.paste(
+                        player_image, (int(left_margin), int(logo_y)), player_image
+                    )
                 else:
                     image.paste(player_image, (int(left_margin), int(logo_y)))
             elif fallback_logo:
                 fallback_logo = fallback_logo.convert("RGBA").resize(logo_size)
                 # Use RGBA image as mask for proper transparency
-                if fallback_logo.mode == 'RGBA':
-                    image.paste(fallback_logo, (int(left_margin), int(logo_y)), fallback_logo)
+                if fallback_logo.mode == "RGBA":
+                    image.paste(
+                        fallback_logo, (int(left_margin), int(logo_y)), fallback_logo
+                    )
                 else:
                     image.paste(fallback_logo, (int(left_margin), int(logo_y)))
 
@@ -464,7 +474,7 @@ class ParlayBetImageGenerator:
 
         from PIL import Image
 
-        lock_icon_path = "bot/static/lock_icon.webp"
+        lock_icon_path = "../../../StaticFiles/DBSBM/static/lock_icon.webp"
         lock_icon = None
         if os.path.exists(lock_icon_path):
             lock_icon = Image.open(lock_icon_path).convert("RGBA").resize((32, 32))
@@ -482,7 +492,7 @@ class ParlayBetImageGenerator:
 
         if lock_icon:
             # Use RGBA image as mask for proper transparency
-            if lock_icon.mode == 'RGBA':
+            if lock_icon.mode == "RGBA":
                 image.paste(lock_icon, (start_x, icon_y), lock_icon)
             else:
                 image.paste(lock_icon, (start_x, icon_y))
@@ -494,8 +504,10 @@ class ParlayBetImageGenerator:
                 anchor="lt",
             )
             # Use RGBA image as mask for proper transparency
-            if lock_icon.mode == 'RGBA':
-                image.paste(lock_icon, (start_x + 32 + risk_width + 8, icon_y), lock_icon)
+            if lock_icon.mode == "RGBA":
+                image.paste(
+                    lock_icon, (start_x + 32 + risk_width + 8, icon_y), lock_icon
+                )
             else:
                 image.paste(lock_icon, (start_x + 32 + risk_width + 8, icon_y))
         else:

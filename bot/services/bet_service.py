@@ -60,7 +60,7 @@ class BetService:
             query = """
                 DELETE FROM bets
                 WHERE status = 'pending'
-                AND COALESCE(expiration_time, created_at) < %s
+                AND COALESCE(expiration_time, created_at) < $1
             """
             result = await self.db_manager.execute(query, (expiration_datetime,))
             rowcount = result[0] if result and result[0] is not None else 0
@@ -80,7 +80,7 @@ class BetService:
                 SELECT bet_serial, guild_id, user_id
                 FROM bets
                 WHERE confirmed = 0
-                AND created_at < %s
+                AND created_at < $1
             """
             expired_bets = await self.db_manager.fetch_all(query_select, (cutoff_time,))
 
@@ -98,7 +98,7 @@ class BetService:
                 )
                 try:
                     delete_query = (
-                        "DELETE FROM bets WHERE bet_serial = %s AND confirmed = 0"
+                        "DELETE FROM bets WHERE bet_serial = $1 AND confirmed = 0"
                     )
                     rowcount, _ = await self.db_manager.execute(
                         delete_query, (bet_serial_int,)
@@ -131,9 +131,9 @@ class BetService:
             query = """
                 UPDATE bets
                 SET confirmed = 1,
-                    message_id = %s,
-                    channel_id = %s
-                WHERE bet_serial = %s AND confirmed = 0
+                    message_id = $1,
+                    channel_id = $2
+                WHERE bet_serial = $3 AND confirmed = 0
             """
             rowcount, _ = await self.db_manager.execute(
                 query, (message_id, channel_id, bet_serial)
@@ -246,10 +246,10 @@ class BetService:
                     game_id, game_start, expiration_time,
                     legs, channel_id, confirmed, status, bet_details
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s,
-                    %s, %s, %s,
-                    %s, %s, %s, %s, %s
+                    $1, $2, $3, $4, $5, $6,
+                    $7, $8, $9, $10, $11,
+                    $12, $13, $14,
+                    $15, $16, $17, $18, $19
                 )
             """
             args = (
@@ -365,9 +365,9 @@ class BetService:
                     legs, game_start, expiration_time,
                     channel_id, confirmed, status, bet_details
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s,
-                    %s, %s, %s, %s
+                    $1, $2, $3, $4, $5, $6,
+                    $7, $8, $9,
+                    $10, $11, $12, $13
                 )
             """
             args = (
@@ -489,7 +489,7 @@ class BetService:
                     player_prop_direction, odds, game_id, status, units, bet_details,
                     channel_id, confirmed
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
                 )
             """
             args = (
@@ -600,8 +600,8 @@ class BetService:
         try:
             query = """
                 UPDATE bets
-                SET channel_id = %s, message_id = %s, confirmed = 1
-                WHERE bet_serial = %s
+                SET channel_id = $1, message_id = $2, confirmed = 1
+                WHERE bet_serial = $3
             """
             rowcount, _ = await self.db_manager.execute(
                 query, (channel_id, message_id, bet_serial)
@@ -638,7 +638,7 @@ class BetService:
             query = f"""
                 UPDATE bets
                 SET {set_clause}
-                WHERE bet_serial = %s
+                WHERE bet_serial = $1
             """
 
             # Add bet_serial to the end of the values tuple
@@ -667,8 +667,8 @@ class BetService:
         try:
             query = """
                 UPDATE bets
-                SET channel_id = %s, message_id = %s, confirmed = 1
-                WHERE bet_serial = %s AND bet_type = 'parlay'
+                SET channel_id = $1, message_id = $2, confirmed = 1
+                WHERE bet_serial = $3 AND bet_type = 'parlay'
             """
             rowcount, _ = await self.db_manager.execute(
                 query, (channel_id, message_id, bet_serial)
@@ -753,7 +753,7 @@ class BetService:
             reaction_query = """
                 INSERT IGNORE INTO bet_reactions (
                     bet_serial, user_id, emoji, channel_id, message_id, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ) VALUES ($1, $2, $3, $4, $5, $6)
             """
             reaction_params = (
                 bet_serial,
@@ -805,7 +805,7 @@ class BetService:
                 bet_data_query = """
                     SELECT guild_id, user_id, units, odds, league, bet_type, bet_details, game_start, created_at
                     FROM bets
-                    WHERE bet_serial = %s
+                    WHERE bet_serial = $1
                 """
                 bet_data = await self.db_manager.fetch_one(
                     bet_data_query, (bet_serial,)
@@ -820,12 +820,12 @@ class BetService:
                 update_time = datetime.now(timezone.utc)
                 status_query = """
                     UPDATE bets
-                    SET status = %s,
-                        result_value = %s,
-                        bet_won = CASE WHEN %s = 'won' THEN 1 ELSE 0 END,
-                        bet_loss = CASE WHEN %s = 'lost' THEN 1 ELSE 0 END,
-                        updated_at = %s
-                    WHERE bet_serial = %s
+                    SET status = $1,
+                        result_value = $2,
+                        bet_won = CASE WHEN $3 = 'won' THEN 1 ELSE 0 END,
+                        bet_loss = CASE WHEN $4 = 'lost' THEN 1 ELSE 0 END,
+                        updated_at = $5
+                    WHERE bet_serial = $6
                 """
 
                 units_staked = float(bet_data.get("units", 0.0))
@@ -877,7 +877,7 @@ class BetService:
                 unit_query = """
                     INSERT INTO unit_records (
                         bet_serial, guild_id, user_id, year, month, units, odds, monthly_result_value, total_result_value, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                     ON DUPLICATE KEY UPDATE
                         monthly_result_value = VALUES(monthly_result_value),
                         total_result_value = VALUES(total_result_value),
@@ -907,26 +907,26 @@ class BetService:
                         bet_won = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s
-                            AND b2.guild_id = %s
+                            WHERE b2.user_id = $1
+                            AND b2.guild_id = $2
                             AND b2.status = 'won'
                         ),
                         bet_loss = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s
-                            AND b2.guild_id = %s
+                            WHERE b2.user_id = $3
+                            AND b2.guild_id = $4
                             AND b2.status = 'lost'
                         ),
                         bet_push = (
                             SELECT COUNT(*)
                             FROM bets b2
-                            WHERE b2.user_id = %s
-                            AND b2.guild_id = %s
+                            WHERE b2.user_id = $5
+                            AND b2.guild_id = $6
                             AND b2.status = 'push'
                         ),
                         updated_at = UTC_TIMESTAMP()
-                    WHERE user_id = %s AND guild_id = %s
+                    WHERE user_id = $7 AND guild_id = $8
                 """
                 capper_params = (
                     bet_data["user_id"],
@@ -993,7 +993,7 @@ class BetService:
 
             query = """
                 DELETE FROM bet_reactions
-                WHERE bet_serial = %s AND user_id = %s AND emoji = %s AND message_id = %s
+                WHERE bet_serial = $1 AND user_id = $2 AND emoji = $3 AND message_id = $4
             """
             params = (bet_serial, payload.user_id, emoji_str, message_id)
             await self.db_manager.execute(query, params)
@@ -1014,7 +1014,7 @@ class BetService:
         src = await self.db_manager.fetch_one(
             """
             SELECT sport, league_id, home_team_name, away_team_name, start_time, status
-            FROM api_games WHERE api_game_id = %s
+            FROM api_games WHERE api_game_id = $1
             """,
             (api_game_id,),
         )
@@ -1025,7 +1025,7 @@ class BetService:
             """
             INSERT INTO games
               (api_game_id, sport, league_id, home_team_name, away_team_name, start_time, status, created_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())
+            VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
             """,
             (
                 api_game_id,

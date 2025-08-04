@@ -370,7 +370,7 @@ async def insert_games(
                     home_team_name, away_team_name, start_time,
                     status, created_at, updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW()
+                    $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
                 ) ON DUPLICATE KEY UPDATE
                     home_team_name = VALUES(home_team_name),
                     away_team_name = VALUES(away_team_name),
@@ -590,7 +590,7 @@ async def get_normalized_games_for_dropdown(
         query = f"""
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
             FROM api_games
-            WHERE sport = %s
+            WHERE sport = $1
             AND status NOT IN ({status_placeholders})
             ORDER BY start_time ASC LIMIT 100
         """
@@ -605,8 +605,8 @@ async def get_normalized_games_for_dropdown(
         query = f"""
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, odds, league_name
             FROM api_games
-            WHERE sport = %s
-            AND league_id = %s
+            WHERE sport = $1
+            AND league_id = $2
             AND (UPPER(league_name) IN ({league_name_placeholders}))
             AND status NOT IN ({status_placeholders})
             ORDER BY start_time ASC LIMIT 100

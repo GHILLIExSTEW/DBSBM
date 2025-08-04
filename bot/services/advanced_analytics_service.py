@@ -39,21 +39,22 @@ logger = logging.getLogger(__name__)
 
 # Analytics-specific cache TTLs
 ADVANCED_ANALYTICS_CACHE_TTLS = {
-    'analytics_dashboards': 1800,        # 30 minutes
-    'analytics_metrics': 900,             # 15 minutes
-    'analytics_reports': 3600,            # 1 hour
-    'analytics_visualizations': 1800,     # 30 minutes
-    'analytics_forecasts': 7200,          # 2 hours
-    'analytics_insights': 3600,           # 1 hour
-    'analytics_alerts': 300,              # 5 minutes
-    'analytics_performance': 1800,        # 30 minutes
-    'analytics_data': 600,                # 10 minutes
-    'analytics_aggregations': 1800,       # 30 minutes
+    "analytics_dashboards": 1800,  # 30 minutes
+    "analytics_metrics": 900,  # 15 minutes
+    "analytics_reports": 3600,  # 1 hour
+    "analytics_visualizations": 1800,  # 30 minutes
+    "analytics_forecasts": 7200,  # 2 hours
+    "analytics_insights": 3600,  # 1 hour
+    "analytics_alerts": 300,  # 5 minutes
+    "analytics_performance": 1800,  # 30 minutes
+    "analytics_data": 600,  # 10 minutes
+    "analytics_aggregations": 1800,  # 30 minutes
 }
 
 
 class ChartType(Enum):
     """Chart types for data visualization."""
+
     LINE = "line"
     BAR = "bar"
     PIE = "pie"
@@ -68,6 +69,7 @@ class ChartType(Enum):
 
 class MetricType(Enum):
     """Types of analytics metrics."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -79,6 +81,7 @@ class MetricType(Enum):
 
 class DashboardType(Enum):
     """Types of analytics dashboards."""
+
     REAL_TIME = "real_time"
     HISTORICAL = "historical"
     PREDICTIVE = "predictive"
@@ -90,6 +93,7 @@ class DashboardType(Enum):
 @dataclass
 class AnalyticsMetric:
     """Analytics metric data structure."""
+
     metric_id: str
     name: str
     metric_type: MetricType
@@ -107,6 +111,7 @@ class AnalyticsMetric:
 @dataclass
 class AnalyticsDashboard:
     """Analytics dashboard data structure."""
+
     dashboard_id: str
     name: str
     dashboard_type: DashboardType
@@ -127,6 +132,7 @@ class AnalyticsDashboard:
 @dataclass
 class AnalyticsWidget:
     """Analytics widget data structure."""
+
     widget_id: str
     name: str
     chart_type: ChartType
@@ -148,6 +154,7 @@ class AnalyticsWidget:
 @dataclass
 class AnalyticsReport:
     """Analytics report data structure."""
+
     report_id: str
     name: str
     report_type: str
@@ -169,6 +176,7 @@ class AnalyticsReport:
 @dataclass
 class AnalyticsForecast:
     """Analytics forecast data structure."""
+
     forecast_id: str
     metric_name: str
     forecast_type: str
@@ -188,6 +196,7 @@ class AnalyticsForecast:
 @dataclass
 class AnalyticsInsight:
     """Analytics insight data structure."""
+
     insight_id: str
     title: str
     description: str
@@ -207,6 +216,7 @@ class AnalyticsInsight:
 @dataclass
 class AnalyticsAlert:
     """Analytics alert data structure."""
+
     alert_id: str
     name: str
     condition: str
@@ -226,7 +236,9 @@ class AnalyticsAlert:
 class AdvancedAnalyticsService:
     """Advanced analytics and business intelligence service."""
 
-    def __init__(self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager):
+    def __init__(
+        self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager
+    ):
         self.db_manager = db_manager
         self.cache_manager = cache_manager
         self.cache_prefix = "advanced_analytics"
@@ -247,12 +259,12 @@ class AdvancedAnalyticsService:
 
         # Performance tracking
         self.analytics_stats = {
-            'total_metrics': 0,
-            'total_dashboards': 0,
-            'total_reports': 0,
-            'total_insights': 0,
-            'total_alerts': 0,
-            'average_response_time': 0.0
+            "total_metrics": 0,
+            "total_dashboards": 0,
+            "total_reports": 0,
+            "total_insights": 0,
+            "total_alerts": 0,
+            "average_response_time": 0.0,
         }
 
         logger.info("Advanced Analytics Service initialized")
@@ -284,8 +296,13 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to stop Advanced Analytics Service: {e}")
 
     @time_operation
-    async def create_dashboard(self, name: str, dashboard_type: DashboardType,
-                              description: str, widgets: List[Dict[str, Any]] = None) -> AnalyticsDashboard:
+    async def create_dashboard(
+        self,
+        name: str,
+        dashboard_type: DashboardType,
+        description: str,
+        widgets: List[Dict[str, Any]] = None,
+    ) -> AnalyticsDashboard:
         """Create a new analytics dashboard."""
         try:
             dashboard_id = str(uuid4())
@@ -300,7 +317,7 @@ class AdvancedAnalyticsService:
                 refresh_interval=30,
                 is_active=True,
                 created_at=datetime.now(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
 
             # Save to database
@@ -311,7 +328,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(dashboard)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_dashboards']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_dashboards"],
             )
 
             self.dashboards[dashboard_id] = dashboard
@@ -324,8 +341,14 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def create_widget(self, name: str, chart_type: ChartType,
-                           data_source: str, query: str, config: Dict[str, Any]) -> AnalyticsWidget:
+    async def create_widget(
+        self,
+        name: str,
+        chart_type: ChartType,
+        data_source: str,
+        query: str,
+        config: Dict[str, Any],
+    ) -> AnalyticsWidget:
         """Create a new analytics widget."""
         try:
             widget_id = str(uuid4())
@@ -341,7 +364,7 @@ class AdvancedAnalyticsService:
                 size={"width": 6, "height": 4},
                 refresh_interval=30,
                 is_active=True,
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
             # Save to database
@@ -352,7 +375,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(widget)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_visualizations']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_visualizations"],
             )
 
             self.widgets[widget_id] = widget
@@ -365,8 +388,14 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def record_metric(self, name: str, metric_type: MetricType,
-                           value: float, unit: str = "", tags: Dict[str, str] = None) -> AnalyticsMetric:
+    async def record_metric(
+        self,
+        name: str,
+        metric_type: MetricType,
+        value: float,
+        unit: str = "",
+        tags: Dict[str, str] = None,
+    ) -> AnalyticsMetric:
         """Record an analytics metric."""
         try:
             metric_id = str(uuid4())
@@ -378,7 +407,7 @@ class AdvancedAnalyticsService:
                 value=value,
                 unit=unit,
                 timestamp=datetime.now(),
-                tags=tags or {}
+                tags=tags or {},
             )
 
             # Save to database
@@ -389,7 +418,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(metric)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_metrics']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_metrics"],
             )
 
             self.metrics[metric_id] = metric
@@ -403,8 +432,13 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def generate_report(self, name: str, report_type: str,
-                             data: Dict[str, Any], charts: List[Dict[str, Any]] = None) -> AnalyticsReport:
+    async def generate_report(
+        self,
+        name: str,
+        report_type: str,
+        data: Dict[str, Any],
+        charts: List[Dict[str, Any]] = None,
+    ) -> AnalyticsReport:
         """Generate an analytics report."""
         try:
             report_id = str(uuid4())
@@ -423,7 +457,7 @@ class AdvancedAnalyticsService:
                 insights=insights,
                 recommendations=recommendations,
                 generated_at=datetime.now(),
-                scheduled=False
+                scheduled=False,
             )
 
             # Save to database
@@ -434,7 +468,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(report)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_reports']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_reports"],
             )
 
             self.reports[report_id] = report
@@ -447,14 +481,21 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def create_forecast(self, metric_name: str, forecast_type: str,
-                             historical_data: List[float], periods: int = 30) -> AnalyticsForecast:
+    async def create_forecast(
+        self,
+        metric_name: str,
+        forecast_type: str,
+        historical_data: List[float],
+        periods: int = 30,
+    ) -> AnalyticsForecast:
         """Create a forecast for a metric."""
         try:
             forecast_id = str(uuid4())
 
             # Generate forecast predictions
-            predictions, confidence_intervals = await self._generate_forecast(historical_data, periods)
+            predictions, confidence_intervals = await self._generate_forecast(
+                historical_data, periods
+            )
             timestamps = [datetime.now() + timedelta(hours=i) for i in range(periods)]
 
             forecast = AnalyticsForecast(
@@ -466,7 +507,7 @@ class AdvancedAnalyticsService:
                 timestamps=timestamps,
                 accuracy=0.85,  # Simulated accuracy
                 model_used="linear_regression",
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
             # Save to database
@@ -477,7 +518,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(forecast)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_forecasts']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_forecasts"],
             )
 
             self.forecasts[forecast_id] = forecast
@@ -490,14 +531,22 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def create_insight(self, title: str, description: str, insight_type: str,
-                           data_points: List[Dict[str, Any]], confidence: float = 0.8) -> AnalyticsInsight:
+    async def create_insight(
+        self,
+        title: str,
+        description: str,
+        insight_type: str,
+        data_points: List[Dict[str, Any]],
+        confidence: float = 0.8,
+    ) -> AnalyticsInsight:
         """Create an analytics insight."""
         try:
             insight_id = str(uuid4())
 
             # Generate recommendations based on insight
-            recommendations = await self._generate_insight_recommendations(insight_type, data_points)
+            recommendations = await self._generate_insight_recommendations(
+                insight_type, data_points
+            )
 
             insight = AnalyticsInsight(
                 insight_id=insight_id,
@@ -508,7 +557,7 @@ class AdvancedAnalyticsService:
                 confidence=confidence,
                 data_points=data_points,
                 recommendations=recommendations,
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
             # Save to database
@@ -519,7 +568,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(insight)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_insights']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_insights"],
             )
 
             self.insights[insight_id] = insight
@@ -532,8 +581,14 @@ class AdvancedAnalyticsService:
             raise
 
     @time_operation
-    async def create_alert(self, name: str, condition: str, threshold: float,
-                          current_value: float, severity: str = "medium") -> AnalyticsAlert:
+    async def create_alert(
+        self,
+        name: str,
+        condition: str,
+        threshold: float,
+        current_value: float,
+        severity: str = "medium",
+    ) -> AnalyticsAlert:
         """Create an analytics alert."""
         try:
             alert_id = str(uuid4())
@@ -546,7 +601,7 @@ class AdvancedAnalyticsService:
                 current_value=current_value,
                 severity=severity,
                 status="active" if current_value > threshold else "normal",
-                triggered_at=datetime.now()
+                triggered_at=datetime.now(),
             )
 
             # Save to database
@@ -557,7 +612,7 @@ class AdvancedAnalyticsService:
             await self.cache_manager.set(
                 cache_key,
                 json.dumps(asdict(alert)),
-                ADVANCED_ANALYTICS_CACHE_TTLS['analytics_alerts']
+                ADVANCED_ANALYTICS_CACHE_TTLS["analytics_alerts"],
             )
 
             self.alerts[alert_id] = alert
@@ -584,9 +639,9 @@ class AdvancedAnalyticsService:
                 widget_data.append(widget_info)
 
             return {
-                'dashboard': asdict(dashboard),
-                'widgets': widget_data,
-                'last_updated': datetime.now().isoformat()
+                "dashboard": asdict(dashboard),
+                "widgets": widget_data,
+                "last_updated": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -597,15 +652,19 @@ class AdvancedAnalyticsService:
         """Get analytics summary and statistics."""
         try:
             return {
-                'total_metrics': len(self.metrics),
-                'total_dashboards': len(self.dashboards),
-                'total_reports': len(self.reports),
-                'total_insights': len(self.insights),
-                'total_alerts': len(self.alerts),
-                'active_alerts': len([a for a in self.alerts.values() if a.status == "active"]),
-                'recent_insights': [asdict(i) for i in list(self.insights.values())[-5:]],
-                'performance_stats': self.analytics_stats,
-                'last_updated': datetime.now().isoformat()
+                "total_metrics": len(self.metrics),
+                "total_dashboards": len(self.dashboards),
+                "total_reports": len(self.reports),
+                "total_insights": len(self.insights),
+                "total_alerts": len(self.alerts),
+                "active_alerts": len(
+                    [a for a in self.alerts.values() if a.status == "active"]
+                ),
+                "recent_insights": [
+                    asdict(i) for i in list(self.insights.values())[-5:]
+                ],
+                "performance_stats": self.analytics_stats,
+                "last_updated": datetime.now().isoformat(),
             }
 
         except Exception as e:
@@ -632,7 +691,9 @@ class AdvancedAnalyticsService:
                 metric = AnalyticsMetric(**metric_data)
                 self.metrics[metric.metric_id] = metric
 
-            logger.info(f"Loaded {len(self.dashboards)} dashboards, {len(self.widgets)} widgets, {len(self.metrics)} metrics")
+            logger.info(
+                f"Loaded {len(self.dashboards)} dashboards, {len(self.widgets)} widgets, {len(self.metrics)} metrics"
+            )
 
         except Exception as e:
             logger.error(f"Failed to load analytics data: {e}")
@@ -641,19 +702,25 @@ class AdvancedAnalyticsService:
         """Initialize default dashboards."""
         try:
             # Create default real-time dashboard
-            if not any(d.dashboard_type == DashboardType.REAL_TIME for d in self.dashboards.values()):
+            if not any(
+                d.dashboard_type == DashboardType.REAL_TIME
+                for d in self.dashboards.values()
+            ):
                 await self.create_dashboard(
                     name="Real-Time Analytics",
                     dashboard_type=DashboardType.REAL_TIME,
-                    description="Real-time system performance and user activity"
+                    description="Real-time system performance and user activity",
                 )
 
             # Create default executive dashboard
-            if not any(d.dashboard_type == DashboardType.EXECUTIVE for d in self.dashboards.values()):
+            if not any(
+                d.dashboard_type == DashboardType.EXECUTIVE
+                for d in self.dashboards.values()
+            ):
                 await self.create_dashboard(
                     name="Executive Overview",
                     dashboard_type=DashboardType.EXECUTIVE,
-                    description="High-level business metrics and KPIs"
+                    description="High-level business metrics and KPIs",
                 )
 
             logger.info("Initialized default dashboards")
@@ -696,7 +763,7 @@ class AdvancedAnalyticsService:
                 metric_type=MetricType.GAUGE,
                 value=0.85,
                 unit="%",
-                tags={"component": "system", "type": "performance"}
+                tags={"component": "system", "type": "performance"},
             )
 
             await self.record_metric(
@@ -704,7 +771,7 @@ class AdvancedAnalyticsService:
                 metric_type=MetricType.COUNTER,
                 value=150,
                 unit="users",
-                tags={"component": "users", "type": "activity"}
+                tags={"component": "users", "type": "activity"},
             )
 
         except Exception as e:
@@ -752,8 +819,11 @@ class AdvancedAnalyticsService:
                         title=f"Metric {recent_metrics[0].name} is {trend}",
                         description=f"Recent trend analysis shows {trend} pattern",
                         insight_type="trend",
-                        data_points=[{"timestamp": m.timestamp, "value": m.value} for m in recent_metrics],
-                        confidence=0.8
+                        data_points=[
+                            {"timestamp": m.timestamp, "value": m.value}
+                            for m in recent_metrics
+                        ],
+                        confidence=0.8,
                     )
 
         except Exception as e:
@@ -763,19 +833,21 @@ class AdvancedAnalyticsService:
         """Get data for a widget."""
         # Simulate widget data retrieval
         return {
-            'widget_id': widget.get('widget_id'),
-            'name': widget.get('name'),
-            'chart_type': widget.get('chart_type'),
-            'data': {
-                'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                'datasets': [{
-                    'label': 'Performance',
-                    'data': [65, 70, 75, 80, 85],
-                    'borderColor': 'rgb(75, 192, 192)',
-                    'backgroundColor': 'rgba(75, 192, 192, 0.2)'
-                }]
+            "widget_id": widget.get("widget_id"),
+            "name": widget.get("name"),
+            "chart_type": widget.get("chart_type"),
+            "data": {
+                "labels": ["Jan", "Feb", "Mar", "Apr", "May"],
+                "datasets": [
+                    {
+                        "label": "Performance",
+                        "data": [65, 70, 75, 80, 85],
+                        "borderColor": "rgb(75, 192, 192)",
+                        "backgroundColor": "rgba(75, 192, 192, 0.2)",
+                    }
+                ],
             },
-            'config': widget.get('config', {})
+            "config": widget.get("config", {}),
         }
 
     async def _update_widget_data(self, widget: Dict[str, Any]):
@@ -783,11 +855,15 @@ class AdvancedAnalyticsService:
         # Simulate widget data update
         pass
 
-    async def _generate_forecast(self, historical_data: List[float], periods: int) -> Tuple[List[float], List[Tuple[float, float]]]:
+    async def _generate_forecast(
+        self, historical_data: List[float], periods: int
+    ) -> Tuple[List[float], List[Tuple[float, float]]]:
         """Generate forecast predictions."""
         # Simple linear regression forecast
         if len(historical_data) < 2:
-            return [historical_data[-1]] * periods, [(historical_data[-1], historical_data[-1])] * periods
+            return [historical_data[-1]] * periods, [
+                (historical_data[-1], historical_data[-1])
+            ] * periods
 
         # Calculate trend
         x = list(range(len(historical_data)))
@@ -800,7 +876,7 @@ class AdvancedAnalyticsService:
         sum_xy = sum(x[i] * y[i] for i in range(n))
         sum_x2 = sum(x[i] ** 2 for i in range(n))
 
-        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2)
+        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x**2)
         intercept = (sum_y - slope * sum_x) / n
 
         # Generate predictions
@@ -822,8 +898,8 @@ class AdvancedAnalyticsService:
         insights = []
 
         # Analyze data for insights
-        if 'performance' in data:
-            performance = data['performance']
+        if "performance" in data:
+            performance = data["performance"]
             if performance > 0.8:
                 insights.append("System performance is excellent")
             elif performance > 0.6:
@@ -831,8 +907,8 @@ class AdvancedAnalyticsService:
             else:
                 insights.append("System performance needs attention")
 
-        if 'user_activity' in data:
-            activity = data['user_activity']
+        if "user_activity" in data:
+            activity = data["user_activity"]
             if activity > 100:
                 insights.append("High user activity detected")
             elif activity < 10:
@@ -845,21 +921,23 @@ class AdvancedAnalyticsService:
         recommendations = []
 
         # Generate recommendations based on data
-        if 'performance' in data:
-            performance = data['performance']
+        if "performance" in data:
+            performance = data["performance"]
             if performance < 0.7:
                 recommendations.append("Consider optimizing system resources")
                 recommendations.append("Monitor system bottlenecks")
 
-        if 'user_activity' in data:
-            activity = data['user_activity']
+        if "user_activity" in data:
+            activity = data["user_activity"]
             if activity < 50:
                 recommendations.append("Implement user engagement strategies")
                 recommendations.append("Consider marketing campaigns")
 
         return recommendations
 
-    async def _generate_insight_recommendations(self, insight_type: str, data_points: List[Dict[str, Any]]) -> List[str]:
+    async def _generate_insight_recommendations(
+        self, insight_type: str, data_points: List[Dict[str, Any]]
+    ) -> List[str]:
         """Generate recommendations based on insight type."""
         recommendations = []
 
@@ -877,11 +955,11 @@ class AdvancedAnalyticsService:
 
     def _update_analytics_stats(self):
         """Update analytics statistics."""
-        self.analytics_stats['total_metrics'] = len(self.metrics)
-        self.analytics_stats['total_dashboards'] = len(self.dashboards)
-        self.analytics_stats['total_reports'] = len(self.reports)
-        self.analytics_stats['total_insights'] = len(self.insights)
-        self.analytics_stats['total_alerts'] = len(self.alerts)
+        self.analytics_stats["total_metrics"] = len(self.metrics)
+        self.analytics_stats["total_dashboards"] = len(self.dashboards)
+        self.analytics_stats["total_reports"] = len(self.reports)
+        self.analytics_stats["total_insights"] = len(self.insights)
+        self.analytics_stats["total_alerts"] = len(self.alerts)
 
     # Database operations
     async def _save_analytics_data(self):
@@ -921,12 +999,22 @@ class AdvancedAnalyticsService:
                 metadata = VALUES(metadata)
             """
 
-            await self.db_manager.execute(query, (
-                dashboard.dashboard_id, dashboard.name, dashboard.dashboard_type.value,
-                dashboard.description, json.dumps(dashboard.widgets), json.dumps(dashboard.layout),
-                dashboard.refresh_interval, dashboard.is_active, dashboard.created_at,
-                dashboard.updated_at, json.dumps(dashboard.metadata)
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    dashboard.dashboard_id,
+                    dashboard.name,
+                    dashboard.dashboard_type.value,
+                    dashboard.description,
+                    json.dumps(dashboard.widgets),
+                    json.dumps(dashboard.layout),
+                    dashboard.refresh_interval,
+                    dashboard.is_active,
+                    dashboard.created_at,
+                    dashboard.updated_at,
+                    json.dumps(dashboard.metadata),
+                ),
+            )
 
             logger.info(f"Saved dashboard to database: {dashboard.dashboard_id}")
 
@@ -951,13 +1039,23 @@ class AdvancedAnalyticsService:
                 is_active = VALUES(is_active), metadata = VALUES(metadata)
             """
 
-            await self.db_manager.execute(query, (
-                widget.widget_id, widget.name, widget.chart_type.value,
-                widget.data_source, widget.query, json.dumps(widget.config),
-                json.dumps(widget.position), json.dumps(widget.size),
-                widget.refresh_interval, widget.is_active, widget.created_at,
-                json.dumps(widget.metadata)
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    widget.widget_id,
+                    widget.name,
+                    widget.chart_type.value,
+                    widget.data_source,
+                    widget.query,
+                    json.dumps(widget.config),
+                    json.dumps(widget.position),
+                    json.dumps(widget.size),
+                    widget.refresh_interval,
+                    widget.is_active,
+                    widget.created_at,
+                    json.dumps(widget.metadata),
+                ),
+            )
 
             logger.info(f"Saved widget to database: {widget.widget_id}")
 
@@ -976,11 +1074,20 @@ class AdvancedAnalyticsService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                metric.metric_id, metric.name, metric.metric_type.value,
-                metric.value, metric.unit, metric.timestamp, json.dumps(metric.tags),
-                json.dumps(metric.metadata), metric.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    metric.metric_id,
+                    metric.name,
+                    metric.metric_type.value,
+                    metric.value,
+                    metric.unit,
+                    metric.timestamp,
+                    json.dumps(metric.tags),
+                    json.dumps(metric.metadata),
+                    metric.created_at,
+                ),
+            )
 
             logger.info(f"Saved metric to database: {metric.metric_id}")
 
@@ -1000,13 +1107,24 @@ class AdvancedAnalyticsService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                report.report_id, report.name, report.report_type, report.description,
-                json.dumps(report.data), json.dumps(report.charts), json.dumps(report.insights),
-                json.dumps(report.recommendations), report.generated_at, report.scheduled,
-                json.dumps(report.schedule_config or {}), json.dumps(report.metadata),
-                report.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    report.report_id,
+                    report.name,
+                    report.report_type,
+                    report.description,
+                    json.dumps(report.data),
+                    json.dumps(report.charts),
+                    json.dumps(report.insights),
+                    json.dumps(report.recommendations),
+                    report.generated_at,
+                    report.scheduled,
+                    json.dumps(report.schedule_config or {}),
+                    json.dumps(report.metadata),
+                    report.created_at,
+                ),
+            )
 
             logger.info(f"Saved report to database: {report.report_id}")
 
@@ -1026,12 +1144,21 @@ class AdvancedAnalyticsService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                forecast.forecast_id, forecast.metric_name, forecast.forecast_type,
-                json.dumps(forecast.predictions), json.dumps(forecast.confidence_intervals),
-                json.dumps([ts.isoformat() for ts in forecast.timestamps]), forecast.accuracy,
-                forecast.model_used, json.dumps(forecast.metadata), forecast.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    forecast.forecast_id,
+                    forecast.metric_name,
+                    forecast.forecast_type,
+                    json.dumps(forecast.predictions),
+                    json.dumps(forecast.confidence_intervals),
+                    json.dumps([ts.isoformat() for ts in forecast.timestamps]),
+                    forecast.accuracy,
+                    forecast.model_used,
+                    json.dumps(forecast.metadata),
+                    forecast.created_at,
+                ),
+            )
 
             logger.info(f"Saved forecast to database: {forecast.forecast_id}")
 
@@ -1051,12 +1178,21 @@ class AdvancedAnalyticsService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                insight.insight_id, insight.title, insight.description, insight.insight_type,
-                insight.severity, insight.confidence, json.dumps(insight.data_points),
-                json.dumps(insight.recommendations), json.dumps(insight.metadata),
-                insight.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    insight.insight_id,
+                    insight.title,
+                    insight.description,
+                    insight.insight_type,
+                    insight.severity,
+                    insight.confidence,
+                    json.dumps(insight.data_points),
+                    json.dumps(insight.recommendations),
+                    json.dumps(insight.metadata),
+                    insight.created_at,
+                ),
+            )
 
             logger.info(f"Saved insight to database: {insight.insight_id}")
 
@@ -1076,11 +1212,21 @@ class AdvancedAnalyticsService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                alert.alert_id, alert.name, alert.condition, alert.threshold,
-                alert.current_value, alert.severity, alert.status, alert.triggered_at,
-                alert.resolved_at, json.dumps(alert.metadata)
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    alert.alert_id,
+                    alert.name,
+                    alert.condition,
+                    alert.threshold,
+                    alert.current_value,
+                    alert.severity,
+                    alert.status,
+                    alert.triggered_at,
+                    alert.resolved_at,
+                    json.dumps(alert.metadata),
+                ),
+            )
 
             logger.info(f"Saved alert to database: {alert.alert_id}")
 
@@ -1097,10 +1243,16 @@ class AdvancedAnalyticsService:
             WHERE alert_id = %s
             """
 
-            await self.db_manager.execute(query, (
-                alert.status, alert.current_value, alert.resolved_at,
-                json.dumps(alert.metadata), alert.alert_id
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    alert.status,
+                    alert.current_value,
+                    alert.resolved_at,
+                    json.dumps(alert.metadata),
+                    alert.alert_id,
+                ),
+            )
 
             logger.info(f"Updated alert in database: {alert.alert_id}")
 
@@ -1117,17 +1269,17 @@ class AdvancedAnalyticsService:
             result = []
             for row in dashboards_data:
                 dashboard_data = {
-                    'dashboard_id': row['dashboard_id'],
-                    'name': row['name'],
-                    'dashboard_type': DashboardType(row['dashboard_type']),
-                    'description': row['description'],
-                    'widgets': json.loads(row['widgets']),
-                    'layout': json.loads(row['layout']),
-                    'refresh_interval': row['refresh_interval'],
-                    'is_active': bool(row['is_active']),
-                    'created_at': row['created_at'],
-                    'updated_at': row['updated_at'],
-                    'metadata': json.loads(row['metadata'])
+                    "dashboard_id": row["dashboard_id"],
+                    "name": row["name"],
+                    "dashboard_type": DashboardType(row["dashboard_type"]),
+                    "description": row["description"],
+                    "widgets": json.loads(row["widgets"]),
+                    "layout": json.loads(row["layout"]),
+                    "refresh_interval": row["refresh_interval"],
+                    "is_active": bool(row["is_active"]),
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "metadata": json.loads(row["metadata"]),
                 }
                 result.append(dashboard_data)
 
@@ -1147,18 +1299,18 @@ class AdvancedAnalyticsService:
             result = []
             for row in widgets_data:
                 widget_data = {
-                    'widget_id': row['widget_id'],
-                    'name': row['name'],
-                    'chart_type': ChartType(row['chart_type']),
-                    'data_source': row['data_source'],
-                    'query': row['query'],
-                    'config': json.loads(row['config']),
-                    'position': json.loads(row['position']),
-                    'size': json.loads(row['size']),
-                    'refresh_interval': row['refresh_interval'],
-                    'is_active': bool(row['is_active']),
-                    'created_at': row['created_at'],
-                    'metadata': json.loads(row['metadata'])
+                    "widget_id": row["widget_id"],
+                    "name": row["name"],
+                    "chart_type": ChartType(row["chart_type"]),
+                    "data_source": row["data_source"],
+                    "query": row["query"],
+                    "config": json.loads(row["config"]),
+                    "position": json.loads(row["position"]),
+                    "size": json.loads(row["size"]),
+                    "refresh_interval": row["refresh_interval"],
+                    "is_active": bool(row["is_active"]),
+                    "created_at": row["created_at"],
+                    "metadata": json.loads(row["metadata"]),
                 }
                 result.append(widget_data)
 
@@ -1178,15 +1330,15 @@ class AdvancedAnalyticsService:
             result = []
             for row in metrics_data:
                 metric_data = {
-                    'metric_id': row['metric_id'],
-                    'name': row['name'],
-                    'metric_type': MetricType(row['metric_type']),
-                    'value': float(row['value']),
-                    'unit': row['unit'],
-                    'timestamp': row['timestamp'],
-                    'tags': json.loads(row['tags']),
-                    'metadata': json.loads(row['metadata']),
-                    'created_at': row['created_at']
+                    "metric_id": row["metric_id"],
+                    "name": row["name"],
+                    "metric_type": MetricType(row["metric_type"]),
+                    "value": float(row["value"]),
+                    "unit": row["unit"],
+                    "timestamp": row["timestamp"],
+                    "tags": json.loads(row["tags"]),
+                    "metadata": json.loads(row["metadata"]),
+                    "created_at": row["created_at"],
                 }
                 result.append(metric_data)
 

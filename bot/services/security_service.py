@@ -43,20 +43,22 @@ logger = logging.getLogger(__name__)
 
 # Security-specific cache TTLs
 SECURITY_CACHE_TTLS = {
-    'ip_reputation': 3600,  # 1 hour
-    'user_behavior': 1800,  # 30 minutes
-    'threat_alerts': 300,   # 5 minutes
-    'fraud_detection': 600,  # 10 minutes
-    'rate_limits': 300,      # 5 minutes
-    'ddos_protection': 60,   # 1 minute
-    'security_events': 1800, # 30 minutes
-    'user_history': 3600,    # 1 hour
-    'session_data': 1800,    # 30 minutes
-    'threat_intelligence': 7200,  # 2 hours
+    "ip_reputation": 3600,  # 1 hour
+    "user_behavior": 1800,  # 30 minutes
+    "threat_alerts": 300,  # 5 minutes
+    "fraud_detection": 600,  # 10 minutes
+    "rate_limits": 300,  # 5 minutes
+    "ddos_protection": 60,  # 1 minute
+    "security_events": 1800,  # 30 minutes
+    "user_history": 3600,  # 1 hour
+    "session_data": 1800,  # 30 minutes
+    "threat_intelligence": 7200,  # 2 hours
 }
+
 
 class SecurityEventType(Enum):
     """Types of security events that can be monitored."""
+
     LOGIN_ATTEMPT = "login_attempt"
     LOGIN_SUCCESS = "login_success"
     LOGIN_FAILURE = "login_failure"
@@ -74,15 +76,19 @@ class SecurityEventType(Enum):
     ADMIN_ACTION = "admin_action"
     SYSTEM_ERROR = "system_error"
 
+
 class ThreatLevel(Enum):
     """Threat levels for security events."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
+
 class FraudType(Enum):
     """Types of fraud that can be detected."""
+
     BETTING_FRAUD = "betting_fraud"
     ACCOUNT_TAKEOVER = "account_takeover"
     MONEY_LAUNDERING = "money_laundering"
@@ -90,9 +96,11 @@ class FraudType(Enum):
     BOT_ACTIVITY = "bot_activity"
     IDENTITY_THEFT = "identity_theft"
 
+
 @dataclass
 class SecurityEvent:
     """Security event data structure."""
+
     event_type: SecurityEventType
     user_id: Optional[int]
     guild_id: Optional[int]
@@ -104,9 +112,11 @@ class SecurityEvent:
     session_id: Optional[str] = None
     correlation_id: Optional[str] = None
 
+
 @dataclass
 class ThreatAlert:
     """Threat alert data structure."""
+
     alert_id: str
     threat_level: ThreatLevel
     alert_type: str
@@ -118,9 +128,11 @@ class ThreatAlert:
     is_resolved: bool = False
     resolution_notes: Optional[str] = None
 
+
 @dataclass
 class FraudDetection:
     """Fraud detection result."""
+
     fraud_type: FraudType
     confidence: float
     user_id: int
@@ -130,10 +142,13 @@ class FraudDetection:
     timestamp: datetime
     is_confirmed: bool = False
 
+
 class SecurityService:
     """Enterprise security monitoring and threat detection service."""
 
-    def __init__(self, db_manager: DatabaseManager, compliance_service: ComplianceService):
+    def __init__(
+        self, db_manager: DatabaseManager, compliance_service: ComplianceService
+    ):
         self.db_manager = db_manager
         self.compliance_service = compliance_service
         self.redis_client = None
@@ -145,38 +160,38 @@ class SecurityService:
 
         # Security configuration
         self.config = {
-            'threat_detection_enabled': True,
-            'fraud_detection_enabled': True,
-            'rate_limiting_enabled': True,
-            'ddos_protection_enabled': True,
-            'anomaly_detection_enabled': True,
-            'ip_reputation_checking': True,
-            'geolocation_monitoring': True,
-            'session_monitoring': True,
-            'real_time_alerting': True
+            "threat_detection_enabled": True,
+            "fraud_detection_enabled": True,
+            "rate_limiting_enabled": True,
+            "ddos_protection_enabled": True,
+            "anomaly_detection_enabled": True,
+            "ip_reputation_checking": True,
+            "geolocation_monitoring": True,
+            "session_monitoring": True,
+            "real_time_alerting": True,
         }
 
         # Rate limiting thresholds
         self.rate_limits = {
-            'login_attempts': {'max': 5, 'window': 300},  # 5 attempts per 5 minutes
-            'api_requests': {'max': 100, 'window': 60},   # 100 requests per minute
-            'bet_placements': {'max': 50, 'window': 300}, # 50 bets per 5 minutes
-            'data_access': {'max': 200, 'window': 60},    # 200 accesses per minute
+            "login_attempts": {"max": 5, "window": 300},  # 5 attempts per 5 minutes
+            "api_requests": {"max": 100, "window": 60},  # 100 requests per minute
+            "bet_placements": {"max": 50, "window": 300},  # 50 bets per 5 minutes
+            "data_access": {"max": 200, "window": 60},  # 200 accesses per minute
         }
 
         # Threat detection thresholds
         self.threat_thresholds = {
-            'suspicious_login': 0.7,
-            'fraud_detection': 0.8,
-            'anomaly_detection': 0.6,
-            'ddos_threshold': 1000,  # requests per minute
+            "suspicious_login": 0.7,
+            "fraud_detection": 0.8,
+            "anomaly_detection": 0.6,
+            "ddos_threshold": 1000,  # requests per minute
         }
 
         # IP reputation sources
         self.ip_reputation_sources = [
-            'https://api.abuseipdb.com/api/v2/check',
-            'https://api.ipqualityscore.com/ip',
-            'https://api.ipapi.com/'
+            "https://api.abuseipdb.com/api/v2/check",
+            "https://api.ipqualityscore.com/ip",
+            "https://api.ipapi.com/",
         ]
 
         # Initialize monitoring
@@ -190,10 +205,10 @@ class SecurityService:
         try:
             # Initialize Redis connection
             self.redis_client = redis.Redis(
-                host='localhost',
+                host="localhost",
                 port=6379,
                 db=1,  # Use separate DB for security
-                decode_responses=True
+                decode_responses=True,
             )
 
             # Initialize aiohttp session
@@ -229,7 +244,7 @@ class SecurityService:
             await self._update_monitoring_data(event)
 
             # Check for immediate threats
-            if event.risk_score > self.threat_thresholds['suspicious_login']:
+            if event.risk_score > self.threat_thresholds["suspicious_login"]:
                 await self._handle_high_risk_event(event)
 
             # Correlate with other events
@@ -243,7 +258,9 @@ class SecurityService:
             return False
 
     @time_operation("threat_detection")
-    async def detect_threats(self, user_id: int, guild_id: Optional[int] = None) -> List[ThreatAlert]:
+    async def detect_threats(
+        self, user_id: int, guild_id: Optional[int] = None
+    ) -> List[ThreatAlert]:
         """Detect potential threats for a user or guild."""
         try:
             # Try to get cached threats first
@@ -281,7 +298,7 @@ class SecurityService:
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 [asdict(threat) for threat in threats],
-                ttl=self.cache_ttls['threat_alerts']
+                ttl=self.cache_ttls["threat_alerts"],
             )
 
             return threats
@@ -291,7 +308,9 @@ class SecurityService:
             return []
 
     @time_operation("fraud_detection")
-    async def detect_fraud(self, user_id: int, guild_id: Optional[int] = None) -> Optional[FraudDetection]:
+    async def detect_fraud(
+        self, user_id: int, guild_id: Optional[int] = None
+    ) -> Optional[FraudDetection]:
         """Detect potential fraud for a user."""
         try:
             # Try to get cached fraud detection
@@ -315,26 +334,28 @@ class SecurityService:
             )
 
             fraud_detection = None
-            if fraud_confidence > self.threat_thresholds['fraud_detection']:
+            if fraud_confidence > self.threat_thresholds["fraud_detection"]:
                 fraud_detection = FraudDetection(
-                    fraud_type=self._determine_fraud_type(user_behavior, betting_analysis),
+                    fraud_type=self._determine_fraud_type(
+                        user_behavior, betting_analysis
+                    ),
                     confidence=fraud_confidence,
                     user_id=user_id,
                     guild_id=guild_id,
                     evidence={
-                        'user_behavior': user_behavior,
-                        'betting_analysis': betting_analysis,
-                        'collusion_indicators': collusion_indicators
+                        "user_behavior": user_behavior,
+                        "betting_analysis": betting_analysis,
+                        "collusion_indicators": collusion_indicators,
                     },
                     risk_factors=await self._identify_risk_factors(user_id, guild_id),
-                    timestamp=datetime.utcnow()
+                    timestamp=datetime.utcnow(),
                 )
 
                 # Cache fraud detection
                 await self.cache_manager.enhanced_cache_set(
                     cache_key,
                     asdict(fraud_detection),
-                    ttl=self.cache_ttls['fraud_detection']
+                    ttl=self.cache_ttls["fraud_detection"],
                 )
 
             return fraud_detection
@@ -344,10 +365,12 @@ class SecurityService:
             return None
 
     @time_operation("rate_limit_check")
-    async def check_rate_limit(self, user_id: int, action_type: str, guild_id: Optional[int] = None) -> bool:
+    async def check_rate_limit(
+        self, user_id: int, action_type: str, guild_id: Optional[int] = None
+    ) -> bool:
         """Check if a user has exceeded rate limits for a specific action."""
         try:
-            if not self.config['rate_limiting_enabled']:
+            if not self.config["rate_limiting_enabled"]:
                 return True
 
             if action_type not in self.rate_limits:
@@ -360,25 +383,28 @@ class SecurityService:
             current_count = await self.cache_manager.enhanced_cache_get(key)
             current_count = int(current_count) if current_count else 0
 
-            if current_count >= limit_config['max']:
+            if current_count >= limit_config["max"]:
                 # Log rate limit violation
-                await self.log_security_event(SecurityEvent(
-                    event_type=SecurityEventType.RATE_LIMIT_EXCEEDED,
-                    user_id=user_id,
-                    guild_id=guild_id,
-                    ip_address=None,
-                    user_agent=None,
-                    event_data={'action_type': action_type, 'current_count': current_count},
-                    risk_score=0.5,
-                    timestamp=datetime.utcnow()
-                ))
+                await self.log_security_event(
+                    SecurityEvent(
+                        event_type=SecurityEventType.RATE_LIMIT_EXCEEDED,
+                        user_id=user_id,
+                        guild_id=guild_id,
+                        ip_address=None,
+                        user_agent=None,
+                        event_data={
+                            "action_type": action_type,
+                            "current_count": current_count,
+                        },
+                        risk_score=0.5,
+                        timestamp=datetime.utcnow(),
+                    )
+                )
                 return False
 
             # Increment counter
             await self.cache_manager.enhanced_cache_set(
-                key,
-                current_count + 1,
-                ttl=limit_config['window']
+                key, current_count + 1, ttl=limit_config["window"]
             )
 
             return True
@@ -391,8 +417,8 @@ class SecurityService:
     async def check_ip_reputation(self, ip_address: str) -> Dict[str, Any]:
         """Check the reputation of an IP address."""
         try:
-            if not self.config['ip_reputation_checking']:
-                return {'reputation': 'unknown', 'risk_score': 0.0}
+            if not self.config["ip_reputation_checking"]:
+                return {"reputation": "unknown", "risk_score": 0.0}
 
             # Check cache first
             cache_key = f"ip_reputation:{ip_address}"
@@ -405,22 +431,20 @@ class SecurityService:
 
             # Cache result
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                reputation_data,
-                ttl=self.cache_ttls['ip_reputation']
+                cache_key, reputation_data, ttl=self.cache_ttls["ip_reputation"]
             )
 
             return reputation_data
 
         except Exception as e:
             logger.error(f"Failed to check IP reputation: {e}")
-            return {'reputation': 'unknown', 'risk_score': 0.0}
+            return {"reputation": "unknown", "risk_score": 0.0}
 
     @time_operation("ddos_protection")
     async def check_ddos_protection(self, ip_address: str) -> bool:
         """Check if an IP address is part of a DDoS attack."""
         try:
-            if not self.config['ddos_protection_enabled']:
+            if not self.config["ddos_protection_enabled"]:
                 return True
 
             # Get request count for this IP
@@ -428,18 +452,20 @@ class SecurityService:
             request_count = await self.cache_manager.enhanced_cache_get(key)
             request_count = int(request_count) if request_count else 0
 
-            if request_count > self.threat_thresholds['ddos_threshold']:
+            if request_count > self.threat_thresholds["ddos_threshold"]:
                 # Log DDoS event
-                await self.log_security_event(SecurityEvent(
-                    event_type=SecurityEventType.DDoS_ATTACK,
-                    user_id=None,
-                    guild_id=None,
-                    ip_address=ip_address,
-                    user_agent=None,
-                    event_data={'request_count': request_count},
-                    risk_score=1.0,
-                    timestamp=datetime.utcnow()
-                ))
+                await self.log_security_event(
+                    SecurityEvent(
+                        event_type=SecurityEventType.DDoS_ATTACK,
+                        user_id=None,
+                        guild_id=None,
+                        ip_address=ip_address,
+                        user_agent=None,
+                        event_data={"request_count": request_count},
+                        risk_score=1.0,
+                        timestamp=datetime.utcnow(),
+                    )
+                )
 
                 # Block IP temporarily
                 await self._block_ip_temporarily(ip_address)
@@ -447,9 +473,7 @@ class SecurityService:
 
             # Increment counter
             await self.cache_manager.enhanced_cache_set(
-                key,
-                request_count + 1,
-                ttl=self.cache_ttls['ddos_protection']
+                key, request_count + 1, ttl=self.cache_ttls["ddos_protection"]
             )
             return True
 
@@ -457,7 +481,9 @@ class SecurityService:
             logger.error(f"Failed to check DDoS protection: {e}")
             return True
 
-    async def get_security_report(self, guild_id: int, days: int = 30) -> Dict[str, Any]:
+    async def get_security_report(
+        self, guild_id: int, days: int = 30
+    ) -> Dict[str, Any]:
         """Generate a comprehensive security report for a guild."""
         try:
             # Try to get cached report
@@ -470,7 +496,9 @@ class SecurityService:
             start_date = end_date - timedelta(days=days)
 
             # Get security events
-            events = await self._get_events_by_date_range(guild_id, start_date, end_date)
+            events = await self._get_events_by_date_range(
+                guild_id, start_date, end_date
+            )
 
             # Analyze events
             analysis = await self._analyze_security_events(events)
@@ -479,29 +507,31 @@ class SecurityService:
             threats = await self._get_threat_alerts(guild_id, start_date, end_date)
 
             # Get fraud detections
-            fraud_detections = await self._get_fraud_detections(guild_id, start_date, end_date)
+            fraud_detections = await self._get_fraud_detections(
+                guild_id, start_date, end_date
+            )
 
             report = {
-                'period': {'start': start_date, 'end': end_date},
-                'summary': {
-                    'total_events': len(events),
-                    'high_risk_events': len([e for e in events if e.risk_score > 0.7]),
-                    'threats_detected': len(threats),
-                    'fraud_cases': len(fraud_detections),
-                    'blocked_ips': len(self.blocked_ips),
-                    'suspicious_ips': len(self.suspicious_ips)
+                "period": {"start": start_date, "end": end_date},
+                "summary": {
+                    "total_events": len(events),
+                    "high_risk_events": len([e for e in events if e.risk_score > 0.7]),
+                    "threats_detected": len(threats),
+                    "fraud_cases": len(fraud_detections),
+                    "blocked_ips": len(self.blocked_ips),
+                    "suspicious_ips": len(self.suspicious_ips),
                 },
-                'analysis': analysis,
-                'threats': [asdict(t) for t in threats],
-                'fraud_detections': [asdict(f) for f in fraud_detections],
-                'recommendations': await self._generate_security_recommendations(analysis)
+                "analysis": analysis,
+                "threats": [asdict(t) for t in threats],
+                "fraud_detections": [asdict(f) for f in fraud_detections],
+                "recommendations": await self._generate_security_recommendations(
+                    analysis
+                ),
             }
 
             # Cache report
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                report,
-                ttl=self.cache_ttls['security_events']
+                cache_key, report, ttl=self.cache_ttls["security_events"]
             )
 
             return report
@@ -545,17 +575,17 @@ class SecurityService:
         await self.db_manager.execute(
             query,
             {
-                'event_type': event.event_type.value,
-                'user_id': event.user_id,
-                'guild_id': event.guild_id,
-                'ip_address': event.ip_address,
-                'user_agent': event.user_agent,
-                'event_data': json.dumps(event.event_data),
-                'risk_score': event.risk_score,
-                'timestamp': event.timestamp,
-                'session_id': event.session_id,
-                'correlation_id': event.correlation_id
-            }
+                "event_type": event.event_type.value,
+                "user_id": event.user_id,
+                "guild_id": event.guild_id,
+                "ip_address": event.ip_address,
+                "user_agent": event.user_agent,
+                "event_data": json.dumps(event.event_data),
+                "risk_score": event.risk_score,
+                "timestamp": event.timestamp,
+                "session_id": event.session_id,
+                "correlation_id": event.correlation_id,
+            },
         )
 
     async def _calculate_risk_score(self, event: SecurityEvent) -> float:
@@ -569,7 +599,7 @@ class SecurityService:
             SecurityEventType.FRAUD_DETECTED: 1.0,
             SecurityEventType.RATE_LIMIT_EXCEEDED: 0.5,
             SecurityEventType.DDoS_ATTACK: 0.9,
-            SecurityEventType.ADMIN_ACTION: 0.2
+            SecurityEventType.ADMIN_ACTION: 0.2,
         }
 
         risk_score += event_type_risk.get(event.event_type, 0.1)
@@ -577,7 +607,7 @@ class SecurityService:
         # IP reputation factor
         if event.ip_address:
             ip_reputation = await self.check_ip_reputation(event.ip_address)
-            risk_score += ip_reputation.get('risk_score', 0.0) * 0.3
+            risk_score += ip_reputation.get("risk_score", 0.0) * 0.3
 
         # Time-based factors
         hour = event.timestamp.hour
@@ -587,7 +617,7 @@ class SecurityService:
         # User history factor
         if event.user_id:
             user_history = await self._get_user_security_history(event.user_id)
-            if user_history.get('suspicious_events', 0) > 5:
+            if user_history.get("suspicious_events", 0) > 5:
                 risk_score += 0.3
 
         return min(risk_score, 1.0)
@@ -607,7 +637,7 @@ class SecurityService:
                 f"Rapid activity detected for user {event.user_id}",
                 [event.user_id] if event.user_id else [],
                 [event.guild_id] if event.guild_id else [],
-                {'event_count': len(recent_events)}
+                {"event_count": len(recent_events)},
             )
 
     async def _monitor_security_events(self):
@@ -645,12 +675,18 @@ class SecurityService:
         WHERE user_id = :user_id AND timestamp > DATE_SUB(NOW(), INTERVAL 30 DAY)
         """
 
-        result = await self.db_manager.fetch_one(query, {'user_id': user_id})
+        result = await self.db_manager.fetch_one(query, {"user_id": user_id})
         return dict(result) if result else {}
 
-    async def _create_threat_alert(self, threat_level: ThreatLevel, alert_type: str,
-                                 description: str, affected_users: List[int],
-                                 affected_guilds: List[int], evidence: Dict[str, Any]):
+    async def _create_threat_alert(
+        self,
+        threat_level: ThreatLevel,
+        alert_type: str,
+        description: str,
+        affected_users: List[int],
+        affected_guilds: List[int],
+        evidence: Dict[str, Any],
+    ):
         """Create a new threat alert."""
         alert = ThreatAlert(
             alert_id=f"alert_{int(time.time())}_{secrets.token_hex(4)}",
@@ -660,14 +696,14 @@ class SecurityService:
             affected_users=affected_users,
             affected_guilds=affected_guilds,
             evidence=evidence,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
         # Store alert in database
         await self._store_threat_alert(alert)
 
         # Send real-time notification if enabled
-        if self.config['real_time_alerting']:
+        if self.config["real_time_alerting"]:
             await self._send_threat_notification(alert)
 
     async def _store_threat_alert(self, alert: ThreatAlert):
@@ -678,87 +714,105 @@ class SecurityService:
         VALUES (:alert_id, :threat_level, :alert_type, :description, :affected_users, :affected_guilds, :evidence, :timestamp)
         """
 
-        await self.db_manager.execute(query, {
-            'alert_id': alert.alert_id,
-            'threat_level': alert.threat_level.value,
-            'alert_type': alert.alert_type,
-            'description': alert.description,
-            'affected_users': json.dumps(alert.affected_users),
-            'affected_guilds': json.dumps(alert.affected_guilds),
-            'evidence': json.dumps(alert.evidence),
-            'timestamp': alert.timestamp
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "alert_id": alert.alert_id,
+                "threat_level": alert.threat_level.value,
+                "alert_type": alert.alert_type,
+                "description": alert.description,
+                "affected_users": json.dumps(alert.affected_users),
+                "affected_guilds": json.dumps(alert.affected_guilds),
+                "evidence": json.dumps(alert.evidence),
+                "timestamp": alert.timestamp,
+            },
+        )
 
     async def _send_threat_notification(self, alert: ThreatAlert):
         """Send real-time threat notification."""
         # This would integrate with notification systems
         # For now, just log the alert
-        logger.warning(f"SECURITY ALERT: {alert.threat_level.value} - {alert.description}")
+        logger.warning(
+            f"SECURITY ALERT: {alert.threat_level.value} - {alert.description}"
+        )
 
     async def _block_ip_temporarily(self, ip_address: str, duration: int = 3600):
         """Block an IP address temporarily."""
         self.blocked_ips.add(ip_address)
         await self.cache_manager.enhanced_cache_set(
-            f"blocked_ip:{ip_address}",
-            "blocked",
-            ttl=duration
+            f"blocked_ip:{ip_address}", "blocked", ttl=duration
         )
 
-    async def _check_multiple_reputation_sources(self, ip_address: str) -> Dict[str, Any]:
+    async def _check_multiple_reputation_sources(
+        self, ip_address: str
+    ) -> Dict[str, Any]:
         """Check IP reputation across multiple sources."""
         # This would integrate with actual IP reputation APIs
         # For now, return mock data
         return {
-            'reputation': 'good',
-            'risk_score': 0.1,
-            'country': 'US',
-            'isp': 'Mock ISP',
-            'sources_checked': 3
+            "reputation": "good",
+            "risk_score": 0.1,
+            "country": "US",
+            "isp": "Mock ISP",
+            "sources_checked": 3,
         }
 
-    async def _get_recent_events(self, user_id: Optional[int], guild_id: Optional[int],
-                               hours: int = 24) -> List[SecurityEvent]:
+    async def _get_recent_events(
+        self, user_id: Optional[int], guild_id: Optional[int], hours: int = 24
+    ) -> List[SecurityEvent]:
         """Get recent security events."""
         query = """
         SELECT * FROM security_events
         WHERE timestamp > DATE_SUB(NOW(), INTERVAL :hours HOUR)
         """
-        params = {'hours': hours}
+        params = {"hours": hours}
 
         if user_id:
             query += " AND user_id = :user_id"
-            params['user_id'] = user_id
+            params["user_id"] = user_id
 
         if guild_id:
             query += " AND guild_id = :guild_id"
-            params['guild_id'] = guild_id
+            params["guild_id"] = guild_id
 
         query += " ORDER BY timestamp DESC"
 
         results = await self.db_manager.fetch_all(query, params)
         return [SecurityEvent(**row) for row in results]
 
-    async def _analyze_suspicious_patterns(self, events: List[SecurityEvent]) -> List[ThreatAlert]:
+    async def _analyze_suspicious_patterns(
+        self, events: List[SecurityEvent]
+    ) -> List[ThreatAlert]:
         """Analyze events for suspicious patterns."""
         threats = []
 
         # Check for multiple failed logins
-        failed_logins = [e for e in events if e.event_type == SecurityEventType.LOGIN_FAILURE]
+        failed_logins = [
+            e for e in events if e.event_type == SecurityEventType.LOGIN_FAILURE
+        ]
         if len(failed_logins) > 5:
-            threats.append(ThreatAlert(
-                alert_id=f"pattern_{int(time.time())}",
-                threat_level=ThreatLevel.MEDIUM,
-                alert_type="multiple_failed_logins",
-                description=f"Multiple failed login attempts detected",
-                affected_users=list(set(e.user_id for e in failed_logins if e.user_id)),
-                affected_guilds=list(set(e.guild_id for e in failed_logins if e.guild_id)),
-                evidence={'failed_attempts': len(failed_logins)},
-                timestamp=datetime.utcnow()
-            ))
+            threats.append(
+                ThreatAlert(
+                    alert_id=f"pattern_{int(time.time())}",
+                    threat_level=ThreatLevel.MEDIUM,
+                    alert_type="multiple_failed_logins",
+                    description=f"Multiple failed login attempts detected",
+                    affected_users=list(
+                        set(e.user_id for e in failed_logins if e.user_id)
+                    ),
+                    affected_guilds=list(
+                        set(e.guild_id for e in failed_logins if e.guild_id)
+                    ),
+                    evidence={"failed_attempts": len(failed_logins)},
+                    timestamp=datetime.utcnow(),
+                )
+            )
 
         return threats
 
-    async def _detect_fraud_indicators(self, user_id: int, guild_id: Optional[int]) -> List[ThreatAlert]:
+    async def _detect_fraud_indicators(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> List[ThreatAlert]:
         """Detect fraud indicators for a user."""
         # This would implement sophisticated fraud detection logic
         # For now, return empty list
@@ -770,60 +824,74 @@ class SecurityService:
         # For now, return empty list
         return []
 
-    async def _check_rate_limit_violations(self, user_id: int, guild_id: Optional[int]) -> List[ThreatAlert]:
+    async def _check_rate_limit_violations(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> List[ThreatAlert]:
         """Check for rate limit violations."""
         # This would check actual rate limit violations
         # For now, return empty list
         return []
 
-    async def _get_user_behavior_data(self, user_id: int, guild_id: Optional[int]) -> Dict[str, Any]:
+    async def _get_user_behavior_data(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> Dict[str, Any]:
         """Get user behavior data for fraud detection."""
         # This would analyze user behavior patterns
         # For now, return mock data
         return {
-            'login_patterns': [],
-            'betting_patterns': [],
-            'activity_times': [],
-            'device_usage': []
+            "login_patterns": [],
+            "betting_patterns": [],
+            "activity_times": [],
+            "device_usage": [],
         }
 
-    async def _analyze_betting_patterns(self, user_id: int, guild_id: Optional[int]) -> Dict[str, Any]:
+    async def _analyze_betting_patterns(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> Dict[str, Any]:
         """Analyze betting patterns for fraud detection."""
         # This would analyze betting behavior
         # For now, return mock data
         return {
-            'bet_frequency': 0,
-            'bet_amounts': [],
-            'win_rate': 0.0,
-            'suspicious_patterns': []
+            "bet_frequency": 0,
+            "bet_amounts": [],
+            "win_rate": 0.0,
+            "suspicious_patterns": [],
         }
 
-    async def _detect_collusion(self, user_id: int, guild_id: Optional[int]) -> Dict[str, Any]:
+    async def _detect_collusion(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> Dict[str, Any]:
         """Detect potential collusion between users."""
         # This would implement collusion detection algorithms
         # For now, return mock data
         return {
-            'collusion_score': 0.0,
-            'suspicious_relationships': [],
-            'coordinated_activity': []
+            "collusion_score": 0.0,
+            "suspicious_relationships": [],
+            "coordinated_activity": [],
         }
 
-    async def _calculate_fraud_confidence(self, user_behavior: Dict[str, Any],
-                                        betting_analysis: Dict[str, Any],
-                                        collusion_indicators: Dict[str, Any]) -> float:
+    async def _calculate_fraud_confidence(
+        self,
+        user_behavior: Dict[str, Any],
+        betting_analysis: Dict[str, Any],
+        collusion_indicators: Dict[str, Any],
+    ) -> float:
         """Calculate fraud confidence score."""
         # This would implement sophisticated fraud scoring
         # For now, return low confidence
         return 0.1
 
-    def _determine_fraud_type(self, user_behavior: Dict[str, Any],
-                            betting_analysis: Dict[str, Any]) -> FraudType:
+    def _determine_fraud_type(
+        self, user_behavior: Dict[str, Any], betting_analysis: Dict[str, Any]
+    ) -> FraudType:
         """Determine the type of fraud detected."""
         # This would analyze patterns to determine fraud type
         # For now, return betting fraud
         return FraudType.BETTING_FRAUD
 
-    async def _identify_risk_factors(self, user_id: int, guild_id: Optional[int]) -> List[str]:
+    async def _identify_risk_factors(
+        self, user_id: int, guild_id: Optional[int]
+    ) -> List[str]:
         """Identify risk factors for a user."""
         # This would analyze various risk factors
         # For now, return empty list
@@ -835,11 +903,11 @@ class SecurityService:
         if event.session_id:
             if event.session_id not in self.active_sessions:
                 self.active_sessions[event.session_id] = {
-                    'user_id': event.user_id,
-                    'start_time': event.timestamp,
-                    'events': []
+                    "user_id": event.user_id,
+                    "start_time": event.timestamp,
+                    "events": [],
                 }
-            self.active_sessions[event.session_id]['events'].append(event)
+            self.active_sessions[event.session_id]["events"].append(event)
 
         # Update IP tracking
         if event.ip_address:
@@ -855,7 +923,7 @@ class SecurityService:
             f"High-risk security event detected: {event.event_type.value}",
             [event.user_id] if event.user_id else [],
             [event.guild_id] if event.guild_id else [],
-            {'event_type': event.event_type.value, 'risk_score': event.risk_score}
+            {"event_type": event.event_type.value, "risk_score": event.risk_score},
         )
 
     async def _process_real_time_alerts(self):
@@ -873,14 +941,16 @@ class SecurityService:
         # Clean up old sessions
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
         expired_sessions = [
-            session_id for session_id, session_data in self.active_sessions.items()
-            if session_data['start_time'] < cutoff_time
+            session_id
+            for session_id, session_data in self.active_sessions.items()
+            if session_data["start_time"] < cutoff_time
         ]
         for session_id in expired_sessions:
             del self.active_sessions[session_id]
 
-    async def _get_events_by_date_range(self, guild_id: int, start_date: datetime,
-                                      end_date: datetime) -> List[SecurityEvent]:
+    async def _get_events_by_date_range(
+        self, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> List[SecurityEvent]:
         """Get security events within a date range."""
         query = """
         SELECT * FROM security_events
@@ -889,26 +959,27 @@ class SecurityService:
         ORDER BY timestamp DESC
         """
 
-        results = await self.db_manager.fetch_all(query, {
-            'guild_id': guild_id,
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        results = await self.db_manager.fetch_all(
+            query,
+            {"guild_id": guild_id, "start_date": start_date, "end_date": end_date},
+        )
 
         return [SecurityEvent(**row) for row in results]
 
-    async def _analyze_security_events(self, events: List[SecurityEvent]) -> Dict[str, Any]:
+    async def _analyze_security_events(
+        self, events: List[SecurityEvent]
+    ) -> Dict[str, Any]:
         """Analyze security events for patterns and insights."""
         if not events:
             return {}
 
         return {
-            'total_events': len(events),
-            'high_risk_count': len([e for e in events if e.risk_score > 0.7]),
-            'avg_risk_score': sum(e.risk_score for e in events) / len(events),
-            'event_types': self._count_event_types(events),
-            'hourly_distribution': self._get_hourly_distribution(events),
-            'top_risk_events': self._get_top_risk_events(events)
+            "total_events": len(events),
+            "high_risk_count": len([e for e in events if e.risk_score > 0.7]),
+            "avg_risk_score": sum(e.risk_score for e in events) / len(events),
+            "event_types": self._count_event_types(events),
+            "hourly_distribution": self._get_hourly_distribution(events),
+            "top_risk_events": self._get_top_risk_events(events),
         }
 
     def _count_event_types(self, events: List[SecurityEvent]) -> Dict[str, int]:
@@ -927,21 +998,24 @@ class SecurityService:
             distribution[hour] += 1
         return distribution
 
-    def _get_top_risk_events(self, events: List[SecurityEvent], limit: int = 10) -> List[Dict[str, Any]]:
+    def _get_top_risk_events(
+        self, events: List[SecurityEvent], limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get top risk events."""
         sorted_events = sorted(events, key=lambda e: e.risk_score, reverse=True)
         return [
             {
-                'event_type': event.event_type.value,
-                'risk_score': event.risk_score,
-                'timestamp': event.timestamp,
-                'user_id': event.user_id
+                "event_type": event.event_type.value,
+                "risk_score": event.risk_score,
+                "timestamp": event.timestamp,
+                "user_id": event.user_id,
             }
             for event in sorted_events[:limit]
         ]
 
-    async def _get_threat_alerts(self, guild_id: int, start_date: datetime,
-                               end_date: datetime) -> List[ThreatAlert]:
+    async def _get_threat_alerts(
+        self, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> List[ThreatAlert]:
         """Get threat alerts for a guild within a date range."""
         query = """
         SELECT * FROM threat_alerts
@@ -950,16 +1024,16 @@ class SecurityService:
         ORDER BY timestamp DESC
         """
 
-        results = await self.db_manager.fetch_all(query, {
-            'guild_id': guild_id,
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        results = await self.db_manager.fetch_all(
+            query,
+            {"guild_id": guild_id, "start_date": start_date, "end_date": end_date},
+        )
 
         return [ThreatAlert(**row) for row in results]
 
-    async def _get_fraud_detections(self, guild_id: int, start_date: datetime,
-                                  end_date: datetime) -> List[FraudDetection]:
+    async def _get_fraud_detections(
+        self, guild_id: int, start_date: datetime, end_date: datetime
+    ) -> List[FraudDetection]:
         """Get fraud detections for a guild within a date range."""
         query = """
         SELECT * FROM fraud_detections
@@ -968,26 +1042,31 @@ class SecurityService:
         ORDER BY timestamp DESC
         """
 
-        results = await self.db_manager.fetch_all(query, {
-            'guild_id': guild_id,
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        results = await self.db_manager.fetch_all(
+            query,
+            {"guild_id": guild_id, "start_date": start_date, "end_date": end_date},
+        )
 
         return [FraudDetection(**row) for row in results]
 
-    async def _generate_security_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
+    async def _generate_security_recommendations(
+        self, analysis: Dict[str, Any]
+    ) -> List[str]:
         """Generate security recommendations based on analysis."""
         recommendations = []
 
-        if analysis.get('high_risk_count', 0) > 10:
-            recommendations.append("Consider implementing additional authentication measures")
+        if analysis.get("high_risk_count", 0) > 10:
+            recommendations.append(
+                "Consider implementing additional authentication measures"
+            )
 
-        if analysis.get('avg_risk_score', 0) > 0.5:
+        if analysis.get("avg_risk_score", 0) > 0.5:
             recommendations.append("Review and strengthen security policies")
 
-        if analysis.get('total_events', 0) > 1000:
-            recommendations.append("Consider implementing rate limiting for high-traffic periods")
+        if analysis.get("total_events", 0) > 1000:
+            recommendations.append(
+                "Consider implementing rate limiting for high-traffic periods"
+            )
 
         return recommendations
 
@@ -1002,6 +1081,7 @@ class SecurityService:
             await self.session.close()
         if self.redis_client:
             await self.redis_client.close()
+
 
 # Security service is now complete with comprehensive enterprise security monitoring
 #

@@ -41,24 +41,25 @@ logger = logging.getLogger(__name__)
 
 # AI-specific cache TTLs
 ADVANCED_AI_CACHE_TTLS = {
-    'ai_models': 3600,              # 1 hour
-    'ai_predictions': 1800,          # 30 minutes
-    'ai_insights': 7200,             # 2 hours
-    'ai_recommendations': 900,       # 15 minutes
-    'ai_analytics': 3600,            # 1 hour
-    'ai_training': 1800,             # 30 minutes
-    'ai_evaluation': 3600,           # 1 hour
-    'ai_deployment': 7200,           # 2 hours
-    'ai_monitoring': 300,            # 5 minutes
-    'ai_performance': 1800,          # 30 minutes
-    'nlp_models': 7200,              # 2 hours
-    'cv_models': 7200,               # 2 hours
-    'rl_models': 3600,               # 1 hour
+    "ai_models": 3600,  # 1 hour
+    "ai_predictions": 1800,  # 30 minutes
+    "ai_insights": 7200,  # 2 hours
+    "ai_recommendations": 900,  # 15 minutes
+    "ai_analytics": 3600,  # 1 hour
+    "ai_training": 1800,  # 30 minutes
+    "ai_evaluation": 3600,  # 1 hour
+    "ai_deployment": 7200,  # 2 hours
+    "ai_monitoring": 300,  # 5 minutes
+    "ai_performance": 1800,  # 30 minutes
+    "nlp_models": 7200,  # 2 hours
+    "cv_models": 7200,  # 2 hours
+    "rl_models": 3600,  # 1 hour
 }
 
 
 class ModelType(Enum):
     """Advanced AI model types."""
+
     PREDICTIVE_ANALYTICS = "predictive_analytics"
     NATURAL_LANGUAGE_PROCESSING = "nlp"
     COMPUTER_VISION = "computer_vision"
@@ -71,6 +72,7 @@ class ModelType(Enum):
 
 class ModelStatus(Enum):
     """Model deployment status."""
+
     TRAINING = "training"
     EVALUATING = "evaluating"
     DEPLOYED = "deployed"
@@ -81,6 +83,7 @@ class ModelStatus(Enum):
 
 class ModelPerformance(Enum):
     """Model performance levels."""
+
     EXCELLENT = "excellent"
     GOOD = "good"
     AVERAGE = "average"
@@ -91,6 +94,7 @@ class ModelPerformance(Enum):
 @dataclass
 class AIModel:
     """Advanced AI model data structure."""
+
     model_id: str
     name: str
     model_type: ModelType
@@ -122,6 +126,7 @@ class AIModel:
 @dataclass
 class Prediction:
     """AI prediction result."""
+
     prediction_id: str
     model_id: str
     input_data: Dict[str, Any]
@@ -141,6 +146,7 @@ class Prediction:
 @dataclass
 class NLPResult:
     """Natural language processing result."""
+
     nlp_id: str
     text: str
     sentiment: str
@@ -160,6 +166,7 @@ class NLPResult:
 @dataclass
 class ComputerVisionResult:
     """Computer vision analysis result."""
+
     cv_id: str
     image_path: str
     objects_detected: List[Dict[str, Any]]
@@ -178,6 +185,7 @@ class ComputerVisionResult:
 @dataclass
 class ReinforcementLearningState:
     """Reinforcement learning state."""
+
     rl_id: str
     state: Dict[str, Any]
     action: str
@@ -198,6 +206,7 @@ class ReinforcementLearningState:
 @dataclass
 class ModelTrainingJob:
     """AI model training job."""
+
     job_id: str
     model_type: ModelType
     training_data: Dict[str, Any]
@@ -220,7 +229,9 @@ class ModelTrainingJob:
 class AdvancedAIService:
     """Advanced AI and machine learning service."""
 
-    def __init__(self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager):
+    def __init__(
+        self, db_manager: DatabaseManager, cache_manager: EnhancedCacheManager
+    ):
         self.db_manager = db_manager
         self.cache_manager = cache_manager
         self.cache_prefix = "advanced_ai"
@@ -237,11 +248,11 @@ class AdvancedAIService:
 
         # Performance tracking
         self.prediction_stats = {
-            'total_predictions': 0,
-            'successful_predictions': 0,
-            'failed_predictions': 0,
-            'average_confidence': 0.0,
-            'average_processing_time': 0.0
+            "total_predictions": 0,
+            "successful_predictions": 0,
+            "failed_predictions": 0,
+            "average_confidence": 0.0,
+            "average_processing_time": 0.0,
         }
 
         logger.info("Advanced AI Service initialized")
@@ -264,9 +275,13 @@ class AdvancedAIService:
             logger.error(f"Failed to stop Advanced AI Service: {e}")
 
     @time_operation
-    async def create_model(self, name: str, model_type: ModelType,
-                           hyperparameters: Dict[str, Any],
-                           description: str = None) -> AIModel:
+    async def create_model(
+        self,
+        name: str,
+        model_type: ModelType,
+        hyperparameters: Dict[str, Any],
+        description: str = None,
+    ) -> AIModel:
         """Create a new AI model."""
         try:
             model_id = str(uuid4())
@@ -290,7 +305,7 @@ class AdvancedAIService:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
                 description=description,
-                tags=[model_type.value]
+                tags=[model_type.value],
             )
 
             # Save to database
@@ -299,9 +314,7 @@ class AdvancedAIService:
             # Cache model
             cache_key = f"{self.cache_prefix}:model:{model_id}"
             await self.cache_manager.set(
-                cache_key,
-                pickle.dumps(model),
-                ADVANCED_AI_CACHE_TTLS['ai_models']
+                cache_key, pickle.dumps(model), ADVANCED_AI_CACHE_TTLS["ai_models"]
             )
 
             self.models[model_id] = model
@@ -314,7 +327,9 @@ class AdvancedAIService:
             raise
 
     @time_operation
-    async def train_model(self, model_id: str, training_data: Dict[str, Any]) -> ModelTrainingJob:
+    async def train_model(
+        self, model_id: str, training_data: Dict[str, Any]
+    ) -> ModelTrainingJob:
         """Train an AI model."""
         try:
             if model_id not in self.models:
@@ -331,7 +346,7 @@ class AdvancedAIService:
                 hyperparameters=model.hyperparameters,
                 status="training",
                 progress=0.0,
-                start_time=datetime.now()
+                start_time=datetime.now(),
             )
 
             self.training_jobs[job_id] = job
@@ -339,8 +354,7 @@ class AdvancedAIService:
             # Start training in background
             asyncio.create_task(self._train_model_async(model_id, job_id))
 
-            logger.info(
-                f"Started training job: {job_id} for model: {model_id}")
+            logger.info(f"Started training job: {job_id} for model: {model_id}")
             return job
 
         except Exception as e:
@@ -370,12 +384,12 @@ class AdvancedAIService:
                 prediction_id=str(uuid4()),
                 model_id=model_id,
                 input_data=input_data,
-                prediction=prediction_result['prediction'],
-                confidence=prediction_result['confidence'],
-                probabilities=prediction_result['probabilities'],
-                features_used=prediction_result['features_used'],
+                prediction=prediction_result["prediction"],
+                confidence=prediction_result["confidence"],
+                probabilities=prediction_result["probabilities"],
+                features_used=prediction_result["features_used"],
                 prediction_time=datetime.now(),
-                processing_time=processing_time
+                processing_time=processing_time,
             )
 
             # Save prediction to database
@@ -405,13 +419,13 @@ class AdvancedAIService:
             result = NLPResult(
                 nlp_id=str(uuid4()),
                 text=text,
-                sentiment=nlp_result['sentiment'],
-                sentiment_score=nlp_result['sentiment_score'],
-                entities=nlp_result['entities'],
-                keywords=nlp_result['keywords'],
+                sentiment=nlp_result["sentiment"],
+                sentiment_score=nlp_result["sentiment_score"],
+                entities=nlp_result["entities"],
+                keywords=nlp_result["keywords"],
                 language=language,
                 processing_time=processing_time,
-                confidence=nlp_result['confidence']
+                confidence=nlp_result["confidence"],
             )
 
             # Save to database
@@ -438,12 +452,12 @@ class AdvancedAIService:
             result = ComputerVisionResult(
                 cv_id=str(uuid4()),
                 image_path=image_path,
-                objects_detected=cv_result['objects'],
-                text_extracted=cv_result['text'],
-                face_analysis=cv_result['faces'],
-                image_quality=cv_result['quality'],
+                objects_detected=cv_result["objects"],
+                text_extracted=cv_result["text"],
+                face_analysis=cv_result["faces"],
+                image_quality=cv_result["quality"],
                 processing_time=processing_time,
-                confidence=cv_result['confidence']
+                confidence=cv_result["confidence"],
             )
 
             # Save to database
@@ -457,8 +471,9 @@ class AdvancedAIService:
             raise
 
     @time_operation
-    async def reinforcement_learning_step(self, state: Dict[str, Any],
-                                          action: str, reward: float) -> ReinforcementLearningState:
+    async def reinforcement_learning_step(
+        self, state: Dict[str, Any], action: str, reward: float
+    ) -> ReinforcementLearningState:
         """Perform a reinforcement learning step."""
         try:
             # RL step processing
@@ -469,19 +484,20 @@ class AdvancedAIService:
                 state=state,
                 action=action,
                 reward=reward,
-                next_state=rl_result['next_state'],
-                episode=rl_result['episode'],
-                step=rl_result['step'],
-                learning_rate=rl_result['learning_rate'],
-                exploration_rate=rl_result['exploration_rate'],
-                timestamp=datetime.now()
+                next_state=rl_result["next_state"],
+                episode=rl_result["episode"],
+                step=rl_result["step"],
+                learning_rate=rl_result["learning_rate"],
+                exploration_rate=rl_result["exploration_rate"],
+                timestamp=datetime.now(),
             )
 
             # Save to database
             await self._save_rl_state_to_db(result)
 
             logger.info(
-                f"Processed RL step: episode {result.episode}, step {result.step}")
+                f"Processed RL step: episode {result.episode}, step {result.step}"
+            )
             return result
 
         except Exception as e:
@@ -500,20 +516,20 @@ class AdvancedAIService:
             metrics = await self._get_model_metrics_from_db(model_id)
 
             return {
-                'model_id': model_id,
-                'name': model.name,
-                'type': model.model_type.value,
-                'status': model.status.value,
-                'performance': model.performance.value,
-                'accuracy': model.accuracy,
-                'precision': model.precision,
-                'recall': model.recall,
-                'f1_score': model.f1_score,
-                'training_data_size': model.training_data_size,
-                'predictions_made': metrics.get('predictions_made', 0),
-                'average_confidence': metrics.get('average_confidence', 0.0),
-                'average_processing_time': metrics.get('average_processing_time', 0.0),
-                'last_updated': model.updated_at.isoformat()
+                "model_id": model_id,
+                "name": model.name,
+                "type": model.model_type.value,
+                "status": model.status.value,
+                "performance": model.performance.value,
+                "accuracy": model.accuracy,
+                "precision": model.precision,
+                "recall": model.recall,
+                "f1_score": model.f1_score,
+                "training_data_size": model.training_data_size,
+                "predictions_made": metrics.get("predictions_made", 0),
+                "average_confidence": metrics.get("average_confidence", 0.0),
+                "average_processing_time": metrics.get("average_processing_time", 0.0),
+                "last_updated": model.updated_at.isoformat(),
             }
 
         except Exception as e:
@@ -529,8 +545,7 @@ class AdvancedAIService:
             model = self.models[model_id]
 
             if model.status != ModelStatus.EVALUATING:
-                raise ValueError(
-                    f"Model {model_id} is not ready for deployment")
+                raise ValueError(f"Model {model_id} is not ready for deployment")
 
             # Deploy model
             model.status = ModelStatus.DEPLOYED
@@ -565,14 +580,30 @@ class AdvancedAIService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                model.model_id, model.name, model.model_type.value, model.version,
-                model.status.value, model.performance.value, model.accuracy,
-                model.precision, model.recall, model.f1_score, model.training_data_size,
-                json.dumps(model.features), json.dumps(model.hyperparameters),
-                model.model_path, model.description, json.dumps(model.tags),
-                json.dumps(model.metadata), model.created_at, model.updated_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    model.model_id,
+                    model.name,
+                    model.model_type.value,
+                    model.version,
+                    model.status.value,
+                    model.performance.value,
+                    model.accuracy,
+                    model.precision,
+                    model.recall,
+                    model.f1_score,
+                    model.training_data_size,
+                    json.dumps(model.features),
+                    json.dumps(model.hyperparameters),
+                    model.model_path,
+                    model.description,
+                    json.dumps(model.tags),
+                    json.dumps(model.metadata),
+                    model.created_at,
+                    model.updated_at,
+                ),
+            )
 
             logger.info(f"Saved AI model to database: {model.model_id}")
 
@@ -592,17 +623,30 @@ class AdvancedAIService:
             WHERE model_id = %s
             """
 
-            await self.db_manager.execute(query, (
-                model.name, model.model_type.value, model.version, model.status.value,
-                model.performance.value, model.accuracy, model.precision, model.recall,
-                model.f1_score, model.training_data_size, json.dumps(
-                    model.features),
-                json.dumps(
-                    model.hyperparameters), model.model_path, model.description,
-                json.dumps(model.tags), json.dumps(
-                    model.metadata), model.updated_at,
-                model.deployed_at, model.model_id
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    model.name,
+                    model.model_type.value,
+                    model.version,
+                    model.status.value,
+                    model.performance.value,
+                    model.accuracy,
+                    model.precision,
+                    model.recall,
+                    model.f1_score,
+                    model.training_data_size,
+                    json.dumps(model.features),
+                    json.dumps(model.hyperparameters),
+                    model.model_path,
+                    model.description,
+                    json.dumps(model.tags),
+                    json.dumps(model.metadata),
+                    model.updated_at,
+                    model.deployed_at,
+                    model.model_id,
+                ),
+            )
 
             logger.info(f"Updated AI model in database: {model.model_id}")
 
@@ -619,26 +663,26 @@ class AdvancedAIService:
             result = []
             for row in models_data:
                 model_data = {
-                    'model_id': row['model_id'],
-                    'name': row['name'],
-                    'model_type': ModelType(row['model_type']),
-                    'version': row['version'],
-                    'status': ModelStatus(row['status']),
-                    'performance': ModelPerformance(row['performance']),
-                    'accuracy': float(row['accuracy']),
-                    'precision': float(row['model_precision']),
-                    'recall': float(row['model_recall']),
-                    'f1_score': float(row['f1_score']),
-                    'training_data_size': row['training_data_size'],
-                    'features': json.loads(row['features']),
-                    'hyperparameters': json.loads(row['hyperparameters']),
-                    'model_path': row['model_path'],
-                    'description': row['description'],
-                    'tags': json.loads(row['tags']),
-                    'metadata': json.loads(row['metadata']),
-                    'created_at': row['created_at'],
-                    'updated_at': row['updated_at'],
-                    'deployed_at': row['deployed_at']
+                    "model_id": row["model_id"],
+                    "name": row["name"],
+                    "model_type": ModelType(row["model_type"]),
+                    "version": row["version"],
+                    "status": ModelStatus(row["status"]),
+                    "performance": ModelPerformance(row["performance"]),
+                    "accuracy": float(row["accuracy"]),
+                    "precision": float(row["model_precision"]),
+                    "recall": float(row["model_recall"]),
+                    "f1_score": float(row["f1_score"]),
+                    "training_data_size": row["training_data_size"],
+                    "features": json.loads(row["features"]),
+                    "hyperparameters": json.loads(row["hyperparameters"]),
+                    "model_path": row["model_path"],
+                    "description": row["description"],
+                    "tags": json.loads(row["tags"]),
+                    "metadata": json.loads(row["metadata"]),
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "deployed_at": row["deployed_at"],
                 }
                 result.append(model_data)
 
@@ -662,18 +706,23 @@ class AdvancedAIService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                prediction.prediction_id, prediction.model_id,
-                json.dumps(prediction.input_data), json.dumps(
-                    prediction.prediction),
-                prediction.confidence, json.dumps(prediction.probabilities),
-                json.dumps(
-                    prediction.features_used), prediction.prediction_time,
-                prediction.processing_time, prediction.prediction_time
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    prediction.prediction_id,
+                    prediction.model_id,
+                    json.dumps(prediction.input_data),
+                    json.dumps(prediction.prediction),
+                    prediction.confidence,
+                    json.dumps(prediction.probabilities),
+                    json.dumps(prediction.features_used),
+                    prediction.prediction_time,
+                    prediction.processing_time,
+                    prediction.prediction_time,
+                ),
+            )
 
-            logger.info(
-                f"Saved AI prediction to database: {prediction.prediction_id}")
+            logger.info(f"Saved AI prediction to database: {prediction.prediction_id}")
 
         except Exception as e:
             logger.error(f"Failed to save prediction to database: {e}")
@@ -691,12 +740,22 @@ class AdvancedAIService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                result.nlp_id, result.text, result.sentiment, result.sentiment_score,
-                json.dumps(result.entities), json.dumps(result.keywords),
-                result.language, result.processing_time, result.confidence,
-                json.dumps(result.metadata), result.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    result.nlp_id,
+                    result.text,
+                    result.sentiment,
+                    result.sentiment_score,
+                    json.dumps(result.entities),
+                    json.dumps(result.keywords),
+                    result.language,
+                    result.processing_time,
+                    result.confidence,
+                    json.dumps(result.metadata),
+                    result.created_at,
+                ),
+            )
 
             logger.info(f"Saved NLP result to database: {result.nlp_id}")
 
@@ -716,13 +775,21 @@ class AdvancedAIService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                result.cv_id, result.image_path, json.dumps(
-                    result.objects_detected),
-                result.text_extracted, json.dumps(result.face_analysis),
-                result.image_quality, result.processing_time, result.confidence,
-                json.dumps(result.metadata), result.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    result.cv_id,
+                    result.image_path,
+                    json.dumps(result.objects_detected),
+                    result.text_extracted,
+                    json.dumps(result.face_analysis),
+                    result.image_quality,
+                    result.processing_time,
+                    result.confidence,
+                    json.dumps(result.metadata),
+                    result.created_at,
+                ),
+            )
 
             logger.info(f"Saved CV result to database: {result.cv_id}")
 
@@ -742,13 +809,22 @@ class AdvancedAIService:
             )
             """
 
-            await self.db_manager.execute(query, (
-                state.rl_id, json.dumps(
-                    state.state), state.action, state.reward,
-                state.episode, state.step, state.learning_rate, state.exploration_rate,
-                state.processing_time, json.dumps(
-                    state.metadata), state.created_at
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    state.rl_id,
+                    json.dumps(state.state),
+                    state.action,
+                    state.reward,
+                    state.episode,
+                    state.step,
+                    state.learning_rate,
+                    state.exploration_rate,
+                    state.processing_time,
+                    json.dumps(state.metadata),
+                    state.created_at,
+                ),
+            )
 
             logger.info(f"Saved RL state to database: {state.rl_id}")
 
@@ -771,13 +847,22 @@ class AdvancedAIService:
                 error_message = VALUES(error_message)
             """
 
-            await self.db_manager.execute(query, (
-                job.job_id, job.model_type.value, json.dumps(
-                    job.training_data),
-                json.dumps(job.hyperparameters), job.status, job.progress,
-                job.start_time, job.end_time, json.dumps(job.metrics or {}),
-                job.error_message, job.start_time
-            ))
+            await self.db_manager.execute(
+                query,
+                (
+                    job.job_id,
+                    job.model_type.value,
+                    json.dumps(job.training_data),
+                    json.dumps(job.hyperparameters),
+                    job.status,
+                    job.progress,
+                    job.start_time,
+                    job.end_time,
+                    json.dumps(job.metrics or {}),
+                    job.error_message,
+                    job.start_time,
+                ),
+            )
 
             logger.info(f"Updated training job in database: {job.job_id}")
 
@@ -858,10 +943,10 @@ class AdvancedAIService:
             job.status = "completed"
             job.end_time = datetime.now()
             job.metrics = {
-                'accuracy': model.accuracy,
-                'precision': model.precision,
-                'recall': model.recall,
-                'f1_score': model.f1_score
+                "accuracy": model.accuracy,
+                "precision": model.precision,
+                "recall": model.recall,
+                "f1_score": model.f1_score,
             }
 
             # Save to database
@@ -878,7 +963,9 @@ class AdvancedAIService:
                 job.error_message = str(e)
                 await self._update_training_job_in_db(job)
 
-    async def _make_prediction(self, model: AIModel, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _make_prediction(
+        self, model: AIModel, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Make a prediction using the model."""
         # Simulate prediction logic
         prediction = "predicted_value"
@@ -887,10 +974,10 @@ class AdvancedAIService:
         features_used = list(input_data.keys())
 
         return {
-            'prediction': prediction,
-            'confidence': confidence,
-            'probabilities': probabilities,
-            'features_used': features_used
+            "prediction": prediction,
+            "confidence": confidence,
+            "probabilities": probabilities,
+            "features_used": features_used,
         }
 
     async def _process_nlp_text(self, text: str, language: str) -> Dict[str, Any]:
@@ -903,11 +990,11 @@ class AdvancedAIService:
         confidence = 0.8
 
         return {
-            'sentiment': sentiment,
-            'sentiment_score': sentiment_score,
-            'entities': entities,
-            'keywords': keywords,
-            'confidence': confidence
+            "sentiment": sentiment,
+            "sentiment_score": sentiment_score,
+            "entities": entities,
+            "keywords": keywords,
+            "confidence": confidence,
         }
 
     async def _process_image(self, image_path: str) -> Dict[str, Any]:
@@ -920,54 +1007,51 @@ class AdvancedAIService:
         confidence = 0.85
 
         return {
-            'objects': objects,
-            'text': text,
-            'faces': faces,
-            'quality': quality,
-            'confidence': confidence
+            "objects": objects,
+            "text": text,
+            "faces": faces,
+            "quality": quality,
+            "confidence": confidence,
         }
 
-    async def _process_rl_step(self, state: Dict[str, Any],
-                               action: str, reward: float) -> Dict[str, Any]:
+    async def _process_rl_step(
+        self, state: Dict[str, Any], action: str, reward: float
+    ) -> Dict[str, Any]:
         """Process reinforcement learning step."""
         # Simulate RL processing
         next_state = state.copy()
-        next_state['step'] = state.get('step', 0) + 1
+        next_state["step"] = state.get("step", 0) + 1
 
         return {
-            'next_state': next_state,
-            'episode': state.get('episode', 1),
-            'step': state.get('step', 0) + 1,
-            'learning_rate': 0.01,
-            'exploration_rate': 0.1
+            "next_state": next_state,
+            "episode": state.get("episode", 1),
+            "step": state.get("step", 0) + 1,
+            "learning_rate": 0.01,
+            "exploration_rate": 0.1,
         }
 
     def _update_prediction_stats(self, prediction: Prediction):
         """Update prediction statistics."""
-        self.prediction_stats['total_predictions'] += 1
-        self.prediction_stats['successful_predictions'] += 1
-        self.prediction_stats['average_confidence'] = (
-            (self.prediction_stats['average_confidence'] *
-             (self.prediction_stats['successful_predictions'] - 1) +
-             prediction.confidence) / self.prediction_stats['successful_predictions']
-        )
-        self.prediction_stats['average_processing_time'] = (
-            (self.prediction_stats['average_processing_time'] *
-             (self.prediction_stats['successful_predictions'] - 1) +
-             prediction.processing_time) / self.prediction_stats['successful_predictions']
-        )
+        self.prediction_stats["total_predictions"] += 1
+        self.prediction_stats["successful_predictions"] += 1
+        self.prediction_stats["average_confidence"] = (
+            self.prediction_stats["average_confidence"]
+            * (self.prediction_stats["successful_predictions"] - 1)
+            + prediction.confidence
+        ) / self.prediction_stats["successful_predictions"]
+        self.prediction_stats["average_processing_time"] = (
+            self.prediction_stats["average_processing_time"]
+            * (self.prediction_stats["successful_predictions"] - 1)
+            + prediction.processing_time
+        ) / self.prediction_stats["successful_predictions"]
 
     async def _create_default_model(self, model_type: ModelType):
         """Create a default model for a model type."""
-        hyperparameters = {
-            'learning_rate': 0.001,
-            'batch_size': 32,
-            'epochs': 100
-        }
+        hyperparameters = {"learning_rate": 0.001, "batch_size": 32, "epochs": 100}
 
         await self.create_model(
             name=f"Default {model_type.value.replace('_', ' ').title()} Model",
             model_type=model_type,
             hyperparameters=hyperparameters,
-            description=f"Default {model_type.value} model"
+            description=f"Default {model_type.value} model",
         )

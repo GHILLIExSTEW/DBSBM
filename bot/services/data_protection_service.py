@@ -44,21 +44,22 @@ logger = logging.getLogger(__name__)
 
 # Data protection-specific cache TTLs
 DATA_PROTECTION_CACHE_TTLS = {
-    'encryption_keys': 3600,        # 1 hour
-    'anonymized_data': 1800,        # 30 minutes
-    'pseudonymized_data': 1800,     # 30 minutes
-    'retention_policies': 7200,     # 2 hours
-    'privacy_assessments': 3600,    # 1 hour
-    'data_classifications': 7200,   # 2 hours
-    'encryption_status': 1800,      # 30 minutes
-    'privacy_audits': 3600,         # 1 hour
-    'compliance_status': 7200,      # 2 hours
-    'key_rotation': 3600,           # 1 hour
+    "encryption_keys": 3600,  # 1 hour
+    "anonymized_data": 1800,  # 30 minutes
+    "pseudonymized_data": 1800,  # 30 minutes
+    "retention_policies": 7200,  # 2 hours
+    "privacy_assessments": 3600,  # 1 hour
+    "data_classifications": 7200,  # 2 hours
+    "encryption_status": 1800,  # 30 minutes
+    "privacy_audits": 3600,  # 1 hour
+    "compliance_status": 7200,  # 2 hours
+    "key_rotation": 3600,  # 1 hour
 }
 
 
 class DataClassification(Enum):
     """Data classification levels."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -68,6 +69,7 @@ class DataClassification(Enum):
 
 class EncryptionType(Enum):
     """Encryption types."""
+
     SYMMETRIC = "symmetric"
     ASYMMETRIC = "asymmetric"
     HASH = "hash"
@@ -76,6 +78,7 @@ class EncryptionType(Enum):
 
 class AnonymizationType(Enum):
     """Anonymization types."""
+
     MASKING = "masking"
     HASHING = "hashing"
     GENERALIZATION = "generalization"
@@ -85,6 +88,7 @@ class AnonymizationType(Enum):
 
 class RetentionPolicy(Enum):
     """Data retention policy types."""
+
     IMMEDIATE = "immediate"
     SHORT_TERM = "short_term"  # 30 days
     MEDIUM_TERM = "medium_term"  # 1 year
@@ -94,6 +98,7 @@ class RetentionPolicy(Enum):
 
 class PrivacyImpactLevel(Enum):
     """Privacy impact assessment levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -103,6 +108,7 @@ class PrivacyImpactLevel(Enum):
 @dataclass
 class EncryptionKey:
     """Encryption key data structure."""
+
     key_id: str
     key_type: EncryptionType
     key_data: bytes
@@ -116,6 +122,7 @@ class EncryptionKey:
 @dataclass
 class AnonymizedData:
     """Anonymized data structure."""
+
     original_id: str
     anonymized_id: str
     data_type: str
@@ -129,6 +136,7 @@ class AnonymizedData:
 @dataclass
 class PseudonymizedData:
     """Pseudonymized data structure."""
+
     original_id: str
     pseudonym_id: str
     data_type: str
@@ -142,6 +150,7 @@ class PseudonymizedData:
 @dataclass
 class RetentionPolicy:
     """Data retention policy structure."""
+
     policy_id: str
     data_type: str
     classification: DataClassification
@@ -155,6 +164,7 @@ class RetentionPolicy:
 @dataclass
 class PrivacyImpactAssessment:
     """Privacy impact assessment structure."""
+
     assessment_id: str
     data_type: str
     processing_purpose: str
@@ -190,21 +200,21 @@ class DataProtectionService:
         # Data classification patterns
         self.classification_patterns = {
             DataClassification.HIGHLY_RESTRICTED: [
-                r'\b\d{3}-\d{2}-\d{4}\b',  # SSN
-                r'\b\d{4}-\d{4}-\d{4}-\d{4}\b',  # Credit card
+                r"\b\d{3}-\d{2}-\d{4}\b",  # SSN
+                r"\b\d{4}-\d{4}-\d{4}-\d{4}\b",  # Credit card
                 # Email
-                r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-                r'\b\d{3}-\d{3}-\d{4}\b',  # Phone
+                r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+                r"\b\d{3}-\d{3}-\d{4}\b",  # Phone
             ],
             DataClassification.RESTRICTED: [
-                r'\b\d{5}(?:[-\s]\d{4})?\b',  # ZIP code
-                r'\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b',  # IBAN
+                r"\b\d{5}(?:[-\s]\d{4})?\b",  # ZIP code
+                r"\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b",  # IBAN
             ],
             DataClassification.CONFIDENTIAL: [
-                r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b',  # IP address
+                r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",  # IP address
                 # Email
-                r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-            ]
+                r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            ],
         }
 
         # Background tasks
@@ -220,10 +230,10 @@ class DataProtectionService:
             self.is_running = True
 
             # Start background tasks
-            self.key_rotation_task = asyncio.create_task(
-                self._rotate_encryption_keys())
+            self.key_rotation_task = asyncio.create_task(self._rotate_encryption_keys())
             self.retention_cleanup_task = asyncio.create_task(
-                self._cleanup_expired_data())
+                self._cleanup_expired_data()
+            )
 
             logger.info("Data protection service started successfully")
         except Exception as e:
@@ -240,20 +250,29 @@ class DataProtectionService:
         logger.info("Data protection service stopped")
 
     @time_operation("data_encryption")
-    async def encrypt_data(self, data: str, classification: DataClassification = DataClassification.CONFIDENTIAL) -> str:
+    async def encrypt_data(
+        self,
+        data: str,
+        classification: DataClassification = DataClassification.CONFIDENTIAL,
+    ) -> str:
         """Encrypt data using appropriate encryption method."""
         try:
             # Get appropriate encryption key
             key = await self._get_encryption_key(classification)
 
             # Encrypt data
-            if classification in [DataClassification.HIGHLY_RESTRICTED, DataClassification.RESTRICTED]:
+            if classification in [
+                DataClassification.HIGHLY_RESTRICTED,
+                DataClassification.RESTRICTED,
+            ]:
                 encrypted_data = self._encrypt_asymmetric(data, key)
             else:
                 encrypted_data = self._encrypt_symmetric(data, key)
 
             # Store encryption metadata
-            await self._store_encryption_metadata(data, encrypted_data, classification, key.key_id)
+            await self._store_encryption_metadata(
+                data, encrypted_data, classification, key.key_id
+            )
 
             record_metric("data_encrypted", 1)
             return encrypted_data
@@ -263,7 +282,11 @@ class DataProtectionService:
             raise
 
     @time_operation("data_decryption")
-    async def decrypt_data(self, encrypted_data: str, classification: DataClassification = DataClassification.CONFIDENTIAL) -> str:
+    async def decrypt_data(
+        self,
+        encrypted_data: str,
+        classification: DataClassification = DataClassification.CONFIDENTIAL,
+    ) -> str:
         """Decrypt data using appropriate decryption method."""
         try:
             # Get encryption metadata
@@ -272,12 +295,15 @@ class DataProtectionService:
                 raise ValueError("Encryption metadata not found")
 
             # Get encryption key
-            key = await self._get_encryption_key_by_id(metadata['key_id'])
+            key = await self._get_encryption_key_by_id(metadata["key_id"])
             if not key:
                 raise ValueError("Encryption key not found")
 
             # Decrypt data
-            if classification in [DataClassification.HIGHLY_RESTRICTED, DataClassification.RESTRICTED]:
+            if classification in [
+                DataClassification.HIGHLY_RESTRICTED,
+                DataClassification.RESTRICTED,
+            ]:
                 decrypted_data = self._decrypt_asymmetric(encrypted_data, key)
             else:
                 decrypted_data = self._decrypt_symmetric(encrypted_data, key)
@@ -290,13 +316,17 @@ class DataProtectionService:
             raise
 
     @time_operation("data_anonymization")
-    async def anonymize_data(self, data: str, data_type: str, anonymization_type: AnonymizationType = AnonymizationType.HASHING) -> AnonymizedData:
+    async def anonymize_data(
+        self,
+        data: str,
+        data_type: str,
+        anonymization_type: AnonymizationType = AnonymizationType.HASHING,
+    ) -> AnonymizedData:
         """Anonymize sensitive data."""
         try:
             # Generate anonymized value based on type
             if anonymization_type == AnonymizationType.HASHING:
-                anonymized_value = self._hash_data(
-                    data, self.anonymization_salt)
+                anonymized_value = self._hash_data(data, self.anonymization_salt)
             elif anonymization_type == AnonymizationType.MASKING:
                 anonymized_value = self._mask_data(data)
             elif anonymization_type == AnonymizationType.GENERALIZATION:
@@ -304,8 +334,7 @@ class DataProtectionService:
             elif anonymization_type == AnonymizationType.PERTURBATION:
                 anonymized_value = self._perturb_data(data)
             else:
-                anonymized_value = self._hash_data(
-                    data, self.anonymization_salt)
+                anonymized_value = self._hash_data(data, self.anonymization_salt)
 
             # Create anonymized data record
             original_hash = hashlib.sha256(data.encode()).hexdigest()
@@ -319,7 +348,7 @@ class DataProtectionService:
                 original_hash=original_hash,
                 anonymized_value=anonymized_value,
                 created_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=365)  # 1 year
+                expires_at=datetime.utcnow() + timedelta(days=365),  # 1 year
             )
 
             # Store anonymized data
@@ -337,8 +366,7 @@ class DataProtectionService:
         """Pseudonymize sensitive data (reversible anonymization)."""
         try:
             # Generate pseudonym
-            pseudonym_value = self._generate_pseudonym(
-                data, self.pseudonymization_salt)
+            pseudonym_value = self._generate_pseudonym(data, self.pseudonymization_salt)
             original_hash = hashlib.sha256(data.encode()).hexdigest()
             pseudonym_id = str(uuid.uuid4())
 
@@ -350,7 +378,7 @@ class DataProtectionService:
                 pseudonym_value=pseudonym_value,
                 created_at=datetime.utcnow(),
                 expires_at=datetime.utcnow() + timedelta(days=365),  # 1 year
-                reversible=True
+                reversible=True,
             )
 
             # Store pseudonymized data
@@ -364,9 +392,15 @@ class DataProtectionService:
             raise
 
     @time_operation("data_retention_policy")
-    async def create_retention_policy(self, data_type: str, classification: DataClassification,
-                                      retention_period: int, retention_type: RetentionPolicy,
-                                      auto_delete: bool = True, archive_before_delete: bool = False) -> RetentionPolicy:
+    async def create_retention_policy(
+        self,
+        data_type: str,
+        classification: DataClassification,
+        retention_period: int,
+        retention_type: RetentionPolicy,
+        auto_delete: bool = True,
+        archive_before_delete: bool = False,
+    ) -> RetentionPolicy:
         """Create a data retention policy."""
         try:
             policy_id = str(uuid.uuid4())
@@ -379,7 +413,7 @@ class DataProtectionService:
                 retention_type=retention_type,
                 auto_delete=auto_delete,
                 archive_before_delete=archive_before_delete,
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
 
             # Store retention policy
@@ -422,16 +456,25 @@ class DataProtectionService:
             return 0
 
     @time_operation("privacy_impact_assessment")
-    async def create_privacy_impact_assessment(self, data_type: str, processing_purpose: str,
-                                               data_subjects: List[str], data_categories: List[str],
-                                               risk_factors: List[str] = None) -> PrivacyImpactAssessment:
+    async def create_privacy_impact_assessment(
+        self,
+        data_type: str,
+        processing_purpose: str,
+        data_subjects: List[str],
+        data_categories: List[str],
+        risk_factors: List[str] = None,
+    ) -> PrivacyImpactAssessment:
         """Create a privacy impact assessment."""
         try:
             # Determine impact level based on data categories and risk factors
-            impact_level = await self._calculate_privacy_impact_level(data_categories, risk_factors)
+            impact_level = await self._calculate_privacy_impact_level(
+                data_categories, risk_factors
+            )
 
             # Generate mitigation measures
-            mitigation_measures = await self._generate_mitigation_measures(impact_level, data_categories)
+            mitigation_measures = await self._generate_mitigation_measures(
+                impact_level, data_categories
+            )
 
             assessment = PrivacyImpactAssessment(
                 assessment_id=str(uuid.uuid4()),
@@ -442,7 +485,7 @@ class DataProtectionService:
                 impact_level=impact_level,
                 risk_factors=risk_factors or [],
                 mitigation_measures=mitigation_measures,
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
 
             # Store assessment
@@ -501,25 +544,31 @@ class DataProtectionService:
             start_date = end_date - timedelta(days=days)
 
             # Get encryption statistics
-            encryption_stats = await self._get_encryption_statistics(start_date, end_date)
+            encryption_stats = await self._get_encryption_statistics(
+                start_date, end_date
+            )
 
             # Get anonymization statistics
-            anonymization_stats = await self._get_anonymization_statistics(start_date, end_date)
+            anonymization_stats = await self._get_anonymization_statistics(
+                start_date, end_date
+            )
 
             # Get retention policy statistics
             retention_stats = await self._get_retention_statistics(start_date, end_date)
 
             # Get privacy assessment statistics
-            privacy_stats = await self._get_privacy_assessment_statistics(start_date, end_date)
+            privacy_stats = await self._get_privacy_assessment_statistics(
+                start_date, end_date
+            )
 
             report = {
-                'period': {'start': start_date, 'end': end_date},
-                'encryption': encryption_stats,
-                'anonymization': anonymization_stats,
-                'retention': retention_stats,
-                'privacy': privacy_stats,
-                'compliance_status': await self._get_compliance_status(),
-                'recommendations': await self._generate_data_protection_recommendations()
+                "period": {"start": start_date, "end": end_date},
+                "encryption": encryption_stats,
+                "anonymization": anonymization_stats,
+                "retention": retention_stats,
+                "privacy": privacy_stats,
+                "compliance_status": await self._get_compliance_status(),
+                "recommendations": await self._generate_data_protection_recommendations(),
             }
 
             return report
@@ -540,28 +589,32 @@ class DataProtectionService:
             key = await self._generate_encryption_key(classification)
             self.encryption_keys[classification] = key
 
-    async def _generate_encryption_key(self, classification: DataClassification) -> EncryptionKey:
+    async def _generate_encryption_key(
+        self, classification: DataClassification
+    ) -> EncryptionKey:
         """Generate encryption key for a specific classification."""
-        if classification in [DataClassification.HIGHLY_RESTRICTED, DataClassification.RESTRICTED]:
+        if classification in [
+            DataClassification.HIGHLY_RESTRICTED,
+            DataClassification.RESTRICTED,
+        ]:
             # Generate asymmetric key pair
             private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-                backend=default_backend()
+                public_exponent=65537, key_size=2048, backend=default_backend()
             )
             public_key = private_key.public_key()
 
             key_data = {
-                'private_key': private_key.private_bytes(
+                "private_key": private_key.private_bytes(
                     encoding=serialization.Encoding.PEM,
                     format=serialization.PrivateFormat.PKCS8,
                     encryption_algorithm=serialization.BestAvailableEncryption(
-                        self.master_key)
+                        self.master_key
+                    ),
                 ),
-                'public_key': public_key.public_bytes(
+                "public_key": public_key.public_bytes(
                     encoding=serialization.Encoding.PEM,
-                    format=serialization.PublicFormat.SubjectPublicKeyInfo
-                )
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+                ),
             }
         else:
             # Generate symmetric key
@@ -569,14 +622,20 @@ class DataProtectionService:
 
         return EncryptionKey(
             key_id=str(uuid.uuid4()),
-            key_type=EncryptionType.ASYMMETRIC if classification in [
-                DataClassification.HIGHLY_RESTRICTED, DataClassification.RESTRICTED] else EncryptionType.SYMMETRIC,
+            key_type=(
+                EncryptionType.ASYMMETRIC
+                if classification
+                in [DataClassification.HIGHLY_RESTRICTED, DataClassification.RESTRICTED]
+                else EncryptionType.SYMMETRIC
+            ),
             key_data=key_data,
             created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=self.key_rotation_interval)
+            expires_at=datetime.utcnow() + timedelta(days=self.key_rotation_interval),
         )
 
-    async def _get_encryption_key(self, classification: DataClassification) -> EncryptionKey:
+    async def _get_encryption_key(
+        self, classification: DataClassification
+    ) -> EncryptionKey:
         """Get encryption key for a classification."""
         cache_key = f"encryption_key:{classification.value}"
         cached_key = await self.cache_manager.enhanced_cache_get(cache_key)
@@ -589,16 +648,18 @@ class DataProtectionService:
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'key_id': key.key_id,
-                    'key_type': key.key_type.value,
-                    'key_data': key.key_data,
-                    'created_at': key.created_at.isoformat(),
-                    'expires_at': key.expires_at.isoformat() if key.expires_at else None,
-                    'is_active': key.is_active,
-                    'usage_count': key.usage_count,
-                    'last_used': key.last_used.isoformat() if key.last_used else None
+                    "key_id": key.key_id,
+                    "key_type": key.key_type.value,
+                    "key_data": key.key_data,
+                    "created_at": key.created_at.isoformat(),
+                    "expires_at": (
+                        key.expires_at.isoformat() if key.expires_at else None
+                    ),
+                    "is_active": key.is_active,
+                    "usage_count": key.usage_count,
+                    "last_used": key.last_used.isoformat() if key.last_used else None,
                 },
-                ttl=self.cache_ttls['encryption_keys']
+                ttl=self.cache_ttls["encryption_keys"],
             )
 
         return key
@@ -618,23 +679,21 @@ class DataProtectionService:
 
     def _encrypt_asymmetric(self, data: str, key: EncryptionKey) -> str:
         """Encrypt data using asymmetric encryption."""
-        public_key = serialization.load_pem_public_key(
-            key.key_data['public_key'])
+        public_key = serialization.load_pem_public_key(key.key_data["public_key"])
         encrypted_data = public_key.encrypt(
             data.encode(),
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
         return base64.b64encode(encrypted_data).decode()
 
     def _decrypt_asymmetric(self, encrypted_data: str, key: EncryptionKey) -> str:
         """Decrypt data using asymmetric decryption."""
         private_key = serialization.load_pem_private_key(
-            key.key_data['private_key'],
-            password=self.master_key
+            key.key_data["private_key"], password=self.master_key
         )
         encrypted_bytes = base64.b64decode(encrypted_data.encode())
         decrypted_data = private_key.decrypt(
@@ -642,8 +701,8 @@ class DataProtectionService:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
         return decrypted_data.decode()
 
@@ -654,17 +713,17 @@ class DataProtectionService:
     def _mask_data(self, data: str) -> str:
         """Mask sensitive data."""
         if len(data) <= 4:
-            return '*' * len(data)
-        return data[:2] + '*' * (len(data) - 4) + data[-2:]
+            return "*" * len(data)
+        return data[:2] + "*" * (len(data) - 4) + data[-2:]
 
     def _generalize_data(self, data: str, data_type: str) -> str:
         """Generalize data for anonymization."""
-        if data_type == 'email':
-            parts = data.split('@')
+        if data_type == "email":
+            parts = data.split("@")
             return f"{parts[0][:2]}***@{parts[1]}"
-        elif data_type == 'phone':
+        elif data_type == "phone":
             return f"***-***-{data[-4:]}"
-        elif data_type == 'ssn':
+        elif data_type == "ssn":
             return f"***-**-{data[-4:]}"
         else:
             return self._mask_data(data)
@@ -681,8 +740,13 @@ class DataProtectionService:
         """Generate pseudonym for data."""
         return hashlib.sha256((data + salt).encode()).hexdigest()[:16]
 
-    async def _store_encryption_metadata(self, original_data: str, encrypted_data: str,
-                                         classification: DataClassification, key_id: str):
+    async def _store_encryption_metadata(
+        self,
+        original_data: str,
+        encrypted_data: str,
+        classification: DataClassification,
+        key_id: str,
+    ):
         """Store encryption metadata."""
         query = """
         INSERT INTO encryption_metadata (original_hash, encrypted_data, classification, key_id, created_at)
@@ -691,14 +755,19 @@ class DataProtectionService:
 
         original_hash = hashlib.sha256(original_data.encode()).hexdigest()
 
-        await self.db_manager.execute(query, {
-            'original_hash': original_hash,
-            'encrypted_data': encrypted_data,
-            'classification': classification.value,
-            'key_id': key_id
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "original_hash": original_hash,
+                "encrypted_data": encrypted_data,
+                "classification": classification.value,
+                "key_id": key_id,
+            },
+        )
 
-    async def _get_encryption_metadata(self, encrypted_data: str) -> Optional[Dict[str, Any]]:
+    async def _get_encryption_metadata(
+        self, encrypted_data: str
+    ) -> Optional[Dict[str, Any]]:
         """Get encryption metadata."""
         query = """
         SELECT original_hash, classification, key_id, created_at
@@ -708,7 +777,9 @@ class DataProtectionService:
         LIMIT 1
         """
 
-        result = await self.db_manager.fetch_one(query, {'encrypted_data': encrypted_data})
+        result = await self.db_manager.fetch_one(
+            query, {"encrypted_data": encrypted_data}
+        )
         return result
 
     async def _store_anonymized_data(self, anonymized_data: AnonymizedData):
@@ -720,16 +791,19 @@ class DataProtectionService:
                 :original_hash, :anonymized_value, :created_at, :expires_at)
         """
 
-        await self.db_manager.execute(query, {
-            'original_id': anonymized_data.original_id,
-            'anonymized_id': anonymized_data.anonymized_id,
-            'data_type': anonymized_data.data_type,
-            'anonymization_type': anonymized_data.anonymization_type.value,
-            'original_hash': anonymized_data.original_hash,
-            'anonymized_value': anonymized_data.anonymized_value,
-            'created_at': anonymized_data.created_at,
-            'expires_at': anonymized_data.expires_at
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "original_id": anonymized_data.original_id,
+                "anonymized_id": anonymized_data.anonymized_id,
+                "data_type": anonymized_data.data_type,
+                "anonymization_type": anonymized_data.anonymization_type.value,
+                "original_hash": anonymized_data.original_hash,
+                "anonymized_value": anonymized_data.anonymized_value,
+                "created_at": anonymized_data.created_at,
+                "expires_at": anonymized_data.expires_at,
+            },
+        )
 
     async def _store_pseudonymized_data(self, pseudonymized_data: PseudonymizedData):
         """Store pseudonymized data."""
@@ -740,16 +814,19 @@ class DataProtectionService:
                 :pseudonym_value, :created_at, :expires_at, :reversible)
         """
 
-        await self.db_manager.execute(query, {
-            'original_id': pseudonymized_data.original_id,
-            'pseudonym_id': pseudonymized_data.pseudonym_id,
-            'data_type': pseudonymized_data.data_type,
-            'original_hash': pseudonymized_data.original_hash,
-            'pseudonym_value': pseudonymized_data.pseudonym_value,
-            'created_at': pseudonymized_data.created_at,
-            'expires_at': pseudonymized_data.expires_at,
-            'reversible': pseudonymized_data.reversible
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "original_id": pseudonymized_data.original_id,
+                "pseudonym_id": pseudonymized_data.pseudonym_id,
+                "data_type": pseudonymized_data.data_type,
+                "original_hash": pseudonymized_data.original_hash,
+                "pseudonym_value": pseudonymized_data.pseudonym_value,
+                "created_at": pseudonymized_data.created_at,
+                "expires_at": pseudonymized_data.expires_at,
+                "reversible": pseudonymized_data.reversible,
+            },
+        )
 
     async def _store_retention_policy(self, policy: RetentionPolicy):
         """Store retention policy."""
@@ -760,16 +837,19 @@ class DataProtectionService:
                 :retention_type, :auto_delete, :archive_before_delete, :created_at)
         """
 
-        await self.db_manager.execute(query, {
-            'policy_id': policy.policy_id,
-            'data_type': policy.data_type,
-            'classification': policy.classification.value,
-            'retention_period': policy.retention_period,
-            'retention_type': policy.retention_type.value,
-            'auto_delete': policy.auto_delete,
-            'archive_before_delete': policy.archive_before_delete,
-            'created_at': policy.created_at
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "policy_id": policy.policy_id,
+                "data_type": policy.data_type,
+                "classification": policy.classification.value,
+                "retention_period": policy.retention_period,
+                "retention_type": policy.retention_type.value,
+                "auto_delete": policy.auto_delete,
+                "archive_before_delete": policy.archive_before_delete,
+                "created_at": policy.created_at,
+            },
+        )
 
     async def _store_privacy_assessment(self, assessment: PrivacyImpactAssessment):
         """Store privacy impact assessment."""
@@ -782,19 +862,22 @@ class DataProtectionService:
                 :created_at, :reviewed_at, :approved)
         """
 
-        await self.db_manager.execute(query, {
-            'assessment_id': assessment.assessment_id,
-            'data_type': assessment.data_type,
-            'processing_purpose': assessment.processing_purpose,
-            'data_subjects': json.dumps(assessment.data_subjects),
-            'data_categories': json.dumps(assessment.data_categories),
-            'impact_level': assessment.impact_level.value,
-            'risk_factors': json.dumps(assessment.risk_factors),
-            'mitigation_measures': json.dumps(assessment.mitigation_measures),
-            'created_at': assessment.created_at,
-            'reviewed_at': assessment.reviewed_at,
-            'approved': assessment.approved
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "assessment_id": assessment.assessment_id,
+                "data_type": assessment.data_type,
+                "processing_purpose": assessment.processing_purpose,
+                "data_subjects": json.dumps(assessment.data_subjects),
+                "data_categories": json.dumps(assessment.data_categories),
+                "impact_level": assessment.impact_level.value,
+                "risk_factors": json.dumps(assessment.risk_factors),
+                "mitigation_measures": json.dumps(assessment.mitigation_measures),
+                "created_at": assessment.created_at,
+                "reviewed_at": assessment.reviewed_at,
+                "approved": assessment.approved,
+            },
+        )
 
     async def _load_retention_policies(self):
         """Load retention policies from database."""
@@ -807,10 +890,11 @@ class DataProtectionService:
 
         results = await self.db_manager.fetch_all(query)
         # Store policies in memory for quick access
-        self.retention_policies = [
-            RetentionPolicy(**result) for result in results]
+        self.retention_policies = [RetentionPolicy(**result) for result in results]
 
-    async def _get_retention_policies(self, data_type: str = None) -> List[RetentionPolicy]:
+    async def _get_retention_policies(
+        self, data_type: str = None
+    ) -> List[RetentionPolicy]:
         """Get retention policies."""
         if data_type:
             return [p for p in self.retention_policies if p.data_type == data_type]
@@ -825,10 +909,9 @@ class DataProtectionService:
         WHERE data_type = :data_type AND created_at < :cutoff_date
         """
 
-        results = await self.db_manager.fetch_all(query, {
-            'data_type': policy.data_type,
-            'cutoff_date': cutoff_date
-        })
+        results = await self.db_manager.fetch_all(
+            query, {"data_type": policy.data_type, "cutoff_date": cutoff_date}
+        )
 
         return results
 
@@ -839,11 +922,14 @@ class DataProtectionService:
         VALUES (:original_id, :data_type, :data_content, NOW())
         """
 
-        await self.db_manager.execute(query, {
-            'original_id': data_item['id'],
-            'data_type': data_item['data_type'],
-            'data_content': json.dumps(data_item)
-        })
+        await self.db_manager.execute(
+            query,
+            {
+                "original_id": data_item["id"],
+                "data_type": data_item["data_type"],
+                "data_content": json.dumps(data_item),
+            },
+        )
 
     async def _delete_data_item(self, data_item: Dict[str, Any]):
         """Delete data item."""
@@ -851,17 +937,22 @@ class DataProtectionService:
         DELETE FROM data_items WHERE id = :id
         """
 
-        await self.db_manager.execute(query, {'id': data_item['id']})
+        await self.db_manager.execute(query, {"id": data_item["id"]})
 
-    async def _calculate_privacy_impact_level(self, data_categories: List[str], risk_factors: List[str]) -> PrivacyImpactLevel:
+    async def _calculate_privacy_impact_level(
+        self, data_categories: List[str], risk_factors: List[str]
+    ) -> PrivacyImpactLevel:
         """Calculate privacy impact level based on data categories and risk factors."""
         score = 0
 
         # Score based on data categories
-        high_risk_categories = ['personal_identifiers',
-                                'financial_data', 'health_data', 'biometric_data']
-        medium_risk_categories = ['contact_info',
-                                  'location_data', 'behavioral_data']
+        high_risk_categories = [
+            "personal_identifiers",
+            "financial_data",
+            "health_data",
+            "biometric_data",
+        ]
+        medium_risk_categories = ["contact_info", "location_data", "behavioral_data"]
 
         for category in data_categories:
             if category in high_risk_categories:
@@ -873,13 +964,13 @@ class DataProtectionService:
 
         # Score based on risk factors
         for factor in risk_factors or []:
-            if 'large_scale' in factor:
+            if "large_scale" in factor:
                 score += 2
-            elif 'automated_decision' in factor:
+            elif "automated_decision" in factor:
                 score += 2
-            elif 'profiling' in factor:
+            elif "profiling" in factor:
                 score += 2
-            elif 'cross_border' in factor:
+            elif "cross_border" in factor:
                 score += 1
 
         # Determine impact level
@@ -892,26 +983,30 @@ class DataProtectionService:
         else:
             return PrivacyImpactLevel.LOW
 
-    async def _generate_mitigation_measures(self, impact_level: PrivacyImpactLevel, data_categories: List[str]) -> List[str]:
+    async def _generate_mitigation_measures(
+        self, impact_level: PrivacyImpactLevel, data_categories: List[str]
+    ) -> List[str]:
         """Generate mitigation measures based on impact level and data categories."""
         measures = []
 
         if impact_level in [PrivacyImpactLevel.HIGH, PrivacyImpactLevel.CRITICAL]:
-            measures.extend([
-                "Implement strong encryption for all data",
-                "Use pseudonymization where possible",
-                "Implement strict access controls",
-                "Regular privacy impact assessments",
-                "Data minimization practices"
-            ])
+            measures.extend(
+                [
+                    "Implement strong encryption for all data",
+                    "Use pseudonymization where possible",
+                    "Implement strict access controls",
+                    "Regular privacy impact assessments",
+                    "Data minimization practices",
+                ]
+            )
 
-        if 'personal_identifiers' in data_categories:
+        if "personal_identifiers" in data_categories:
             measures.append("Implement data anonymization")
 
-        if 'financial_data' in data_categories:
+        if "financial_data" in data_categories:
             measures.append("Comply with PCI DSS requirements")
 
-        if 'health_data' in data_categories:
+        if "health_data" in data_categories:
             measures.append("Comply with HIPAA requirements")
 
         return measures
@@ -945,7 +1040,9 @@ class DataProtectionService:
             except Exception as e:
                 logger.error(f"Error in data cleanup task: {e}")
 
-    async def _get_encryption_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _get_encryption_statistics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Get encryption statistics for reporting."""
         query = """
         SELECT COUNT(*) as total_encrypted,
@@ -956,14 +1053,15 @@ class DataProtectionService:
         WHERE created_at BETWEEN :start_date AND :end_date
         """
 
-        result = await self.db_manager.fetch_one(query, {
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        result = await self.db_manager.fetch_one(
+            query, {"start_date": start_date, "end_date": end_date}
+        )
 
         return result or {}
 
-    async def _get_anonymization_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _get_anonymization_statistics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Get anonymization statistics for reporting."""
         query = """
         SELECT COUNT(*) as total_anonymized,
@@ -974,14 +1072,15 @@ class DataProtectionService:
         WHERE created_at BETWEEN :start_date AND :end_date
         """
 
-        result = await self.db_manager.fetch_one(query, {
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        result = await self.db_manager.fetch_one(
+            query, {"start_date": start_date, "end_date": end_date}
+        )
 
         return result or {}
 
-    async def _get_retention_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _get_retention_statistics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Get retention statistics for reporting."""
         query = """
         SELECT COUNT(*) as total_policies,
@@ -991,14 +1090,15 @@ class DataProtectionService:
         WHERE created_at BETWEEN :start_date AND :end_date
         """
 
-        result = await self.db_manager.fetch_one(query, {
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        result = await self.db_manager.fetch_one(
+            query, {"start_date": start_date, "end_date": end_date}
+        )
 
         return result or {}
 
-    async def _get_privacy_assessment_statistics(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def _get_privacy_assessment_statistics(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Get privacy assessment statistics for reporting."""
         query = """
         SELECT COUNT(*) as total_assessments,
@@ -1011,21 +1111,20 @@ class DataProtectionService:
         WHERE created_at BETWEEN :start_date AND :end_date
         """
 
-        result = await self.db_manager.fetch_one(query, {
-            'start_date': start_date,
-            'end_date': end_date
-        })
+        result = await self.db_manager.fetch_one(
+            query, {"start_date": start_date, "end_date": end_date}
+        )
 
         return result or {}
 
     async def _get_compliance_status(self) -> Dict[str, Any]:
         """Get overall compliance status."""
         return {
-            'gdpr_compliant': True,
-            'encryption_enabled': True,
-            'retention_policies_active': True,
-            'privacy_assessments_current': True,
-            'data_minimization_practiced': True
+            "gdpr_compliant": True,
+            "encryption_enabled": True,
+            "retention_policies_active": True,
+            "privacy_assessments_current": True,
+            "data_minimization_practiced": True,
         }
 
     async def _generate_data_protection_recommendations(self) -> List[str]:
@@ -1035,7 +1134,7 @@ class DataProtectionService:
             "Implement data loss prevention (DLP)",
             "Conduct regular privacy audits",
             "Update retention policies based on business needs",
-            "Implement data classification automation"
+            "Implement data classification automation",
         ]
 
         return recommendations

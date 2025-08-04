@@ -8,7 +8,12 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from bot.utils.enhanced_cache_manager import enhanced_cache_get, enhanced_cache_set, enhanced_cache_delete, get_enhanced_cache_manager
+from bot.utils.enhanced_cache_manager import (
+    enhanced_cache_get,
+    enhanced_cache_set,
+    enhanced_cache_delete,
+    get_enhanced_cache_manager,
+)
 from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
 USER_CACHE_TTL = 3600  # Default TTL (1 hour)
@@ -59,7 +64,9 @@ class UserService:
             if user_data:
                 if "balance" in user_data and user_data["balance"] is not None:
                     user_data["balance"] = float(user_data["balance"])
-                await enhanced_cache_set("user_data", str(user_id), user_data, ttl=USER_CACHE_TTL)
+                await enhanced_cache_set(
+                    "user_data", str(user_id), user_data, ttl=USER_CACHE_TTL
+                )
                 return user_data
             else:
                 return None
@@ -156,7 +163,9 @@ class UserService:
             )
 
             user["balance"] = new_balance
-            await enhanced_cache_set("user_data", str(user_id), user, ttl=USER_CACHE_TTL)
+            await enhanced_cache_set(
+                "user_data", str(user_id), user, ttl=USER_CACHE_TTL
+            )
 
             return user
 
@@ -181,7 +190,8 @@ class UserService:
                 ORDER BY created_at DESC
                 LIMIT 100
                 """,
-                user_id, guild_id
+                user_id,
+                guild_id,
             )
 
             if not bets:
@@ -191,23 +201,23 @@ class UserService:
                     "total_volume": 0.0,
                     "avg_bet_size": 0.0,
                     "total_winnings": 0.0,
-                    "roi": 0.0
+                    "roi": 0.0,
                 }
 
             # Calculate statistics
             total_bets = len(bets)
-            completed_bets = [
-                bet for bet in bets if bet["status"] in ["won", "lost"]]
-            won_bets = [
-                bet for bet in completed_bets if bet["status"] == "won"]
+            completed_bets = [bet for bet in bets if bet["status"] in ["won", "lost"]]
+            won_bets = [bet for bet in completed_bets if bet["status"] == "won"]
 
-            win_rate = len(won_bets) / \
-                len(completed_bets) if completed_bets else 0.0
+            win_rate = len(won_bets) / len(completed_bets) if completed_bets else 0.0
             total_volume = sum(bet["units"] for bet in bets)
             avg_bet_size = total_volume / total_bets if total_bets > 0 else 0.0
             total_winnings = sum(bet.get("payout", 0) for bet in won_bets)
-            roi = (total_winnings - total_volume) / \
-                total_volume if total_volume > 0 else 0.0
+            roi = (
+                (total_winnings - total_volume) / total_volume
+                if total_volume > 0
+                else 0.0
+            )
 
             return {
                 "total_bets": total_bets,
@@ -215,7 +225,7 @@ class UserService:
                 "total_volume": total_volume,
                 "avg_bet_size": avg_bet_size,
                 "total_winnings": total_winnings,
-                "roi": roi
+                "roi": roi,
             }
 
         except Exception as e:
@@ -246,11 +256,12 @@ class UserService:
             await self.update_user_balance(user_id, -amount, "withdrawal")
             return True
         except Exception as e:
-            logger.exception(
-                f"Error subtracting units for user {user_id}: {e}")
+            logger.exception(f"Error subtracting units for user {user_id}: {e}")
             return False
 
-    async def get_top_users(self, guild_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_top_users(
+        self, guild_id: int, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get top users by balance."""
         try:
             users = await self.db.fetch_all(
@@ -261,7 +272,7 @@ class UserService:
                 ORDER BY balance DESC
                 LIMIT %s
                 """,
-                limit
+                limit,
             )
             return users
         except Exception as e:

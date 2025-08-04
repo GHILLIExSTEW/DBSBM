@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheHeaders:
     """Cache headers for API responses."""
+
     etag: str
     last_modified: str
     cache_control: str
@@ -37,6 +38,7 @@ class CacheHeaders:
 @dataclass
 class APIResponse:
     """API response with cache metadata."""
+
     data: Any
     headers: CacheHeaders
     status_code: int = 200
@@ -80,21 +82,9 @@ class APIResponseCacheService:
 
         # Cache configuration
         self.cache_config = {
-            "api_response": {
-                "ttl": 300,
-                "prefix": "api_resp:",
-                "max_size": 1000
-            },
-            "etag": {
-                "ttl": 3600,
-                "prefix": "api_etag:",
-                "max_size": 5000
-            },
-            "rate_limit": {
-                "ttl": 60,
-                "prefix": "api_rate:",
-                "max_size": 100
-            }
+            "api_response": {"ttl": 300, "prefix": "api_resp:", "max_size": 1000},
+            "etag": {"ttl": 3600, "prefix": "api_etag:", "max_size": 5000},
+            "rate_limit": {"ttl": 60, "prefix": "api_rate:", "max_size": 100},
         }
 
     async def start(self):
@@ -107,16 +97,20 @@ class APIResponseCacheService:
         await self.cache_manager.disconnect()
         logger.info("API Response Cache Service stopped")
 
-    def _generate_cache_key(self, method: str, url: str, params: Dict = None,
-                            headers: Dict = None) -> str:
+    def _generate_cache_key(
+        self, method: str, url: str, params: Dict = None, headers: Dict = None
+    ) -> str:
         """Generate a unique cache key for an API request."""
         # Create a hash of the request components
         request_data = {
             "method": method,
             "url": url,
             "params": sorted(params.items()) if params else {},
-            "headers": {k: v for k, v in (headers or {}).items()
-                        if k.lower() not in ['authorization', 'x-api-key']}
+            "headers": {
+                k: v
+                for k, v in (headers or {}).items()
+                if k.lower() not in ["authorization", "x-api-key"]
+            },
         }
 
         request_str = json.dumps(request_data, sort_keys=True)
@@ -138,10 +132,10 @@ class APIResponseCacheService:
 
         return CacheHeaders(
             etag=etag,
-            last_modified=now.strftime('%a, %d %b %Y %H:%M:%S GMT'),
+            last_modified=now.strftime("%a, %d %b %Y %H:%M:%S GMT"),
             cache_control=f"public, max-age={ttl or self.default_ttl}",
-            expires=expires.strftime('%a, %d %b %Y %H:%M:%S GMT'),
-            age=0
+            expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+            age=0,
         )
 
     async def get_cached_response(self, cache_key: str) -> Optional[APIResponse]:
@@ -160,7 +154,7 @@ class APIResponseCacheService:
                         headers=cached_data["headers"],
                         status_code=cached_data["status_code"],
                         cached=True,
-                        cache_hit=True
+                        cache_hit=True,
                     )
                 else:
                     # ETag mismatch, invalidate cache
@@ -171,32 +165,27 @@ class APIResponseCacheService:
             logger.error(f"Error getting cached response: {e}")
             return None
 
-    async def cache_response(self, cache_key: str, response: APIResponse,
-                             ttl: int = None) -> None:
+    async def cache_response(
+        self, cache_key: str, response: APIResponse, ttl: int = None
+    ) -> None:
         """Cache an API response."""
         try:
             cache_data = {
                 "data": response.data,
                 "headers": response.headers,
                 "status_code": response.status_code,
-                "cached_at": datetime.utcnow().isoformat()
+                "cached_at": datetime.utcnow().isoformat(),
             }
 
             # Cache the response
             await self.cache_manager.set(
-                "api_response",
-                cache_key,
-                cache_data,
-                ttl or self.default_ttl
+                "api_response", cache_key, cache_data, ttl or self.default_ttl
             )
 
             # Cache the ETag separately
             etag_key = f"etag:{cache_key}"
             await self.cache_manager.set(
-                "etag",
-                etag_key,
-                response.headers.etag,
-                self.etag_ttl
+                "etag", etag_key, response.headers.etag, self.etag_ttl
             )
 
             logger.debug(f"Cached response for key: {cache_key}")
@@ -213,7 +202,9 @@ class APIResponseCacheService:
         except Exception as e:
             logger.error(f"Error invalidating cache: {e}")
 
-    async def check_rate_limit(self, provider: str, user_id: Optional[str] = None) -> bool:
+    async def check_rate_limit(
+        self, provider: str, user_id: Optional[str] = None
+    ) -> bool:
         """Check if rate limit allows the request."""
         try:
             # Get or create rate limiter for provider
@@ -225,10 +216,7 @@ class APIResponseCacheService:
             # Cache rate limit info
             rate_key = f"{provider}:{user_id or 'anonymous'}"
             await self.cache_manager.set(
-                "rate_limit",
-                rate_key,
-                {"last_request": time.time()},
-                60
+                "rate_limit", rate_key, {"last_request": time.time()}, 60
             )
 
             return True
@@ -236,10 +224,14 @@ class APIResponseCacheService:
             logger.error(f"Rate limit check failed: {e}")
             return False
 
-    def cache_api_response(self, ttl: Optional[int] = None,
-                           provider: Optional[str] = None,
-                           invalidate_patterns: Optional[List[str]] = None):
+    def cache_api_response(
+        self,
+        ttl: Optional[int] = None,
+        provider: Optional[str] = None,
+        invalidate_patterns: Optional[List[str]] = None,
+    ):
         """Decorator for caching API responses."""
+
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -247,7 +239,8 @@ class APIResponseCacheService:
                 func_name = func.__name__
                 args_str = str(args) + str(sorted(kwargs.items()))
                 cache_key = hashlib.sha256(
-                    f"{func_name}:{args_str}".encode()).hexdigest()
+                    f"{func_name}:{args_str}".encode()
+                ).hexdigest()
 
                 # Check cache first
                 cached_response = await self.get_cached_response(cache_key)
@@ -273,7 +266,7 @@ class APIResponseCacheService:
                         headers=headers,
                         status_code=200,
                         cached=False,
-                        cache_hit=False
+                        cache_hit=False,
                     )
 
                     # Cache the response
@@ -285,7 +278,8 @@ class APIResponseCacheService:
                             await self.invalidate_cache(pattern)
 
                     logger.info(
-                        f"API response cached for {func_name} (execution time: {execution_time:.2f}s)")
+                        f"API response cached for {func_name} (execution time: {execution_time:.2f}s)"
+                    )
                     return api_response
 
                 except Exception as e:
@@ -293,6 +287,7 @@ class APIResponseCacheService:
                     raise
 
             return wrapper
+
         return decorator
 
     async def get_cache_stats(self) -> Dict[str, Any]:
@@ -303,8 +298,10 @@ class APIResponseCacheService:
                 "api_response_cache": stats.get("api_response", {}),
                 "etag_cache": stats.get("etag", {}),
                 "rate_limit_cache": stats.get("rate_limit", {}),
-                "total_cache_size": sum(stats.get(prefix, {}).get("size", 0)
-                                        for prefix in ["api_response", "etag", "rate_limit"])
+                "total_cache_size": sum(
+                    stats.get(prefix, {}).get("size", 0)
+                    for prefix in ["api_response", "etag", "rate_limit"]
+                ),
             }
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
@@ -333,8 +330,7 @@ class APIResponseCacheService:
                 await func(**params)
                 logger.debug(f"Warmed cache for {func.__name__}")
             except Exception as e:
-                logger.warning(
-                    f"Failed to warm cache for {func.__name__}: {e}")
+                logger.warning(f"Failed to warm cache for {func.__name__}: {e}")
 
         logger.info("Cache warming completed")
 
@@ -350,12 +346,12 @@ def cache_api_response(ttl: Optional[int] = None, provider: Optional[str] = None
     return api_cache_service.cache_api_response(ttl=ttl, provider=provider)
 
 
-def cache_api_response_with_invalidation(ttl: Optional[int] = None,
-                                         provider: Optional[str] = None,
-                                         invalidate_patterns: Optional[List[str]] = None):
+def cache_api_response_with_invalidation(
+    ttl: Optional[int] = None,
+    provider: Optional[str] = None,
+    invalidate_patterns: Optional[List[str]] = None,
+):
     """Convenience decorator for caching API responses with invalidation."""
     return api_cache_service.cache_api_response(
-        ttl=ttl,
-        provider=provider,
-        invalidate_patterns=invalidate_patterns
+        ttl=ttl, provider=provider, invalidate_patterns=invalidate_patterns
     )

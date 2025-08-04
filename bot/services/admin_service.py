@@ -63,7 +63,7 @@ class AdminService:
                 """
                 SELECT is_paid, subscription_level
                 FROM guild_settings
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 """,
                 guild_id,
             )
@@ -73,7 +73,7 @@ class AdminService:
                 await self.db_manager.execute(
                     """
                     INSERT INTO guild_settings (guild_id, is_paid, subscription_level)
-                    VALUES (%s, 0, 'initial')
+                    VALUES ($1, 0, 'initial')
                     """,
                     guild_id,
                 )
@@ -86,7 +86,7 @@ class AdminService:
                         """
                         UPDATE guild_settings
                         SET subscription_level = 'premium'
-                        WHERE guild_id = %s
+                        WHERE guild_id = $1
                         """,
                         guild_id,
                     )
@@ -95,8 +95,7 @@ class AdminService:
             return result.get("subscription_level", "initial")
 
         except Exception as e:
-            logger.error(
-                f"Error getting guild subscription level for {guild_id}: {e}")
+            logger.error(f"Error getting guild subscription level for {guild_id}: {e}")
             return "initial"  # Default to initial on error
 
     async def check_guild_subscription(self, guild_id: int) -> bool:
@@ -107,8 +106,7 @@ class AdminService:
             )
             return bool(result and result.get("is_paid", False))
         except Exception as e:
-            logger.error(
-                f"Error checking guild subscription for {guild_id}: {e}")
+            logger.error(f"Error checking guild subscription for {guild_id}: {e}")
             return False
 
     async def setup_guild(self, guild_id: int, settings: Dict[str, any]) -> bool:
@@ -124,29 +122,29 @@ class AdminService:
                 await self.db_manager.execute(
                     """
                     UPDATE guild_settings
-                    SET embed_channel_1 = %s,
-                        embed_channel_2 = %s,
-                        command_channel_1 = %s,
-                        command_channel_2 = %s,
-                        admin_channel_1 = %s,
-                        main_chat_channel_id = %s,
-                        admin_role = %s,
-                        authorized_role = %s,
-                        member_role = %s,
-                        voice_channel_id = %s,
-                        yearly_channel_id = %s,
-                        daily_report_time = %s,
-                        bot_name_mask = %s,
-                        bot_image_mask = %s,
-                        guild_background = %s,
-                        guild_default_image = %s,
-                        default_parlay_image = %s,
-                        min_units = %s,
-                        max_units = %s,
-                        live_game_updates = %s,
-                        units_display_mode = %s,
+                    SET embed_channel_1 = $1,
+                        embed_channel_2 = $2,
+                        command_channel_1 = $3,
+                        command_channel_2 = $4,
+                        admin_channel_1 = $5,
+                        main_chat_channel_id = $6,
+                        admin_role = $7,
+                        authorized_role = $8,
+                        member_role = $9,
+                        voice_channel_id = $10,
+                        yearly_channel_id = $11,
+                        daily_report_time = $12,
+                        bot_name_mask = $13,
+                        bot_image_mask = $14,
+                        guild_background = $15,
+                        guild_default_image = $16,
+                        default_parlay_image = $17,
+                        min_units = $18,
+                        max_units = $19,
+                        live_game_updates = $20,
+                        units_display_mode = $21,
                         updated_at = CURRENT_TIMESTAMP
-                    WHERE guild_id = %s
+                    WHERE guild_id = $22
                     """,
                     settings.get("embed_channel_1"),
                     settings.get("embed_channel_2"),
@@ -183,7 +181,7 @@ class AdminService:
                         default_parlay_image, min_units, max_units, is_paid, live_game_updates,
                         units_display_mode
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
                     )
                     """,
                     guild_id,
@@ -228,7 +226,7 @@ class AdminService:
                 await self.db_manager.execute(
                     """
                     INSERT INTO guild_settings (guild_id, is_paid, subscription_level)
-                    VALUES (%s, 0, 'initial')
+                    VALUES ($1, 0, 'initial')
                     """,
                     guild_id,
                 )
@@ -262,7 +260,7 @@ class AdminService:
             query = f"""
                 UPDATE guild_settings
                 SET {', '.join(set_clauses)}, updated_at = CURRENT_TIMESTAMP
-                WHERE guild_id = %s
+                WHERE guild_id = $1
             """
 
             await self.db_manager.execute(query, *values)
@@ -297,16 +295,15 @@ class AdminCog(commands.Cog):
         try:
             query = """
                 INSERT INTO guild_settings (guild_id, is_active, subscription_level)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE is_active = %s, subscription_level = %s
+                VALUES ($1, $2, $3)
+                ON DUPLICATE KEY UPDATE is_active = $4, subscription_level = $5
             """
             params = (interaction.guild_id, True, 0, True, 0)
             await self.bot.db_manager.execute(query, params)
             await interaction.response.send_message(
                 "Guild settings initialized successfully!", ephemeral=True
             )
-            logger.debug(
-                f"Guild settings set up for guild {interaction.guild_id}")
+            logger.debug(f"Guild settings set up for guild {interaction.guild_id}")
         except Exception as e:
             logger.error(
                 f"Failed to set up guild settings for guild {interaction.guild_id}: {e}",
@@ -330,8 +327,8 @@ class AdminCog(commands.Cog):
         try:
             query = """
                 UPDATE guild_settings
-                SET embed_channel_1 = %s
-                WHERE guild_id = %s
+                SET embed_channel_1 = $1
+                WHERE guild_id = $2
             """
             params = (channel.id, interaction.guild_id)
             await self.bot.db_manager.execute(query, params)

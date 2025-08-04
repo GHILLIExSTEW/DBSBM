@@ -23,21 +23,22 @@ logger = logging.getLogger(__name__)
 
 # Tenant-specific cache TTLs
 TENANT_CACHE_TTLS = {
-    'tenant_data': 1800,         # 30 minutes
-    'tenant_resources': 900,      # 15 minutes
-    'tenant_customizations': 3600,  # 1 hour
-    'tenant_billing': 7200,       # 2 hours
-    'tenant_stats': 1800,         # 30 minutes
-    'resource_quotas': 300,       # 5 minutes
-    'tenant_list': 900,           # 15 minutes
-    'tenant_settings': 3600,      # 1 hour
-    'tenant_features': 7200,      # 2 hours
-    'tenant_usage': 600,          # 10 minutes
+    "tenant_data": 1800,  # 30 minutes
+    "tenant_resources": 900,  # 15 minutes
+    "tenant_customizations": 3600,  # 1 hour
+    "tenant_billing": 7200,  # 2 hours
+    "tenant_stats": 1800,  # 30 minutes
+    "resource_quotas": 300,  # 5 minutes
+    "tenant_list": 900,  # 15 minutes
+    "tenant_settings": 3600,  # 1 hour
+    "tenant_features": 7200,  # 2 hours
+    "tenant_usage": 600,  # 10 minutes
 }
 
 
 class TenantStatus(Enum):
     """Tenant status types."""
+
     ACTIVE = "active"
     SUSPENDED = "suspended"
     INACTIVE = "inactive"
@@ -46,6 +47,7 @@ class TenantStatus(Enum):
 
 class PlanType(Enum):
     """Tenant plan types."""
+
     BASIC = "basic"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
@@ -54,6 +56,7 @@ class PlanType(Enum):
 
 class ResourceType(Enum):
     """Resource types for quota management."""
+
     USERS = "users"
     BETS = "bets"
     API_CALLS = "api_calls"
@@ -66,6 +69,7 @@ class ResourceType(Enum):
 @dataclass
 class Tenant:
     """Tenant configuration."""
+
     id: int
     tenant_name: str
     tenant_code: str
@@ -84,6 +88,7 @@ class Tenant:
 @dataclass
 class TenantResource:
     """Tenant resource quota."""
+
     id: int
     tenant_id: int
     resource_type: ResourceType
@@ -98,6 +103,7 @@ class TenantResource:
 @dataclass
 class TenantCustomization:
     """Tenant customization configuration."""
+
     id: int
     tenant_id: int
     customization_type: str
@@ -110,6 +116,7 @@ class TenantCustomization:
 @dataclass
 class TenantBilling:
     """Tenant billing information."""
+
     id: int
     tenant_id: int
     plan_name: str
@@ -144,8 +151,7 @@ class TenantService:
             await self._initialize_default_tenant()
             await self._setup_resource_quotas()
             self.is_running = True
-            self.cleanup_task = asyncio.create_task(
-                self._cleanup_expired_data())
+            self.cleanup_task = asyncio.create_task(self._cleanup_expired_data())
             logger.info("Tenant service started successfully")
         except Exception as e:
             logger.error(f"Failed to start tenant service: {e}")
@@ -159,9 +165,16 @@ class TenantService:
         logger.info("Tenant service stopped")
 
     @time_operation("tenant_create_tenant")
-    async def create_tenant(self, tenant_name: str, display_name: str, plan_type: PlanType,
-                            contact_email: Optional[str] = None, contact_phone: Optional[str] = None,
-                            custom_domain: Optional[str] = None, timezone: str = "UTC") -> Optional[Tenant]:
+    async def create_tenant(
+        self,
+        tenant_name: str,
+        display_name: str,
+        plan_type: PlanType,
+        contact_email: Optional[str] = None,
+        contact_phone: Optional[str] = None,
+        custom_domain: Optional[str] = None,
+        timezone: str = "UTC",
+    ) -> Optional[Tenant]:
         """Create a new tenant."""
         try:
             # Generate unique tenant code
@@ -176,24 +189,27 @@ class TenantService:
             """
 
             settings = {
-                'features': self._get_plan_features(plan_type),
-                'security': self._get_default_security_settings(),
-                'integrations': self._get_default_integration_settings(),
-                'notifications': self._get_default_notification_settings()
+                "features": self._get_plan_features(plan_type),
+                "security": self._get_default_security_settings(),
+                "integrations": self._get_default_integration_settings(),
+                "notifications": self._get_default_notification_settings(),
             }
 
-            result = await self.db_manager.execute(query, {
-                'tenant_name': tenant_name,
-                'tenant_code': tenant_code,
-                'display_name': display_name,
-                'status': TenantStatus.ACTIVE.value,
-                'plan_type': plan_type.value,
-                'contact_email': contact_email,
-                'contact_phone': contact_phone,
-                'settings': json.dumps(settings),
-                'custom_domain': custom_domain,
-                'timezone': timezone
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_name": tenant_name,
+                    "tenant_code": tenant_code,
+                    "display_name": display_name,
+                    "status": TenantStatus.ACTIVE.value,
+                    "plan_type": plan_type.value,
+                    "contact_email": contact_email,
+                    "contact_phone": contact_phone,
+                    "settings": json.dumps(settings),
+                    "custom_domain": custom_domain,
+                    "timezone": timezone,
+                },
+            )
 
             tenant_id = result.lastrowid
 
@@ -236,47 +252,46 @@ class TenantService:
             SELECT * FROM tenants WHERE id = :tenant_id
             """
 
-            result = await self.db_manager.fetch_one(query, {'tenant_id': tenant_id})
+            result = await self.db_manager.fetch_one(query, {"tenant_id": tenant_id})
 
             if not result:
                 return None
 
             tenant = Tenant(
-                id=result['id'],
-                tenant_name=result['tenant_name'],
-                tenant_code=result['tenant_code'],
-                display_name=result['display_name'],
-                status=TenantStatus(result['status']),
-                plan_type=PlanType(result['plan_type']),
-                contact_email=result['contact_email'],
-                contact_phone=result['contact_phone'],
-                settings=json.loads(
-                    result['settings']) if result['settings'] else {},
-                custom_domain=result['custom_domain'],
-                timezone=result['timezone'],
-                created_at=result['created_at'],
-                updated_at=result['updated_at']
+                id=result["id"],
+                tenant_name=result["tenant_name"],
+                tenant_code=result["tenant_code"],
+                display_name=result["display_name"],
+                status=TenantStatus(result["status"]),
+                plan_type=PlanType(result["plan_type"]),
+                contact_email=result["contact_email"],
+                contact_phone=result["contact_phone"],
+                settings=json.loads(result["settings"]) if result["settings"] else {},
+                custom_domain=result["custom_domain"],
+                timezone=result["timezone"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
             )
 
             # Cache tenant data
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': tenant.id,
-                    'tenant_name': tenant.tenant_name,
-                    'tenant_code': tenant.tenant_code,
-                    'display_name': tenant.display_name,
-                    'status': tenant.status.value,
-                    'plan_type': tenant.plan_type.value,
-                    'contact_email': tenant.contact_email,
-                    'contact_phone': tenant.contact_phone,
-                    'settings': tenant.settings,
-                    'custom_domain': tenant.custom_domain,
-                    'timezone': tenant.timezone,
-                    'created_at': tenant.created_at.isoformat(),
-                    'updated_at': tenant.updated_at.isoformat()
+                    "id": tenant.id,
+                    "tenant_name": tenant.tenant_name,
+                    "tenant_code": tenant.tenant_code,
+                    "display_name": tenant.display_name,
+                    "status": tenant.status.value,
+                    "plan_type": tenant.plan_type.value,
+                    "contact_email": tenant.contact_email,
+                    "contact_phone": tenant.contact_phone,
+                    "settings": tenant.settings,
+                    "custom_domain": tenant.custom_domain,
+                    "timezone": tenant.timezone,
+                    "created_at": tenant.created_at.isoformat(),
+                    "updated_at": tenant.updated_at.isoformat(),
                 },
-                ttl=self.cache_ttls['tenant_data']
+                ttl=self.cache_ttls["tenant_data"],
             )
 
             return tenant
@@ -301,19 +316,19 @@ class TenantService:
             SELECT id FROM tenants WHERE tenant_code = :tenant_code
             """
 
-            result = await self.db_manager.fetch_one(query, {'tenant_code': tenant_code})
+            result = await self.db_manager.fetch_one(
+                query, {"tenant_code": tenant_code}
+            )
 
             if not result:
                 return None
 
             # Cache tenant ID mapping
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                result['id'],
-                ttl=self.cache_ttls['tenant_data']
+                cache_key, result["id"], ttl=self.cache_ttls["tenant_data"]
             )
 
-            return await self.get_tenant_by_id(result['id'])
+            return await self.get_tenant_by_id(result["id"])
 
         except Exception as e:
             logger.error(f"Failed to get tenant by code: {e}")
@@ -325,16 +340,24 @@ class TenantService:
         try:
             # Build update query dynamically
             update_fields = []
-            params = {'tenant_id': tenant_id}
+            params = {"tenant_id": tenant_id}
 
             for field, value in updates.items():
-                if field in ['tenant_name', 'display_name', 'status', 'plan_type',
-                             'contact_email', 'contact_phone', 'custom_domain', 'timezone']:
+                if field in [
+                    "tenant_name",
+                    "display_name",
+                    "status",
+                    "plan_type",
+                    "contact_email",
+                    "contact_phone",
+                    "custom_domain",
+                    "timezone",
+                ]:
                     update_fields.append(f"{field} = :{field}")
                     params[field] = value
-                elif field == 'settings':
+                elif field == "settings":
                     update_fields.append("settings = :settings")
-                    params['settings'] = json.dumps(value)
+                    params["settings"] = json.dumps(value)
 
             if not update_fields:
                 return False
@@ -356,8 +379,10 @@ class TenantService:
             await self.cache_manager.clear_cache_by_pattern("tenant_stats:*")
 
             # If plan type changed, update quotas
-            if 'plan_type' in updates:
-                await self._update_tenant_quotas(tenant_id, PlanType(updates['plan_type']))
+            if "plan_type" in updates:
+                await self._update_tenant_quotas(
+                    tenant_id, PlanType(updates["plan_type"])
+                )
 
             record_metric("tenants_updated", 1)
             return True
@@ -376,19 +401,24 @@ class TenantService:
             WHERE id = :tenant_id
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'status': TenantStatus.INACTIVE.value
-            })
+            result = await self.db_manager.execute(
+                query, {"tenant_id": tenant_id, "status": TenantStatus.INACTIVE.value}
+            )
 
             if result.rowcount == 0:
                 return False
 
             # Clear all related cache
             await self.cache_manager.clear_cache_by_pattern(f"tenant_data:{tenant_id}")
-            await self.cache_manager.clear_cache_by_pattern(f"tenant_resources:{tenant_id}:*")
-            await self.cache_manager.clear_cache_by_pattern(f"tenant_customizations:{tenant_id}:*")
-            await self.cache_manager.clear_cache_by_pattern(f"tenant_billing:{tenant_id}")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"tenant_resources:{tenant_id}:*"
+            )
+            await self.cache_manager.clear_cache_by_pattern(
+                f"tenant_customizations:{tenant_id}:*"
+            )
+            await self.cache_manager.clear_cache_by_pattern(
+                f"tenant_billing:{tenant_id}"
+            )
             await self.cache_manager.clear_cache_by_pattern(f"tenant_stats:{tenant_id}")
             await self.cache_manager.clear_cache_by_pattern("tenant_list:*")
 
@@ -408,8 +438,10 @@ class TenantService:
             cached_resources = await self.cache_manager.enhanced_cache_get(cache_key)
 
             if cached_resources:
-                return {resource_type: TenantResource(**resource)
-                        for resource_type, resource in cached_resources.items()}
+                return {
+                    resource_type: TenantResource(**resource)
+                    for resource_type, resource in cached_resources.items()
+                }
 
             # Get from database
             query = """
@@ -417,38 +449,41 @@ class TenantService:
             WHERE tenant_id = :tenant_id AND is_active = 1
             """
 
-            results = await self.db_manager.fetch_all(query, {'tenant_id': tenant_id})
+            results = await self.db_manager.fetch_all(query, {"tenant_id": tenant_id})
 
             resources = {}
             for row in results:
                 resource = TenantResource(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    resource_type=ResourceType(row['resource_type']),
-                    quota_limit=row['quota_limit'],
-                    current_usage=row['current_usage'],
-                    reset_period=row['reset_period'],
-                    last_reset=row['last_reset'],
-                    next_reset=row['next_reset'],
-                    is_active=row['is_active']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    resource_type=ResourceType(row["resource_type"]),
+                    quota_limit=row["quota_limit"],
+                    current_usage=row["current_usage"],
+                    reset_period=row["reset_period"],
+                    last_reset=row["last_reset"],
+                    next_reset=row["next_reset"],
+                    is_active=row["is_active"],
                 )
                 resources[resource.resource_type.value] = resource
 
             # Cache resources
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                {resource_type: {
-                    'id': resource.id,
-                    'tenant_id': resource.tenant_id,
-                    'resource_type': resource.resource_type.value,
-                    'quota_limit': resource.quota_limit,
-                    'current_usage': resource.current_usage,
-                    'reset_period': resource.reset_period,
-                    'last_reset': resource.last_reset.isoformat(),
-                    'next_reset': resource.next_reset.isoformat(),
-                    'is_active': resource.is_active
-                } for resource_type, resource in resources.items()},
-                ttl=self.cache_ttls['tenant_resources']
+                {
+                    resource_type: {
+                        "id": resource.id,
+                        "tenant_id": resource.tenant_id,
+                        "resource_type": resource.resource_type.value,
+                        "quota_limit": resource.quota_limit,
+                        "current_usage": resource.current_usage,
+                        "reset_period": resource.reset_period,
+                        "last_reset": resource.last_reset.isoformat(),
+                        "next_reset": resource.next_reset.isoformat(),
+                        "is_active": resource.is_active,
+                    }
+                    for resource_type, resource in resources.items()
+                },
+                ttl=self.cache_ttls["tenant_resources"],
             )
 
             return resources
@@ -458,8 +493,9 @@ class TenantService:
             return {}
 
     @time_operation("tenant_check_resource_quota")
-    async def check_resource_quota(self, tenant_id: int, resource_type: ResourceType,
-                                   required_amount: int = 1) -> bool:
+    async def check_resource_quota(
+        self, tenant_id: int, resource_type: ResourceType, required_amount: int = 1
+    ) -> bool:
         """Check if tenant has sufficient resource quota."""
         try:
             # Try to get from cache first
@@ -467,7 +503,7 @@ class TenantService:
             cached_quota = await self.cache_manager.enhanced_cache_get(cache_key)
 
             if cached_quota:
-                return cached_quota['available'] >= required_amount
+                return cached_quota["available"] >= required_amount
 
             # Get current usage
             resources = await self.get_resource_usage(tenant_id)
@@ -483,8 +519,8 @@ class TenantService:
             # Cache quota check
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                {'available': available, 'has_quota': has_quota},
-                ttl=self.cache_ttls['resource_quotas']
+                {"available": available, "has_quota": has_quota},
+                ttl=self.cache_ttls["resource_quotas"],
             )
 
             return has_quota
@@ -494,8 +530,9 @@ class TenantService:
             return False
 
     @time_operation("tenant_increment_resource_usage")
-    async def increment_resource_usage(self, tenant_id: int, resource_type: ResourceType,
-                                       amount: int = 1) -> bool:
+    async def increment_resource_usage(
+        self, tenant_id: int, resource_type: ResourceType, amount: int = 1
+    ) -> bool:
         """Increment resource usage for a tenant."""
         try:
             # Update database
@@ -505,18 +542,25 @@ class TenantService:
             WHERE tenant_id = :tenant_id AND resource_type = :resource_type AND is_active = 1
             """
 
-            result = await self.db_manager.execute(query, {
-                'tenant_id': tenant_id,
-                'resource_type': resource_type.value,
-                'amount': amount
-            })
+            result = await self.db_manager.execute(
+                query,
+                {
+                    "tenant_id": tenant_id,
+                    "resource_type": resource_type.value,
+                    "amount": amount,
+                },
+            )
 
             if result.rowcount == 0:
                 return False
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"tenant_resources:{tenant_id}")
-            await self.cache_manager.clear_cache_by_pattern(f"resource_quota:{tenant_id}:{resource_type.value}")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"tenant_resources:{tenant_id}"
+            )
+            await self.cache_manager.clear_cache_by_pattern(
+                f"resource_quota:{tenant_id}:{resource_type.value}"
+            )
             await self.cache_manager.clear_cache_by_pattern(f"tenant_stats:{tenant_id}")
 
             record_metric("resource_usage_incremented", 1)
@@ -532,10 +576,15 @@ class TenantService:
         try:
             # Try to get from cache first
             cache_key = f"tenant_customizations:{tenant_id}"
-            cached_customizations = await self.cache_manager.enhanced_cache_get(cache_key)
+            cached_customizations = await self.cache_manager.enhanced_cache_get(
+                cache_key
+            )
 
             if cached_customizations:
-                return [TenantCustomization(**customization) for customization in cached_customizations]
+                return [
+                    TenantCustomization(**customization)
+                    for customization in cached_customizations
+                ]
 
             # Get from database
             query = """
@@ -543,35 +592,41 @@ class TenantService:
             WHERE tenant_id = :tenant_id AND is_active = 1
             """
 
-            results = await self.db_manager.fetch_all(query, {'tenant_id': tenant_id})
+            results = await self.db_manager.fetch_all(query, {"tenant_id": tenant_id})
 
             customizations = []
             for row in results:
                 customization = TenantCustomization(
-                    id=row['id'],
-                    tenant_id=row['tenant_id'],
-                    customization_type=row['customization_type'],
-                    customization_data=json.loads(
-                        row['customization_data']) if row['customization_data'] else {},
-                    is_active=row['is_active'],
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    id=row["id"],
+                    tenant_id=row["tenant_id"],
+                    customization_type=row["customization_type"],
+                    customization_data=(
+                        json.loads(row["customization_data"])
+                        if row["customization_data"]
+                        else {}
+                    ),
+                    is_active=row["is_active"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 customizations.append(customization)
 
             # Cache customizations
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': c.id,
-                    'tenant_id': c.tenant_id,
-                    'customization_type': c.customization_type,
-                    'customization_data': c.customization_data,
-                    'is_active': c.is_active,
-                    'created_at': c.created_at.isoformat(),
-                    'updated_at': c.updated_at.isoformat()
-                } for c in customizations],
-                ttl=self.cache_ttls['tenant_customizations']
+                [
+                    {
+                        "id": c.id,
+                        "tenant_id": c.tenant_id,
+                        "customization_type": c.customization_type,
+                        "customization_data": c.customization_data,
+                        "is_active": c.is_active,
+                        "created_at": c.created_at.isoformat(),
+                        "updated_at": c.updated_at.isoformat(),
+                    }
+                    for c in customizations
+                ],
+                ttl=self.cache_ttls["tenant_customizations"],
             )
 
             return customizations
@@ -581,8 +636,12 @@ class TenantService:
             return []
 
     @time_operation("tenant_update_customization")
-    async def update_customization(self, tenant_id: int, customization_type: str,
-                                   customization_data: Dict[str, Any]) -> bool:
+    async def update_customization(
+        self,
+        tenant_id: int,
+        customization_type: str,
+        customization_data: Dict[str, Any],
+    ) -> bool:
         """Update customization for a tenant."""
         try:
             # Check if customization exists
@@ -591,10 +650,10 @@ class TenantService:
             WHERE tenant_id = :tenant_id AND customization_type = :customization_type
             """
 
-            existing = await self.db_manager.fetch_one(query, {
-                'tenant_id': tenant_id,
-                'customization_type': customization_type
-            })
+            existing = await self.db_manager.fetch_one(
+                query,
+                {"tenant_id": tenant_id, "customization_type": customization_type},
+            )
 
             if existing:
                 # Update existing
@@ -610,14 +669,19 @@ class TenantService:
                 VALUES (:tenant_id, :customization_type, :customization_data, 1, NOW(), NOW())
                 """
 
-            await self.db_manager.execute(update_query, {
-                'tenant_id': tenant_id,
-                'customization_type': customization_type,
-                'customization_data': json.dumps(customization_data)
-            })
+            await self.db_manager.execute(
+                update_query,
+                {
+                    "tenant_id": tenant_id,
+                    "customization_type": customization_type,
+                    "customization_data": json.dumps(customization_data),
+                },
+            )
 
             # Clear related cache
-            await self.cache_manager.clear_cache_by_pattern(f"tenant_customizations:{tenant_id}")
+            await self.cache_manager.clear_cache_by_pattern(
+                f"tenant_customizations:{tenant_id}"
+            )
 
             return True
 
@@ -644,38 +708,38 @@ class TenantService:
             LIMIT 1
             """
 
-            result = await self.db_manager.fetch_one(query, {'tenant_id': tenant_id})
+            result = await self.db_manager.fetch_one(query, {"tenant_id": tenant_id})
 
             if not result:
                 return None
 
             billing = TenantBilling(
-                id=result['id'],
-                tenant_id=result['tenant_id'],
-                plan_name=result['plan_name'],
-                billing_cycle=result['billing_cycle'],
-                amount=result['amount'],
-                currency=result['currency'],
-                status=result['status'],
-                next_billing_date=result['next_billing_date'],
-                created_at=result['created_at']
+                id=result["id"],
+                tenant_id=result["tenant_id"],
+                plan_name=result["plan_name"],
+                billing_cycle=result["billing_cycle"],
+                amount=result["amount"],
+                currency=result["currency"],
+                status=result["status"],
+                next_billing_date=result["next_billing_date"],
+                created_at=result["created_at"],
             )
 
             # Cache billing info
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
                 {
-                    'id': billing.id,
-                    'tenant_id': billing.tenant_id,
-                    'plan_name': billing.plan_name,
-                    'billing_cycle': billing.billing_cycle,
-                    'amount': billing.amount,
-                    'currency': billing.currency,
-                    'status': billing.status,
-                    'next_billing_date': billing.next_billing_date.isoformat(),
-                    'created_at': billing.created_at.isoformat()
+                    "id": billing.id,
+                    "tenant_id": billing.tenant_id,
+                    "plan_name": billing.plan_name,
+                    "billing_cycle": billing.billing_cycle,
+                    "amount": billing.amount,
+                    "currency": billing.currency,
+                    "status": billing.status,
+                    "next_billing_date": billing.next_billing_date.isoformat(),
+                    "created_at": billing.created_at.isoformat(),
                 },
-                ttl=self.cache_ttls['tenant_billing']
+                ttl=self.cache_ttls["tenant_billing"],
             )
 
             return billing
@@ -685,8 +749,12 @@ class TenantService:
             return None
 
     @time_operation("tenant_get_all_tenants")
-    async def get_all_tenants(self, status: Optional[TenantStatus] = None,
-                              plan_type: Optional[PlanType] = None, limit: int = 100) -> List[Tenant]:
+    async def get_all_tenants(
+        self,
+        status: Optional[TenantStatus] = None,
+        plan_type: Optional[PlanType] = None,
+        limit: int = 100,
+    ) -> List[Tenant]:
         """Get all tenants with optional filtering."""
         try:
             # Try to get from cache first
@@ -702,56 +770,58 @@ class TenantService:
 
             if status:
                 query += " AND status = :status"
-                params['status'] = status.value
+                params["status"] = status.value
 
             if plan_type:
                 query += " AND plan_type = :plan_type"
-                params['plan_type'] = plan_type.value
+                params["plan_type"] = plan_type.value
 
             query += " ORDER BY created_at DESC LIMIT :limit"
-            params['limit'] = limit
+            params["limit"] = limit
 
             results = await self.db_manager.fetch_all(query, params)
 
             tenants = []
             for row in results:
                 tenant = Tenant(
-                    id=row['id'],
-                    tenant_name=row['tenant_name'],
-                    tenant_code=row['tenant_code'],
-                    display_name=row['display_name'],
-                    status=TenantStatus(row['status']),
-                    plan_type=PlanType(row['plan_type']),
-                    contact_email=row['contact_email'],
-                    contact_phone=row['contact_phone'],
-                    settings=json.loads(
-                        row['settings']) if row['settings'] else {},
-                    custom_domain=row['custom_domain'],
-                    timezone=row['timezone'],
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
+                    id=row["id"],
+                    tenant_name=row["tenant_name"],
+                    tenant_code=row["tenant_code"],
+                    display_name=row["display_name"],
+                    status=TenantStatus(row["status"]),
+                    plan_type=PlanType(row["plan_type"]),
+                    contact_email=row["contact_email"],
+                    contact_phone=row["contact_phone"],
+                    settings=json.loads(row["settings"]) if row["settings"] else {},
+                    custom_domain=row["custom_domain"],
+                    timezone=row["timezone"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
                 )
                 tenants.append(tenant)
 
             # Cache tenant list
             await self.cache_manager.enhanced_cache_set(
                 cache_key,
-                [{
-                    'id': tenant.id,
-                    'tenant_name': tenant.tenant_name,
-                    'tenant_code': tenant.tenant_code,
-                    'display_name': tenant.display_name,
-                    'status': tenant.status.value,
-                    'plan_type': tenant.plan_type.value,
-                    'contact_email': tenant.contact_email,
-                    'contact_phone': tenant.contact_phone,
-                    'settings': tenant.settings,
-                    'custom_domain': tenant.custom_domain,
-                    'timezone': tenant.timezone,
-                    'created_at': tenant.created_at.isoformat(),
-                    'updated_at': tenant.updated_at.isoformat()
-                } for tenant in tenants],
-                ttl=self.cache_ttls['tenant_list']
+                [
+                    {
+                        "id": tenant.id,
+                        "tenant_name": tenant.tenant_name,
+                        "tenant_code": tenant.tenant_code,
+                        "display_name": tenant.display_name,
+                        "status": tenant.status.value,
+                        "plan_type": tenant.plan_type.value,
+                        "contact_email": tenant.contact_email,
+                        "contact_phone": tenant.contact_phone,
+                        "settings": tenant.settings,
+                        "custom_domain": tenant.custom_domain,
+                        "timezone": tenant.timezone,
+                        "created_at": tenant.created_at.isoformat(),
+                        "updated_at": tenant.updated_at.isoformat(),
+                    }
+                    for tenant in tenants
+                ],
+                ttl=self.cache_ttls["tenant_list"],
             )
 
             return tenants
@@ -787,55 +857,66 @@ class TenantService:
 
             # Calculate statistics
             total_resources = len(resources)
-            active_resources = len(
-                [r for r in resources.values() if r.is_active])
+            active_resources = len([r for r in resources.values() if r.is_active])
             usage_percentages = {}
 
             for resource_type, resource in resources.items():
                 if resource.quota_limit > 0:
                     usage_percentages[resource_type] = (
-                        resource.current_usage / resource.quota_limit) * 100
+                        resource.current_usage / resource.quota_limit
+                    ) * 100
 
             stats = {
-                'tenant_info': {
-                    'id': tenant.id,
-                    'name': tenant.tenant_name,
-                    'display_name': tenant.display_name,
-                    'status': tenant.status.value,
-                    'plan_type': tenant.plan_type.value,
-                    'created_at': tenant.created_at.isoformat()
+                "tenant_info": {
+                    "id": tenant.id,
+                    "name": tenant.tenant_name,
+                    "display_name": tenant.display_name,
+                    "status": tenant.status.value,
+                    "plan_type": tenant.plan_type.value,
+                    "created_at": tenant.created_at.isoformat(),
                 },
-                'resources': {
-                    'total': total_resources,
-                    'active': active_resources,
-                    'usage_percentages': usage_percentages,
-                    'details': {resource_type: {
-                        'quota_limit': resource.quota_limit,
-                        'current_usage': resource.current_usage,
-                        'available': resource.quota_limit - resource.current_usage,
-                        'usage_percentage': (resource.current_usage / resource.quota_limit * 100) if resource.quota_limit > 0 else 0
-                    } for resource_type, resource in resources.items()}
+                "resources": {
+                    "total": total_resources,
+                    "active": active_resources,
+                    "usage_percentages": usage_percentages,
+                    "details": {
+                        resource_type: {
+                            "quota_limit": resource.quota_limit,
+                            "current_usage": resource.current_usage,
+                            "available": resource.quota_limit - resource.current_usage,
+                            "usage_percentage": (
+                                (resource.current_usage / resource.quota_limit * 100)
+                                if resource.quota_limit > 0
+                                else 0
+                            ),
+                        }
+                        for resource_type, resource in resources.items()
+                    },
                 },
-                'customizations': {
-                    'total': len(customizations),
-                    'active': len([c for c in customizations if c.is_active]),
-                    'types': list(set(c.customization_type for c in customizations))
+                "customizations": {
+                    "total": len(customizations),
+                    "active": len([c for c in customizations if c.is_active]),
+                    "types": list(set(c.customization_type for c in customizations)),
                 },
-                'billing': {
-                    'plan_name': billing.plan_name if billing else None,
-                    'billing_cycle': billing.billing_cycle if billing else None,
-                    'amount': billing.amount if billing else None,
-                    'currency': billing.currency if billing else None,
-                    'status': billing.status if billing else None,
-                    'next_billing_date': billing.next_billing_date.isoformat() if billing else None
-                } if billing else None
+                "billing": (
+                    {
+                        "plan_name": billing.plan_name if billing else None,
+                        "billing_cycle": billing.billing_cycle if billing else None,
+                        "amount": billing.amount if billing else None,
+                        "currency": billing.currency if billing else None,
+                        "status": billing.status if billing else None,
+                        "next_billing_date": (
+                            billing.next_billing_date.isoformat() if billing else None
+                        ),
+                    }
+                    if billing
+                    else None
+                ),
             }
 
             # Cache stats
             await self.cache_manager.enhanced_cache_set(
-                cache_key,
-                stats,
-                ttl=self.cache_ttls['tenant_stats']
+                cache_key, stats, ttl=self.cache_ttls["tenant_stats"]
             )
 
             return stats
@@ -879,7 +960,7 @@ class TenantService:
                 ResourceType.STORAGE: 1024,  # MB
                 ResourceType.ANALYTICS: 100,
                 ResourceType.ML_PREDICTIONS: 100,
-                ResourceType.WEBHOOKS: 10
+                ResourceType.WEBHOOKS: 10,
             },
             PlanType.PROFESSIONAL: {
                 ResourceType.USERS: 1000,
@@ -888,7 +969,7 @@ class TenantService:
                 ResourceType.STORAGE: 10240,  # MB
                 ResourceType.ANALYTICS: 1000,
                 ResourceType.ML_PREDICTIONS: 1000,
-                ResourceType.WEBHOOKS: 100
+                ResourceType.WEBHOOKS: 100,
             },
             PlanType.ENTERPRISE: {
                 ResourceType.USERS: 10000,
@@ -897,8 +978,8 @@ class TenantService:
                 ResourceType.STORAGE: 102400,  # MB
                 ResourceType.ANALYTICS: 10000,
                 ResourceType.ML_PREDICTIONS: 10000,
-                ResourceType.WEBHOOKS: 1000
-            }
+                ResourceType.WEBHOOKS: 1000,
+            },
         }
 
     async def _initialize_default_tenant(self):
@@ -907,12 +988,12 @@ class TenantService:
             query = "SELECT COUNT(*) as count FROM tenants"
             result = await self.db_manager.fetch_one(query)
 
-            if result['count'] == 0:
+            if result["count"] == 0:
                 await self.create_tenant(
                     tenant_name="Default Tenant",
                     display_name="Default System Tenant",
                     plan_type=PlanType.ENTERPRISE,
-                    contact_email="admin@dbsbm.com"
+                    contact_email="admin@dbsbm.com",
                 )
                 logger.info("Default tenant created")
         except Exception as e:
@@ -930,75 +1011,80 @@ class TenantService:
     def _generate_tenant_code(self) -> str:
         """Generate unique tenant code."""
         while True:
-            code = ''.join(secrets.choice(
-                string.ascii_uppercase + string.digits) for _ in range(8))
+            code = "".join(
+                secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8)
+            )
             # Check if code exists (would need async check in real implementation)
             return code
 
     def _get_plan_features(self, plan_type: PlanType) -> Dict[str, bool]:
         """Get features available for plan type."""
         features = {
-            'basic_betting': True,
-            'analytics': False,
-            'ml_predictions': False,
-            'webhooks': False,
-            'custom_branding': False,
-            'enterprise_integrations': False,
-            'compliance_features': False,
-            'advanced_security': False
+            "basic_betting": True,
+            "analytics": False,
+            "ml_predictions": False,
+            "webhooks": False,
+            "custom_branding": False,
+            "enterprise_integrations": False,
+            "compliance_features": False,
+            "advanced_security": False,
         }
 
         if plan_type == PlanType.PROFESSIONAL:
-            features.update({
-                'analytics': True,
-                'ml_predictions': True,
-                'webhooks': True,
-                'custom_branding': True
-            })
+            features.update(
+                {
+                    "analytics": True,
+                    "ml_predictions": True,
+                    "webhooks": True,
+                    "custom_branding": True,
+                }
+            )
         elif plan_type == PlanType.ENTERPRISE:
-            features.update({
-                'analytics': True,
-                'ml_predictions': True,
-                'webhooks': True,
-                'custom_branding': True,
-                'enterprise_integrations': True,
-                'compliance_features': True,
-                'advanced_security': True
-            })
+            features.update(
+                {
+                    "analytics": True,
+                    "ml_predictions": True,
+                    "webhooks": True,
+                    "custom_branding": True,
+                    "enterprise_integrations": True,
+                    "compliance_features": True,
+                    "advanced_security": True,
+                }
+            )
 
         return features
 
     def _get_default_security_settings(self) -> Dict[str, Any]:
         """Get default security settings."""
         return {
-            'mfa_required': False,
-            'session_timeout': 24,  # hours
-            'password_policy': 'standard',
-            'ip_whitelist': [],
-            'audit_logging': False
+            "mfa_required": False,
+            "session_timeout": 24,  # hours
+            "password_policy": "standard",
+            "ip_whitelist": [],
+            "audit_logging": False,
         }
 
     def _get_default_integration_settings(self) -> Dict[str, Any]:
         """Get default integration settings."""
         return {
-            'webhooks_enabled': False,
-            'api_rate_limit': 100,
-            'third_party_integrations': [],
-            'custom_endpoints': []
+            "webhooks_enabled": False,
+            "api_rate_limit": 100,
+            "third_party_integrations": [],
+            "custom_endpoints": [],
         }
 
     def _get_default_notification_settings(self) -> Dict[str, Any]:
         """Get default notification settings."""
         return {
-            'email_notifications': True,
-            'sms_notifications': False,
-            'push_notifications': False,
-            'notification_preferences': {
-                'bet_confirmation': True,
-                'bet_result': True,
-                'system_alerts': True,
-                'marketing': False
-            }
+            "email_notifications": True,
+            "sms_notifications": False,
+            "push_notifications": False,
+            "notification_preferences": {
+                "bet_confirmation": True,
+                "bet_result": True,
+                "system_alerts": True,
+                "marketing": False,
+            },
         }
 
     async def _setup_tenant_quotas(self, tenant_id: int, plan_type: PlanType):
@@ -1016,9 +1102,9 @@ class TenantService:
                 # Set next reset based on reset period
                 next_reset = datetime.utcnow() + timedelta(days=30)  # Monthly reset
 
-                await self.db_manager.execute(query, (
-                    tenant_id, resource_type.value, quota_limit, next_reset
-                ))
+                await self.db_manager.execute(
+                    query, (tenant_id, resource_type.value, quota_limit, next_reset)
+                )
         except Exception as e:
             logger.error(f"Setup tenant quotas error: {e}")
 
@@ -1033,7 +1119,9 @@ class TenantService:
                     SET quota_limit = %s
                     WHERE tenant_id = %s AND resource_type = %s
                 """
-                await self.db_manager.execute(query, (quota_limit, tenant_id, resource_type.value))
+                await self.db_manager.execute(
+                    query, (quota_limit, tenant_id, resource_type.value)
+                )
         except Exception as e:
             logger.error(f"Update tenant quotas error: {e}")
 
@@ -1041,18 +1129,18 @@ class TenantService:
         """Setup default customizations for a tenant."""
         try:
             customizations = {
-                'branding': {
-                    'logo_url': None,
-                    'primary_color': '#007bff',
-                    'secondary_color': '#6c757d',
-                    'company_name': None
+                "branding": {
+                    "logo_url": None,
+                    "primary_color": "#007bff",
+                    "secondary_color": "#6c757d",
+                    "company_name": None,
                 },
-                'features': {
-                    'enable_chatbot': True,
-                    'enable_analytics': plan_type != PlanType.BASIC,
-                    'enable_ml': plan_type != PlanType.BASIC,
-                    'enable_webhooks': plan_type != PlanType.BASIC
-                }
+                "features": {
+                    "enable_chatbot": True,
+                    "enable_analytics": plan_type != PlanType.BASIC,
+                    "enable_ml": plan_type != PlanType.BASIC,
+                    "enable_webhooks": plan_type != PlanType.BASIC,
+                },
             }
 
             for customization_type, data in customizations.items():
@@ -1066,7 +1154,7 @@ class TenantService:
             billing_amounts = {
                 PlanType.BASIC: 29.99,
                 PlanType.PROFESSIONAL: 99.99,
-                PlanType.ENTERPRISE: 299.99
+                PlanType.ENTERPRISE: 299.99,
             }
 
             amount = billing_amounts.get(plan_type, 0.0)
@@ -1078,9 +1166,10 @@ class TenantService:
 
             next_billing = datetime.utcnow() + timedelta(days=30)
 
-            await self.db_manager.execute(query, (
-                tenant_id, plan_type.value, 'monthly', amount, 'USD', next_billing
-            ))
+            await self.db_manager.execute(
+                query,
+                (tenant_id, plan_type.value, "monthly", amount, "USD", next_billing),
+            )
         except Exception as e:
             logger.error(f"Setup tenant billing error: {e}")
 

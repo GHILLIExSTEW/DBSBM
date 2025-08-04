@@ -163,7 +163,7 @@ class TestUserService:
     async def test_get_user_not_found(self, user_service):
         """Test getting a non-existent user."""
         # Mock the enhanced cache functions to return None
-        with patch('bot.services.user_service.enhanced_cache_get', return_value=None):
+        with patch("bot.services.user_service.enhanced_cache_get", return_value=None):
             user_service.db.fetch_one.return_value = None
 
             result = await user_service.get_user(123456789)
@@ -181,9 +181,11 @@ class TestUserService:
         }
 
         # Mock the enhanced cache functions
-        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
-                patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
-                patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
+        with patch(
+            "bot.services.user_service.enhanced_cache_get", return_value=None
+        ), patch("bot.services.user_service.enhanced_cache_set") as mock_set, patch(
+            "bot.services.user_service.enhanced_cache_delete"
+        ) as mock_delete:
 
             user_service.db.fetch_one.return_value = user_data
 
@@ -206,9 +208,11 @@ class TestUserService:
     async def test_get_or_create_user_new(self, user_service):
         """Test creating a new user."""
         # Mock the enhanced cache functions
-        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
-                patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
-                patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
+        with patch(
+            "bot.services.user_service.enhanced_cache_get", return_value=None
+        ), patch("bot.services.user_service.enhanced_cache_set") as mock_set, patch(
+            "bot.services.user_service.enhanced_cache_delete"
+        ) as mock_delete:
 
             user_service.db.fetch_one.return_value = None
             user_service.db.execute.return_value = 1
@@ -248,9 +252,11 @@ class TestUserService:
         }
 
         # Mock the enhanced cache functions
-        with patch('bot.services.user_service.enhanced_cache_get', return_value=None), \
-                patch('bot.services.user_service.enhanced_cache_set') as mock_set, \
-                patch('bot.services.user_service.enhanced_cache_delete') as mock_delete:
+        with patch(
+            "bot.services.user_service.enhanced_cache_get", return_value=None
+        ), patch("bot.services.user_service.enhanced_cache_set") as mock_set, patch(
+            "bot.services.user_service.enhanced_cache_delete"
+        ) as mock_delete:
 
             user_service.db.fetch_one.return_value = user_data
             user_service.db.execute.return_value = 1
@@ -263,8 +269,7 @@ class TestUserService:
     @pytest.mark.asyncio
     async def test_update_user_balance_insufficient_funds(self, user_service):
         """Test balance update with insufficient funds."""
-        user_data = {"user_id": 123456789,
-                     "username": "testuser", "balance": 100.0}
+        user_data = {"user_id": 123456789, "username": "testuser", "balance": 100.0}
         user_service.db.fetch_one.return_value = user_data
 
         with pytest.raises(Exception):  # Should raise InsufficientUnitsError
@@ -362,8 +367,7 @@ class TestAdminService:
     @pytest.mark.asyncio
     async def test_setup_guild_existing(self, admin_service):
         """Test updating an existing guild."""
-        admin_service.db_manager.fetch_one.return_value = {
-            "guild_id": 123456789}
+        admin_service.db_manager.fetch_one.return_value = {"guild_id": 123456789}
         admin_service.db_manager.execute.return_value = (1, None)
 
         settings = {"embed_channel_1": 111222333, "admin_role": 444555666}
@@ -391,10 +395,11 @@ class TestDatabaseManager:
             },
         ):
             # Mock the module-level imports
-            with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), \
-                 patch("bot.data.db_manager.MYSQL_USER", "test_user"), \
-                 patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), \
-                 patch("bot.data.db_manager.MYSQL_DB", "test_db"):
+            with patch("bot.data.db_manager.MYSQL_HOST", "localhost"), patch(
+                "bot.data.db_manager.MYSQL_USER", "test_user"
+            ), patch("bot.data.db_manager.MYSQL_PASSWORD", "test_password"), patch(
+                "bot.data.db_manager.MYSQL_DB", "test_db"
+            ):
                 return DatabaseManager()
 
     @pytest.mark.skip(
