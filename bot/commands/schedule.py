@@ -451,10 +451,10 @@ class TeamSeasonSelect(View):
         # Add text below logos with proper spacing (matching league schedule)
         text_y_start = header_y_start + 100  # 100px below logos
 
-        # Add Bet Tracking AI branding at 1/3 position (left side)
+        # Add Bet Tracking Bot branding at 1/3 position (left side)
         draw.text(
             (400, text_y_start),
-            "Bet Tracking AI",
+            "Bet Tracking Bot",
             font=title_font,
             fill="#ffffff",
             anchor="mm",
@@ -464,7 +464,7 @@ class TeamSeasonSelect(View):
         if guild:
             guild_name_text = f"{guild.name.upper()}"
         else:
-            guild_name_text = "BET TRACKING AI GUILD"
+            guild_name_text = "BET TRACKING BOT GUILD"
         draw.text(
             (840, text_y_start),
             guild_name_text,
@@ -582,7 +582,7 @@ class TeamSeasonSelect(View):
         current_year = datetime.now().year
         draw.text(
             (600, 1780),
-            f"© Bet Tracking AI {current_year}",
+            f"© Bet Tracking Bot {current_year}",
             font=text_font,
             fill="#666666",
             anchor="mm",
@@ -1113,9 +1113,9 @@ class ScheduleCog(commands.Cog):
                     width=3,
                 )
                 image.paste(ptp_logo, (logo_x, logo_y), ptp_logo)
-                logger.info(f"Added Bet Tracking AI logo from {ptp_logo_path}")
+                logger.info(f"Added Bet Tracking Bot logo from {ptp_logo_path}")
             else:
-                logger.warning(f"Bet Tracking AI logo not found at {ptp_logo_path}")
+                logger.warning(f"Bet Tracking Bot logo not found at {ptp_logo_path}")
                 logo_x = 400 - 35
                 logo_y = header_y_start
                 draw.ellipse(
@@ -1201,10 +1201,10 @@ class ScheduleCog(commands.Cog):
         # Add text below logos with proper spacing
         text_y_start = header_y_start + 100  # 100px below logos
 
-        # Add Bet Tracking AI branding at 1/3 position (left side)
+        # Add Bet Tracking Bot branding at 1/3 position (left side)
         draw.text(
             (400, text_y_start),
-            "Bet Tracking AI",
+            "Bet Tracking Bot",
             font=title_font,
             fill="#ffffff",
             anchor="mm",
@@ -1214,7 +1214,7 @@ class ScheduleCog(commands.Cog):
         if guild:
             guild_name_text = f"{guild.name.upper()}"
         else:
-            guild_name_text = "BET TRACKING AI GUILD"
+            guild_name_text = "BET TRACKING BOT GUILD"
         draw.text(
             (840, text_y_start),
             guild_name_text,
@@ -1237,7 +1237,7 @@ class ScheduleCog(commands.Cog):
         current_year = datetime.now().year
         draw.text(
             (600, 1580),
-            f"© Bet Tracking AI {current_year}",
+            f"© Bet Tracking Bot {current_year}",
             font=text_font,
             fill="#666666",
             anchor="mm",

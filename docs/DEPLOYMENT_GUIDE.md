@@ -16,10 +16,10 @@ public_html/
 ```
 
 ## 🌐 Test Your Website
-- **Main Site**: https://bet-tracking-ai.com/
-- **Health Check**: https://bet-tracking-ai.com/health
-- **Server List**: https://bet-tracking-ai.com/server-list
-- **CGI Test**: https://bet-tracking-ai.com/cgi-bin/test_cgi.py
+- **Main Site**: https://bet-tracking-bot.com/
+- **Health Check**: https://bet-tracking-bot.com/health
+- **Server List**: https://bet-tracking-bot.com/server-list
+- **CGI Test**: https://bet-tracking-bot.com/cgi-bin/test_cgi.py
 
 ## 🔧 Troubleshooting
 If you see Bluehost default page:

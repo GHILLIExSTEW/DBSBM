@@ -816,12 +816,12 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
                 # Find existing webhook or create new one
                 for existing_webhook in webhooks:
-                    if existing_webhook.name == "Bet Tracking AI":
+                    if existing_webhook.name == "Bet Tracking Bot":
                         webhook = existing_webhook
                         break
 
                 if not webhook:
-                    webhook = await channel.create_webhook(name="Bet Tracking AI")
+                    webhook = await channel.create_webhook(name="Bet Tracking Bot")
 
                 # Post to channel using webhook
                 webhook_message = await webhook.send(
