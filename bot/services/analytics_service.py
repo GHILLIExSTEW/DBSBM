@@ -7,14 +7,14 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import (
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from bot.utils.performance_monitor import time_operation
+from utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
 
@@ -339,8 +339,8 @@ class AnalyticsService:
             query = """
                 SELECT bet_id, amount, odds, status, created_at, game_id
                 FROM bets
-                WHERE user_id = %s AND guild_id = %s
-                AND created_at BETWEEN %s AND %s
+                WHERE user_id = $1 AND guild_id = $2
+                AND created_at BETWEEN $3 AND $4
                 ORDER BY created_at DESC
             """
             return await self.db_manager.fetch_all(
@@ -358,8 +358,8 @@ class AnalyticsService:
             query = """
                 SELECT bet_id, user_id, amount, odds, status, created_at, game_id
                 FROM bets
-                WHERE guild_id = %s
-                AND created_at BETWEEN %s AND %s
+                WHERE guild_id = $1
+                AND created_at BETWEEN $2 AND $3
                 ORDER BY created_at DESC
             """
             return await self.db_manager.fetch_all(

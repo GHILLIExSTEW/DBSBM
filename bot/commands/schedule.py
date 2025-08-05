@@ -11,107 +11,107 @@ from discord.ext import commands
 from discord.ui import Button, Select, View
 from PIL import Image, ImageDraw, ImageFont
 
-from bot.data.league_schedules.nfl.teams.arizona_cardinals_schedule import (
+from data.league_schedules.nfl.teams.arizona_cardinals_schedule import (
     ARIZONA_CARDINALS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.atlanta_falcons_schedule import (
+from data.league_schedules.nfl.teams.atlanta_falcons_schedule import (
     ATLANTA_FALCONS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.baltimore_ravens_schedule import (
+from data.league_schedules.nfl.teams.baltimore_ravens_schedule import (
     BALTIMORE_RAVENS_SCHEDULE,
 )
 
 # Import team schedules
-from bot.data.league_schedules.nfl.teams.buffalo_bills_schedule import (
+from data.league_schedules.nfl.teams.buffalo_bills_schedule import (
     BUFFALO_BILLS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.carolina_panthers_schedule import (
+from data.league_schedules.nfl.teams.carolina_panthers_schedule import (
     CAROLINA_PANTHERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.chicago_bears_schedule import (
+from data.league_schedules.nfl.teams.chicago_bears_schedule import (
     CHICAGO_BEARS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.cincinnati_bengals_schedule import (
+from data.league_schedules.nfl.teams.cincinnati_bengals_schedule import (
     CINCINNATI_BENGALS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.cleveland_browns_schedule import (
+from data.league_schedules.nfl.teams.cleveland_browns_schedule import (
     CLEVELAND_BROWNS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.dallas_cowboys_schedule import (
+from data.league_schedules.nfl.teams.dallas_cowboys_schedule import (
     DALLAS_COWBOYS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.denver_broncos_schedule import (
+from data.league_schedules.nfl.teams.denver_broncos_schedule import (
     DENVER_BRONCOS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.detroit_lions_schedule import (
+from data.league_schedules.nfl.teams.detroit_lions_schedule import (
     DETROIT_LIONS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.green_bay_packers_schedule import (
+from data.league_schedules.nfl.teams.green_bay_packers_schedule import (
     GREEN_BAY_PACKERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.houston_texans_schedule import (
+from data.league_schedules.nfl.teams.houston_texans_schedule import (
     HOUSTON_TEXANS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.indianapolis_colts_schedule import (
+from data.league_schedules.nfl.teams.indianapolis_colts_schedule import (
     INDIANAPOLIS_COLTS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.jacksonville_jaguars_schedule import (
+from data.league_schedules.nfl.teams.jacksonville_jaguars_schedule import (
     JACKSONVILLE_JAGUARS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.kansas_city_chiefs_schedule import (
+from data.league_schedules.nfl.teams.kansas_city_chiefs_schedule import (
     KANSAS_CITY_CHIEFS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.las_vegas_raiders_schedule import (
+from data.league_schedules.nfl.teams.las_vegas_raiders_schedule import (
     LAS_VEGAS_RAIDERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.los_angeles_chargers_schedule import (
+from data.league_schedules.nfl.teams.los_angeles_chargers_schedule import (
     LOS_ANGELES_CHARGERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.los_angeles_rams_schedule import (
+from data.league_schedules.nfl.teams.los_angeles_rams_schedule import (
     LOS_ANGELES_RAMS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.miami_dolphins_schedule import (
+from data.league_schedules.nfl.teams.miami_dolphins_schedule import (
     MIAMI_DOLPHINS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.minnesota_vikings_schedule import (
+from data.league_schedules.nfl.teams.minnesota_vikings_schedule import (
     MINNESOTA_VIKINGS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.new_england_patriots_schedule import (
+from data.league_schedules.nfl.teams.new_england_patriots_schedule import (
     NEW_ENGLAND_PATRIOTS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.new_orleans_saints_schedule import (
+from data.league_schedules.nfl.teams.new_orleans_saints_schedule import (
     NEW_ORLEANS_SAINTS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.new_york_giants_schedule import (
+from data.league_schedules.nfl.teams.new_york_giants_schedule import (
     NEW_YORK_GIANTS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.new_york_jets_schedule import (
+from data.league_schedules.nfl.teams.new_york_jets_schedule import (
     NEW_YORK_JETS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.philadelphia_eagles_schedule import (
+from data.league_schedules.nfl.teams.philadelphia_eagles_schedule import (
     PHILADELPHIA_EAGLES_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.pittsburgh_steelers_schedule import (
+from data.league_schedules.nfl.teams.pittsburgh_steelers_schedule import (
     PITTSBURGH_STEELERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.san_francisco_49ers_schedule import (
+from data.league_schedules.nfl.teams.san_francisco_49ers_schedule import (
     SAN_FRANCISCO_49ERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.seattle_seahawks_schedule import (
+from data.league_schedules.nfl.teams.seattle_seahawks_schedule import (
     SEATTLE_SEAHAWKS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.tampa_bay_buccaneers_schedule import (
+from data.league_schedules.nfl.teams.tampa_bay_buccaneers_schedule import (
     TAMPA_BAY_BUCCANEERS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.tennessee_titans_schedule import (
+from data.league_schedules.nfl.teams.tennessee_titans_schedule import (
     TENNESSEE_TITANS_SCHEDULE,
 )
-from bot.data.league_schedules.nfl.teams.washington_commanders_schedule import (
+from data.league_schedules.nfl.teams.washington_commanders_schedule import (
     WASHINGTON_COMMANDERS_SCHEDULE,
 )
 
 # Import the league schedule data
-from bot.data.nfl_schedule_2025_2026 import NFL_SCHEDULE_2025_2026
+from data.nfl_schedule_2025_2026 import NFL_SCHEDULE_2025_2026
 
 logger = logging.getLogger(__name__)
 
@@ -327,7 +327,7 @@ class TeamSeasonSelect(View):
         self, guild, team_name: str, team_schedule: dict, league="NFL"
     ):
         # Import team colors
-        from bot.config.team_colors import get_team_colors
+        from config.team_colors import get_team_colors
 
         # Get team colors for background
         team_colors = get_team_colors(team_name, league)

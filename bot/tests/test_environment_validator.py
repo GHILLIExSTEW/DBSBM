@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bot.utils.environment_validator import EnvironmentValidator, validate_environment
+from utils.environment_validator import EnvironmentValidator, validate_environment
 
 
 class TestEnvironmentValidator:

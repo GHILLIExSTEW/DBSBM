@@ -16,7 +16,7 @@ import hashlib
 import hmac
 
 from data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
@@ -1095,7 +1095,7 @@ class TenantService:
             for resource_type, quota_limit in quotas.items():
                 query = """
                     INSERT INTO tenant_resources (tenant_id, resource_type, quota_limit, next_reset)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4)
                     ON DUPLICATE KEY UPDATE quota_limit = VALUES(quota_limit)
                 """
 
@@ -1116,8 +1116,8 @@ class TenantService:
             for resource_type, quota_limit in quotas.items():
                 query = """
                     UPDATE tenant_resources
-                    SET quota_limit = %s
-                    WHERE tenant_id = %s AND resource_type = %s
+                    SET quota_limit = $1
+                    WHERE tenant_id = $1 AND resource_type = $2
                 """
                 await self.db_manager.execute(
                     query, (quota_limit, tenant_id, resource_type.value)
@@ -1161,7 +1161,7 @@ class TenantService:
 
             query = """
                 INSERT INTO tenant_billing (tenant_id, plan_name, billing_cycle, amount, currency, next_billing_date)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES ($1, $2, $3, $4, $5, $6)
             """
 
             next_billing = datetime.utcnow() + timedelta(days=30)
@@ -1179,7 +1179,7 @@ class TenantService:
             query = """
                 UPDATE tenant_resources
                 SET current_usage = 0, last_reset = NOW(), next_reset = DATE_ADD(NOW(), INTERVAL 30 DAY)
-                WHERE tenant_id = %s AND resource_type = %s
+                WHERE tenant_id = $1 AND resource_type = $2
             """
             await self.db_manager.execute(query, (tenant_id, resource_type.value))
         except Exception as e:

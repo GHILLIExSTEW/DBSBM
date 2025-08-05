@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 
-from bot.api.sports_api import APISportsFetcher
+from api.sports_api import APISportsFetcher
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")

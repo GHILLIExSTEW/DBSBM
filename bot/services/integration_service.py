@@ -30,9 +30,9 @@ import aiohttp
 import hashlib
 import hmac
 
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -501,25 +501,25 @@ class IntegrationService:
             query = """
             INSERT INTO integrations
             (integration_id, integration_type, name, provider, status, config_data, credentials, sync_settings, created_at, updated_at, last_sync, health_status)
-            VALUES (:integration_id, :integration_type, :name, :provider, :status, :config_data, :credentials, :sync_settings, :created_at, :updated_at, :last_sync, :health_status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             """
 
             await self.db_manager.execute(
                 query,
-                {
-                    "integration_id": integration.integration_id,
-                    "integration_type": integration.integration_type.value,
-                    "name": integration.name,
-                    "provider": integration.provider,
-                    "status": integration.status.value,
-                    "config_data": json.dumps(integration.config_data),
-                    "credentials": json.dumps(integration.credentials),
-                    "sync_settings": json.dumps(integration.sync_settings),
-                    "created_at": integration.created_at,
-                    "updated_at": integration.updated_at,
-                    "last_sync": integration.last_sync,
-                    "health_status": integration.health_status,
-                },
+                (
+                    integration.integration_id,
+                    integration.integration_type.value,
+                    integration.name,
+                    integration.provider,
+                    integration.status.value,
+                    json.dumps(integration.config_data),
+                    json.dumps(integration.credentials),
+                    json.dumps(integration.sync_settings),
+                    integration.created_at,
+                    integration.updated_at,
+                    integration.last_sync,
+                    integration.health_status,
+                ),
             )
 
         except Exception as e:
@@ -530,23 +530,23 @@ class IntegrationService:
         try:
             query = """
             UPDATE integrations
-            SET status = :status, config_data = :config_data, credentials = :credentials,
-                sync_settings = :sync_settings, updated_at = :updated_at, last_sync = :last_sync, health_status = :health_status
-            WHERE integration_id = :integration_id
+            SET status = $1, config_data = $2, credentials = $3,
+                sync_settings = $4, updated_at = $5, last_sync = $6, health_status = $7
+            WHERE integration_id = $8
             """
 
             await self.db_manager.execute(
                 query,
-                {
-                    "integration_id": integration.integration_id,
-                    "status": integration.status.value,
-                    "config_data": json.dumps(integration.config_data),
-                    "credentials": json.dumps(integration.credentials),
-                    "sync_settings": json.dumps(integration.sync_settings),
-                    "updated_at": integration.updated_at,
-                    "last_sync": integration.last_sync,
-                    "health_status": integration.health_status,
-                },
+                (
+                    integration.status.value,
+                    json.dumps(integration.config_data),
+                    json.dumps(integration.credentials),
+                    json.dumps(integration.sync_settings),
+                    integration.updated_at,
+                    integration.last_sync,
+                    integration.health_status,
+                    integration.integration_id,
+                ),
             )
 
         except Exception as e:
@@ -809,7 +809,7 @@ class IntegrationService:
                 COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_jobs
             FROM sync_jobs
             WHERE integration_id = :integration_id
-            AND started_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+            AND started_at > NOW() - INTERVAL '7 DAY'
             """
 
             result = await self.db_manager.fetch_one(
@@ -860,7 +860,7 @@ class IntegrationService:
                 SUM(records_processed) as total_records_processed,
                 SUM(records_successful) as total_records_successful
             FROM sync_jobs
-            WHERE started_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
+            WHERE started_at > NOW() - INTERVAL '30 DAY'
             """
 
             result = await self.db_manager.fetch_one(query)
@@ -1190,10 +1190,10 @@ class IntegrationService:
         try:
             # Check for slow syncs
             query = """
-            SELECT integration_id, AVG(TIMESTAMPDIFF(MINUTE, started_at, completed_at)) as avg_duration
+            SELECT integration_id, AVG(EXTRACT(EPOCH FROM (completed_at - started_at))/60) as avg_duration
             FROM sync_jobs
             WHERE completed_at IS NOT NULL
-            AND started_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
+            AND started_at > NOW() - INTERVAL '1 DAY'
             GROUP BY integration_id
             HAVING avg_duration > 30
             """
@@ -1215,7 +1215,7 @@ class IntegrationService:
             query = """
             SELECT * FROM sync_jobs
             WHERE status = 'failed'
-            AND started_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
+            AND started_at > NOW() - INTERVAL '1 DAY'
             AND error_details NOT LIKE '%permanent%'
             """
 

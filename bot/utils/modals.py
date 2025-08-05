@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 import discord
 from discord.ui import Modal, TextInput
 
-from bot.config.asset_paths import BASE_DIR
+from config.asset_paths import BASE_DIR
 
 # Import your project's configurations and utilities
 # Adjust these paths if your config/utils structure is different
 # relative to the 'bot' root when this module is imported.
-from bot.config.leagues import LEAGUE_CONFIG
+from config.leagues import LEAGUE_CONFIG
 
 # Example, if used directly in modal
-from bot.utils.errors import BetServiceError
+from utils.errors import BetServiceError
 
 # Import the correct version of the image generator
 
@@ -767,7 +767,7 @@ class ParlayBetDetailsModal(Modal):
     ) -> bool:
         """Generate parlay preview image. Returns True if successful."""
         try:
-            from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
+            from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
             generator = ParlayBetImageGenerator(
                 guild_id=self.view_ref.original_interaction.guild_id

@@ -125,12 +125,12 @@ class GameService:
                     home_team_name, away_team_name, start_time, status, venue,
                     home_team_id, away_team_id, score
                 FROM api_games
-                WHERE sport = %s
+                WHERE sport = $1
                 AND UPPER(league_name) = UPPER(%s)
                 AND start_time > NOW()
                 AND status NOT IN ('Match Finished', 'Finished', 'FT', 'Ended', 'Game Finished', 'Final')
                 ORDER BY start_time ASC
-                LIMIT %s
+                LIMIT $3
             """
 
             games = await self.db.fetch_all(query, (db_sport, league_name, limit))

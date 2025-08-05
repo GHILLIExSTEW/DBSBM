@@ -14,8 +14,8 @@ import aiohttp
 from dotenv import load_dotenv
 
 # Import LEAGUE_IDS for league mapping
-from bot.config.leagues import LEAGUE_IDS
-from bot.services.api_response_cache_service import (
+from config.leagues import LEAGUE_IDS
+from services.api_response_cache_service import (
     cache_api_response,
     cache_api_response_with_invalidation,
 )

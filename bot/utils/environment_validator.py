@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 import aiohttp
-import aiomysql
+import asyncpg
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 
@@ -74,10 +74,10 @@ class EnvironmentValidator:
     REQUIRED_VARS = {
         "DISCORD_TOKEN": "Discord bot token for authentication",
         "API_KEY": "API-Sports key for sports data access",
-        "MYSQL_HOST": "MySQL database host address",
-        "MYSQL_USER": "MySQL database username",
-        "MYSQL_PASSWORD": "MySQL database password",
-        "MYSQL_DB": "MySQL database name",
+        "POSTGRES_HOST": "PostgreSQL database host address",
+        "POSTGRES_USER": "PostgreSQL database username",
+        "POSTGRES_PASSWORD": "PostgreSQL database password",
+        "POSTGRES_DB": "PostgreSQL database name",
         "TEST_GUILD_ID": "Discord guild ID for testing",
     }
 
@@ -88,9 +88,9 @@ class EnvironmentValidator:
         "API_TIMEOUT": ("30", "API request timeout in seconds"),
         "API_RETRY_ATTEMPTS": ("3", "Number of API retry attempts"),
         "API_RETRY_DELAY": ("5", "Delay between API retries in seconds"),
-        "MYSQL_PORT": ("3306", "MySQL database port"),
-        "MYSQL_POOL_MIN_SIZE": ("1", "Minimum MySQL connection pool size"),
-        "MYSQL_POOL_MAX_SIZE": ("10", "Maximum MySQL connection pool size"),
+        "POSTGRES_PORT": ("5432", "PostgreSQL database port"),
+        "POSTGRES_POOL_MIN_SIZE": ("1", "Minimum PostgreSQL connection pool size"),
+        "POSTGRES_POOL_MAX_SIZE": ("10", "Maximum PostgreSQL connection pool size"),
         "REDIS_URL": ("", "Redis connection URL for caching"),
         "CACHE_TTL": ("3600", "Default cache TTL in seconds"),
     }
@@ -266,22 +266,20 @@ class EnvironmentValidator:
             db_config = get_database_config()
 
             # Test connection
-            conn = await aiomysql.connect(
+            conn = await asyncpg.connect(
                 host=db_config["host"],
                 port=db_config["port"],
                 user=db_config["user"],
                 password=db_config["password"],
-                db=db_config["database"],
-                connect_timeout=10,
+                database=db_config["database"],
+                server_settings={"application_name": "dbsbm_env_validator"},
             )
 
             # Test a simple query
-            async with conn.cursor() as cursor:
-                await cursor.execute("SELECT 1")
-                result = await cursor.fetchone()
-                if result and result[0] == 1:
-                    await conn.close()
-                    return True, "Database connection successful"
+            result = await conn.fetchval("SELECT 1")
+            if result == 1:
+                await conn.close()
+                return True, "Database connection successful"
 
             await conn.close()
             return False, "Database query test failed"
@@ -451,9 +449,9 @@ class EnvironmentValidator:
             "API_TIMEOUT": int,
             "API_RETRY_ATTEMPTS": int,
             "API_RETRY_DELAY": int,
-            "MYSQL_PORT": int,
-            "MYSQL_POOL_MIN_SIZE": int,
-            "MYSQL_POOL_MAX_SIZE": int,
+            "POSTGRES_PORT": int,
+            "POSTGRES_POOL_MIN_SIZE": int,
+            "POSTGRES_POOL_MAX_SIZE": int,
             "CACHE_TTL": int,
         }
 
@@ -477,12 +475,12 @@ class EnvironmentValidator:
                     f"Invalid TEST_GUILD_ID: {test_guild_id}. Must be a valid integer"
                 )
 
-        # Validate MYSQL_POOL sizes
-        min_size = int(os.getenv("MYSQL_POOL_MIN_SIZE", "1"))
-        max_size = int(os.getenv("MYSQL_POOL_MAX_SIZE", "10"))
+        # Validate POSTGRES_POOL sizes
+        min_size = int(os.getenv("POSTGRES_POOL_MIN_SIZE", "1"))
+        max_size = int(os.getenv("POSTGRES_POOL_MAX_SIZE", "10"))
         if min_size > max_size:
             errors.append(
-                f"MYSQL_POOL_MIN_SIZE ({min_size}) cannot be greater than MYSQL_POOL_MAX_SIZE ({max_size})"
+                f"POSTGRES_POOL_MIN_SIZE ({min_size}) cannot be greater than POSTGRES_POOL_MAX_SIZE ({max_size})"
             )
 
         return errors

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
-from bot.utils.asset_loader import AssetLoader
+from utils.asset_loader import AssetLoader
 
 logger = logging.getLogger(__name__)
 

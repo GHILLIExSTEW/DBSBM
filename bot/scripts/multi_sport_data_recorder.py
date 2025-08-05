@@ -17,8 +17,8 @@ from typing import Dict, List, Optional
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.multi_provider_api import MultiProviderAPI
+from data.db_manager import DatabaseManager
+from utils.multi_provider_api import MultiProviderAPI
 
 # Configure logging
 logging.basicConfig(

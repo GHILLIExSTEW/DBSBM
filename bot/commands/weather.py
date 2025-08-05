@@ -12,14 +12,14 @@ from discord import ButtonStyle, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from bot.services.weather_service import WeatherService
+from services.weather_service import WeatherService
 
 # Import GameService with fallback for missing API_KEY
 GAME_SERVICE_AVAILABLE = False
 GameService = None
 
 try:
-    from bot.services.game_service import GameService
+    from services.game_service import GameService
 
     GAME_SERVICE_AVAILABLE = True
 except (ValueError, ImportError):

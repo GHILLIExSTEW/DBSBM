@@ -50,20 +50,20 @@ except ImportError:
 
 # Try to import with bot prefix first, then without
 try:
-    from bot.api.sports_api import SportsAPI
-    from bot.services.live_game_channel_service import LiveGameChannelService
-    from bot.utils.error_handler import (
+    from api.sports_api import SportsAPI
+    from services.live_game_channel_service import LiveGameChannelService
+    from utils.error_handler import (
         get_error_handler,
         initialize_default_recovery_strategies,
     )
-    from bot.utils.game_line_image_generator import GameLineImageGenerator
-    from bot.utils.parlay_image_generator import ParlayImageGenerator
-    from bot.utils.performance_monitor import (
+    from utils.game_line_image_generator import GameLineImageGenerator
+    from utils.parlay_image_generator import ParlayImageGenerator
+    from utils.performance_monitor import (
         background_monitoring,
         get_performance_monitor,
     )
-    from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
-    from bot.utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
+    from utils.player_prop_image_generator import PlayerPropImageGenerator
+    from utils.rate_limiter import cleanup_rate_limits, get_rate_limiter
 except ImportError:
     from api.sports_api import SportsAPI
     from services.live_game_channel_service import LiveGameChannelService
@@ -80,7 +80,7 @@ except ImportError:
 # --- Logging Setup ---
 # Use new centralized logging configuration
 try:
-    from bot.utils.logging_config import auto_configure_logging
+    from utils.logging_config import auto_configure_logging
 
     auto_configure_logging()
 except ImportError:
@@ -156,31 +156,31 @@ except Exception as e:
 
 # Try to import with bot prefix first, then without
 try:
-    from bot.commands.sync_cog import setup_sync_cog
-    from bot.data.db_manager import DatabaseManager
-    from bot.services.admin_service import AdminService
-    from bot.services.analytics_service import AnalyticsService
-    from bot.services.bet_service import BetService
-    from bot.services.data_sync_service import DataSyncService
-    from bot.services.game_service import GameService
-    from bot.services.platinum_service import PlatinumService
-    from bot.services.predictive_service import PredictiveService
-    from bot.services.statistics_service import StatisticsService
-    from bot.services.user_service import UserService
-    from bot.services.voice_service import VoiceService
+    from commands.sync_cog import setup_sync_cog
+    from data.db_manager import DatabaseManager
+    from services.admin_service import AdminService
+    from services.analytics_service import AnalyticsService
+    from services.bet_service import BetService
+    from services.data_sync_service import DataSyncService
+    from services.game_service import GameService
+    from services.platinum_service import PlatinumService
+    from services.predictive_service import PredictiveService
+    from services.statistics_service import StatisticsService
+    from services.user_service import UserService
+    from services.voice_service import VoiceService
 except ImportError:
-    from bot.commands.sync_cog import setup_sync_cog
-    from bot.data.db_manager import DatabaseManager
-    from bot.services.admin_service import AdminService
-    from bot.services.analytics_service import AnalyticsService
-    from bot.services.bet_service import BetService
-    from bot.services.data_sync_service import DataSyncService
-    from bot.services.game_service import GameService
-    from bot.services.platinum_service import PlatinumService
-    from bot.services.predictive_service import PredictiveService
-    from bot.services.statistics_service import StatisticsService
-    from bot.services.user_service import UserService
-    from bot.services.voice_service import VoiceService
+    from commands.sync_cog import setup_sync_cog
+    from data.db_manager import DatabaseManager
+    from services.admin_service import AdminService
+    from services.analytics_service import AnalyticsService
+    from services.bet_service import BetService
+    from services.data_sync_service import DataSyncService
+    from services.game_service import GameService
+    from services.platinum_service import PlatinumService
+    from services.predictive_service import PredictiveService
+    from services.statistics_service import StatisticsService
+    from services.user_service import UserService
+    from services.voice_service import VoiceService
 
 # TEMPORARY FIX: Disable Redis to prevent freezing
 # os.environ["REDIS_DISABLED"] = "true"
@@ -200,7 +200,7 @@ REQUIRED_ENV_VARS = {
 
 try:
     try:
-        from bot.utils.environment_validator import validate_environment
+        from utils.environment_validator import validate_environment
     except ImportError:
         from utils.environment_validator import validate_environment
 
@@ -510,10 +510,24 @@ class BettingBot(commands.Bot):
                 """
                 guilds = await self.db_manager.fetch_all(guilds_query)
 
+                # Fallback: if database is unavailable, use Discord's actual guilds
+                if not guilds:
+                    logger.warning("No guilds found in database, using Discord guild list as fallback")
+                    guilds = []
+                    for discord_guild in self.guilds:
+                        guilds.append({
+                            "guild_id": discord_guild.id,
+                            "is_paid": False,  # Default to free tier
+                            "subscription_level": "initial"
+                        })
+                        logger.debug(f"Added fallback guild: {discord_guild.name} (ID: {discord_guild.id})")
+                    logger.info(f"Created fallback guild list with {len(guilds)} guilds from Discord")
+
                 # Get all guild IDs that are in the database
                 db_guild_ids = {guild["guild_id"] for guild in guilds}
 
                 # Sync commands to each guild in the table
+                logger.info(f"Syncing commands to {len(guilds)} guilds")
                 for guild in guilds:
                     guild_id = guild["guild_id"]
                     is_paid = guild["is_paid"]
@@ -528,7 +542,7 @@ class BettingBot(commands.Bot):
                             """
                             UPDATE guild_settings
                             SET subscription_level = 'premium'
-                            WHERE guild_id = %s
+                            WHERE guild_id = $1
                             """,
                             (guild_id,),
                         )
@@ -614,7 +628,7 @@ class BettingBot(commands.Bot):
         """Start the fetcher process and monitor its status."""
         if self.fetcher_process is None or self.fetcher_process.poll() is not None:
             # Use the new fetcher logger system
-            from bot.utils.fetcher_logger import get_fetcher_logger
+            from utils.fetcher_logger import get_fetcher_logger
 
             fetcher_logger = get_fetcher_logger()
             fetcher_log_path = fetcher_logger.get_current_log_path()
@@ -876,7 +890,7 @@ class BettingBot(commands.Bot):
             # Initialize community engagement services (DISABLED)
             # try:
             #     logger.info("Step 3a: Initializing community services...")
-            #     from bot.services.community_analytics import CommunityAnalyticsService
+            #     from services.community_analytics import CommunityAnalyticsService
 
             #     self.community_analytics_service = CommunityAnalyticsService(
             #         self, self.db_manager
@@ -910,7 +924,7 @@ class BettingBot(commands.Bot):
             # Initialize real ML service
             try:
                 logger.info("Step 3c: Initializing ML service...")
-                from bot.services.real_ml_service import RealMLService
+                from services.real_ml_service import RealMLService
 
                 self.real_ml_service = RealMLService(
                     self.db_manager, self.sports_api, self.predictive_service
@@ -927,7 +941,7 @@ class BettingBot(commands.Bot):
             # Initialize system integration service
             try:
                 logger.info("Step 3d: Initializing system integration service...")
-                from bot.services.system_integration_service import (
+                from services.system_integration_service import (
                     SystemIntegrationService,
                 )
 
@@ -997,7 +1011,7 @@ class BettingBot(commands.Bot):
                 logger.info("Running health status check...")
                 # Add a small delay to ensure all services are properly initialized
                 await asyncio.sleep(2)
-                from bot.utils.health_checker import run_system_health_check
+                from utils.health_checker import run_system_health_check
 
                 try:
                     health_results = await asyncio.wait_for(
@@ -1370,7 +1384,7 @@ async def run_bot():
         try:
             from startup_checks import DBSBMStartupChecker
         except ImportError:
-            from bot.startup_checks import DBSBMStartupChecker
+            from startup_checks import DBSBMStartupChecker
         checker = DBSBMStartupChecker()
 
         # Run startup checks with timeout but don't block startup
@@ -1392,12 +1406,12 @@ async def run_bot():
             bot = BettingBot()
 
             # Progressive startup approach
-            logger.info("🔄 Starting progressive bot initialization...")
+            logger.info("[STARTING] Starting progressive bot initialization...")
 
             # Step 1: Initialize core components first (skip since setup_hook will handle this)
             logger.info("Step 1: Core components will be initialized in setup_hook...")
             logger.info(
-                "✅ Core components initialization skipped (will be handled by Discord)"
+                "[OK] Core components initialization skipped (will be handled by Discord)"
             )
 
             # Step 2: Connect to Discord with extended timeout and retry logic
@@ -1413,12 +1427,12 @@ async def run_bot():
             )
 
             if not discord_token:
-                logger.critical("❌ DISCORD_TOKEN environment variable is not set")
+                logger.critical("[ERROR] DISCORD_TOKEN environment variable is not set")
                 raise RuntimeError("DISCORD_TOKEN environment variable is not set")
 
             if not discord_token.startswith("MT") or len(discord_token) < 50:
                 logger.critical(
-                    f"❌ DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})"
+                    f"[ERROR] DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})"
                 )
                 raise RuntimeError("DISCORD_TOKEN format appears invalid")
 
@@ -1431,7 +1445,7 @@ async def run_bot():
             connection_success = False
             for attempt in range(3):
                 try:
-                    logger.info(f"🔄 Discord connection attempt {attempt + 1}/3...")
+                    logger.info(f"[CONNECTING] Discord connection attempt {attempt + 1}/3...")
                     logger.debug(
                         f"Starting Discord connection with token: {discord_token[:10]}...{discord_token[-5:]}"
                     )
@@ -1445,7 +1459,7 @@ async def run_bot():
                     end_time = datetime.now()
                     connection_time = (end_time - start_time).total_seconds()
                     logger.info(
-                        f"✅ Bot started successfully in {connection_time:.2f} seconds"
+                        f"[SUCCESS] Bot started successfully in {connection_time:.2f} seconds"
                     )
                     connection_success = True
                     break
@@ -1458,24 +1472,24 @@ async def run_bot():
                         logger.debug("Waiting 10 seconds before next attempt...")
                         await asyncio.sleep(10)
                 except discord.LoginFailure as e:
-                    logger.critical(f"❌ Discord login failed - invalid token: {e}")
+                    logger.critical(f"[ERROR] Discord login failed - invalid token: {e}")
                     raise RuntimeError("Discord login failed - check your bot token")
                 except discord.PrivilegedIntentsRequired as e:
-                    logger.critical(f"❌ Privileged intents required: {e}")
+                    logger.critical(f"[ERROR] Privileged intents required: {e}")
                     raise RuntimeError(
                         "Enable required intents in Discord Developer Portal"
                     )
                 except discord.HTTPException as e:
-                    logger.error(f"❌ Discord HTTP error on attempt {attempt + 1}: {e}")
+                    logger.error(f"[ERROR] Discord HTTP error on attempt {attempt + 1}: {e}")
                     if attempt < 2:
                         await asyncio.sleep(10)
                 except aiohttp.ClientError as e:
-                    logger.error(f"❌ Network error on attempt {attempt + 1}: {e}")
+                    logger.error(f"[ERROR] Network error on attempt {attempt + 1}: {e}")
                     if attempt < 2:
                         await asyncio.sleep(10)
                 except Exception as e:
                     logger.error(
-                        f"❌ Discord connection attempt {attempt + 1} failed: {e}"
+                        f"[ERROR] Discord connection attempt {attempt + 1} failed: {e}"
                     )
                     logger.debug(f"Exception type: {type(e).__name__}")
                     logger.debug(f"Exception details: {str(e)}")
@@ -1485,7 +1499,7 @@ async def run_bot():
             if connection_success:
                 break
             else:
-                logger.error("❌ All Discord connection attempts failed")
+                logger.error("[ERROR] All Discord connection attempts failed")
                 await bot.close()
                 raise RuntimeError("Discord connection failed after all attempts")
 

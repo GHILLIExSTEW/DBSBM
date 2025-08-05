@@ -19,9 +19,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot.data.db_manager import DatabaseManager
-from bot.services.experimental_systems_integration import ExperimentalSystemsIntegration
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from data.db_manager import DatabaseManager
+from services.experimental_systems_integration import ExperimentalSystemsIntegration
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 

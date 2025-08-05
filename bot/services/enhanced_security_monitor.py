@@ -20,15 +20,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
 import joblib
 
-from bot.services.security_service import (
+from services.security_service import (
     SecurityService,
     SecurityEvent,
     SecurityEventType,
     ThreatLevel,
 )
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 

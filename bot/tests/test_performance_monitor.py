@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from bot.utils.performance_monitor import (
+from utils.performance_monitor import (
     HealthCheck,
     PerformanceMetric,
     PerformanceMonitor,

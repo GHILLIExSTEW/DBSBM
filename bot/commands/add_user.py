@@ -21,7 +21,7 @@ TEST_GUILD_ID = int(os.getenv("TEST_GUILD_ID", "0"))
 async def is_paid_guild(guild_id, db_manager):
     try:
         result = await db_manager.fetch_one(
-            "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+            "SELECT subscription_level FROM guild_settings WHERE guild_id = $1",
             guild_id,
         )
         return bool(result and result.get("subscription_level") == "premium")
@@ -54,8 +54,9 @@ class AddUserCog(commands.Cog):
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, image_path, banner_color, bet_won, bet_loss, bet_push, updated_at
-                ) VALUES (%s, %s, %s, NULL, NULL, 0, 0, 0, UTC_TIMESTAMP())
-                ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP()
+                ) VALUES ($1, $2, $3, NULL, NULL, 0, 0, 0, NOW())
+                ON CONFLICT (guild_id, user_id) 
+                DO UPDATE SET updated_at = NOW()
                 """,
                 guild_id,
                 user_id,

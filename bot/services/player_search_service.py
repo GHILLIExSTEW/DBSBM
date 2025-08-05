@@ -200,7 +200,7 @@ class PlayerSearchService:
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
 
-            query += " ORDER BY usage_count DESC, last_used DESC LIMIT %s"
+            query += f" ORDER BY usage_count DESC, last_used DESC LIMIT ${len(params) + 1}"
             params.append(limit)
 
             players = await self.db_manager.fetch_all(query, tuple(params))
@@ -244,7 +244,7 @@ class PlayerSearchService:
             query = """
                 INSERT INTO player_search_cache
                 (player_name, team_name, league, sport, search_keywords, last_used, usage_count)
-                VALUES (%s, %s, %s, %s, %s, %s, 1)
+                VALUES ($1, $2, $3, $4, $5, $6, 1)
                 ON DUPLICATE KEY UPDATE
                     search_keywords = VALUES(search_keywords),
                     last_used = VALUES(last_used),
@@ -334,7 +334,7 @@ class PlayerSearchService:
                 UPDATE player_search_cache
                 SET usage_count = usage_count + 1,
                     last_used = %s
-                WHERE player_name = %s
+                WHERE player_name = $1
                 AND team_name = %s
                 AND league = %s
             """
@@ -394,7 +394,7 @@ class PlayerSearchService:
 
             query = """
                 DELETE FROM player_search_cache
-                WHERE last_used < %s AND usage_count < 5
+                WHERE last_used < $1 AND usage_count < 5
             """
 
             result = await self.db_manager.execute(query, (cutoff_date,))
@@ -412,7 +412,7 @@ class PlayerSearchService:
             players = []
 
             # Import team mappings
-            from bot.utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
+            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
 
             # Get league-specific player data
             if league:

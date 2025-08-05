@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 import aiohttp
 from dotenv import load_dotenv
 
-from bot.config.leagues import ENDPOINTS, LEAGUE_IDS, get_current_season
+from config.leagues import ENDPOINTS, LEAGUE_IDS, get_current_season
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")

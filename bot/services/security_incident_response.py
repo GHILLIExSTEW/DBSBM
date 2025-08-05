@@ -17,9 +17,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 from uuid import uuid4
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.performance_monitor import time_operation
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
 

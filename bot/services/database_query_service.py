@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.performance_monitor import record_query
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import record_query
 
 logger = logging.getLogger(__name__)
 

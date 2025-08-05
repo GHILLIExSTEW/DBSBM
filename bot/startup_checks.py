@@ -24,7 +24,7 @@ class DBSBMStartupChecker:
 
     async def run_all_checks(self) -> Tuple[bool, List[str]]:
         """Run all startup checks and return success status and errors."""
-        logger.info("🔍 Running comprehensive startup checks...")
+        logger.info("[INFO] Running comprehensive startup checks...")
 
         # Reset counters
         self.errors = []
@@ -42,27 +42,27 @@ class DBSBMStartupChecker:
 
         # Log results
         logger.info(
-            f"✅ Startup checks completed: {self.checks_passed}/{self.total_checks} passed"
+            f"[OK] Startup checks completed: {self.checks_passed}/{self.total_checks} passed"
         )
         if self.warnings:
-            logger.warning(f"⚠️ {len(self.warnings)} warnings found")
+            logger.warning(f"[WARNING] {len(self.warnings)} warnings found")
         if self.errors:
-            logger.error(f"❌ {len(self.errors)} errors found")
+            logger.error(f"[ERROR] {len(self.errors)} errors found")
 
         return len(self.errors) == 0, self.errors
 
     async def _check_environment_variables(self):
         """Check that all required environment variables are set."""
         self.total_checks += 1
-        logger.debug("🔍 Checking environment variables...")
+        logger.debug("[INFO] Checking environment variables...")
 
         required_vars = [
             "DISCORD_TOKEN",
             "API_KEY",
-            "MYSQL_HOST",
-            "MYSQL_USER",
-            "MYSQL_PASSWORD",
-            "MYSQL_DB",
+            "POSTGRES_HOST",
+            "POSTGRES_USER",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_DB",
             "TEST_GUILD_ID",
         ]
 
@@ -73,7 +73,7 @@ class DBSBMStartupChecker:
             value = os.getenv(var)
             if not value:
                 missing_vars.append(var)
-                logger.debug(f"❌ {var}: NOT SET")
+                logger.debug(f"[ERROR] {var}: NOT SET")
             else:
                 present_vars.append(var)
                 # Mask sensitive values for logging
@@ -81,9 +81,9 @@ class DBSBMStartupChecker:
                     masked_value = (
                         value[:10] + "..." + value[-5:] if len(value) > 15 else "***"
                     )
-                    logger.debug(f"✅ {var}: {masked_value}")
+                    logger.debug(f"[OK] {var}: {masked_value}")
                 else:
-                    logger.debug(f"✅ {var}: {value}")
+                    logger.debug(f"[OK] {var}: {value}")
 
         if missing_vars:
             error_msg = (
@@ -93,7 +93,7 @@ class DBSBMStartupChecker:
             logger.error(error_msg)
         else:
             self.checks_passed += 1
-            logger.info("✅ All required environment variables are set")
+            logger.info("[OK] All required environment variables are set")
             logger.debug(f"Found {len(present_vars)} environment variables")
 
     async def _check_discord_token(self):
@@ -125,48 +125,47 @@ class DBSBMStartupChecker:
         logger.debug(f"Token preview: {token[:10]}...{token[-5:]}")
 
         self.checks_passed += 1
-        logger.info("✅ Discord token format appears valid")
+        logger.info("[OK] Discord token format appears valid")
 
     async def _check_database_connection(self):
         """Test database connection."""
         self.total_checks += 1
-        logger.debug("🔍 Testing database connection...")
+        logger.debug("[INFO] Testing PostgreSQL database connection...")
 
         try:
-            import aiomysql
+            import asyncpg
 
             # Get database configuration
-            host = os.getenv("MYSQL_HOST")
-            port = int(os.getenv("MYSQL_PORT", 3306))
-            user = os.getenv("MYSQL_USER")
-            password = os.getenv("MYSQL_PASSWORD")
-            db = os.getenv("MYSQL_DB")
+            host = os.getenv("POSTGRES_HOST")
+            port = int(os.getenv("POSTGRES_PORT", 5432))
+            user = os.getenv("POSTGRES_USER")
+            password = os.getenv("POSTGRES_PASSWORD")
+            database = os.getenv("POSTGRES_DB")
 
             logger.debug(f"Database host: {host}")
             logger.debug(f"Database port: {port}")
             logger.debug(f"Database user: {user}")
-            logger.debug(f"Database name: {db}")
+            logger.debug(f"Database name: {database}")
             logger.debug(f"Database password: {'***' if password else 'NOT SET'}")
 
             # Test connection with timeout
-            logger.debug("Attempting database connection...")
+            logger.debug("Attempting PostgreSQL connection...")
             conn = await asyncio.wait_for(
-                aiomysql.connect(
+                asyncpg.connect(
                     host=host,
                     port=port,
                     user=user,
                     password=password,
-                    db=db,
-                    autocommit=True,
+                    database=database,
                 ),
                 timeout=10.0,
             )
-            await conn.ensure_closed()
+            await conn.close()
             self.checks_passed += 1
-            logger.info("✅ Database connection successful")
+            logger.info("[OK] PostgreSQL database connection successful")
 
         except Exception as e:
-            error_msg = f"Database connection failed: {str(e)}"
+            error_msg = f"PostgreSQL database connection failed: {str(e)}"
             self.errors.append(error_msg)
             logger.error(error_msg)
             logger.debug(f"Database connection exception type: {type(e).__name__}")
@@ -175,7 +174,7 @@ class DBSBMStartupChecker:
     async def _check_api_connection(self):
         """Test API connection."""
         self.total_checks += 1
-        logger.debug("🔍 Testing API connection...")
+        logger.debug("[INFO] Testing API connection...")
 
         try:
             import aiohttp
@@ -208,7 +207,7 @@ class DBSBMStartupChecker:
                         response_text = await response.text()
                         logger.debug(f"API response content: {response_text[:200]}...")
                         self.checks_passed += 1
-                        logger.info("✅ API connection successful")
+                        logger.info("[OK] API connection successful")
                     else:
                         error_msg = (
                             f"API connection failed with status {response.status}"
@@ -226,7 +225,7 @@ class DBSBMStartupChecker:
     async def _check_file_permissions(self):
         """Check file permissions for critical directories."""
         self.total_checks += 1
-        logger.debug("🔍 Checking file permissions and critical directories...")
+        logger.debug("[INFO] Checking file permissions and critical directories...")
 
         critical_dirs = ["data", "logs", "static", "templates"]
 
@@ -236,19 +235,19 @@ class DBSBMStartupChecker:
         for dir_name in critical_dirs:
             if not os.path.exists(dir_name):
                 missing_dirs.append(dir_name)
-                logger.debug(f"❌ Directory missing: {dir_name}")
+                logger.debug(f"[MISSING] Directory missing: {dir_name}")
             else:
                 existing_dirs.append(dir_name)
-                logger.debug(f"✅ Directory exists: {dir_name}")
+                logger.debug(f"[OK] Directory exists: {dir_name}")
                 # Check if directory is writable
                 try:
                     test_file = os.path.join(dir_name, ".test_write")
                     with open(test_file, "w") as f:
                         f.write("test")
                     os.remove(test_file)
-                    logger.debug(f"✅ Directory writable: {dir_name}")
+                    logger.debug(f"[OK] Directory writable: {dir_name}")
                 except Exception as e:
-                    logger.debug(f"⚠️ Directory not writable: {dir_name} - {e}")
+                    logger.debug(f"[WARNING] Directory not writable: {dir_name} - {e}")
 
         if missing_dirs:
             warning_msg = f"Missing directories: {', '.join(missing_dirs)}"
@@ -256,15 +255,15 @@ class DBSBMStartupChecker:
             logger.warning(warning_msg)
         else:
             self.checks_passed += 1
-            logger.info("✅ All critical directories exist")
+            logger.info("[OK] All critical directories exist")
             logger.debug(f"Found {len(existing_dirs)} existing directories")
 
     async def _check_dependencies(self):
         """Check that all required dependencies are available."""
         self.total_checks += 1
-        logger.debug("🔍 Checking required dependencies...")
+        logger.debug("[INFO] Checking required dependencies...")
 
-        required_modules = ["discord", "aiomysql", "aiohttp", "asyncio", "logging"]
+        required_modules = ["discord", "asyncpg", "aiohttp", "asyncio", "logging"]
 
         missing_modules = []
         available_modules = []
@@ -273,7 +272,7 @@ class DBSBMStartupChecker:
             try:
                 imported_module = __import__(module)
                 available_modules.append(module)
-                logger.debug(f"✅ Module available: {module}")
+                logger.debug(f"[OK] Module available: {module}")
                 # Log version if available
                 try:
                     version = getattr(imported_module, "__version__", "unknown")
@@ -282,7 +281,7 @@ class DBSBMStartupChecker:
                     pass
             except ImportError as e:
                 missing_modules.append(module)
-                logger.debug(f"❌ Module missing: {module} - {e}")
+                logger.debug(f"[ERROR] Module missing: {module} - {e}")
 
         if missing_modules:
             error_msg = f"Missing required modules: {', '.join(missing_modules)}"
@@ -290,5 +289,5 @@ class DBSBMStartupChecker:
             logger.error(error_msg)
         else:
             self.checks_passed += 1
-            logger.info("✅ All required dependencies are available")
+            logger.info("[OK] All required dependencies are available")
             logger.debug(f"Found {len(available_modules)} available modules")

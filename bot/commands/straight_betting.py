@@ -12,20 +12,21 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import discord
+import pytz
 from discord import ButtonStyle, File, Interaction, Message, SelectOption, TextChannel
 from discord.ext import commands
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from bot.utils.game_line_image_generator import GameLineImageGenerator
-from bot.utils.image_url_converter import convert_image_path_to_url
-from bot.utils.league_loader import (
+from utils.game_line_image_generator import GameLineImageGenerator
+from utils.image_url_converter import convert_image_path_to_url
+from utils.league_loader import (
     get_all_league_names,
     get_all_sport_categories,
     get_leagues_by_sport,
 )
 
 # Using local StraightBetDetailsModal class instead of importing from utils.modals
-from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -313,10 +314,18 @@ class GameSelect(Select):
             self.parent_view.bet_details["is_manual"] = True
 
             logger.debug(f"Stored manual entry details: {self.parent_view.bet_details}")
-            self.disabled = True
-            await interaction.response.defer()
-            logger.debug(f"Deferred response for manual entry, proceeding to next step")
-            await self.parent_view.go_next(interaction)
+            
+            # For manual entry, show the modal directly instead of going to team selection
+            logger.debug("Manual entry detected, showing modal for bet details")
+            modal = StraightBetDetailsModal(
+                line_type=self.parent_view.bet_details.get("line_type", "game_line"),
+                selected_league_key=self.parent_view.bet_details.get("league", "OTHER"),
+                bet_details_from_view=self.parent_view.bet_details,
+                is_manual=True,
+                view_custom_id_suffix=str(interaction.id),
+            )
+            modal.view_ref = self.parent_view
+            await interaction.response.send_modal(modal)
             return
 
         # Find the selected game data
@@ -795,10 +804,14 @@ class StraightBetWorkflowView(View):
 
         # Get games for the selected league from database
         try:
-            from bot.data.db_manager import DatabaseManager
-
-            db_manager = DatabaseManager()
-            games = await db_manager.get_normalized_games_for_dropdown(league)
+            # Use the bot's database manager instance instead of creating a new one
+            db_manager = self.bot.db_manager
+            if not db_manager._pool:
+                logger.warning("Database pool not available, attempting to reconnect...")
+                await db_manager.connect()
+            
+            from data.game_utils import get_normalized_games_for_dropdown
+            games = await get_normalized_games_for_dropdown(db_manager, league)
             logger.debug(f"Found {len(games)} games for league {league}")
         except Exception as e:
             logger.error(f"Error fetching games for league {league}: {e}")
@@ -956,7 +969,7 @@ class StraightBetWorkflowView(View):
     ) -> Tuple[str, Optional[str]]:
         """Get capper display name and avatar URL."""
         capper_data = await self.bot.db_manager.fetch_one(
-            "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+            "SELECT display_name, image_path FROM cappers WHERE guild_id = $1 AND user_id = $2",
             (interaction.guild_id, interaction.user.id),
         )
 
@@ -981,7 +994,7 @@ class StraightBetWorkflowView(View):
     ) -> Optional[str]:
         """Get member role mention if configured."""
         guild_settings = await self.bot.db_manager.fetch_one(
-            "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+            "SELECT member_role FROM guild_settings WHERE guild_id = $1",
             (str(interaction.guild_id),),
         )
 
@@ -1132,7 +1145,7 @@ class StraightBetWorkflowView(View):
         self, units: float, odds: float
     ) -> Tuple[str, bool]:
         """Determine units display mode and risk display based on units and odds."""
-        from bot.utils.bet_utils import determine_risk_win_display_auto
+        from utils.bet_utils import determine_risk_win_display_auto
 
         units_display_mode = "auto"
         display_as_risk = determine_risk_win_display_auto(odds, units, 0.0)
@@ -1184,7 +1197,7 @@ class StraightBetWorkflowView(View):
     ) -> bool:
         """Generate player prop preview image. Returns True if successful."""
         try:
-            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+            from utils.player_prop_image_generator import PlayerPropImageGenerator
 
             generator = PlayerPropImageGenerator(
                 guild_id=self.original_interaction.guild_id
@@ -1273,7 +1286,7 @@ class StraightBetWorkflowView(View):
             preview_success = await self._generate_preview_image(units)
             if preview_success:
                 logger.debug("Preview image generated successfully")
-                await self._update_ui_with_preview()
+                await self._update_ui_with_preview(interaction)
             else:
                 logger.error("Failed to generate preview image")
                 await interaction.response.send_message(
@@ -1284,6 +1297,31 @@ class StraightBetWorkflowView(View):
             await interaction.response.send_message(
                 "❌ Error processing units selection.", ephemeral=True
             )
+
+    async def _update_ui_with_preview(self, interaction: discord.Interaction):
+        """Update the UI with the preview image."""
+        try:
+            # Generate preview file if we have preview bytes
+            preview_file = None
+            if self.preview_image_bytes:
+                self.preview_image_bytes.seek(0)
+                preview_file = File(
+                    self.preview_image_bytes,
+                    filename="bet_preview.webp"
+                )
+
+            # Defer the response since this is called from a callback
+            if not interaction.response.is_done():
+                await interaction.response.defer()
+
+            # Update the message with preview
+            content = self.get_content(6)  # Units selection step
+            await self.edit_message(content=content, view=self, file=preview_file)
+            
+        except Exception as e:
+            logger.exception(f"Error updating UI with preview: {e}")
+            # Fallback without preview
+            await self.go_next(interaction)
 
     def stop(self):
         self._stopped = True
@@ -1360,7 +1398,7 @@ class StraightBetDetailsModal(Modal):
         """Add team/opponent fields for manual entry"""
         if self.is_manual:
             # Get league config to check sport type
-            from bot.config.leagues import LEAGUE_CONFIG
+            from config.leagues import LEAGUE_CONFIG
 
             league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
             sport_type = league_conf.get("sport_type", "Team Sport")
@@ -1406,6 +1444,24 @@ class StraightBetDetailsModal(Modal):
                     custom_id=f"player_name_input_{self.view_custom_id_suffix}",
                 )
                 self.add_item(self.player_name_input)
+                
+                # Add prop line input for player props
+                self.prop_line_input = TextInput(
+                    label="Player Prop Line",
+                    placeholder="e.g., Over 25.5 points, Under 8.5 rebounds, Over 2.5 touchdowns",
+                    required=True,
+                    custom_id=f"prop_line_input_{self.view_custom_id_suffix}",
+                )
+                self.add_item(self.prop_line_input)
+                
+                # Add odds input for player props
+                self.odds_input = TextInput(
+                    label="Odds",
+                    placeholder="e.g., -110, +150, +200",
+                    required=True,
+                    custom_id=f"odds_input_{self.view_custom_id_suffix}",
+                )
+                self.add_item(self.odds_input)
                 return  # Don't add other fields for player props
 
             if is_individual_sport or self.selected_league_key == "DARTS":
@@ -1515,33 +1571,24 @@ class StraightBetDetailsModal(Modal):
                     )
                     self.add_item(self.opponent_input)
 
-        # Add line input (for all types except player props which have their own)
-        if self.line_type != "player_prop":
-            self.line_input = TextInput(
-                label="Bet Line",
-                placeholder="e.g., -110, +150, Over 2.5, Under 1.5",
-                required=True,
-                custom_id=f"line_input_{self.view_custom_id_suffix}",
-            )
-            self.add_item(self.line_input)
-        else:
-            # For player props, add prop line input
-            self.prop_line_input = TextInput(
-                label="Player Prop Line",
-                placeholder="e.g., Over 25.5 points, Under 8.5 rebounds, Over 2.5 touchdowns",
-                required=True,
-                custom_id=f"prop_line_input_{self.view_custom_id_suffix}",
-            )
-            self.add_item(self.prop_line_input)
-
-        # Add odds input
-        self.odds_input = TextInput(
-            label="Odds",
-            placeholder="e.g., -110, +150, +200",
-            required=True,
-            custom_id=f"odds_input_{self.view_custom_id_suffix}",
-        )
-        self.add_item(self.odds_input)
+            # Add line input (for all types except player props which have their own)
+            if self.line_type != "player_prop":
+                self.line_input = TextInput(
+                    label="Bet Line",
+                    placeholder="e.g., -110, +150, Over 2.5, Under 1.5",
+                    required=True,
+                    custom_id=f"line_input_{self.view_custom_id_suffix}",
+                )
+                self.add_item(self.line_input)
+                
+                # Add odds input for game lines
+                self.odds_input = TextInput(
+                    label="Odds",
+                    placeholder="e.g., -110, +150, +200",
+                    required=True,
+                    custom_id=f"odds_input_{self.view_custom_id_suffix}",
+                )
+                self.add_item(self.odds_input)
 
     def _add_line_and_odds_fields(self):
         """Add line and odds fields for non-manual entries."""
@@ -1586,7 +1633,7 @@ class StraightBetDetailsModal(Modal):
                     line = self.prop_line_input.value.strip()[:100] or "Prop Line"
                 else:
                     # Get league config to check sport type
-                    from bot.config.leagues import LEAGUE_CONFIG
+                    from config.leagues import LEAGUE_CONFIG
 
                     league_conf = LEAGUE_CONFIG.get(self.selected_league_key, {})
                     sport_type = league_conf.get("sport_type", "Team Sport")
@@ -1675,7 +1722,7 @@ class StraightBetDetailsModal(Modal):
 
                 # Use different generator for player props
                 if self.line_type == "player_prop":
-                    from bot.utils.player_prop_image_generator import (
+                    from utils.player_prop_image_generator import (
                         PlayerPropImageGenerator,
                     )
 

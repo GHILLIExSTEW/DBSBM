@@ -14,13 +14,13 @@ load_dotenv("bot/.env")
 
 # Fix import issues with fallback
 try:
-    from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+    from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 except ImportError:
     LEAGUE_CONFIG = {}
     LEAGUE_IDS = {}
 
 try:
-    from bot.data.game_utils import get_league_abbreviation, normalize_team_name
+    from data.game_utils import get_league_abbreviation, normalize_team_name
 except ImportError:
     def get_league_abbreviation(league_name: str) -> str:
         return league_name
@@ -28,7 +28,7 @@ except ImportError:
         return team_name
 
 try:
-    from bot.utils.enhanced_cache_manager import enhanced_cache_get as cache_get, enhanced_cache_set as cache_set, enhanced_cache_query as cache_query
+    from utils.enhanced_cache_manager import enhanced_cache_get as cache_get, enhanced_cache_set as cache_set, enhanced_cache_query as cache_query
 except ImportError:
     async def cache_get(prefix: str, key: str) -> Optional[Any]:
         return None
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 # PostgreSQL config
 try:
-    from bot.config.database import (
+    from config.database import (
         PG_DATABASE,
         PG_HOST,
         PG_PASSWORD,
@@ -560,7 +560,7 @@ class DatabaseManager:
     async def sync_games_from_api(self, force_season: int = None):
         """Sync games from API to database."""
         try:
-            from bot.api.sports_api import SportsAPI
+            from api.sports_api import SportsAPI
 
             api = SportsAPI(self)
             current_date = datetime.now().strftime("%Y-%m-%d")
@@ -638,7 +638,7 @@ class DatabaseManager:
                     )
                     continue
         except Exception as e:
-            logger.error("Error in sync_games_from_api: %s", e, exc_info=True)
+            logger.error("Error in sync_games_from_api: $1", e, exc_info=True)
             raise
 
     async def get_normalized_games_for_dropdown(
@@ -727,7 +727,7 @@ class DatabaseManager:
         query = """
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
             FROM api_games
-            WHERE sport = %s
+            WHERE sport = $1
             AND league_id = %s
             AND UPPER(league_name) = UPPER(%s)
             AND start_time >= %s
@@ -735,7 +735,7 @@ class DatabaseManager:
             AND season = %s
             ORDER BY start_time ASC LIMIT 100
         """
-        from bot.data.game_utils import LEAGUE_ID_MAP
+        from data.game_utils import LEAGUE_ID_MAP
 
         league_id = LEAGUE_ID_MAP.get(league_name, "1")
         logger.info(

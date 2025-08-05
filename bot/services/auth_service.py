@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
@@ -749,13 +749,13 @@ class AuthService:
         permissions: List[str],
     ):
         """Create a role if it doesn't exist."""
-        query = "SELECT id FROM roles WHERE role_name = %s"
+        query = "SELECT id FROM roles WHERE role_name = $1"
         existing = await self.db_manager.fetch_one(query, (role_name,))
 
         if not existing:
             insert_query = """
                 INSERT INTO roles (role_name, display_name, description, permissions, is_system_role)
-                VALUES (%s, %s, %s, %s, TRUE)
+                VALUES ($1, $2, $3, $4, TRUE)
             """
             await self.db_manager.execute(
                 insert_query,
@@ -764,7 +764,7 @@ class AuthService:
 
     async def _get_user_by_username(self, username: str) -> Optional[Dict]:
         """Get user by username."""
-        query = "SELECT user_id, username, password_hash FROM users WHERE username = %s"
+        query = "SELECT user_id, username, password_hash FROM users WHERE username = $1"
         return await self.db_manager.fetch_one(query, (username,))
 
     async def _verify_password(self, password: str, password_hash: str) -> bool:
@@ -782,7 +782,7 @@ class AuthService:
             SELECT account_locked, account_locked_until
             FROM user_settings us
             JOIN users u ON us.user_id = u.user_id
-            WHERE u.username = %s
+            WHERE u.username = $1
         """
         result = await self.db_manager.fetch_one(query, (username,))
 
@@ -804,7 +804,7 @@ class AuthService:
             UPDATE user_settings us
             JOIN users u ON us.user_id = u.user_id
             SET account_locked = FALSE, account_locked_until = NULL, failed_login_attempts = 0
-            WHERE u.username = %s
+            WHERE u.username = $1
         """
         await self.db_manager.execute(query, (username,))
 
@@ -814,8 +814,8 @@ class AuthService:
         """Record a failed login attempt."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
-            SELECT 'failed_login', u.user_id, %s, %s, %s, 0.5
-            FROM users u WHERE u.username = %s
+            SELECT 'failed_login', u.user_id, $1, $2, $3, 0.5
+            FROM users u WHERE u.username = $1
         """
         event_data = json.dumps(
             {"username": username, "timestamp": datetime.utcnow().isoformat()}
@@ -834,7 +834,7 @@ class AuthService:
                     WHEN (failed_login_attempts + 1 >= %s) THEN DATE_ADD(NOW(), INTERVAL %s MINUTE)
                     ELSE account_locked_until
                 END
-            WHERE user_id = %s
+            WHERE user_id = $1
         """
         await self.db_manager.execute(
             query,
@@ -851,13 +851,13 @@ class AuthService:
         query = """
             UPDATE user_settings
             SET failed_login_attempts = 0, account_locked = FALSE, account_locked_until = NULL
-            WHERE user_id = %s
+            WHERE user_id = $1
         """
         await self.db_manager.execute(query, (user_id,))
 
     async def _is_mfa_required(self, user_id: int) -> bool:
         """Check if MFA is required for a user."""
-        query = "SELECT mfa_enabled FROM user_settings WHERE user_id = %s"
+        query = "SELECT mfa_enabled FROM user_settings WHERE user_id = $1"
         result = await self.db_manager.fetch_one(query, (user_id,))
         return result and result["mfa_enabled"]
 
@@ -865,7 +865,7 @@ class AuthService:
         """Get the primary MFA method for a user."""
         query = """
             SELECT device_type FROM mfa_devices
-            WHERE user_id = %s AND is_active = TRUE
+            WHERE user_id = $1 AND is_active = TRUE
             ORDER BY created_at ASC LIMIT 1
         """
         result = await self.db_manager.fetch_one(query, (user_id,))
@@ -897,7 +897,7 @@ class AuthService:
             SELECT DISTINCT r.role_name, r.permissions
             FROM roles r
             JOIN user_roles ur ON r.id = ur.role_id
-            WHERE ur.user_id = %s AND ur.is_active = TRUE AND r.is_active = TRUE
+            WHERE ur.user_id = $1 AND ur.is_active = TRUE AND r.is_active = TRUE
             AND (ur.guild_id = %s OR ur.guild_id IS NULL)
             AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
         """
@@ -918,8 +918,8 @@ class AuthService:
         """Update user's last login information."""
         query = """
             UPDATE user_settings
-            SET last_login_ip = %s, last_login_time = NOW()
-            WHERE user_id = %s
+            SET last_login_ip = $1, last_login_time = NOW()
+            WHERE user_id = $1
         """
         await self.db_manager.execute(query, (ip_address, user_id))
 
@@ -929,7 +929,7 @@ class AuthService:
         """Record a successful login."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
-            VALUES ('successful_login', %s, %s, %s, %s, 0.0)
+            VALUES ('successful_login', $1, $2, $3, $4, 0.0)
         """
         event_data = json.dumps({"timestamp": datetime.utcnow().isoformat()})
         await self.db_manager.execute(
@@ -942,7 +942,7 @@ class AuthService:
         """Get MFA device for a user."""
         query = """
             SELECT * FROM mfa_devices
-            WHERE user_id = %s AND device_type = %s AND is_active = TRUE
+            WHERE user_id = $1 AND device_type = $2 AND is_active = TRUE
         """
         result = await self.db_manager.fetch_one(query, (user_id, mfa_method.value))
 
@@ -980,7 +980,7 @@ class AuthService:
 
     async def _update_mfa_device_usage(self, device_id: int):
         """Update MFA device last used timestamp."""
-        query = "UPDATE mfa_devices SET last_used = NOW() WHERE id = %s"
+        query = "UPDATE mfa_devices SET last_used = NOW() WHERE id = $1"
         await self.db_manager.execute(query, (device_id,))
 
     async def _record_failed_mfa_attempt(
@@ -989,7 +989,7 @@ class AuthService:
         """Record a failed MFA attempt."""
         query = """
             INSERT INTO security_events (event_type, user_id, ip_address, user_agent, event_data, risk_score)
-            VALUES ('failed_mfa', %s, %s, %s, %s, 0.7)
+            VALUES ('failed_mfa', $1, $2, $3, $4, 0.7)
         """
         event_data = json.dumps({"timestamp": datetime.utcnow().isoformat()})
         await self.db_manager.execute(
@@ -1009,7 +1009,7 @@ class AuthService:
         # Store device
         query = """
             INSERT INTO mfa_devices (user_id, device_type, device_id, device_name)
-            VALUES (%s, %s, %s, %s)
+            VALUES ($1, $2, $3, $4)
         """
         await self.db_manager.execute(
             query, (user_id, MFAMethod.TOTP.value, secret, device_name)
@@ -1017,7 +1017,7 @@ class AuthService:
 
         # Enable MFA for user
         await self.db_manager.execute(
-            "UPDATE user_settings SET mfa_enabled = TRUE, mfa_method = %s WHERE user_id = %s",
+            "UPDATE user_settings SET mfa_enabled = TRUE, mfa_method = $1 WHERE user_id = $2",
             (MFAMethod.TOTP.value, user_id),
         )
 
@@ -1047,7 +1047,7 @@ class AuthService:
         """Log role assignment for audit."""
         query = """
             INSERT INTO audit_logs (user_id, action_type, resource_type, resource_id, action_data, ip_address)
-            VALUES (%s, 'role_assigned', 'role', %s, %s, 'system')
+            VALUES ($1, 'role_assigned', 'role', $2, $3, 'system')
         """
         action_data = json.dumps(
             {
@@ -1065,7 +1065,7 @@ class AuthService:
         """Log role revocation for audit."""
         query = """
             INSERT INTO audit_logs (user_id, action_type, resource_type, resource_id, action_data, ip_address)
-            VALUES (%s, 'role_revoked', 'role', %s, %s, 'system')
+            VALUES ($1, 'role_revoked', 'role', $2, $3, 'system')
         """
         action_data = json.dumps(
             {

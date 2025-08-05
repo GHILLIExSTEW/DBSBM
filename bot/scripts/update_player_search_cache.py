@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv
 
-from bot.data.db_manager import DatabaseManager
+from data.db_manager import DatabaseManager
 
 load_dotenv()
 
@@ -104,7 +104,7 @@ class PlayerCacheUpdater:
         INSERT IGNORE INTO player_search_cache (
             player_name, team_name, league, sport, search_keywords,
             usage_count, last_used
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         """
 
         batch_size = 1000

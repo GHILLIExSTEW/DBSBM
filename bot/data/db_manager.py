@@ -40,12 +40,16 @@ class DatabaseManager:
                 **self.db_config,
                 min_size=1,
                 max_size=10,
-                command_timeout=60
+                command_timeout=60,
+                server_settings={
+                    'application_name': 'DBSBM_Bot',
+                    'jit': 'off'
+                }
             )
-            logger.info("✅ PostgreSQL database connection established successfully")
+            logger.info("[OK] PostgreSQL database connection established successfully")
             return self._pool
         except Exception as e:
-            logger.error(f"❌ PostgreSQL database connection failed: {e}")
+            logger.error(f"[ERROR] PostgreSQL database connection failed: {e}")
             logger.error(f"Connection details: {self.db_config['host']}:{self.db_config['port']}/{self.db_config['database']}")
             logger.warning("Bot will continue in graceful degradation mode without database")
             self._pool = None
@@ -61,12 +65,12 @@ class DatabaseManager:
     async def initialize_db(self):
         """Initialize database schema."""
         if not self._pool:
-            logger.warning("📊 Database not connected - skipping initialization")
+            logger.warning("[INFO] Database not connected - skipping initialization")
             return False
         
-        logger.info("📊 Initializing PostgreSQL database schema...")
+        logger.info("[INFO] Initializing PostgreSQL database schema...")
         # Add your schema initialization code here
-        logger.info("📊 Database schema initialization completed")
+        logger.info("[INFO] Database schema initialization completed")
         return True
 
     async def fetch_all(self, query: str, *args) -> List[Dict[str, Any]]:
@@ -77,6 +81,9 @@ class DatabaseManager:
         
         try:
             async with self._pool.acquire() as connection:
+                # Handle tuple arguments - unpack if single tuple provided
+                if len(args) == 1 and isinstance(args[0], (tuple, list)):
+                    args = args[0]
                 rows = await connection.fetch(query, *args)
                 return [dict(row) for row in rows]
         except Exception as e:
@@ -91,6 +98,9 @@ class DatabaseManager:
         
         try:
             async with self._pool.acquire() as connection:
+                # Handle tuple arguments - unpack if single tuple provided
+                if len(args) == 1 and isinstance(args[0], (tuple, list)):
+                    args = args[0]
                 row = await connection.fetchrow(query, *args)
                 return dict(row) if row else None
         except Exception as e:
@@ -105,50 +115,31 @@ class DatabaseManager:
         
         try:
             async with self._pool.acquire() as connection:
+                # Handle tuple arguments - unpack if single tuple provided
+                if len(args) == 1 and isinstance(args[0], (tuple, list)):
+                    args = args[0]
                 await connection.execute(query, *args)
                 return True
         except Exception as e:
             logger.error(f"Database query execution failed: {e}")
             return False
 
-    async def execute(self, query: str, *args) -> Tuple[Optional[str], Optional[int]]:
-        """Execute a query."""
-        if not self.pool:
-            logger.warning("Database pool not available, skipping query execution")
-            return "Database not connected", 0
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.execute(query, *args)
-                return None, 1
-        except Exception as e:
-            logger.error(f"Query execution failed: {e}")
-            return str(e), None
-
-    async def fetch_one(self, query: str, *args) -> Optional[Dict[str, Any]]:
-        """Fetch one row."""
-        if not self.pool:
-            logger.warning("Database pool not available, returning empty result")
+    async def fetchval(self, query: str, *args):
+        """Execute a query and return a single value."""
+        if not self._pool:
+            logger.warning("Database pool not available, returning None")
             return None
+        
         try:
-            async with self.pool.acquire() as conn:
-                row = await conn.fetchrow(query, *args)
-                return dict(row) if row else None
+            async with self._pool.acquire() as connection:
+                # Handle tuple arguments - unpack if single tuple provided
+                if len(args) == 1 and isinstance(args[0], (tuple, list)):
+                    args = args[0]
+                result = await connection.fetchval(query, *args)
+                return result
         except Exception as e:
-            logger.error(f"Query fetch failed: {e}")
+            logger.error(f"Database query failed: {e}")
             return None
-
-    async def fetch_all(self, query: str, *args) -> List[Dict[str, Any]]:
-        """Fetch all rows."""
-        if not self.pool:
-            logger.warning("Database pool not available, returning empty list")
-            return []
-        try:
-            async with self.pool.acquire() as conn:
-                rows = await conn.fetch(query, *args)
-                return [dict(row) for row in rows]
-        except Exception as e:
-            logger.error(f"Query fetch failed: {e}")
-            return []
 
 
 # Singleton instance

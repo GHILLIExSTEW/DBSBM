@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from functools import wraps
 
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 

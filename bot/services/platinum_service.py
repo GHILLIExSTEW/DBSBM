@@ -68,7 +68,7 @@ class PlatinumService:
             await self.db_manager.execute(
                 """
                 INSERT INTO webhook_integrations (guild_id, webhook_name, webhook_url, webhook_type)
-                VALUES (%s, %s, %s, %s)
+                VALUES ($1, $2, $3, $4)
                 """,
                 guild_id,
                 webhook_name,
@@ -88,7 +88,7 @@ class PlatinumService:
         """Get all webhook integrations for a guild."""
         try:
             return await self.db_manager.fetch_all(
-                "SELECT * FROM webhook_integrations WHERE guild_id = %s AND is_active = TRUE",
+                "SELECT * FROM webhook_integrations WHERE guild_id = $1 AND is_active = TRUE",
                 guild_id,
             )
         except Exception as e:
@@ -145,7 +145,7 @@ class PlatinumService:
             await self.db_manager.execute(
                 """
                 INSERT INTO real_time_alerts (guild_id, alert_type, alert_conditions, alert_channel_id)
-                VALUES (%s, %s, %s, %s)
+                VALUES ($1, $2, $3, $4)
                 """,
                 guild_id,
                 alert_type,
@@ -165,7 +165,7 @@ class PlatinumService:
         """Get all real-time alerts for a guild."""
         try:
             return await self.db_manager.fetch_all(
-                "SELECT * FROM real_time_alerts WHERE guild_id = %s AND is_active = TRUE",
+                "SELECT * FROM real_time_alerts WHERE guild_id = $1 AND is_active = TRUE",
                 guild_id,
             )
         except Exception as e:
@@ -245,7 +245,7 @@ class PlatinumService:
             result = await self.db_manager.execute(
                 """
                 INSERT INTO data_exports (guild_id, export_type, export_format, created_by, created_at, user_filter)
-                VALUES (%s, %s, %s, %s, NOW(), %s)
+                VALUES ($1, $2, $3, $4, NOW(), $5)
                 """,
                 guild_id,
                 export_type,
@@ -471,7 +471,7 @@ class PlatinumService:
         """Get data for the specified export type."""
         try:
             if export_type == "bets":
-                query = "SELECT * FROM bets WHERE guild_id = %s"
+                query = "SELECT * FROM bets WHERE guild_id = $1"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
@@ -479,7 +479,7 @@ class PlatinumService:
                 query += " ORDER BY created_at DESC"
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "users":
-                query = "SELECT * FROM users WHERE guild_id = %s"
+                query = "SELECT * FROM users WHERE guild_id = $1"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
@@ -487,7 +487,7 @@ class PlatinumService:
                 query += " ORDER BY created_at DESC"
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "analytics":
-                query = "SELECT * FROM platinum_analytics WHERE guild_id = %s"
+                query = "SELECT * FROM platinum_analytics WHERE guild_id = $1"
                 params = [guild_id]
                 if user_id:
                     query += " AND user_id = %s"
@@ -496,9 +496,9 @@ class PlatinumService:
                 return await self.db_manager.fetch_all(query, *params)
             elif export_type == "all":
                 # Combine all data types with user filtering
-                bets_query = "SELECT * FROM bets WHERE guild_id = %s"
-                users_query = "SELECT * FROM users WHERE guild_id = %s"
-                analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = %s"
+                bets_query = "SELECT * FROM bets WHERE guild_id = $1"
+                users_query = "SELECT * FROM users WHERE guild_id = $1"
+                analytics_query = "SELECT * FROM platinum_analytics WHERE guild_id = $1"
 
                 params = [guild_id]
                 if user_id:
@@ -827,8 +827,8 @@ class PlatinumService:
                 await self.db_manager.execute(
                     """
                     UPDATE data_exports
-                    SET is_completed = TRUE, file_path = %s, completed_at = NOW()
-                    WHERE id = %s
+                    SET is_completed = TRUE, file_path = $1, completed_at = NOW()
+                    WHERE id = $1
                     """,
                     file_path,
                     export_id,
@@ -837,8 +837,8 @@ class PlatinumService:
                 await self.db_manager.execute(
                     """
                     UPDATE data_exports
-                    SET is_completed = FALSE, file_path = %s, completed_at = NOW()
-                    WHERE id = %s
+                    SET is_completed = FALSE, file_path = $1, completed_at = NOW()
+                    WHERE id = $1
                     """,
                     file_path,
                     export_id,
@@ -1009,7 +1009,7 @@ class PlatinumService:
             return await self.db_manager.fetch_all(
                 """
                 SELECT * FROM data_exports
-                WHERE guild_id = %s AND created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                WHERE guild_id = $1 AND created_at >= DATE_SUB(NOW(), INTERVAL $2 DAY)
                 ORDER BY created_at DESC
                 """,
                 guild_id,
@@ -1026,7 +1026,7 @@ class PlatinumService:
             await self.db_manager.execute(
                 """
                 INSERT INTO platinum_analytics (guild_id, feature_name, usage_count, last_used)
-                VALUES (%s, %s, 1, NOW())
+                VALUES ($1, $2, 1, NOW())
                 ON DUPLICATE KEY UPDATE
                     usage_count = usage_count + 1,
                     last_used = NOW()
@@ -1046,7 +1046,7 @@ class PlatinumService:
                 """
                 SELECT feature_name, usage_count, last_used
                 FROM platinum_analytics
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 ORDER BY usage_count DESC
                 """,
                 guild_id,
@@ -1060,7 +1060,7 @@ class PlatinumService:
         """Check if a guild has Platinum subscription."""
         try:
             result = await self.db_manager.fetch_one(
-                "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+                "SELECT subscription_level FROM guild_settings WHERE guild_id = $1",
                 guild_id,
             )
             return bool(result and result.get("subscription_level") == "platinum")
@@ -1076,7 +1076,7 @@ class PlatinumService:
                 SELECT max_embed_channels_platinum, max_command_channels_platinum,
                        max_active_bets_platinum, max_custom_commands_platinum,
                        max_webhooks_platinum, max_data_exports_platinum
-                FROM guild_settings WHERE guild_id = %s
+                FROM guild_settings WHERE guild_id = $1
                 """,
                 guild_id,
             )
@@ -1151,7 +1151,7 @@ class PlatinumService:
             exports = await self.db_manager.fetch_all(
                 """
                 SELECT COUNT(*) as count FROM data_exports
-                WHERE guild_id = %s AND created_at >= %s AND created_at < %s
+                WHERE guild_id = $1 AND created_at >= $2 AND created_at < $3
                 """,
                 guild_id,
                 start_date,

@@ -3,12 +3,12 @@ Multi-Provider API System
 Handles different API providers for various sports including API-Sports, SportDevs, RapidAPI, etc.
 """
 
-from bot.services.api_response_cache_service import (
+from services.api_response_cache_service import (
     cache_api_response,
     cache_api_response_with_invalidation,
 )
-from bot.data.db_manager import DatabaseManager
-from bot.config.api_settings import API_KEY
+from data.db_manager import DatabaseManager
+from config.api_settings import API_KEY
 import asyncio
 import json
 import logging
@@ -1328,7 +1328,7 @@ class MultiProviderAPI:
                 async with conn.cursor() as cur:
                     # Check if game already exists
                     await cur.execute(
-                        "SELECT api_game_id FROM api_games WHERE api_game_id = %s",
+                        "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
                         (game_data["api_game_id"],),
                     )
 

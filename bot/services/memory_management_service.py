@@ -14,7 +14,7 @@ from enum import Enum
 import threading
 import tracemalloc
 
-from bot.data.cache_manager import cache_manager
+from data.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 

@@ -5,15 +5,15 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from bot.services.game_service import GameService
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import (
+from services.game_service import GameService
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from bot.utils.errors import DataSyncError
+from utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
 
@@ -240,7 +240,7 @@ class DataSyncService:
         try:
             # Check if game already exists
             existing_game = await self.db_manager.fetch_one(
-                "SELECT id FROM api_games WHERE game_id = %s", game_data.get("id")
+                "SELECT id FROM api_games WHERE game_id = $1", game_data.get("id")
             )
 
             if existing_game:
@@ -249,7 +249,7 @@ class DataSyncService:
                     """
                     UPDATE api_games
                     SET home_team = $1, away_team = $2, game_time = $3,
-                        league = $4, sport = $5, status = $6, updated_at = UTC_TIMESTAMP()
+                        league = $4, sport = $5, status = $6, updated_at = NOW()
                     WHERE game_id = $7
                     """,
                     game_data.get("home_team"),
@@ -266,7 +266,7 @@ class DataSyncService:
                     """
                     INSERT INTO api_games
                     (game_id, home_team, away_team, game_time, league, sport, status, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                     """,
                     game_data.get("id"),
                     game_data.get("home_team"),
@@ -288,7 +288,7 @@ class DataSyncService:
         try:
             # Check if team already exists
             existing_team = await self.db_manager.fetch_one(
-                "SELECT id FROM teams WHERE team_id = %s", team_data.get("id")
+                "SELECT id FROM teams WHERE team_id = $1", team_data.get("id")
             )
 
             if existing_team:
@@ -296,7 +296,7 @@ class DataSyncService:
                 await self.db_manager.execute(
                     """
                     UPDATE teams
-                    SET name = $1, league = $2, sport = $3, updated_at = UTC_TIMESTAMP()
+                    SET name = $1, league = $2, sport = $3, updated_at = NOW()
                     WHERE team_id = $4
                     """,
                     team_data.get("name"),
@@ -310,7 +310,7 @@ class DataSyncService:
                     """
                     INSERT INTO teams
                     (team_id, name, league, sport, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, NOW(), NOW())
                     """,
                     team_data.get("id"),
                     team_data.get("name"),
@@ -329,7 +329,7 @@ class DataSyncService:
         try:
             # Check if league already exists
             existing_league = await self.db_manager.fetch_one(
-                "SELECT id FROM leagues WHERE league_id = %s", league_data.get("id")
+                "SELECT id FROM leagues WHERE league_id = $1", league_data.get("id")
             )
 
             if existing_league:
@@ -337,7 +337,7 @@ class DataSyncService:
                 await self.db_manager.execute(
                     """
                     UPDATE leagues
-                    SET name = $1, sport = $2, country = $3, updated_at = UTC_TIMESTAMP()
+                    SET name = $1, sport = $2, country = $3, updated_at = NOW()
                     WHERE league_id = $4
                     """,
                     league_data.get("name"),
@@ -351,7 +351,7 @@ class DataSyncService:
                     """
                     INSERT INTO leagues
                     (league_id, name, sport, country, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, $4, NOW(), NOW())
                     """,
                     league_data.get("id"),
                     league_data.get("name"),

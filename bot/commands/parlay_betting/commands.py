@@ -7,7 +7,7 @@ import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
 
-from bot.commands.admin import require_registered_guild
+from commands.admin import require_registered_guild
 
 from .workflow import ParlayBetWorkflowView
 

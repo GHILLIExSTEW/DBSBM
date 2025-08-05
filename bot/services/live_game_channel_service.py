@@ -47,7 +47,7 @@ class LiveGameChannelService:
                 break
             except Exception as e:
                 logger.error(
-                    "Error in live game channel update loop: %s", e, exc_info=True
+                    "Error in live game channel update loop: $1", e, exc_info=True
                 )
                 await asyncio.sleep(15)
 
@@ -65,13 +65,13 @@ class LiveGameChannelService:
         # Fetch active gameline bets, including parlay legs, excluding player props
         bets = await self.db.fetch_all(
             """
-            SELECT DISTINCT COALESCE(b.api_game_id, l.api_game_id) as api_game_id,
+            SELECT DISTINCT COALESCE(b.api_game_id::text, l.api_game_id::text) as api_game_id,
                    g.home_team_name, g.away_team_name, g.start_time, g.status,
                    g.score, g.id as game_id
             FROM bets b
             LEFT JOIN bet_legs l ON b.bet_type = 'parlay' AND l.bet_id = b.bet_serial
-            JOIN api_games g ON COALESCE(b.api_game_id, l.api_game_id) = g.api_game_id
-            WHERE b.guild_id = %s AND b.confirmed = 1
+            JOIN api_games g ON COALESCE(b.api_game_id::text, l.api_game_id::text) = g.api_game_id::text
+            WHERE b.guild_id = $1 AND b.confirmed = 1
             AND (b.bet_type = 'game_line' OR l.bet_type = 'game_line')
             AND g.status NOT IN ('finished', 'Match Finished', 'Final', 'Ended')
             """,
@@ -199,7 +199,7 @@ class LiveGameChannelService:
             try:
                 await channel.edit(name=new_name[:100], reason="Update live game score")
                 logger.debug(
-                    "Updated channel %s name to %s in guild %s",
+                    "Updated channel $1 name to $2 in guild $3",
                     channel_id,
                     new_name[:100],
                     guild.id,
@@ -212,7 +212,7 @@ class LiveGameChannelService:
                 )
             except Exception as e:
                 logger.error(
-                    "Failed to update channel %s name in guild %s: %s",
+                    "Failed to update channel $1 name in guild $2: $3",
                     channel_id,
                     guild.id,
                     e,
@@ -305,19 +305,19 @@ class LiveGameChannelService:
                 reason="Game finished, deleting live update channel after 1 hour"
             )
             logger.info(
-                "Deleted live game channel %s for game %s in guild %s",
+                "Deleted live game channel $1 for game $2 in guild $3",
                 channel_id,
                 api_game_id,
                 guild.id,
             )
         except discord.errors.Forbidden:
             logger.error(
-                "Missing permissions to delete channel %s in guild %s",
+                "Missing permissions to delete channel $1 in guild $2",
                 channel_id,
                 guild.id,
             )
         except Exception as e:
             logger.error(
-                "Failed to delete channel %s in guild %s: %s", channel_id, guild.id, e
+                "Failed to delete channel $1 in guild $2: $3", channel_id, guild.id, e
             )
         tracked.pop(api_game_id, None)

@@ -43,7 +43,7 @@ except ImportError:
     MySQLInstrumentor = None
     RedisInstrumentor = None
 
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 

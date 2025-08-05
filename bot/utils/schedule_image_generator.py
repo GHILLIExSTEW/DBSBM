@@ -8,8 +8,8 @@ from typing import Dict, List, Optional
 import pytz
 from PIL import Image, ImageDraw, ImageFont
 
-from bot.config.asset_paths import get_sport_category_for_path
-from bot.utils.asset_loader import asset_loader
+from config.asset_paths import get_sport_category_for_path
+from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 

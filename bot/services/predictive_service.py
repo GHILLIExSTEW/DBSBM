@@ -30,9 +30,9 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.utils.cache_manager import cache_manager
+from services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 

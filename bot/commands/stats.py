@@ -12,14 +12,14 @@ from discord.ext import commands  # Import commands for Cog
 from discord.ui import Select, View
 from PIL import Image  # Added for PIL Image handling
 
-from bot.commands.admin import require_registered_guild
+from commands.admin import require_registered_guild
 
 # Import necessary services and utils
 try:
-    from bot.utils.stats_image_generator import StatsImageGenerator
+    from utils.stats_image_generator import StatsImageGenerator
 except ImportError:
     try:
-        from bot.utils.stats_image_generator import StatsImageGenerator
+        from utils.stats_image_generator import StatsImageGenerator
     except ImportError:
         StatsImageGenerator = None
 
@@ -176,7 +176,7 @@ class StatsView(View):
             # Use self.db (shared DatabaseManager)
             cappers = await self.db.fetch_all(
                 """
-                SELECT user_id FROM cappers WHERE guild_id = %s
+                SELECT user_id FROM cappers WHERE guild_id = $1
                 """,
                 [self.original_interaction.guild_id],
             )
@@ -289,7 +289,7 @@ class StatsView(View):
 
                 # Get capper info from database
                 capper_info = await self.db.fetch_one(
-                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = $1 AND user_id = $2",
                     (interaction.guild_id, self.selected_user_id),
                 )
 

@@ -14,7 +14,7 @@ from typing import Any, Dict, List
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bot.data.db_manager import DatabaseManager
+from data.db_manager import DatabaseManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class DatabaseOptimizer:
                 SELECT
                     ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
                 FROM information_schema.tables
-                WHERE table_schema = %s AND table_name = %s
+                WHERE table_schema = $1 AND table_name = $2
                 """,
                 (self.db_manager.db_name, table_name),
             )
@@ -82,7 +82,7 @@ class DatabaseOptimizer:
                     column_name,
                     cardinality
                 FROM information_schema.statistics
-                WHERE table_schema = %s AND table_name = %s
+                WHERE table_schema = $1 AND table_name = $2
                 ORDER BY index_name, seq_in_index
                 """,
                 (self.db_manager.db_name, table_name),
@@ -172,7 +172,7 @@ class DatabaseOptimizer:
                     index_name,
                     cardinality
                 FROM information_schema.statistics
-                WHERE table_schema = %s
+                WHERE table_schema = $1
                 AND cardinality = 0
                 ORDER BY table_name, index_name
                 """,
@@ -187,7 +187,7 @@ class DatabaseOptimizer:
                     GROUP_CONCAT(index_name) as indexes,
                     COUNT(*) as count
                 FROM information_schema.statistics
-                WHERE table_schema = %s
+                WHERE table_schema = $1
                 GROUP BY table_name, column_name
                 HAVING COUNT(*) > 1
                 """,
@@ -230,7 +230,7 @@ class DatabaseOptimizer:
                         """
                         SELECT COUNT(*) as count
                         FROM information_schema.statistics
-                        WHERE table_schema = %s AND table_name = %s AND index_name = %s
+                        WHERE table_schema = $1 AND table_name = $2 AND index_name = $3
                         """,
                         (self.db_manager.db_name, table, index_name),
                     )
@@ -267,7 +267,7 @@ class DatabaseOptimizer:
 
             # Delete old bets
             deleted_bets = await self.db_manager.execute(
-                "DELETE FROM bets WHERE created_at < %s", (cutoff_date,)
+                "DELETE FROM bets WHERE created_at < $1", (cutoff_date,)
             )
             results["deleted_bets"] = (
                 deleted_bets.get("affected_rows", 0) if deleted_bets else 0
@@ -275,7 +275,7 @@ class DatabaseOptimizer:
 
             # Delete old games
             deleted_games = await self.db_manager.execute(
-                "DELETE FROM games WHERE game_time < %s AND status = 'finished'",
+                "DELETE FROM games WHERE game_time < $1 AND status = 'finished'",
                 (cutoff_date,),
             )
             results["deleted_games"] = (

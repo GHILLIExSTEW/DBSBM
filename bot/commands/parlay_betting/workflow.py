@@ -10,10 +10,10 @@ from discord import ButtonStyle, File, Interaction, Message, TextChannel
 from discord.ext import commands
 from discord.ui import View
 
-from bot.commands.admin import require_registered_guild
-from bot.data.db_manager import get_db_manager
-from bot.utils.errors import ValidationError
-from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
+from commands.admin import require_registered_guild
+from data.db_manager import get_db_manager
+from utils.errors import ValidationError
+from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
 from .constants import DEFAULT_UNITS
 from .modals import BetDetailsModal, OddsModal, TotalOddsModal
@@ -413,7 +413,7 @@ class ParlayBetWorkflowView(View):
         allowed_channels = []
         try:
             guild_settings = await self.bot.db_manager.fetch_one(
-                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = $1",
                 (str(guild.id),),
             )
             if guild_settings:

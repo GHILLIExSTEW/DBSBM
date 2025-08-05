@@ -26,17 +26,17 @@ import uuid
 import re
 from collections import defaultdict
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.services.compliance_service import (
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
+from services.compliance_service import (
     ComplianceService,
     ComplianceType,
     ComplianceStatus,
     ComplianceSeverity,
 )
-from bot.services.audit_service import AuditService, AuditCategory, AuditLevel
-from bot.services.data_protection_service import (
+from services.audit_service import AuditService, AuditCategory, AuditLevel
+from services.data_protection_service import (
     DataProtectionService,
     DataClassification,
 )

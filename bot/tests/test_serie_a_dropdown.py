@@ -15,8 +15,8 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bot.data.db_manager import DatabaseManager
-from bot.data.game_utils import get_normalized_games_for_dropdown
+from data.db_manager import DatabaseManager
+from data.game_utils import get_normalized_games_for_dropdown
 
 logger = logging.getLogger(__name__)
 

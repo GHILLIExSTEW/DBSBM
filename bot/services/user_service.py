@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from bot.utils.enhanced_cache_manager import (
+from utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from bot.utils.errors import InsufficientUnitsError, UserServiceError
+from utils.errors import InsufficientUnitsError, UserServiceError
 
 USER_CACHE_TTL = 3600  # Default TTL (1 hour)
 
@@ -56,7 +56,7 @@ class UserService:
                 """
                 SELECT user_id, username, balance, created_at
                 FROM users
-                WHERE user_id = %s
+                WHERE user_id = $1
                 """,
                 user_id,
             )
@@ -84,8 +84,8 @@ class UserService:
                 await self.db.execute(
                     """
                     UPDATE users
-                    SET username = %s
-                    WHERE user_id = %s
+                    SET username = $1
+                    WHERE user_id = $1
                     """,
                     username,
                     user_id,
@@ -110,7 +110,7 @@ class UserService:
                 await self.db.execute(
                     """
                     INSERT IGNORE INTO users (user_id, username, balance, created_at)
-                    VALUES (%s, %s, %s, UTC_TIMESTAMP())
+                    VALUES ($1, $2, $3, NOW())
                     """,
                     user_id,
                     username,
@@ -143,8 +143,8 @@ class UserService:
             updated_rows = await self.db.execute(
                 """
                 UPDATE users
-                SET balance = %s
-                WHERE user_id = %s
+                SET balance = $1
+                WHERE user_id = $1
                 """,
                 new_balance,
                 user_id,
@@ -186,7 +186,7 @@ class UserService:
                     bet_id, game_id, selection, odds, units,
                     status, created_at, result, payout
                 FROM bets
-                WHERE user_id = %s AND guild_id = %s
+                WHERE user_id = $1 AND guild_id = $2
                 ORDER BY created_at DESC
                 LIMIT 100
                 """,
@@ -270,7 +270,7 @@ class UserService:
                 FROM users
                 WHERE balance > 0
                 ORDER BY balance DESC
-                LIMIT %s
+                LIMIT $1
                 """,
                 limit,
             )

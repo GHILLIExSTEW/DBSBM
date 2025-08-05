@@ -40,7 +40,7 @@ def generate_player_prop_bet_image(
     import os
 
     # Determine if this is a non-team-based league (individual sport)
-    from bot.config.leagues import LEAGUE_CONFIG
+    from config.leagues import LEAGUE_CONFIG
 
     # Always use the league for sport_type lookup, not team_name
     league_key = None
@@ -132,7 +132,7 @@ class GameLineImageGenerator:
 
     def _setup_image_parameters(self):
         """Setup image parameters and fonts."""
-        from bot.config.image_settings import (
+        from config.image_settings import (
             BACKGROUND_COLOR,
             DEFAULT_PADDING,
             FOOTER_FONT_SIZE,
@@ -187,7 +187,7 @@ class GameLineImageGenerator:
 
     def _find_league_logo(self, league):
         """Find the appropriate league logo file."""
-        from bot.config.asset_paths import get_sport_category_for_path
+        from config.asset_paths import get_sport_category_for_path
 
         league_upper = league.upper()
         league_cap = league.capitalize()
@@ -566,7 +566,7 @@ class GameLineImageGenerator:
 
         from PIL import Image
 
-        from bot.utils.asset_loader import asset_loader
+        from utils.asset_loader import asset_loader
 
         # Special handling for manual entry
         if league.upper() == "MANUAL":
@@ -614,7 +614,7 @@ class GameLineImageGenerator:
             )
 
     def _load_player_image(self, player_name: str, team_name: str, league: str):
-        from bot.utils.asset_loader import asset_loader
+        from utils.asset_loader import asset_loader
 
         return asset_loader.load_player_image(
             player_name, team_name, league, getattr(self, "guild_id", None)

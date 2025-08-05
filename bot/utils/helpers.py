@@ -16,7 +16,7 @@ from PIL     """Get the file pathdef get_league_logo_path(league_key: str) -> Op
     league_id = league.get("id")
     save_path = f"../../../StaticFiles/DBSBM/assets/logos/{team_name.replace('/', '_')}.webp"rt Image
 
-from bot.config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
+from config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
 
 # NCAA teams list (661 Division I and II teams, abridged for brevity)
 NCAA_TEAMS = [

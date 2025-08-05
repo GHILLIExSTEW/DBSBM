@@ -21,7 +21,7 @@ class SubscriptionService:
                 """
                 INSERT INTO subscriptions (
                     guild_id, user_id, plan_type, start_date, end_date, is_active
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ) VALUES ($1, $2, $3, $4, $5, $6)
                 """,
                 guild_id,
                 user_id,
@@ -34,7 +34,7 @@ class SubscriptionService:
             # Update guild settings based on plan type
             subscription_level = plan_type
             await self.db_manager.execute(
-                "UPDATE guild_settings SET subscription_level = %s WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = $1 WHERE guild_id = $2",
                 subscription_level,
                 guild_id,
             )
@@ -54,7 +54,7 @@ class SubscriptionService:
             return await self.db_manager.fetch_one(
                 """
                 SELECT * FROM subscriptions
-                WHERE guild_id = %s AND is_active = TRUE
+                WHERE guild_id = $1 AND is_active = TRUE
                 ORDER BY end_date DESC LIMIT 1
                 """,
                 guild_id,
@@ -71,14 +71,14 @@ class SubscriptionService:
                 """
                 UPDATE subscriptions
                 SET is_active = FALSE
-                WHERE guild_id = %s AND is_active = TRUE
+                WHERE guild_id = $1 AND is_active = TRUE
                 """,
                 guild_id,
             )
 
             # Update guild settings to mark as unpaid
             await self.db_manager.execute(
-                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = $1",
                 guild_id,
             )
 
@@ -91,7 +91,7 @@ class SubscriptionService:
         """Activate a subscription for a guild."""
         try:
             await self.db_manager.execute(
-                "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = 'premium' WHERE guild_id = $1",
                 guild_id,
             )
             return True
@@ -103,7 +103,7 @@ class SubscriptionService:
         """Deactivate a subscription for a guild."""
         try:
             await self.db_manager.execute(
-                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = %s",
+                "UPDATE guild_settings SET subscription_level = 'free' WHERE guild_id = $1",
                 guild_id,
             )
             return True
@@ -115,7 +115,7 @@ class SubscriptionService:
         """Check if a guild has an active subscription and return the level."""
         try:
             result = await self.db_manager.fetch_one(
-                "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+                "SELECT subscription_level FROM guild_settings WHERE guild_id = $1",
                 guild_id,
             )
             return result.get("subscription_level", "free") if result else "free"
@@ -138,8 +138,8 @@ class SubscriptionService:
             await self.db_manager.execute(
                 """
                 UPDATE subscriptions
-                SET end_date = %s
-                WHERE guild_id = %s AND is_active = TRUE
+                SET end_date = $1
+                WHERE guild_id = $1 AND is_active = TRUE
                 """,
                 new_end_date,
                 guild_id,
@@ -192,7 +192,7 @@ class SubscriptionService:
                     custom_embeds_enabled = TRUE,
                     real_time_alerts_enabled = TRUE,
                     data_export_enabled = TRUE
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 """,
                 guild_id,
             )
@@ -205,7 +205,7 @@ class SubscriptionService:
                     priority_support, custom_commands, advanced_reporting,
                     multi_guild_sync, webhook_integration, custom_embeds,
                     real_time_alerts, data_export
-                ) VALUES (%s, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
+                ) VALUES ($1, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
                 ON DUPLICATE KEY UPDATE
                     advanced_analytics = TRUE,
                     custom_branding = TRUE,
@@ -246,7 +246,7 @@ class SubscriptionService:
                     custom_embeds_enabled = FALSE,
                     real_time_alerts_enabled = FALSE,
                     data_export_enabled = FALSE
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 """,
                 guild_id,
             )
@@ -266,7 +266,7 @@ class SubscriptionService:
                     custom_embeds = FALSE,
                     real_time_alerts = FALSE,
                     data_export = FALSE
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 """,
                 guild_id,
             )
@@ -280,7 +280,7 @@ class SubscriptionService:
         """Get Platinum features status for a guild."""
         try:
             result = await self.db_manager.fetch_one(
-                "SELECT * FROM platinum_features WHERE guild_id = %s",
+                "SELECT * FROM platinum_features WHERE guild_id = $1",
                 guild_id,
             )
             return result if result else {}

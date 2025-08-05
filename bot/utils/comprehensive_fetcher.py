@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Set
 from zoneinfo import ZoneInfo
 
 import aiohttp
-import aiomysql
+import asyncpg
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -53,7 +53,7 @@ UTC = ZoneInfo("UTC")
 
 
 class ComprehensiveFetcher:
-    def __init__(self, db_pool: aiomysql.Pool):
+    def __init__(self, db_pool: asyncpg.Pool):
         self.db_pool = db_pool
         self.api_key = API_KEY
         if not self.api_key:
@@ -539,7 +539,7 @@ class ComprehensiveFetcher:
                 async with conn.cursor() as cur:
                     # Check if game already exists
                     await cur.execute(
-                        "SELECT api_game_id FROM api_games WHERE api_game_id = %s",
+                        "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
                         (game_data["api_game_id"],),
                     )
 
@@ -651,34 +651,30 @@ class ComprehensiveFetcher:
         """Get statistics about the fetch operation."""
         try:
             async with self.db_pool.acquire() as conn:
-                async with conn.cursor(aiomysql.DictCursor) as cur:
-                    await cur.execute("SELECT COUNT(*) as total_games FROM api_games")
-                    total_games = (await cur.fetchone())["total_games"]
+                total_games = await conn.fetchval("SELECT COUNT(*) FROM api_games")
 
-                    await cur.execute(
-                        "SELECT COUNT(DISTINCT league_id) as unique_leagues FROM api_games"
-                    )
-                    unique_leagues = (await cur.fetchone())["unique_leagues"]
+                unique_leagues = await conn.fetchval(
+                    "SELECT COUNT(DISTINCT league_id) FROM api_games"
+                )
 
-                    await cur.execute(
-                        "SELECT COUNT(DISTINCT sport) as unique_sports FROM api_games"
-                    )
-                    unique_sports = (await cur.fetchone())["unique_sports"]
+                unique_sports = await conn.fetchval(
+                    "SELECT COUNT(DISTINCT sport) FROM api_games"
+                )
 
-                    return {
-                        "total_games": total_games,
-                        "unique_leagues": unique_leagues,
-                        "unique_sports": unique_sports,
-                        "failed_leagues": list(self.failed_leagues),
-                        "successful_fetches": self.successful_fetches,
-                        "total_fetches": self.total_fetches,
-                    }
+                return {
+                    "total_games": total_games,
+                    "unique_leagues": unique_leagues,
+                    "unique_sports": unique_sports,
+                    "failed_leagues": list(self.failed_leagues),
+                    "successful_fetches": self.successful_fetches,
+                    "total_fetches": self.total_fetches,
+                }
         except Exception as e:
             log_fetcher_error(f"Error getting fetch statistics: {e}", "statistics")
             return {}
 
 
-async def run_comprehensive_hourly_fetch(db_pool: aiomysql.Pool):
+async def run_comprehensive_hourly_fetch(db_pool: asyncpg.Pool):
     """Run comprehensive fetch for ALL leagues every hour."""
     log_fetcher_operation("Starting comprehensive hourly fetch task for ALL leagues")
 
@@ -740,15 +736,14 @@ async def main():
     log_fetcher_startup()
 
     # Set up database pool
-    db_pool = await aiomysql.create_pool(
-        host=os.getenv("MYSQL_HOST"),
-        port=int(os.getenv("MYSQL_PORT", 3306)),
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_PASSWORD"),
-        db=os.getenv("MYSQL_DB"),
-        minsize=int(os.getenv("MYSQL_POOL_MIN_SIZE", 1)),
-        maxsize=int(os.getenv("MYSQL_POOL_MAX_SIZE", 10)),
-        autocommit=True,
+    db_pool = await asyncpg.create_pool(
+        host=os.getenv("POSTGRES_HOST"),
+        port=int(os.getenv("POSTGRES_PORT", 5432)),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        database=os.getenv("POSTGRES_DB"),
+        min_size=int(os.getenv("POSTGRES_POOL_MIN_SIZE", 1)),
+        max_size=int(os.getenv("POSTGRES_POOL_MAX_SIZE", 10)),
     )
 
     try:

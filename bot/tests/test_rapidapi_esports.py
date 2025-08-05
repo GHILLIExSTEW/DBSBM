@@ -3,7 +3,7 @@
 Test script to verify RapidAPI esports integration.
 """
 
-from bot.utils.multi_provider_api import MultiProviderAPI
+from utils.multi_provider_api import MultiProviderAPI
 import asyncio
 import logging
 import os

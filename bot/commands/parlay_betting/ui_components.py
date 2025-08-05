@@ -7,7 +7,7 @@ import discord
 from discord import ButtonStyle, Interaction, SelectOption, TextChannel
 from discord.ui import Button, Select, View
 
-from bot.data.game_utils import get_normalized_games_for_dropdown
+from data.game_utils import get_normalized_games_for_dropdown
 
 from .constants import DEFAULT_LEGS_PER_PAGE, LINE_TYPES
 from .utils import get_leagues_for_sport

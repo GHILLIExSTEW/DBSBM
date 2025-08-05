@@ -12,8 +12,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
-from bot.api.sports_api import APISportsFetcher, SportsAPI
-from bot.data.db_manager import DatabaseManager
+from api.sports_api import APISportsFetcher, SportsAPI
+from data.db_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class RealMLService:
         try:
             # 1. Get user's betting history
             user_bets = await self.db_manager.fetch_all(
-                "SELECT * FROM bets WHERE user_id = %s ORDER BY created_at DESC LIMIT 100",
+                "SELECT * FROM bets WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100",
                 (user_id,),
             )
 
@@ -359,7 +359,7 @@ class RealMLService:
 
         try:
             # Use the existing predictive service
-            from bot.services.predictive_service import PredictionType
+            from services.predictive_service import PredictionType
 
             prediction = await self.predictive_service.generate_prediction(
                 model_id="bet_outcome_predictor_v1",
@@ -418,7 +418,7 @@ class RealMLService:
         try:
             # Get user's betting history
             user_bets = await self.db_manager.fetch_all(
-                "SELECT * FROM bets WHERE user_id = %s ORDER BY created_at DESC LIMIT 50",
+                "SELECT * FROM bets WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50",
                 (user_id,),
             )
 

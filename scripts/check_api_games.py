@@ -42,7 +42,7 @@ async def check_api_games():
         print(f"\nLeagues found:")
         for league in leagues:
             count = await db_manager.fetchval(
-                "SELECT COUNT(*) FROM api_games WHERE league_name = %s AND sport = %s",
+                "SELECT COUNT(*) FROM api_games WHERE league_name = $1 AND sport = $2",
                 (league['league_name'], league['sport'])
             )
             print(f"  - {league['sport']}: {league['league_name']} ({count} games)")
@@ -72,7 +72,7 @@ async def check_api_games():
         # Check for games starting today or later
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         future_games = await db_manager.fetch_all(
-            "SELECT COUNT(*) as count FROM api_games WHERE start_time >= %s",
+            "SELECT COUNT(*) as count FROM api_games WHERE start_time >= $1",
             (today_start,)
         )
         print(f"Games starting today or later: {future_games[0]['count']}")
@@ -91,7 +91,7 @@ async def check_api_games():
         query = """
             SELECT id, api_game_id, home_team_name, away_team_name, start_time, status, score, league_name
             FROM api_games
-            WHERE sport = %s
+            WHERE sport = $1
             AND league_id = %s
             AND UPPER(league_name) = UPPER(%s)
             AND start_time >= %s

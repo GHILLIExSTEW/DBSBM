@@ -8,14 +8,14 @@ from typing import Dict, List, Optional, Any
 import discord
 from discord.ext import commands
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import (
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from bot.utils.errors import VoiceServiceError
+from utils.errors import VoiceServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -214,11 +214,11 @@ class VoiceService:
                 """
                 SELECT
                     COUNT(*) as total_sessions,
-                    SUM(TIMESTAMPDIFF(MINUTE, joined_at, COALESCE(left_at, NOW()))) as total_minutes,
-                    AVG(TIMESTAMPDIFF(MINUTE, joined_at, COALESCE(left_at, NOW()))) as avg_session_length,
+                    SUM(EXTRACT(EPOCH FROM (COALESCE(left_at, NOW()) - joined_at))/60) as total_minutes,
+                    AVG(EXTRACT(EPOCH FROM (COALESCE(left_at, NOW()) - joined_at))/60) as avg_session_length,
                     MAX(joined_at) as last_joined
                 FROM voice_activity
-                WHERE user_id = %s AND guild_id = %s
+                WHERE user_id = $1 AND guild_id = $2
                 """,
                 user_id,
                 guild_id,
@@ -250,7 +250,7 @@ class VoiceService:
                     """
                     INSERT INTO voice_activity
                     (user_id, guild_id, channel_id, joined_at, created_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5)
                     """,
                     user_id,
                     guild_id,
@@ -262,8 +262,8 @@ class VoiceService:
                 await self.db_manager.execute(
                     """
                     UPDATE voice_activity
-                    SET left_at = %s, updated_at = %s
-                    WHERE user_id = %s AND guild_id = %s AND channel_id = %s AND left_at IS NULL
+                    SET left_at = $1, updated_at = $2
+                    WHERE user_id = $1 AND guild_id = $2 AND channel_id = $3 AND left_at IS NULL
                     """,
                     current_time,
                     current_time,
@@ -287,10 +287,10 @@ class VoiceService:
                 SELECT
                     COUNT(DISTINCT user_id) as unique_users,
                     COUNT(*) as total_sessions,
-                    SUM(TIMESTAMPDIFF(MINUTE, joined_at, COALESCE(left_at, NOW()))) as total_minutes,
-                    AVG(TIMESTAMPDIFF(MINUTE, joined_at, COALESCE(left_at, NOW()))) as avg_session_length
+                    SUM(EXTRACT(EPOCH FROM (COALESCE(left_at, NOW()) - joined_at))/60) as total_minutes,
+                    AVG(EXTRACT(EPOCH FROM (COALESCE(left_at, NOW()) - joined_at))/60) as avg_session_length
                 FROM voice_activity
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 """,
                 guild_id,
             )

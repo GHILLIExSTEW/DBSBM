@@ -107,11 +107,11 @@ class AssetLoader:
         Load team logo with fallback chain.
         """
         # Import here to avoid circular imports
-        from bot.config.asset_paths import get_sport_category_for_path
+        from config.asset_paths import get_sport_category_for_path
 
         # Import team mappings
         try:
-            from bot.utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
+            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
         except ImportError:
             LEAGUE_TEAM_MAPPINGS = {}
 
@@ -286,8 +286,8 @@ class AssetLoader:
         Returns:
             Tuple of (PIL Image object, display name) or (None, original_name) if not found
         """
-        from bot.config.asset_paths import get_sport_category_for_path
-        from bot.data.game_utils import normalize_team_name_any_league
+        from config.asset_paths import get_sport_category_for_path
+        from data.game_utils import normalize_team_name_any_league
 
         sport = get_sport_category_for_path(league.upper())
         if not sport:
@@ -352,8 +352,8 @@ class AssetLoader:
         Returns:
             PIL Image object or None if no logo found
         """
-        from bot.config.asset_paths import get_sport_category_for_path
-        from bot.config.leagues import LEAGUE_IDS
+        from config.asset_paths import get_sport_category_for_path
+        from config.leagues import LEAGUE_IDS
 
         # Get league info from LEAGUE_IDS
         league_info = LEAGUE_IDS.get(league_code.upper())
@@ -462,23 +462,23 @@ class AssetLoader:
             # Import appropriate league dictionary based on the league
             league_lower = league.lower()
             if league_lower == "mlb":
-                from bot.utils.league_dictionaries.baseball import (
+                from utils.league_dictionaries.baseball import (
                     TEAM_FULL_NAMES as league_dict,
                 )
             elif league_lower == "nba":
-                from bot.utils.league_dictionaries.basketball import (
+                from utils.league_dictionaries.basketball import (
                     TEAM_NAMES as league_dict,
                 )
             elif league_lower == "nfl":
-                from bot.utils.league_dictionaries.football import (
+                from utils.league_dictionaries.football import (
                     TEAM_NAMES as league_dict,
                 )
             elif league_lower == "nhl":
-                from bot.utils.league_dictionaries.hockey import (
+                from utils.league_dictionaries.hockey import (
                     TEAM_NAMES as league_dict,
                 )
             elif league_lower == "cfl":
-                from bot.utils.league_dictionaries.cfl import TEAM_NAMES as league_dict
+                from utils.league_dictionaries.cfl import TEAM_NAMES as league_dict
             else:
                 league_dict = {}
 

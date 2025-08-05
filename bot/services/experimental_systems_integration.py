@@ -19,15 +19,15 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.advanced_ai_service import AdvancedAIService
-from bot.services.advanced_analytics_service import AdvancedAnalyticsService
-from bot.services.system_integration_service import SystemIntegrationService
-from bot.services.compliance_automation_service import ComplianceAutomationService
-from bot.services.data_protection_service import DataProtectionService
-from bot.services.security_incident_response import SecurityIncidentResponseService
-from bot.services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.advanced_ai_service import AdvancedAIService
+from services.advanced_analytics_service import AdvancedAnalyticsService
+from services.system_integration_service import SystemIntegrationService
+from services.compliance_automation_service import ComplianceAutomationService
+from services.data_protection_service import DataProtectionService
+from services.security_incident_response import SecurityIncidentResponseService
+from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +190,7 @@ class ExperimentalSystemsIntegration:
         """Make a prediction using the advanced AI system."""
         try:
             # Get the appropriate model type
-            from bot.services.advanced_ai_service import ModelType
+            from services.advanced_ai_service import ModelType
 
             model_type_enum = None
             for mt in ModelType:
@@ -240,7 +240,7 @@ class ExperimentalSystemsIntegration:
     ) -> Dict[str, Any]:
         """Create an analytics dashboard."""
         try:
-            from bot.services.advanced_analytics_service import DashboardType
+            from services.advanced_analytics_service import DashboardType
 
             dashboard_type_enum = None
             for dt in DashboardType:
@@ -276,7 +276,7 @@ class ExperimentalSystemsIntegration:
     ) -> Dict[str, Any]:
         """Register a service with the system integration service."""
         try:
-            from bot.services.system_integration_service import ServiceType
+            from services.system_integration_service import ServiceType
 
             service_type_enum = None
             for st in ServiceType:

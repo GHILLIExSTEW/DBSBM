@@ -4,7 +4,7 @@ from io import BytesIO
 from discord import File, Interaction, app_commands
 from discord.ext import commands
 
-from bot.utils.stats_image_generator import StatsImageGenerator
+from utils.stats_image_generator import StatsImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class LeaderboardCog(commands.Cog):
 
             # Get all cappers in the guild
             cappers = await self.db_manager.fetch_all(
-                "SELECT user_id, display_name FROM cappers WHERE guild_id = %s",
+                "SELECT user_id, display_name FROM cappers WHERE guild_id = $1",
                 (interaction.guild_id,),
             )
 

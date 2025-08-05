@@ -18,13 +18,13 @@ from pydantic_settings import BaseSettings
 class DatabaseSettings(BaseSettings):
     """Database configuration settings."""
 
-    host: str = Field("localhost", env="PG_HOST", description="PostgreSQL host address")
-    port: int = Field(5432, env="PG_PORT", description="PostgreSQL port")
-    user: str = Field("postgres", env="PG_USER", description="PostgreSQL username")
+    host: str = Field("localhost", env="POSTGRES_HOST", description="PostgreSQL host address")
+    port: int = Field(5432, env="POSTGRES_PORT", description="PostgreSQL port")
+    user: str = Field("postgres", env="POSTGRES_USER", description="PostgreSQL username")
     password: SecretStr = Field(
-        SecretStr(""), env="PG_PASSWORD", description="PostgreSQL password"
+        SecretStr(""), env="POSTGRES_PASSWORD", description="PostgreSQL password"
     )
-    database: str = Field("dbsbm", env="PG_DATABASE", description="PostgreSQL database name")
+    database: str = Field("dbsbm", env="POSTGRES_DB", description="PostgreSQL database name")
 
     # Connection pool settings
     pool_min_size: int = Field(

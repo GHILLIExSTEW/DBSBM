@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 import os
 
-from bot.data.db_manager import DatabaseManager
-from bot.services.admin_service import AdminService
+from data.db_manager import DatabaseManager
+from services.admin_service import AdminService
 
 # Import services
-from bot.services.bet_service import BetService
-from bot.services.user_service import UserService
+from services.bet_service import BetService
+from services.user_service import UserService
 
 
 class TestBetService:
@@ -467,7 +467,7 @@ class TestDatabaseManager:
 
             mock_connect.return_value = mock_pool
 
-            result = await db_manager.execute("INSERT INTO test VALUES (%s)", ("test",))
+            result = await db_manager.execute("INSERT INTO test VALUES ($1)", ("test",))
 
             assert result == (1, 12345)
             mock_cursor.execute.assert_called_once()
@@ -496,7 +496,7 @@ class TestDatabaseManager:
             mock_connect.return_value = mock_pool
 
             result = await db_manager.fetch_one(
-                "SELECT * FROM test WHERE id = %s", (1,)
+                "SELECT * FROM test WHERE id = $1", (1,)
             )
 
             assert result == {"id": 1, "name": "test"}

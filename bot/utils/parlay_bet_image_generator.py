@@ -3,7 +3,7 @@ import os
 
 from PIL import ImageDraw, ImageFont
 
-from bot.utils.asset_loader import asset_loader
+from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +218,7 @@ class ParlayBetImageGenerator:
             available_width = right_margin - left_margin
 
             # Import team display name function
-            from bot.utils.team_display_names import get_team_display_name
+            from utils.team_display_names import get_team_display_name
 
             # Team (left-aligned)
             team_logo = self._load_team_logo(home_team, league)
@@ -306,7 +306,7 @@ class ParlayBetImageGenerator:
             available_width = right_margin - left_margin
 
             # Import team display name function
-            from bot.utils.team_display_names import get_team_display_name
+            from utils.team_display_names import get_team_display_name
 
             # Team (left-aligned) - like home team in game lines
             team_logo = self._load_team_logo(home_team, league)
@@ -441,7 +441,7 @@ class ParlayBetImageGenerator:
         if not units:
             payout_text = "Units: X"
         else:
-            from bot.utils.bet_utils import (
+            from utils.bet_utils import (
                 determine_risk_win_display_auto,
                 format_units_display,
             )

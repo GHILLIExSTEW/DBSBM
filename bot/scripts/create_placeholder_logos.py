@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Add the bot directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from bot.config.asset_paths import get_sport_category_for_path
+from config.asset_paths import get_sport_category_for_path
 
 
 def create_placeholder_logo(league_name: str, league_code: str, size=(200, 200)):

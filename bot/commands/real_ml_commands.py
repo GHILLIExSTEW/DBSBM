@@ -586,7 +586,7 @@ class MLCommandView(discord.ui.View):
                     home_team_name, away_team_name, start_time, status,
                     score, odds, venue, referee, season
                 FROM api_games
-                WHERE sport = %s
+                WHERE sport = $1
                 AND (league_id = %s OR league_name LIKE %s)
                 AND (home_team_name LIKE %s OR away_team_name LIKE %s)
                 ORDER BY start_time DESC
@@ -746,7 +746,7 @@ class MLCommandView(discord.ui.View):
                     home_team_name, away_team_name, start_time, status,
                     score, odds, venue, referee, season
                 FROM api_games
-                WHERE sport = %s
+                WHERE sport = $1
                 AND (league_id = %s OR league_name LIKE %s)
                 AND (
                     (home_team_name LIKE %s AND away_team_name LIKE %s)
@@ -901,7 +901,7 @@ class RealMLCommands(commands.Cog):
         try:
             # First check if guild_settings table exists and has the guild
             result = await self.bot.db_manager.fetch_one(
-                "SELECT subscription_level FROM guild_settings WHERE guild_id = %s",
+                "SELECT subscription_level FROM guild_settings WHERE guild_id = $1",
                 interaction.guild_id,
             )
 
@@ -911,7 +911,7 @@ class RealMLCommands(commands.Cog):
                     """
                     INSERT IGNORE INTO guild_settings
                     (guild_id, guild_name, subscription_level, created_at, updated_at)
-                    VALUES (%s, %s, %s, NOW(), NOW())
+                    VALUES ($1, $2, $3, NOW(), NOW())
                     """,
                     interaction.guild_id,
                     interaction.guild.name if interaction.guild else "Unknown Guild",
@@ -1073,7 +1073,7 @@ class RealMLCommands(commands.Cog):
                 """
                 INSERT INTO bets (user_id, guild_id, home_team, away_team, bet_type,
                                 bet_selection, bet_amount, odds, is_manual, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE, NOW())
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW())
                 """,
                 interaction.user.id,
                 interaction.guild_id,

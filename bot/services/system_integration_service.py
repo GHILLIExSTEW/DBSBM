@@ -32,9 +32,9 @@ import hashlib
 import hmac
 from pathlib import Path
 
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -1050,8 +1050,8 @@ class SystemIntegrationService:
             query = """
             UPDATE service_instances SET
                 status = %s, current_connections = %s, response_time = %s,
-                last_health_check = %s, updated_at = %s
-            WHERE instance_id = %s
+                last_health_check = $1, updated_at = $2
+            WHERE instance_id = $1
             """
 
             await self.db_manager.execute(
@@ -1075,7 +1075,7 @@ class SystemIntegrationService:
     async def _remove_service_instance(self, instance_id: str):
         """Remove service instance from database."""
         try:
-            query = "DELETE FROM service_instances WHERE instance_id = %s"
+            query = "DELETE FROM service_instances WHERE instance_id = $1"
             await self.db_manager.execute(query, (instance_id,))
             logger.info(f"Removed service instance: {instance_id}")
 
@@ -1259,8 +1259,8 @@ class SystemIntegrationService:
             query = """
             UPDATE circuit_breakers SET
                 state = %s, failure_count = %s, last_failure_time = %s,
-                last_success_time = %s, updated_at = %s
-            WHERE breaker_id = %s
+                last_success_time = $1, updated_at = $2
+            WHERE breaker_id = $1
             """
 
             await self.db_manager.execute(
@@ -1294,7 +1294,7 @@ class SystemIntegrationService:
 
                 # Get instances for this service
                 instances_query = (
-                    "SELECT * FROM service_instances WHERE service_id = %s"
+                    "SELECT * FROM service_instances WHERE service_id = $1"
                 )
                 instances_data = await self.db_manager.fetch_all(
                     instances_query, (service_id,)
@@ -1473,12 +1473,12 @@ class SystemIntegrationService:
             for service_id, registry in self.service_registry.items():
                 query = """
                 UPDATE service_registry
-                SET health_check_interval = %s,
+                SET health_check_interval = $1,
                     circuit_breaker_threshold = %s,
                     circuit_breaker_timeout = %s,
                     load_balancer_type = %s,
-                    updated_at = %s
-                WHERE service_id = %s
+                    updated_at = $1
+                WHERE service_id = $1
                 """
 
                 await self.db_manager.execute(
@@ -1503,8 +1503,8 @@ class SystemIntegrationService:
         try:
             query = """
             UPDATE load_balancers
-            SET instances = %s, updated_at = %s
-            WHERE balancer_id = %s
+            SET instances = $1, updated_at = $2
+            WHERE balancer_id = $1
             """
 
             instances_json = json.dumps([asdict(inst) for inst in balancer.instances])
@@ -1531,7 +1531,7 @@ class SystemIntegrationService:
     async def _get_current_balancer_instances(self, balancer_id: str) -> str:
         """Get current instances JSON for a load balancer."""
         try:
-            query = "SELECT instances FROM load_balancers WHERE balancer_id = %s"
+            query = "SELECT instances FROM load_balancers WHERE balancer_id = $1"
             result = await self.db_manager.fetch_one(query, (balancer_id,))
             return result["instances"] if result else "[]"
         except Exception:

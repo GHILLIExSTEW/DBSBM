@@ -12,7 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot.services.ufc_fighter_service import ufc_fighter_service
+from services.ufc_fighter_service import ufc_fighter_service
 
 logger = logging.getLogger(__name__)
 

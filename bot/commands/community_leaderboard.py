@@ -276,7 +276,7 @@ class CommunityLeaderboardCog(commands.Cog):
                     SELECT br.user_id, COUNT(*) as reaction_count
                     FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s
+                    WHERE b.guild_id = $1
                     GROUP BY br.user_id
                     ORDER BY reaction_count DESC
                     LIMIT 10
@@ -292,7 +292,7 @@ class CommunityLeaderboardCog(commands.Cog):
                 query = """
                     SELECT user_id, COUNT(*) as achievement_count
                     FROM community_achievements
-                    WHERE guild_id = %s
+                    WHERE guild_id = $1
                     GROUP BY user_id
                     ORDER BY achievement_count DESC
                     LIMIT 10
@@ -311,7 +311,7 @@ class CommunityLeaderboardCog(commands.Cog):
                 query = """
                     SELECT user_id, SUM(metric_value) as helpful_score
                     FROM user_metrics
-                    WHERE guild_id = %s
+                    WHERE guild_id = $1
                     AND metric_type IN ('commands_encourage', 'commands_thanks', 'commands_help_community')
                     GROUP BY user_id
                     ORDER BY helpful_score DESC
@@ -340,7 +340,7 @@ class CommunityLeaderboardCog(commands.Cog):
             query = """
                 SELECT achievement_type, achievement_name, earned_at
                 FROM community_achievements
-                WHERE guild_id = %s AND user_id = %s
+                WHERE guild_id = $1 AND user_id = $2
                 ORDER BY earned_at DESC
             """
             results = await self.bot.db_manager.fetch_all(query, (guild_id, user_id))
@@ -393,7 +393,7 @@ class CommunityLeaderboardCog(commands.Cog):
                 SELECT COUNT(*) as total_reactions
                 FROM bet_reactions br
                 JOIN bets b ON br.bet_serial = b.bet_serial
-                WHERE b.guild_id = %s
+                WHERE b.guild_id = $1
                 AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
             reactions_result = await self.bot.db_manager.fetch_one(
@@ -407,7 +407,7 @@ class CommunityLeaderboardCog(commands.Cog):
             achievements_query = """
                 SELECT COUNT(*) as total_achievements
                 FROM community_achievements
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 AND earned_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """
             achievements_result = await self.bot.db_manager.fetch_one(
@@ -422,12 +422,12 @@ class CommunityLeaderboardCog(commands.Cog):
                 SELECT COUNT(DISTINCT user_id) as active_users
                 FROM (
                     SELECT user_id FROM user_metrics
-                    WHERE guild_id = %s
+                    WHERE guild_id = $1
                     AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                     UNION
                     SELECT br.user_id FROM bet_reactions br
                     JOIN bets b ON br.bet_serial = b.bet_serial
-                    WHERE b.guild_id = %s
+                    WHERE b.guild_id = $1
                     AND br.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
                 ) as active_users
             """
@@ -442,7 +442,7 @@ class CommunityLeaderboardCog(commands.Cog):
             commands_query = """
                 SELECT SUM(metric_value) as community_commands
                 FROM community_metrics
-                WHERE guild_id = %s
+                WHERE guild_id = $1
                 AND metric_type LIKE %s
                 AND recorded_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
             """

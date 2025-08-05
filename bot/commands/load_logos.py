@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from PIL import Image
 
 # Import directly from utils
-from bot.config.asset_paths import get_sport_category_for_path
+from config.asset_paths import get_sport_category_for_path
 
 logger = logging.getLogger(__name__)
 

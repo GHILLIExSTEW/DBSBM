@@ -11,12 +11,12 @@ import discord
 from discord import ButtonStyle, Interaction, SelectOption
 from discord.ui import Button, Modal, Select, TextInput, View
 
-from bot.config.prop_templates import (
+from config.prop_templates import (
     get_prop_groups_for_league,
     get_prop_templates_for_league,
     validate_prop_value,
 )
-from bot.services.player_search_service import PlayerSearchResult, PlayerSearchService
+from services.player_search_service import PlayerSearchResult, PlayerSearchService
 
 logger = logging.getLogger(__name__)
 
@@ -390,7 +390,7 @@ class ParlayEnhancedPlayerPropModal(Modal):
     async def _generate_preview_image(self, bet_data: dict):
         """Generate preview image for the parlay leg."""
         try:
-            from bot.utils.parlay_bet_image_generator import ParlayBetImageGenerator
+            from utils.parlay_bet_image_generator import ParlayBetImageGenerator
 
             generator = ParlayBetImageGenerator(
                 guild_id=self.view_ref.original_interaction.guild_id

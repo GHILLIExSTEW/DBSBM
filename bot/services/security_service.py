@@ -34,10 +34,10 @@ from sqlalchemy import text
 import numpy as np
 from scipy import stats
 
-from bot.services.performance_monitor import time_operation, record_metric
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.compliance_service import ComplianceService
+from services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.compliance_service import ComplianceService
 
 logger = logging.getLogger(__name__)
 

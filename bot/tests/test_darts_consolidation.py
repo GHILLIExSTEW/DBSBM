@@ -15,8 +15,8 @@ import pytest
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.multi_provider_api import MultiProviderAPI
+from data.db_manager import DatabaseManager
+from utils.multi_provider_api import MultiProviderAPI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

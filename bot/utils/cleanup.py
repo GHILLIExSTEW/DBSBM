@@ -46,7 +46,7 @@ class CleanupTasks:
             query = """
                 DELETE FROM bets
                 WHERE confirmed = 0
-                AND created_at < %s
+                AND created_at < $1
             """
             result = await self.db_manager.execute(query, (cutoff_time,))
             if result.rowcount > 0:

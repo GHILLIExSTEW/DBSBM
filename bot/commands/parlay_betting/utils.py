@@ -3,8 +3,8 @@
 import logging
 from typing import Dict, List, Optional, Union
 
-from bot.config.leagues import LEAGUE_CONFIG
-from bot.utils.league_loader import (
+from config.leagues import LEAGUE_CONFIG
+from utils.league_loader import (
     get_all_league_names,
     get_all_sport_categories,
     get_leagues_by_sport,

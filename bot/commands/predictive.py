@@ -77,7 +77,7 @@ class PredictiveCommands(commands.Cog):
                 }
 
             # Get prediction from service
-            from bot.services.predictive_service import PredictionType
+            from services.predictive_service import PredictionType
 
             prediction_type_map = {
                 "bet_outcome": PredictionType.BET_OUTCOME,

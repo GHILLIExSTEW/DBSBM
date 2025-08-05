@@ -21,8 +21,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from dotenv import load_dotenv
 
-from bot.config.asset_paths import get_sport_category_for_path
-from bot.config.leagues import LEAGUE_CONFIG
+from config.asset_paths import get_sport_category_for_path
+from config.leagues import LEAGUE_CONFIG
 
 # Load environment variables
 load_dotenv()

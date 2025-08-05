@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Callable
 from enum import Enum
 
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 
 logger = logging.getLogger(__name__)
 

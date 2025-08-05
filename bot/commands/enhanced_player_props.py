@@ -17,9 +17,9 @@ from discord import ButtonStyle, File, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from bot.config.leagues import LEAGUE_CONFIG
-from bot.utils.league_loader import get_all_sport_categories, get_leagues_by_sport
-from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+from config.leagues import LEAGUE_CONFIG
+from utils.league_loader import get_all_sport_categories, get_leagues_by_sport
+from utils.player_prop_image_generator import PlayerPropImageGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ class PlayerPropsWorkflowView(View):
     async def _handle_step_3_game_selection(self, interaction: Interaction):
         """Handles the game selection step."""
         from commands.straight_betting import GameSelect
-        from bot.data.game_utils import get_normalized_games_for_dropdown
+        from data.game_utils import get_normalized_games_for_dropdown
 
         league = self.bet_details.get("league", "N/A")
         logger.info(f"[PLAYER PROPS WORKFLOW] Fetching games for league: {league}")
@@ -365,7 +365,7 @@ class PlayerPropsWorkflowView(View):
 
         # Get guild settings for units display mode
         guild_settings = await self.bot.db_manager.fetch_one(
-            "SELECT units_display_mode FROM guild_settings WHERE guild_id = %s",
+            "SELECT units_display_mode FROM guild_settings WHERE guild_id = $1",
             (str(self.original_interaction.guild_id),),
         )
         units_display_mode = (
@@ -553,7 +553,7 @@ class PlayerPropsWorkflowView(View):
 
                 # Get capper data for webhook
                 capper_data = await self.bot.db_manager.fetch_one(
-                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = $1 AND user_id = $2",
                     (interaction.guild_id, interaction.user.id),
                 )
                 webhook_username = (
@@ -564,7 +564,7 @@ class PlayerPropsWorkflowView(View):
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
                     logger.info(f"Found capper image_path: {capper_data['image_path']}")
-                    from bot.utils.image_url_converter import convert_image_path_to_url
+                    from utils.image_url_converter import convert_image_path_to_url
 
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]
@@ -578,7 +578,7 @@ class PlayerPropsWorkflowView(View):
                 # Fetch member_role for mention
                 member_role_id = None
                 guild_settings = await self.bot.db_manager.fetch_one(
-                    "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                    "SELECT member_role FROM guild_settings WHERE guild_id = $1",
                     (str(interaction.guild_id),),
                 )
                 if guild_settings and guild_settings.get("member_role"):

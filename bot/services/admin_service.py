@@ -102,7 +102,7 @@ class AdminService:
         """Check if a guild has an active paid subscription."""
         try:
             result = await self.db_manager.fetch_one(
-                "SELECT is_paid FROM guild_settings WHERE guild_id = %s", guild_id
+                "SELECT is_paid FROM guild_settings WHERE guild_id = $1", guild_id
             )
             return bool(result and result.get("is_paid", False))
         except Exception as e:
@@ -114,7 +114,7 @@ class AdminService:
         try:
             # Check if guild already exists
             existing = await self.db_manager.fetch_one(
-                "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
+                "SELECT * FROM guild_settings WHERE guild_id = $1", guild_id
             )
 
             if existing:
@@ -218,7 +218,7 @@ class AdminService:
         """Get guild settings."""
         try:
             result = await self.db_manager.fetch_one(
-                "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
+                "SELECT * FROM guild_settings WHERE guild_id = $1", guild_id
             )
 
             if not result:
@@ -232,7 +232,7 @@ class AdminService:
                 )
                 # Fetch the newly created entry
                 result = await self.db_manager.fetch_one(
-                    "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
+                    "SELECT * FROM guild_settings WHERE guild_id = $1", guild_id
                 )
 
             return result
@@ -250,7 +250,7 @@ class AdminService:
             values = []
             for key, value in settings.items():
                 if key != "guild_id":  # Skip guild_id in SET clause
-                    set_clauses.append(f"{key} = %s")
+                    set_clauses.append(f"{key} = $1")
                     values.append(value)
 
             if not set_clauses:

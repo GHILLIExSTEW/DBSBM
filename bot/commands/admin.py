@@ -14,7 +14,7 @@ from discord.ext import commands  # Import commands for Cog
 # Use relative imports (assuming commands/ is sibling to services/, utils/)
 try:
     # Services will be accessed via self.bot.<service_name>
-    from bot.services.admin_service import (  # Explicitly import AdminService type hint if needed
+    from services.admin_service import (  # Explicitly import AdminService type hint if needed
         AdminService,
     )
 except ImportError:
@@ -33,7 +33,7 @@ def require_registered_guild():
         async def wrapper(self, interaction: Interaction, *args, **kwargs):
             # Check if guild exists in database
             existing_settings = await self.bot.db_manager.fetch_one(
-                "SELECT * FROM guild_settings WHERE guild_id = %s", interaction.guild_id
+                "SELECT * FROM guild_settings WHERE guild_id = $1", interaction.guild_id
             )
 
             if not existing_settings:
@@ -1029,7 +1029,7 @@ class AdminCog(commands.Cog):
         try:
             # Check if guild exists in database
             existing_settings = await self.bot.db_manager.fetch_one(
-                "SELECT * FROM guild_settings WHERE guild_id = %s", guild_id
+                "SELECT * FROM guild_settings WHERE guild_id = $1", guild_id
             )
 
             # If guild doesn't exist, create it with default values for the new table structure
@@ -1041,7 +1041,7 @@ class AdminCog(commands.Cog):
                      embed_channel_1, command_channel_1, admin_channel_1,
                      live_game_updates, units_display_mode, min_units, max_units,
                      embed_color, timezone, auto_sync_commands)
-                    VALUES (%s, 1, 'free', 0,
+                    VALUES ($1, 1, 'free', 0,
                            NULL, NULL, NULL,
                            0, 'auto', 0.50, 3.00,
                            '#00FF00', 'UTC', 1)
@@ -1077,7 +1077,7 @@ class AdminCog(commands.Cog):
                 # Update subscription_level in database if it doesn't match
                 if subscription_level != db_subscription_level:
                     await self.bot.db_manager.execute(
-                        "UPDATE guild_settings SET subscription_level = %s WHERE guild_id = %s",
+                        "UPDATE guild_settings SET subscription_level = $1 WHERE guild_id = $2",
                         subscription_level,
                         guild_id,
                     )

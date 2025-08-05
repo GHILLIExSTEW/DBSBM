@@ -11,8 +11,8 @@ from zoneinfo import ZoneInfo
 import discord
 from aiomysql import IntegrityError
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.errors import BetServiceError
+from data.db_manager import DatabaseManager
+from utils.errors import BetServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,7 @@ class BetService:
                     f"Failed to confirm bet {bet_serial}. Rowcount: {rowcount}. May already be confirmed or deleted."
                 )
                 existing = await self.db_manager.fetch_one(
-                    "SELECT confirmed, message_id, channel_id FROM bets WHERE bet_serial = %s",
+                    "SELECT confirmed, message_id, channel_id FROM bets WHERE bet_serial = $1",
                     (bet_serial,),
                 )
                 if (
@@ -169,7 +169,7 @@ class BetService:
     async def get_game_id_by_api_id(self, api_game_id: str) -> Optional[int]:
         """Get internal game ID from api_game_id as a plain integer."""
         try:
-            query = "SELECT id FROM api_games WHERE api_game_id = %s"
+            query = "SELECT id FROM api_games WHERE api_game_id = $1"
             # fetchval returns a single value or None
             game_id = await self.db_manager.fetchval(query, (api_game_id,))
             return game_id
@@ -206,7 +206,7 @@ class BetService:
                         f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}"
                     )
                     game_exists = await self.db_manager.fetch_one(
-                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        "SELECT id FROM api_games WHERE api_game_id = $1",
                         (api_game_id,),
                     )
                     if not game_exists:
@@ -331,7 +331,7 @@ class BetService:
                 api_game_id = leg.get("api_game_id")
                 if api_game_id and api_game_id != "Other":
                     game_exists = await self.db_manager.fetch_one(
-                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        "SELECT id FROM api_games WHERE api_game_id = $1",
                         (api_game_id,),
                     )
                     if not game_exists:
@@ -441,7 +441,7 @@ class BetService:
                         f"[BET INSERT] Checking if game exists for api_game_id: {api_game_id}"
                     )
                     game_exists = await self.db_manager.fetch_one(
-                        "SELECT id FROM api_games WHERE api_game_id = %s",
+                        "SELECT id FROM api_games WHERE api_game_id = $1",
                         (api_game_id,),
                     )
                     if not game_exists:
@@ -634,7 +634,7 @@ class BetService:
                 return False
 
             # Build the SET clause dynamically
-            set_clause = ", ".join(f"{field} = %s" for field in kwargs.keys())
+            set_clause = ", ".join(f"{field} = $1" for field in kwargs.keys())
             query = f"""
                 UPDATE bets
                 SET {set_clause}
@@ -691,7 +691,7 @@ class BetService:
         """Delete a bet and its associated data from the database."""
         logger.info(f"Attempting to delete bet {bet_serial} and associated data.")
         try:
-            bet_query = "DELETE FROM bets WHERE bet_serial = %s"
+            bet_query = "DELETE FROM bets WHERE bet_serial = $1"
             rowcount, _ = await self.db_manager.execute(bet_query, (bet_serial,))
 
             if rowcount is not None and rowcount > 0:
@@ -731,7 +731,7 @@ class BetService:
         )
 
         try:
-            bet_lookup_query = "SELECT bet_serial, user_id, guild_id, status FROM bets WHERE message_id = %s AND guild_id = %s"
+            bet_lookup_query = "SELECT bet_serial, user_id, guild_id, status FROM bets WHERE message_id = $1 AND guild_id = $2"
             bet_context = await self.db_manager.fetch_one(
                 bet_lookup_query, (message_id, payload.guild_id)
             )
@@ -925,7 +925,7 @@ class BetService:
                             AND b2.guild_id = $6
                             AND b2.status = 'push'
                         ),
-                        updated_at = UTC_TIMESTAMP()
+                        updated_at = NOW()
                     WHERE user_id = $7 AND guild_id = $8
                 """
                 capper_params = (
@@ -974,7 +974,7 @@ class BetService:
 
         try:
             bet_lookup_query = (
-                "SELECT bet_serial FROM bets WHERE message_id = %s AND guild_id = %s"
+                "SELECT bet_serial FROM bets WHERE message_id = $1 AND guild_id = $2"
             )
             bet_context = await self.db_manager.fetch_one(
                 bet_lookup_query, (message_id, payload.guild_id)
@@ -1006,7 +1006,7 @@ class BetService:
     async def _get_or_create_game(self, api_game_id: str) -> int:
         # 1) look up in games
         row = await self.db_manager.fetch_one(
-            "SELECT id FROM games WHERE api_game_id = %s", (api_game_id,)
+            "SELECT id FROM games WHERE api_game_id = $1", (api_game_id,)
         )
         if row:
             return row["id"]

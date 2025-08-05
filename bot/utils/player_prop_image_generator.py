@@ -4,7 +4,7 @@ import os
 
 from PIL import Image, ImageFont
 
-from bot.utils.asset_loader import asset_loader
+from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ class PlayerPropImageGenerator:
     @staticmethod
     def _find_league_logo_for_player_prop(league):
         """Find the appropriate league logo file for player prop images."""
-        from bot.config.asset_paths import get_sport_category_for_path
+        from config.asset_paths import get_sport_category_for_path
 
         league_upper = league.upper()
         league_lower = league.lower()
@@ -242,7 +242,7 @@ class PlayerPropImageGenerator:
         logo_display_size = (45, 45)
 
         # Get proper league display name
-        from bot.config.leagues import LEAGUE_CONFIG
+        from config.leagues import LEAGUE_CONFIG
 
         league_display_name = LEAGUE_CONFIG.get(league, {}).get("name", league.upper())
 

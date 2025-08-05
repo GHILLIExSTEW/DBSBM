@@ -40,7 +40,7 @@ import websockets
 from websockets.server import serve
 
 from data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
@@ -949,7 +949,7 @@ class GraphQLService:
             context = info.context
             db_manager = context.get("db_manager")
 
-            query = "SELECT * FROM users WHERE user_id = %s"
+            query = "SELECT * FROM users WHERE user_id = $1"
             user = await db_manager.fetch_one(query, (id,))
 
             return user if user else None
@@ -966,7 +966,7 @@ class GraphQLService:
             context = info.context
             db_manager = context.get("db_manager")
 
-            query = "SELECT * FROM users ORDER BY created_at DESC LIMIT %s OFFSET %s"
+            query = "SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2"
             users = await db_manager.fetch_all(query, (limit, offset))
 
             return users
@@ -984,7 +984,7 @@ class GraphQLService:
             db_manager = context.get("db_manager")
             user = info.source
 
-            query = "SELECT * FROM bets WHERE user_id = %s ORDER BY created_at DESC LIMIT %s OFFSET %s"
+            query = "SELECT * FROM bets WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3"
             bets = await db_manager.fetch_all(query, (user["user_id"], limit, offset))
 
             return bets
@@ -999,7 +999,7 @@ class GraphQLService:
             context = info.context
             db_manager = context.get("db_manager")
 
-            query = "SELECT * FROM bets WHERE id = %s"
+            query = "SELECT * FROM bets WHERE id = $1"
             bet = await db_manager.fetch_one(query, (id,))
 
             return bet if bet else None
@@ -1048,7 +1048,7 @@ class GraphQLService:
                     query += " AND amount <= %s"
                     params.append(filter["max_amount"])
 
-            query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+            query += " ORDER BY created_at DESC LIMIT $1 OFFSET $2"
             params.extend([limit, offset])
 
             bets = await db_manager.fetch_all(query, params)
@@ -1104,14 +1104,14 @@ class GraphQLService:
 
             query = """
                 INSERT INTO bets (user_id, guild_id, amount, odds, status, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, 'pending', NOW(), NOW())
+                VALUES ($1, $2, $3, $4, 'pending', NOW(), NOW())
             """
             await db_manager.execute(query, (user_id, guild_id, amount, odds))
 
             bet_id = await db_manager.last_insert_id()
 
             # Get created bet
-            bet_query = "SELECT * FROM bets WHERE id = %s"
+            bet_query = "SELECT * FROM bets WHERE id = $1"
             bet = await db_manager.fetch_one(bet_query, (bet_id,))
 
             return bet
@@ -1138,26 +1138,26 @@ class GraphQLService:
             params = []
 
             if status is not None:
-                set_clauses.append("status = %s")
+                set_clauses.append("status = $1")
                 params.append(status)
 
             if amount is not None:
-                set_clauses.append("amount = %s")
+                set_clauses.append("amount = $1")
                 params.append(amount)
 
             if odds is not None:
-                set_clauses.append("odds = %s")
+                set_clauses.append("odds = $1")
                 params.append(odds)
 
             if set_clauses:
                 set_clauses.append("updated_at = NOW()")
                 params.append(id)
 
-                query = f"UPDATE bets SET {', '.join(set_clauses)} WHERE id = %s"
+                query = f"UPDATE bets SET {', '.join(set_clauses)} WHERE id = $1"
                 await db_manager.execute(query, params)
 
             # Get updated bet
-            bet_query = "SELECT * FROM bets WHERE id = %s"
+            bet_query = "SELECT * FROM bets WHERE id = $1"
             bet = await db_manager.fetch_one(bet_query, (id,))
 
             return bet

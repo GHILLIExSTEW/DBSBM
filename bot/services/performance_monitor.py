@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, field
 from collections import defaultdict, deque
 
-from bot.data.cache_manager import cache_manager
+from data.cache_manager import cache_manager
 
 logger = logging.getLogger(__name__)
 

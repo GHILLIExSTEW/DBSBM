@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv("bot/.env")
 
-from bot.data.db_manager import DatabaseManager
+from data.db_manager import DatabaseManager
 
 
 logger = logging.getLogger(__name__)
@@ -239,7 +239,7 @@ async def check_database_health() -> Dict[str, Any]:
     try:
         # Import here to avoid circular imports
         try:
-            from bot.data.db_manager import get_db_manager
+            from data.db_manager import get_db_manager
         except ImportError:
             return {
                 "status": "unhealthy",
@@ -326,7 +326,7 @@ async def check_cache_health() -> Dict[str, Any]:
     try:
         # Import here to avoid circular imports
         try:
-            from bot.utils.enhanced_cache_manager import get_enhanced_cache_manager
+            from utils.enhanced_cache_manager import get_enhanced_cache_manager
         except ImportError:
             return {
                 "status": "unhealthy",
@@ -435,7 +435,7 @@ async def check_api_health() -> Dict[str, Any]:
     try:
         # Import here to avoid circular imports
         try:
-            from bot.api.sports_api import SportsAPI
+            from api.sports_api import SportsAPI
         except ImportError:
             return {
                 "status": "unhealthy",
@@ -591,7 +591,7 @@ async def check_statistics_health() -> Dict[str, Any]:
 
             # Try bot.services.statistics_service first
             try:
-                from bot.services.statistics_service import StatisticsService
+                from services.statistics_service import StatisticsService
 
                 stats_service_class = StatisticsService
                 logger.debug(

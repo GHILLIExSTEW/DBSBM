@@ -78,8 +78,8 @@ async def fix_league_ids():
         for update in updates_needed:
             update_query = """
                 UPDATE api_games 
-                SET league_id = %s 
-                WHERE id = %s
+                SET league_id = $1 
+                WHERE id = $1
             """
             await db_manager.execute(update_query, (update['new_league_id'], update['id']))
             print(f"✅ Updated {update['sport']} - {update['league_name']}: {update['old_league_id']} -> {update['new_league_id']}")

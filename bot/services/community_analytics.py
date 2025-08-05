@@ -224,7 +224,7 @@ class CommunityAnalyticsService:
 
             # Get main chat channel from guild settings
             guild_settings = await self.db_manager.fetch_one(
-                "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = %s",
+                "SELECT main_chat_channel_id FROM guild_settings WHERE guild_id = $1",
                 (guild_id,),
             )
 

@@ -22,12 +22,12 @@ import requests
 from PIL import Image, UnidentifiedImageError
 
 try:
-    from bot.config.asset_paths import (
+    from config.asset_paths import (
         DEFAULT_FALLBACK_CATEGORY,
         get_sport_category_for_path,
     )
-    from bot.config.leagues import LEAGUE_IDS  # Contains league name to sport mapping
-    from bot.config.team_mappings import (  # For sanitizing team names
+    from config.leagues import LEAGUE_IDS  # Contains league name to sport mapping
+    from config.team_mappings import (  # For sanitizing team names
         normalize_team_name,
     )
 except ImportError as e:

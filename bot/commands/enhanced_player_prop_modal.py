@@ -9,12 +9,12 @@ import logging
 
 import discord
 
-from bot.config.prop_templates import (
+from config.prop_templates import (
     get_prop_groups_for_league,
     get_prop_templates_for_league,
     validate_prop_value,
 )
-from bot.services.player_search_service import PlayerSearchService
+from services.player_search_service import PlayerSearchService
 
 logger = logging.getLogger(__name__)
 
@@ -479,7 +479,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             from discord import File
 
-            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+            from utils.player_prop_image_generator import PlayerPropImageGenerator
 
             # Generate preview image
             generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
@@ -590,7 +590,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
             # Get the most recent player prop bet for this user
             bet_record = await self.db_manager.fetch_one(
-                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
+                "SELECT bet_serial FROM bets WHERE user_id = $1 AND guild_id = $2 AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
                 (interaction.user.id, interaction.guild_id),
             )
 
@@ -628,7 +628,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             # Get available channels from guild settings
             allowed_channels = []
             guild_settings = await self.db_manager.fetch_one(
-                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = %s",
+                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = $1",
                 (str(interaction.guild_id),),
             )
 
@@ -729,7 +729,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             import io
             from datetime import datetime, timezone
 
-            from bot.utils.player_prop_image_generator import PlayerPropImageGenerator
+            from utils.player_prop_image_generator import PlayerPropImageGenerator
 
             generator = PlayerPropImageGenerator(guild_id=interaction.guild_id)
 
@@ -739,7 +739,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             )
 
             bet_record = await self.db_manager.fetch_one(
-                "SELECT bet_serial FROM bets WHERE user_id = %s AND guild_id = %s AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
+                "SELECT bet_serial FROM bets WHERE user_id = $1 AND guild_id = $2 AND bet_type = 'player_prop' ORDER BY created_at DESC LIMIT 1",
                 (interaction.user.id, interaction.guild_id),
             )
 
@@ -775,7 +775,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
 
                 # Get capper data for webhook
                 capper_data = await self.db_manager.fetch_one(
-                    "SELECT display_name, image_path FROM cappers WHERE guild_id = %s AND user_id = %s",
+                    "SELECT display_name, image_path FROM cappers WHERE guild_id = $1 AND user_id = $2",
                     (interaction.guild_id, interaction.user.id),
                 )
 
@@ -787,7 +787,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 webhook_avatar_url = None
                 if capper_data and capper_data.get("image_path"):
                     logger.info(f"Found capper image_path: {capper_data['image_path']}")
-                    from bot.utils.image_url_converter import convert_image_path_to_url
+                    from utils.image_url_converter import convert_image_path_to_url
 
                     webhook_avatar_url = convert_image_path_to_url(
                         capper_data["image_path"]
@@ -801,7 +801,7 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
                 # Get member role for mention
                 member_role_id = None
                 guild_settings = await self.db_manager.fetch_one(
-                    "SELECT member_role FROM guild_settings WHERE guild_id = %s",
+                    "SELECT member_role FROM guild_settings WHERE guild_id = $1",
                     (str(interaction.guild_id),),
                 )
                 if guild_settings and guild_settings.get("member_role"):

@@ -163,7 +163,7 @@ def get_guild_details(guild_id):
             created_at,
             updated_at
         FROM guilds
-        WHERE guild_id = %s AND is_active = 1
+        WHERE guild_id = $1 AND is_active = 1
         """
         
         cursor.execute(query, (guild_id,))

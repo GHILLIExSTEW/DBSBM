@@ -31,9 +31,9 @@ from uuid import uuid4
 import hashlib
 import math
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
@@ -990,13 +990,13 @@ class AdvancedAnalyticsService:
                 dashboard_id, name, dashboard_type, description, widgets, layout,
                 refresh_interval, is_active, created_at, updated_at, metadata
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON DUPLICATE KEY UPDATE
-                name = VALUES(name), dashboard_type = VALUES(dashboard_type),
-                description = VALUES(description), widgets = VALUES(widgets),
-                layout = VALUES(layout), refresh_interval = VALUES(refresh_interval),
-                is_active = VALUES(is_active), updated_at = VALUES(updated_at),
-                metadata = VALUES(metadata)
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            ) ON CONFLICT (dashboard_id) DO UPDATE SET
+                name = EXCLUDED.name, dashboard_type = EXCLUDED.dashboard_type,
+                description = EXCLUDED.description, widgets = EXCLUDED.widgets,
+                layout = EXCLUDED.layout, refresh_interval = EXCLUDED.refresh_interval,
+                is_active = EXCLUDED.is_active, updated_at = EXCLUDED.updated_at,
+                metadata = EXCLUDED.metadata
             """
 
             await self.db_manager.execute(
@@ -1030,13 +1030,13 @@ class AdvancedAnalyticsService:
                 widget_id, name, chart_type, data_source, query, config, position,
                 size, refresh_interval, is_active, created_at, metadata
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            ) ON DUPLICATE KEY UPDATE
-                name = VALUES(name), chart_type = VALUES(chart_type),
-                data_source = VALUES(data_source), query = VALUES(query),
-                config = VALUES(config), position = VALUES(position),
-                size = VALUES(size), refresh_interval = VALUES(refresh_interval),
-                is_active = VALUES(is_active), metadata = VALUES(metadata)
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+            ) ON CONFLICT (widget_id) DO UPDATE SET
+                name = EXCLUDED.name, chart_type = EXCLUDED.chart_type,
+                data_source = EXCLUDED.data_source, query = EXCLUDED.query,
+                config = EXCLUDED.config, position = EXCLUDED.position,
+                size = EXCLUDED.size, refresh_interval = EXCLUDED.refresh_interval,
+                is_active = EXCLUDED.is_active, metadata = EXCLUDED.metadata
             """
 
             await self.db_manager.execute(
@@ -1240,7 +1240,7 @@ class AdvancedAnalyticsService:
             query = """
             UPDATE analytics_alerts SET
                 status = %s, current_value = %s, resolved_at = %s, metadata = %s
-            WHERE alert_id = %s
+            WHERE alert_id = $1
             """
 
             await self.db_manager.execute(

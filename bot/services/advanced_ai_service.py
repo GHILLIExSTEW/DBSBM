@@ -33,9 +33,9 @@ import pickle
 import base64
 from pathlib import Path
 
-from bot.data.db_manager import DatabaseManager
-from bot.utils.enhanced_cache_manager import EnhancedCacheManager
-from bot.services.performance_monitor import time_operation, record_metric
+from data.db_manager import DatabaseManager
+from utils.enhanced_cache_manager import EnhancedCacheManager
+from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
 
@@ -619,8 +619,8 @@ class AdvancedAIService:
                 name = %s, model_type = %s, version = %s, status = %s, performance = %s,
                 accuracy = %s, model_precision = %s, model_recall = %s, f1_score = %s,
                 training_data_size = %s, features = %s, hyperparameters = %s, model_path = %s,
-                description = %s, tags = %s, metadata = %s, updated_at = %s, deployed_at = %s
-            WHERE model_id = %s
+                description = $1, tags = $2, metadata = $3, updated_at = $4, deployed_at = $5
+            WHERE model_id = $1
             """
 
             await self.db_manager.execute(

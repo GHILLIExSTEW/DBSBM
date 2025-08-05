@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from bot.utils.rate_limiter import (
+from utils.rate_limiter import (
     RateLimitConfig,
     RateLimitEntry,
     RateLimiter,
@@ -204,7 +204,7 @@ class TestRateLimitDecorator:
     @pytest.fixture
     def decorator(self, mock_rate_limiter):
         """Create a rate limit decorator."""
-        from bot.utils.rate_limiter import RateLimitDecorator
+        from utils.rate_limiter import RateLimitDecorator
 
         return RateLimitDecorator(mock_rate_limiter, "test_action")
 

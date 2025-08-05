@@ -17,19 +17,19 @@ from discord.ui import (  # Corrected import for button decorator
 )
 from PIL import Image  # Keep Pillow for image processing
 
-from bot.commands.admin import require_registered_guild
+from commands.admin import require_registered_guild
 
 # Use relative imports
 try:
     # Import db_manager only for type hint if needed
-    # from bot.data.db_manager import DatabaseManager
+    # from data.db_manager import DatabaseManager
     # Import errors if needed
-    # from bot.utils.errors import ...
+    # from utils.errors import ...
     pass  # No specific service needed directly here? DB access via bot.db_manager
 except ImportError:
     # Fallback imports
-    # from bot.data.db_manager import DatabaseManager
-    # from bot.utils.errors import ...
+    # from data.db_manager import DatabaseManager
+    # from utils.errors import ...
     pass
 
 logger = logging.getLogger(__name__)
@@ -94,8 +94,9 @@ class CapperModal(Modal, title="Capper Profile Setup"):
                 """
                 INSERT INTO cappers (
                     guild_id, user_id, display_name, banner_color, updated_at
-                ) VALUES (%s, %s, %s, %s, UTC_TIMESTAMP())
-                ON DUPLICATE KEY UPDATE updated_at = UTC_TIMESTAMP()
+                ) VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (guild_id, user_id) 
+                DO UPDATE SET updated_at = NOW()
                 """,
                 guild_id,
                 user_id,
@@ -218,8 +219,8 @@ class ImageUploadView(View):
                 await self.db.execute(
                     """
                     UPDATE cappers
-                    SET image_path = %s, updated_at = UTC_TIMESTAMP()
-                    WHERE guild_id = %s AND user_id = %s
+                    SET image_path = $1, updated_at = NOW()
+                    WHERE guild_id = $1 AND user_id = $2
                     """,
                     url_path,
                     self.guild_id,
@@ -323,8 +324,8 @@ class ImageURLModal(Modal, title="Enter Profile Image URL"):
             update_status = await self.db.execute(
                 """
                 UPDATE cappers
-                SET image_path = %s, updated_at = UTC_TIMESTAMP()
-                WHERE guild_id = %s AND user_id = %s
+                SET image_path = $1, updated_at = NOW()
+                WHERE guild_id = $1 AND user_id = $2
                 """,
                 url_path,
                 self.guild_id,

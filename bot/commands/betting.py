@@ -11,10 +11,10 @@ from discord import ButtonStyle, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from bot.commands.admin import require_registered_guild
+from commands.admin import require_registered_guild
 
 # Import from same directory
-from bot.commands.straight_betting import StraightBetWorkflowView
+from commands.straight_betting import StraightBetWorkflowView
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ async def is_allowed_command_channel(interaction: Interaction) -> bool:
     try:
         # Get guild settings
         settings = await interaction.client.db_manager.fetch_one(
-            "SELECT command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = %s",
+            "SELECT command_channel_1, command_channel_2 FROM guild_settings WHERE guild_id = $1",
             (interaction.guild_id,),
         )
 
