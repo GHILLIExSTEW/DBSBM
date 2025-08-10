@@ -1,3 +1,4 @@
+import os
 """Schedule image generator for displaying upcoming games."""
 
 import logging
@@ -17,9 +18,10 @@ logger = logging.getLogger(__name__)
 class ScheduleImageGenerator:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.assets_dir = os.path.join(self.base_dir, "assets")
-        self.fonts_dir = os.path.join(self.assets_dir, "fonts")
-        self.logos_dir = os.path.join(self.base_dir, "static", "logos", "teams")
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+        self.assets_dir = static_dir
+        self.fonts_dir = os.path.join(static_dir, "fonts")
+        self.logos_dir = os.path.join(static_dir, "logos", "teams")
 
         # Load fonts
         self.title_font = ImageFont.truetype(

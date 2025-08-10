@@ -1,3 +1,4 @@
+import os
 import logging
 import os
 
@@ -19,22 +20,22 @@ class ParlayBetImageGenerator:
         self.font_dir = font_dir
         self.guild_id = guild_id
         self.font_regular = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 28
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 28
         )
         self.font_bold = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Bold.ttf"), 36
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Bold.ttf"), 36
         )
         self.font_small = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 22
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 22
         )
         self.font_mini = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 18
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 18
         )
         self.font_huge = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Bold.ttf"), 48
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Bold.ttf"), 48
         )
         self.font_vs_small = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 21
+            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 21
         )  # 3/4 of 28
 
     def generate_parlay_preview(self, legs, total_odds=None, units=None):

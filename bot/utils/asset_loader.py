@@ -3,6 +3,7 @@
 import difflib
 import logging
 import os
+import os
 from typing import Optional, Tuple
 
 from PIL import Image, ImageFont
@@ -23,7 +24,7 @@ class AssetLoader:
             self.base_dir = base_dir
 
         self.fonts_dir = os.path.join(self.base_dir, "assets", "fonts")
-        self.static_dir = os.path.join(self.base_dir, "static")
+        self.static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
         self.logos_dir = os.path.join(self.static_dir, "logos")
 
         # Cache for loaded assets

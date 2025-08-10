@@ -1,5 +1,6 @@
 import logging
 import os
+import os
 from io import BytesIO
 from typing import Dict, List, Optional
 
@@ -25,12 +26,9 @@ def make_rounded_feathered(img):
 
 class StatsImageGenerator:
     def __init__(self):
-        self.font_path = os.path.join(
-            os.path.dirname(__file__), "..", "static", "fonts", "arial.ttf"
-        )
-        self.background_path = os.path.join(
-            os.path.dirname(__file__), "..", "static", "images", "stats_bg.webp"
-        )
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+        self.font_path = os.path.join(static_dir, "fonts", "arial.ttf")
+        self.background_path = os.path.join(static_dir, "images", "stats_bg.webp")
 
         # Create directories if they don't exist
         os.makedirs(os.path.dirname(self.font_path), exist_ok=True)
@@ -274,18 +272,16 @@ class StatsImageGenerator:
         from io import BytesIO
         import requests
 
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         # Try to load from provided URL/path
         if profile_image_url:
             try:
                 local_path = profile_image_url
                 if profile_image_url.startswith("/static/"):
-                    local_path = os.path.join(
-                        base_dir, *profile_image_url.lstrip("/").split("/")
-                    )
+                    local_path = os.path.join(static_dir, *profile_image_url.lstrip("/static/").split("/"))
                 elif not os.path.isabs(local_path):
-                    local_path = os.path.join(base_dir, local_path)
+                    local_path = os.path.join(static_dir, local_path)
 
                 if os.path.exists(local_path):
                     profile_img = Image.open(local_path).convert("RGBA")
@@ -314,9 +310,7 @@ class StatsImageGenerator:
         if stats.get("guild_id"):
             try:
                 guild_id = str(stats["guild_id"])
-                default_path = os.path.join(
-                    base_dir, "static", "guilds", guild_id, "default_image.webp"
-                )
+                default_path = os.path.join(static_dir, "guilds", guild_id, "default_image.webp")
                 if os.path.exists(default_path):
                     profile_img = Image.open(default_path).convert("RGBA")
                     profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
@@ -326,9 +320,7 @@ class StatsImageGenerator:
                     # Try alternative default image names
                     alt_names = ["default_logo.webp", "logo.webp", "guild_logo.webp"]
                     for alt_name in alt_names:
-                        alt_path = os.path.join(
-                            base_dir, "static", "guilds", guild_id, alt_name
-                        )
+                        alt_path = os.path.join(static_dir, "guilds", guild_id, alt_name)
                         if os.path.exists(alt_path):
                             profile_img = Image.open(alt_path).convert("RGBA")
                             profile_img.thumbnail((500, 500), Image.Resampling.LANCZOS)
@@ -340,10 +332,10 @@ class StatsImageGenerator:
         # Final fallback: Try generic default images
         try:
             generic_paths = [
-                os.path.join(base_dir, "static", "images", "default_user.webp"),
-                os.path.join(base_dir, "static", "images", "default_avatar.webp"),
-                os.path.join(base_dir, "static", "default_logo.webp"),
-                os.path.join(base_dir, "static", "images", "default_image.webp"),
+                os.path.join(static_dir, "images", "default_user.webp"),
+                os.path.join(static_dir, "images", "default_avatar.webp"),
+                os.path.join(static_dir, "default_logo.webp"),
+                os.path.join(static_dir, "images", "default_image.webp"),
             ]
 
             for generic_path in generic_paths:

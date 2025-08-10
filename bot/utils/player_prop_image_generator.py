@@ -1,35 +1,22 @@
-# This file contains the logic for generating player prop bet images.
-import logging
+
 import os
-
+import logging
 from PIL import Image, ImageFont
-
 from utils.asset_loader import asset_loader
 
 logger = logging.getLogger(__name__)
 
 
 class PlayerPropImageGenerator:
-    def __init__(
-        self, font_dir="../../../StaticFiles/DBSBM/assets/fonts", guild_id=None
-    ):
-        self.font_dir = font_dir
+    def __init__(self, guild_id=None):
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+        self.font_dir = os.path.join(static_dir, 'fonts')
         self.guild_id = guild_id
-        self.font_regular = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 28
-        )
-        self.font_bold = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Bold.ttf"), 36
-        )
-        self.font_small = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 22
-        )
-        self.font_mini = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Regular.ttf"), 18
-        )
-        self.font_huge = ImageFont.truetype(
-            os.path.join(font_dir, "Roboto-Bold.ttf"), 48
-        )
+        self.font_regular = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 28)
+        self.font_bold = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Bold.ttf"), 36)
+        self.font_small = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 22)
+        self.font_mini = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 18)
+        self.font_huge = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Bold.ttf"), 48)
 
     def draw_player_prop_section(
         self,
@@ -329,6 +316,7 @@ class PlayerPropImageGenerator:
         player_name,
         player_image,
         player_team,
+        league
     ):
         """Create the teams section for player prop images."""
         # Load team logos
@@ -434,6 +422,8 @@ class PlayerPropImageGenerator:
         line,
         prop_type,
         units,
+        home_team=None,
+        away_team=None,
         output_path=None,
         bet_id=None,
         timestamp=None,
@@ -477,6 +467,7 @@ class PlayerPropImageGenerator:
             player_name,
             player_image,
             team_name,
+            league
         )
 
         # Create bet details section

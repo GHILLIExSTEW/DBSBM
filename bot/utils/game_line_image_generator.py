@@ -1,3 +1,4 @@
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,13 +74,14 @@ def generate_player_prop_bet_image(
 
     # Only use this logic for non-team-based leagues (player props for individual sports)
     if sport_type == "Individual Player":
-        player_img = Image.open(player_picture_path).resize((100, 100))
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+        player_img = Image.open(os.path.join(static_dir, player_picture_path)).resize((100, 100))
         image.paste(player_img, (50, 100))
         default_sport_path = (
             f"../../../StaticFiles/DBSBM/static/logos/default_{sport}.webp"
         )
         if os.path.exists(default_sport_path):
-            right_img = Image.open(default_sport_path).resize((100, 100))
+            right_img = Image.open(os.path.join(static_dir, default_sport_path)).resize((100, 100))
         else:
             right_img = Image.open(
                 "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
@@ -87,9 +89,9 @@ def generate_player_prop_bet_image(
         image.paste(right_img, (650, 100))
     else:
         # Team-based: show both images as before
-        team_logo = Image.open(team_logo_path).resize((100, 100))
+        team_logo = Image.open(os.path.join(static_dir, team_logo_path)).resize((100, 100))
         image.paste(team_logo, (50, 100))
-        player_picture = Image.open(player_picture_path).resize((100, 100))
+        player_picture = Image.open(os.path.join(static_dir, player_picture_path)).resize((100, 100))
         image.paste(player_picture, (650, 100))
 
     # Draw player name
@@ -243,7 +245,7 @@ class GameLineImageGenerator:
 
         if logo_path and os.path.exists(logo_path):
             try:
-                logo = Image.open(logo_path).convert("RGBA")
+                logo = Image.open(os.path.join(static_dir, logo_path)).convert("RGBA")
                 logo = logo.resize(logo_display_size, Image.Resampling.LANCZOS)
                 image.paste(logo, (params["padding"], params["padding"]), logo)
                 text_x = params["padding"] + logo_display_size[0] + 10
@@ -574,7 +576,7 @@ class GameLineImageGenerator:
                 "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
             )
             if os.path.exists(default_logo_path):
-                return Image.open(default_logo_path)
+                return Image.open(os.path.join(static_dir, default_logo_path))
             else:
                 logger.warning(f"Default logo not found at {default_logo_path}")
                 return None
@@ -600,7 +602,7 @@ class GameLineImageGenerator:
             )
 
             if os.path.exists(sport_all_path):
-                return Image.open(sport_all_path)
+                return Image.open(os.path.join(static_dir, sport_all_path))
             else:
                 logger.warning(
                     f"{sport.capitalize()} logo not found at {sport_all_path}"
