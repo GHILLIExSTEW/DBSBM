@@ -245,6 +245,9 @@ class APIResponseCacheService:
                 # Check cache first
                 cached_response = await self.get_cached_response(cache_key)
                 if cached_response:
+                    # Always return the .data (dict/list) if APIResponse, else as-is
+                    if hasattr(cached_response, 'data'):
+                        return cached_response.data
                     return cached_response
 
                 # Check rate limit if provider specified
@@ -259,10 +262,16 @@ class APIResponseCacheService:
                     result = await func(*args, **kwargs)
                     execution_time = time.time() - start_time
 
+                    # If result is an APIResponse, unwrap .data
+                    if hasattr(result, 'data'):
+                        result_to_cache = result.data
+                    else:
+                        result_to_cache = result
+
                     # Create API response with cache headers
-                    headers = self._create_cache_headers(result, ttl)
+                    headers = self._create_cache_headers(result_to_cache, ttl)
                     api_response = APIResponse(
-                        data=result,
+                        data=result_to_cache,
                         headers=headers,
                         status_code=200,
                         cached=False,
@@ -280,7 +289,8 @@ class APIResponseCacheService:
                     logger.info(
                         f"API response cached for {func_name} (execution time: {execution_time:.2f}s)"
                     )
-                    return api_response
+                    # Always return the .data (dict/list) only
+                    return result_to_cache
 
                 except Exception as e:
                     logger.error(f"API request failed for {func_name}: {e}")

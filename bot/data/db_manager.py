@@ -1,3 +1,7 @@
+def get_db_manager():
+    """Return the singleton db_manager instance (for legacy compatibility)."""
+    global db_manager
+    return db_manager
 """
 Database Manager for PostgreSQL - Updated for proper PostgreSQL connection
 """
@@ -14,6 +18,18 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
+    def _convert_params(self, params):
+        # Recursively convert datetime to isoformat and bool to int in params
+        def convert(val):
+            if isinstance(val, (list, tuple)):
+                return type(val)(convert(x) for x in val)
+            elif hasattr(val, 'isoformat') and callable(val.isoformat):
+                return val.isoformat()
+            elif isinstance(val, bool):
+                logger.warning("Auto-converting boolean %s to int for SQL (use 1/0 for smallint columns)", val)
+                return int(val)
+            return val
+        return convert(params)
     """PostgreSQL database manager with proper connection handling."""
 
     def __init__(self):
@@ -78,12 +94,12 @@ class DatabaseManager:
         if not self._pool:
             logger.warning("Database pool not available, returning empty list")
             return []
-        
         try:
             async with self._pool.acquire() as connection:
                 # Handle tuple arguments - unpack if single tuple provided
                 if len(args) == 1 and isinstance(args[0], (tuple, list)):
                     args = args[0]
+                args = self._convert_params(args)
                 rows = await connection.fetch(query, *args)
                 return [dict(row) for row in rows]
         except Exception as e:
@@ -95,34 +111,40 @@ class DatabaseManager:
         if not self._pool:
             logger.warning("Database pool not available, returning None")
             return None
-        
         try:
             async with self._pool.acquire() as connection:
                 # Handle tuple arguments - unpack if single tuple provided
                 if len(args) == 1 and isinstance(args[0], (tuple, list)):
                     args = args[0]
+                args = self._convert_params(args)
                 row = await connection.fetchrow(query, *args)
                 return dict(row) if row else None
         except Exception as e:
             logger.error(f"Database query failed: {e}")
             return None
 
-    async def execute(self, query: str, *args) -> bool:
-        """Execute a query without returning results."""
+    async def execute(self, query: str, *args):
+        """Execute a query and return the number of affected rows for DML statements, or True/False for others."""
         if not self._pool:
             logger.warning("Database pool not available, skipping query execution")
-            return False
-        
+            return 0
         try:
             async with self._pool.acquire() as connection:
                 # Handle tuple arguments - unpack if single tuple provided
                 if len(args) == 1 and isinstance(args[0], (tuple, list)):
                     args = args[0]
-                await connection.execute(query, *args)
+                args = self._convert_params(args)
+                result = await connection.execute(query, *args)
+                # result is a string like 'DELETE 3', 'UPDATE 1', 'INSERT 0', or 'SELECT 0'
+                if isinstance(result, str) and result.split()[0] in {"DELETE", "UPDATE", "INSERT"}:
+                    try:
+                        return int(result.split()[1])
+                    except Exception:
+                        return 0
                 return True
         except Exception as e:
             logger.error(f"Database query execution failed: {e}")
-            return False
+            return 0
 
     async def fetchval(self, query: str, *args):
         """Execute a query and return a single value."""

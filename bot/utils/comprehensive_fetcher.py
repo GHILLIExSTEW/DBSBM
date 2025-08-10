@@ -1,3 +1,7 @@
+print("=== COMPREHENSIVE_FETCHER.PY: FILE EXECUTION TEST LINE ===")
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.getLogger(__name__).info("=== COMPREHENSIVE_FETCHER.PY: FILE EXECUTION TEST LINE ===")
 """
 Comprehensive Fetcher for ALL API-Sports Leagues
 Automatically fetches data for every single league available from the API.
@@ -58,6 +62,7 @@ class ComprehensiveFetcher:
         self.api_key = API_KEY
         if not self.api_key:
             raise ValueError("API_KEY not found in environment variables")
+        # Never log API keys
 
         self.session = None
         self.discovered_leagues = {}
@@ -74,25 +79,33 @@ class ComprehensiveFetcher:
             await self.session.close()
 
     async def discover_all_leagues(self) -> Dict[str, List[Dict]]:
-        """Discover all available leagues using the LeagueDiscovery utility."""
-        log_fetcher_operation("Starting comprehensive league discovery")
-
-        async with LeagueDiscovery() as discoverer:
-            self.discovered_leagues = await discoverer.discover_all_leagues()
-
-            total_leagues = sum(
-                len(leagues) for leagues in self.discovered_leagues.values()
-            )
-            logger.info(
-                f"Discovered {total_leagues} leagues across {len(self.discovered_leagues)} sports"
-            )
-
-            return self.discovered_leagues
+        """Dynamically build league list from LEAGUE_CONFIG, grouping by sport, so only mapped leagues are queried."""
+        from config.leagues import LEAGUE_CONFIG
+        log_fetcher_operation("Starting league discovery (using mapped leagues from LEAGUE_CONFIG)")
+        all_leagues = {}
+        for league_key, league_info in LEAGUE_CONFIG.items():
+            # Skip manual/other/generic entries
+            if league_key.upper() in ("MANUAL", "OTHER"):
+                continue
+            sport = league_info.get("sport", "Unknown").lower()
+            # Use league_key as id if no id is present
+            league_id = league_info.get("id", league_key)
+            league_dict = {
+                "id": league_id,
+                "name": league_info.get("name", league_key),
+                "country": league_info.get("country", None),
+                "season": 2025,  # You can make this dynamic if needed
+                "league_key": league_key
+            }
+            all_leagues.setdefault(sport, []).append(league_dict)
+        self.discovered_leagues = all_leagues
+        logger.info(f"Loaded {sum(len(l) for l in all_leagues.values())} leagues across {len(all_leagues)} sports (mapped)")
+        return all_leagues
 
     async def fetch_all_leagues_data(
         self, date: str = None, next_days: int = 2
-    ) -> Dict[str, int]:
-        """Fetch data for ALL discovered leagues."""
+    ) -> dict:
+        """Fetch data for ALL discovered leagues and collect HTTP status codes and errors."""
         if not date:
             date = datetime.now().strftime("%Y-%m-%d")
 
@@ -108,6 +121,7 @@ class ComprehensiveFetcher:
             "successful_fetches": 0,
             "failed_fetches": 0,
             "total_games": 0,
+            "http_status_codes": [],
         }
 
         # Fetch for each sport and league
@@ -115,6 +129,11 @@ class ComprehensiveFetcher:
             logger.info(f"Processing {len(leagues)} leagues for {sport}")
 
             for league in leagues:
+                # Only process league dicts (should always be dicts now)
+                if not isinstance(league, dict):
+                    logger.warning(f"Skipping league that is not a dict: {league}")
+                    continue
+
                 results["total_leagues"] += 1
 
                 try:
@@ -125,9 +144,16 @@ class ComprehensiveFetcher:
                             + timedelta(days=day_offset)
                         ).strftime("%Y-%m-%d")
 
-                        games_fetched = await self._fetch_league_games(
-                            sport, league, fetch_date
+                        games_fetched, status_code, error_msg = await self._fetch_league_games(
+                            sport, league, fetch_date, collect_status=True
                         )
+                        results["http_status_codes"].append({
+                            "sport": sport,
+                            "league": league.get("name"),
+                            "date": fetch_date,
+                            "status_code": status_code,
+                            "error": error_msg
+                        })
 
                         if games_fetched > 0:
                             results["total_games"] += games_fetched
@@ -136,15 +162,15 @@ class ComprehensiveFetcher:
                             )
 
                         # Rate limiting between requests - reduced for hourly operation
-                        await asyncio.sleep(0.5)  # Reduced from 1.5s to 0.5s
+                        await asyncio.sleep(0.5)
 
                     results["successful_fetches"] += 1
 
                 except Exception as e:
                     results["failed_fetches"] += 1
-                    self.failed_leagues.add(league["name"])
+                    self.failed_leagues.add(league.get("name", str(league)))
                     log_fetcher_error(
-                        f"Failed to fetch data for {league['name']}: {e}",
+                        f"Failed to fetch data for {league.get('name', str(league))}: {e}",
                         "league_fetch",
                     )
                     continue
@@ -152,121 +178,55 @@ class ComprehensiveFetcher:
         logger.info(f"Comprehensive fetch completed: {results}")
         return results
 
-    async def _fetch_league_games(self, sport: str, league: Dict, date: str) -> int:
-        """Fetch games for a specific league on a specific date."""
+    async def _fetch_league_games(self, sport: str, league: dict, date: str, collect_status: bool = False):
+        """Fetch games for a specific league on a specific date using MultiProviderAPI."""
+        from utils.multi_provider_api import MultiProviderAPI
         import time
-
-        base_url = SPORT_ENDPOINTS.get(sport)
-        if not base_url:
-            log_fetcher_error(f"No endpoint found for sport: {sport}")
-            return 0
-
-        # Determine the correct endpoint based on sport
-        if sport == "football":
-            endpoint = "fixtures"
-        elif sport == "formula-1":
-            endpoint = "races"
-        elif sport == "mma":
-            endpoint = "fights"
-        elif sport in [
-            "tennis",
-            "golf",
-            "darts",
-            "cricket",
-            "boxing",
-            "cycling",
-            "esports",
-            "snooker",
-            "squash",
-        ]:
-            endpoint = "matches"
-        elif sport in [
-            "futsal",
-            "table-tennis",
-            "badminton",
-            "beach-volleyball",
-            "field-hockey",
-            "ice-hockey",
-            "water-polo",
-            "winter-sports",
-        ]:
-            endpoint = "games"
-        elif sport == "motorsport":
-            endpoint = "races"
-        else:
-            endpoint = "games"
-
-        url = f"{base_url}/{endpoint}"
-        headers = {"x-apisports-key": self.api_key}
-        params = {
-            "league": league["id"],
-            "season": league.get("season", datetime.now().year),
-            "date": date,
-        }
-
         start_time = time.time()
+        status_code = None
+        error_msg = None
+        games_saved = 0
         try:
-            async with self.session.get(
-                url, headers=headers, params=params
-            ) as response:
-                response_time = time.time() - start_time
-
-                if response.status == 429:  # Rate limit exceeded
-                    logger.warning(
-                        f"Rate limit exceeded for {league['name']}, waiting..."
-                    )
-                    log_api_request(url, False, response_time, "Rate limit exceeded")
-                    await asyncio.sleep(60)
-                    return await self._fetch_league_games(sport, league, date)
-
-                response.raise_for_status()
-                data = await response.json()
-
-                if "errors" in data and data["errors"]:
-                    logger.warning(f"API errors for {league['name']}: {data['errors']}")
-                    log_api_request(
-                        url, False, response_time, f"API errors: {data['errors']}"
-                    )
-                    return 0
-
-                games = data.get("response", [])
-                games_saved = 0
-
+            # league is always a dict now
+            async with MultiProviderAPI() as mpa:
+                games = await mpa.fetch_games(sport, league, date)
+                logger.info(f"Fetched games list: type={type(games)}, len={len(games) if hasattr(games, '__len__') else 'N/A'}, sample={games[:1] if isinstance(games, list) and games else str(games)[:200]}")
+                if not games:
+                    logger.warning(f"No games found for {league.get('name', league.get('id'))} on {date}")
+                    error_msg = "No games found"
                 for game in games:
                     try:
+                        # Log the raw game dict for debugging
+                        logger.info(f"Raw game dict: {game}")
                         mapped_game = self._map_game_data(game, sport, league)
-                        if mapped_game:
-                            await self._save_game_to_db(mapped_game)
-                            games_saved += 1
+                        # Log the mapped game result for debugging
+                        logger.info(f"Mapped game result: {mapped_game}")
+                        if not mapped_game:
+                            logger.warning("Game could not be mapped: [DATA REDACTED]")
+                        else:
+                            logger.info("Mapped game: [DATA REDACTED]")
+                            save_result = await self._save_game_to_db(mapped_game)
+                            logger.info(f"Save to DB result: {save_result}")
+                            if save_result:
+                                games_saved += 1
                     except Exception as e:
                         log_fetcher_error(
-                            f"Error processing game for {league['name']}: {e}",
+                            f"Error processing game for {league.get('name', league.get('id'))}: {e}",
                             "game_processing",
                         )
                         continue
-
-                # Log successful fetch
-                log_league_fetch(sport, league["name"], True, games_saved)
-                log_api_request(url, True, response_time)
-
-                return games_saved
-
-        except aiohttp.ClientError as e:
-            response_time = time.time() - start_time
-            log_league_fetch(sport, league["name"], False, 0, str(e))
-            log_api_request(url, False, response_time, str(e))
-            log_fetcher_error(
-                f"API request failed for {league['name']}: {e}", "api_request"
-            )
-            return 0
+            log_league_fetch(sport, league.get("name", league.get("id")), True, games_saved)
+            log_api_request(f"multi_provider:{sport}:{league.get('id')}", True, time.time() - start_time)
+            return (games_saved, status_code, error_msg) if collect_status else games_saved
         except Exception as e:
-            response_time = time.time() - start_time
-            log_league_fetch(sport, league["name"], False, 0, str(e))
-            log_api_request(url, False, response_time, str(e))
+            league_name = league.get("name") if isinstance(league, dict) else str(league)
+            league_id = league.get("id") if isinstance(league, dict) else str(league)
+            log_league_fetch(sport, league_name, False, 0, str(e))
+            log_api_request(f"multi_provider:{sport}:{league_id}", False, time.time() - start_time, str(e))
             log_fetcher_error(
-                f"Unexpected error fetching {league['name']}: {e}", "league_fetch"
+                f"Unexpected error fetching {league_name}: {e}", "league_fetch"
             )
-            return 0
+            return (0, None, str(e)) if collect_status else 0
 
     def _convert_utc_to_est(self, utc_time_str: str) -> str:
         """Convert UTC time string to EST time string."""
@@ -295,7 +255,7 @@ class ComprehensiveFetcher:
 
     def _map_football_game_data(self, game: Dict, league: Dict) -> Optional[Dict]:
         """Map football game data to our standard format."""
-        # Force league_name for Brazil Serie A and Italian Serie A
+        # Support both API-Sports (nested) and MultiProviderAPI (flat) formats
         league_id = str(league["id"])
         if league_id == "71":
             league_name_final = "Brazil Serie A"
@@ -304,30 +264,49 @@ class ComprehensiveFetcher:
         else:
             league_name_final = league["name"]
 
-        # Convert UTC time to EST
-        start_time_est = self._convert_utc_to_est(game["fixture"]["date"])
-
-        return {
-            "api_game_id": str(game["fixture"]["id"]),
-            "sport": "Football",
-            "league_id": league_id,
-            "league_name": league_name_final,
-            "home_team_name": game["teams"]["home"]["name"],
-            "away_team_name": game["teams"]["away"]["name"],
-            "start_time": start_time_est,
-            "status": game["fixture"]["status"]["long"],
-            "score": (
-                {
-                    "home": game["goals"]["home"] if "goals" in game else None,
-                    "away": game["goals"]["away"] if "goals" in game else None,
-                }
-                if "goals" in game
-                else None
-            ),
-            "venue": (
-                game["fixture"]["venue"]["name"] if "venue" in game["fixture"] else None
-            ),
-        }
+        # Try API-Sports format first
+        if "fixture" in game and "id" in game["fixture"]:
+            start_time_est = self._convert_utc_to_est(game["fixture"]["date"])
+            return {
+                "api_game_id": str(game["fixture"]["id"]),
+                "sport": "Football",
+                "league_id": league_id,
+                "league_name": league_name_final,
+                "home_team_name": game["teams"]["home"]["name"],
+                "away_team_name": game["teams"]["away"]["name"],
+                "start_time": start_time_est,
+                "status": game["fixture"]["status"]["long"],
+                "score": (
+                    {
+                        "home": game["goals"]["home"] if "goals" in game else None,
+                        "away": game["goals"]["away"] if "goals" in game else None,
+                    }
+                    if "goals" in game
+                    else None
+                ),
+                "venue": (
+                    game["fixture"]["venue"]["name"] if "venue" in game["fixture"] else None
+                ),
+            }
+        # Fallback: flat format (from MultiProviderAPI)
+        # Expect keys: id, home_team_name, away_team_name, start_time, status, score, venue
+        if "id" in game and "home_team_name" in game and "away_team_name" in game:
+            start_time_est = self._convert_utc_to_est(game.get("start_time") or game.get("date"))
+            return {
+                "api_game_id": str(game["id"]),
+                "sport": "Football",
+                "league_id": league_id,
+                "league_name": league_name_final,
+                "home_team_name": game["home_team_name"],
+                "away_team_name": game["away_team_name"],
+                "start_time": start_time_est,
+                "status": game.get("status", ""),
+                "score": game.get("score"),
+                "venue": game.get("venue"),
+            }
+        # If neither format matches, return None
+        logger.warning(f"Football game format not recognized: keys={list(game.keys())}")
+        return None
 
     def _map_basketball_game_data(self, game: Dict, league: Dict) -> Optional[Dict]:
         """Map basketball game data to our standard format."""
@@ -517,7 +496,66 @@ class ComprehensiveFetcher:
                 "volleyball": self._map_volleyball_game_data,
                 "handball": self._map_handball_game_data,
                 "rugby": self._map_rugby_game_data,
+                # Add darts and american football mapping inline below
             }
+
+            # Darts mapping (flat format, as seen in logs)
+            if sport == "darts":
+                # Example keys: api_game_id, sport, league_id, league_name, home_team_name, away_team_name, start_time, status, score, venue
+                start_time_est = self._convert_utc_to_est(game.get("start_time") or game.get("date"))
+                return {
+                    "api_game_id": str(game.get("api_game_id") or game.get("id")),
+                    "sport": "Darts",
+                    "league_id": str(league["id"]),
+                    "league_name": league["name"],
+                    "home_team_name": game.get("home_team_name") or game.get("home_team"),
+                    "away_team_name": game.get("away_team_name") or game.get("away_team"),
+                    "start_time": start_time_est,
+                    "status": game.get("status", ""),
+                    "score": game.get("score"),
+                    "venue": game.get("venue"),
+                }
+
+            # American football (NFL, NCAA, CFL, etc.) mapping
+            if sport == "american football":
+                # Try to support both nested and flat formats
+                # Nested: {"id", "teams": {"home":..., "away":...}, "date", "status", "scores", "venue"}
+                # Flat: {"id", "home_team_name", ...}
+                if "teams" in game and "home" in game["teams"] and "away" in game["teams"]:
+                    start_time_est = self._convert_utc_to_est(game.get("date") or game.get("start_time"))
+                    return {
+                        "api_game_id": str(game["id"]),
+                        "sport": "American Football",
+                        "league_id": str(league["id"]),
+                        "league_name": league["name"],
+                        "home_team_name": game["teams"]["home"]["name"],
+                        "away_team_name": game["teams"]["away"]["name"],
+                        "start_time": start_time_est,
+                        "status": game["status"]["long"] if "status" in game and isinstance(game["status"], dict) else game.get("status", ""),
+                        "score": (
+                            {
+                                "home": game["scores"]["home"]["total"] if "scores" in game and "home" in game["scores"] else None,
+                                "away": game["scores"]["away"]["total"] if "scores" in game and "away" in game["scores"] else None,
+                            }
+                            if "scores" in game else None
+                        ),
+                        "venue": game["venue"]["name"] if "venue" in game and isinstance(game["venue"], dict) else game.get("venue"),
+                    }
+                # Flat format fallback
+                if "id" in game and "home_team_name" in game and "away_team_name" in game:
+                    start_time_est = self._convert_utc_to_est(game.get("start_time") or game.get("date"))
+                    return {
+                        "api_game_id": str(game["id"]),
+                        "sport": "American Football",
+                        "league_id": str(league["id"]),
+                        "league_name": league["name"],
+                        "home_team_name": game["home_team_name"],
+                        "away_team_name": game["away_team_name"],
+                        "start_time": start_time_est,
+                        "status": game.get("status", ""),
+                        "score": game.get("score"),
+                        "venue": game.get("venue"),
+                    }
 
             mapper = sport_mappers.get(sport)
             if mapper:
@@ -535,68 +573,70 @@ class ComprehensiveFetcher:
     async def _save_game_to_db(self, game_data: Dict) -> bool:
         """Save game data to the database."""
         try:
+            # Log the full mapped game data for debugging (redact keys if needed)
+            logger.info(f"_save_game_to_db: mapped game data: {game_data}")
             async with self.db_pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    # Check if game already exists
-                    await cur.execute(
-                        "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
-                        (game_data["api_game_id"],),
+                # Check if game already exists
+                row = await conn.fetchrow(
+                    "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
+                    game_data["api_game_id"],
+                )
+
+                if row:
+                    logger.info(f"Game already exists in DB: {game_data['api_game_id']}")
+                    # Update existing game
+                    result = await conn.execute(
+                        """
+                        UPDATE api_games SET
+                            sport = $1, league_id = $2, league_name = $3,
+                            home_team_name = $4, away_team_name = $5,
+                            start_time = $6, status = $7, score = $8, venue = $9,
+                            updated_at = NOW()
+                        WHERE api_game_id = $10
+                        """,
+                        game_data["sport"],
+                        game_data["league_id"],
+                        game_data["league_name"],
+                        game_data["home_team_name"],
+                        game_data["away_team_name"],
+                        game_data["start_time"],
+                        game_data["status"],
+                        str(game_data["score"]) if game_data["score"] else None,
+                        game_data["venue"],
+                        game_data["api_game_id"],
                     )
-
-                    if await cur.fetchone():
-                        # Update existing game
-                        await cur.execute(
-                            """
-                            UPDATE api_games SET
-                                sport = $1, league_id = $2, league_name = $3,
-                                home_team_name = $4, away_team_name = $5,
-                                start_time = $6, status = $7, score = $8, venue = $9,
-                                updated_at = NOW()
-                            WHERE api_game_id = $10
+                    logger.info(f"UPDATE result: {result}")
+                    log_database_operation("UPDATE game", True, 1)
+                else:
+                    logger.info(f"Inserting new game into DB: {game_data['api_game_id']}")
+                    # Insert new game
+                    result = await conn.execute(
+                        """
+                        INSERT INTO api_games (
+                            api_game_id, sport, league_id, league_name,
+                            home_team_name, away_team_name, start_time,
+                            status, score, venue, created_at, updated_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
                         """,
-                            (
-                                game_data["sport"],
-                                game_data["league_id"],
-                                game_data["league_name"],
-                                game_data["home_team_name"],
-                                game_data["away_team_name"],
-                                game_data["start_time"],
-                                game_data["status"],
-                                str(game_data["score"]) if game_data["score"] else None,
-                                game_data["venue"],
-                                game_data["api_game_id"],
-                            ),
-                        )
-                        log_database_operation("UPDATE game", True, 1)
-                    else:
-                        # Insert new game
-                        await cur.execute(
-                            """
-                            INSERT INTO api_games (
-                                api_game_id, sport, league_id, league_name,
-                                home_team_name, away_team_name, start_time,
-                                status, score, venue, created_at, updated_at
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-                        """,
-                            (
-                                game_data["api_game_id"],
-                                game_data["sport"],
-                                game_data["league_id"],
-                                game_data["league_name"],
-                                game_data["home_team_name"],
-                                game_data["away_team_name"],
-                                game_data["start_time"],
-                                game_data["status"],
-                                str(game_data["score"]) if game_data["score"] else None,
-                                game_data["venue"],
-                            ),
-                        )
-                        log_database_operation("INSERT game", True, 1)
+                        game_data["api_game_id"],
+                        game_data["sport"],
+                        game_data["league_id"],
+                        game_data["league_name"],
+                        game_data["home_team_name"],
+                        game_data["away_team_name"],
+                        game_data["start_time"],
+                        game_data["status"],
+                        str(game_data["score"]) if game_data["score"] else None,
+                        game_data["venue"],
+                    )
+                    logger.info(f"INSERT result: {result}")
+                    log_database_operation("INSERT game", True, 1)
 
-                    await conn.commit()
-                    return True
+                return True
 
         except Exception as e:
+            logger.error(f"Exception in _save_game_to_db: {e}")
+            logger.error(f"Game data that caused error: {game_data}")
             log_database_operation("Save game", False, 0, str(e))
             log_fetcher_error(f"Error saving game to database: {e}", "database_save")
             return False
@@ -605,10 +645,8 @@ class ComprehensiveFetcher:
         """Clear the api_games table."""
         try:
             async with self.db_pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("DELETE FROM api_games")
-                    await conn.commit()
-                    log_cleanup_operation("Cleared api_games table")
+                await conn.execute("DELETE FROM api_games")
+                log_cleanup_operation("Cleared api_games table")
         except Exception as e:
             log_fetcher_error(
                 f"Error clearing api_games table: {e}", "database_cleanup"
@@ -618,29 +656,33 @@ class ComprehensiveFetcher:
         """Clear finished games and past games data, keeping active and upcoming games."""
         try:
             async with self.db_pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    # Get current time in UTC
-                    current_time = datetime.now(timezone.utc)
+                # Get current time in UTC
+                current_time = datetime.now(timezone.utc)
 
-                    # Remove finished games and games that have started
-                    await cur.execute(
-                        """
-                        DELETE FROM api_games
-                        WHERE status IN (
-                            'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
-                            'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted', 'Completed'
-                        )
-                        OR start_time < $1
+                # Remove finished games and games that have started
+                result = await conn.execute(
+                    """
+                    DELETE FROM api_games
+                    WHERE status IN (
+                        'Match Finished', 'FT', 'AET', 'PEN', 'Match Cancelled', 'Match Postponed', 'Match Suspended', 'Match Interrupted',
+                        'Fight Finished', 'Cancelled', 'Postponed', 'Suspended', 'Interrupted', 'Completed'
+                    )
+                    OR start_time < $1
                     """,
-                        (current_time,),
-                    )
+                    current_time,
+                )
 
-                    deleted_count = cur.rowcount
-                    await conn.commit()
-                    log_cleanup_operation("Cleared finished/past games", deleted_count)
-                    logger.info(
-                        f"Cleared {deleted_count} finished/past games from api_games table"
-                    )
+                # asyncpg's execute returns a string like 'DELETE X'
+                deleted_count = 0
+                if result and result.startswith('DELETE'):
+                    try:
+                        deleted_count = int(result.split(' ')[1])
+                    except Exception:
+                        deleted_count = 0
+                log_cleanup_operation("Cleared finished/past games", deleted_count)
+                logger.info(
+                    f"Cleared {deleted_count} finished/past games from api_games table"
+                )
         except Exception as e:
             log_fetcher_error(
                 f"Error clearing finished/past games data: {e}", "database_cleanup"
@@ -733,6 +775,7 @@ async def run_comprehensive_hourly_fetch(db_pool: asyncpg.Pool):
 async def main():
     """Main function to run the comprehensive fetcher."""
     # Log startup
+    logger.info("=== DBSBM COMPREHENSIVE FETCHER: CODE VERSION TEST LOG LINE ===")
     log_fetcher_startup()
 
     # Set up database pool
@@ -749,15 +792,25 @@ async def main():
     try:
         logger.info("Starting comprehensive fetcher...")
 
-        # Run the comprehensive hourly fetch
+        # If 'ONESHOT' env var is set, do a single fetch and exit (for testing)
+        if os.getenv("ONESHOT", "0") == "1":
+            async with ComprehensiveFetcher(db_pool) as fetcher:
+                await fetcher.discover_all_leagues()
+                await fetcher.fetch_all_leagues_data()
+                stats = await fetcher.get_fetch_statistics()
+                logger.info(f"One-shot fetch complete. Stats: {stats}")
+            return
+
+        # Run the comprehensive hourly fetch (default)
         await run_comprehensive_hourly_fetch(db_pool)
 
     except Exception as e:
         log_fetcher_error(f"Fatal error in comprehensive fetcher: {e}")
         raise
     finally:
-        db_pool.close()
-        await db_pool.wait_closed()
+        # Properly close the asyncpg pool
+        if db_pool:
+            await db_pool.close()
         log_fetcher_shutdown()
 
 

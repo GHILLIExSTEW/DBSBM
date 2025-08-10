@@ -54,7 +54,7 @@ class SubscriptionService:
             return await self.db_manager.fetch_one(
                 """
                 SELECT * FROM subscriptions
-                WHERE guild_id = $1 AND is_active = TRUE
+                WHERE guild_id = $1 AND is_active = 1
                 ORDER BY end_date DESC LIMIT 1
                 """,
                 guild_id,
@@ -70,8 +70,8 @@ class SubscriptionService:
             await self.db_manager.execute(
                 """
                 UPDATE subscriptions
-                SET is_active = FALSE
-                WHERE guild_id = $1 AND is_active = TRUE
+                SET is_active = 0
+                WHERE guild_id = $1 AND is_active = 1
                 """,
                 guild_id,
             )

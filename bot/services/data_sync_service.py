@@ -5,15 +5,15 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from services.game_service import GameService
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import (
+from bot.services.game_service import GameService
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from utils.errors import DataSyncError
+from bot.utils.errors import DataSyncError
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class DataSyncService:
                        home_team_name, away_team_name, start_time, status, score
                 FROM api_games
                 WHERE start_time > NOW()
-                AND start_time < DATE_ADD(NOW(), INTERVAL 72 HOUR)
+                AND start_time < NOW() + INTERVAL '72 hours'
                 ORDER BY start_time ASC
                 LIMIT $1
             """

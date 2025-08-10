@@ -62,9 +62,8 @@ class BetService:
                 WHERE status = 'pending'
                 AND COALESCE(expiration_time, created_at) < $1
             """
-            result = await self.db_manager.execute(query, (expiration_datetime,))
-            rowcount = result[0] if result and result[0] is not None else 0
-            if rowcount > 0:
+            rowcount = await self.db_manager.execute(query, (expiration_datetime,))
+            if isinstance(rowcount, int) and rowcount > 0:
                 logger.info(f"Cleaned up {rowcount} expired pending bets.")
             else:
                 logger.debug("No expired pending bets found to clean up.")

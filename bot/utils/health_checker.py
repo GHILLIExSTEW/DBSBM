@@ -1,3 +1,16 @@
+def _make_json_safe(obj):
+    """Recursively convert datetime and other non-serializable objects to JSON-safe values."""
+    import datetime as _dt
+    if isinstance(obj, dict):
+        return {k: _make_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [ _make_json_safe(v) for v in obj ]
+    elif isinstance(obj, _dt.datetime):
+        return obj.isoformat()
+    elif isinstance(obj, _dt.date):
+        return obj.isoformat()
+    else:
+        return obj
 """
 Health check utilities for DBSBM system.
 
@@ -548,22 +561,29 @@ async def check_memory_health() -> Dict[str, Any]:
         memory_percent = memory.percent
         disk_percent = disk.percent
 
-        if memory_percent > 90 or disk_percent > 90:
+
+        if memory_percent > 95 or disk_percent > 95:
             status = "unhealthy"
-        elif memory_percent > 80 or disk_percent > 80:
+        elif memory_percent > 90 or disk_percent > 90:
             status = "degraded"
         else:
             status = "healthy"
 
+        details = {
+            "memory_usage_percent": memory_percent,
+            "memory_available_gb": memory.available / (1024**3),
+            "disk_usage_percent": disk_percent,
+            "disk_free_gb": disk.free / (1024**3),
+        }
+        from datetime import datetime, date
+        for k, v in details.items():
+            if isinstance(v, (datetime, date)):
+                details[k] = v.isoformat()
+
         return {
             "status": status,
             "response_time": 0.0,
-            "details": {
-                "memory_usage_percent": memory_percent,
-                "memory_available_gb": memory.available / (1024**3),
-                "disk_usage_percent": disk_percent,
-                "disk_free_gb": disk.free / (1024**3),
-            },
+            "details": details,
         }
 
     except Exception as e:
@@ -572,7 +592,6 @@ async def check_memory_health() -> Dict[str, Any]:
             "error_message": f"Memory health check failed: {str(e)}",
             "response_time": 0.0,
         }
-
 
 async def check_statistics_health() -> Dict[str, Any]:
     """Check statistics service health."""
@@ -675,6 +694,7 @@ async def check_statistics_health() -> Dict[str, Any]:
                 cpu_percent = psutil.cpu_percent(interval=0.1)
 
                 # Create a simple stats dict with only serializable values
+
                 stats = {
                     "status": status,
                     "uptime": (
@@ -690,14 +710,16 @@ async def check_statistics_health() -> Dict[str, Any]:
                     "active_connections": 0,
                     "total_requests": 0,
                     "error_rate": 0.0,
-                    "service_running": bool(
-                        getattr(stats_service, "is_running", False)
-                    ),
+                    "service_running": bool(getattr(stats_service, "is_running", False)),
                 }
 
-                # Only mark as degraded if system resources are critically high
+                # Mark as unhealthy or degraded based on new thresholds
                 if stats.get("memory_usage", 0) > 95 or stats.get("cpu_usage", 0) > 95:
+                    status = "unhealthy"
+                elif stats.get("memory_usage", 0) > 90 or stats.get("cpu_usage", 0) > 90:
                     status = "degraded"
+                else:
+                    status = "healthy"
 
                 logger.debug(f"Statistics health check completed with status: {status}")
 
@@ -720,9 +742,7 @@ async def check_statistics_health() -> Dict[str, Any]:
                     "active_connections": 0,
                     "total_requests": 0,
                     "error_rate": 0.0,
-                    "service_running": bool(
-                        getattr(stats_service, "is_running", False)
-                    ),
+                    "service_running": bool(getattr(stats_service, "is_running", False)),
                     "note": "psutil not available, using basic health check",
                 }
 
@@ -794,29 +814,8 @@ async def run_system_health_check() -> Dict[str, Any]:
         results = await health_checker.run_all_health_checks()
         report = health_checker.generate_health_report(results)
 
-        # Final safety check - ensure the report is serializable
-        try:
-            import json
-
-            json.dumps(report)
-        except (TypeError, ValueError) as e:
-            logger.warning(f"Health check report contains non-serializable data: {e}")
-            # Create a minimal safe report
-            report = {
-                "overall_status": "unknown",
-                "timestamp": datetime.utcnow().isoformat(),
-                "statistics": {
-                    "total_checks": len(results),
-                    "healthy": 0,
-                    "degraded": 0,
-                    "unhealthy": 0,
-                    "health_percentage": 0,
-                },
-                "average_response_time": 0.0,
-                "services": {},
-                "error": "Health check report contained non-serializable data",
-            }
-
+        # Recursively convert datetimes and other non-serializable objects to JSON-safe values
+        report = _make_json_safe(report)
         return report
     except Exception as e:
         logger.error(f"Health check execution failed: {e}")

@@ -31,7 +31,7 @@ class PlatinumService:
         """Load active webhook integrations from database."""
         try:
             webhooks = await self.db_manager.fetch_all(
-                "SELECT * FROM webhook_integrations WHERE is_active = TRUE"
+                "SELECT * FROM webhook_integrations WHERE is_active = 1"
             )
             for webhook in webhooks:
                 self.active_webhooks[webhook["id"]] = webhook
@@ -43,7 +43,7 @@ class PlatinumService:
         """Load active real-time alerts from database."""
         try:
             alerts = await self.db_manager.fetch_all(
-                "SELECT * FROM real_time_alerts WHERE is_active = TRUE"
+                "SELECT * FROM real_time_alerts WHERE is_active = 1"
             )
             for alert in alerts:
                 self.active_alerts[alert["id"]] = alert
@@ -88,7 +88,7 @@ class PlatinumService:
         """Get all webhook integrations for a guild."""
         try:
             return await self.db_manager.fetch_all(
-                "SELECT * FROM webhook_integrations WHERE guild_id = $1 AND is_active = TRUE",
+                "SELECT * FROM webhook_integrations WHERE guild_id = $1 AND is_active = 1",
                 guild_id,
             )
         except Exception as e:
@@ -165,7 +165,7 @@ class PlatinumService:
         """Get all real-time alerts for a guild."""
         try:
             return await self.db_manager.fetch_all(
-                "SELECT * FROM real_time_alerts WHERE guild_id = $1 AND is_active = TRUE",
+                "SELECT * FROM real_time_alerts WHERE guild_id = $1 AND is_active = 1",
                 guild_id,
             )
         except Exception as e:

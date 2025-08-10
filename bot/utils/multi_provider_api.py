@@ -1,7 +1,13 @@
+
 """
 Multi-Provider API System
 Handles different API providers for various sports including API-Sports, SportDevs, RapidAPI, etc.
 """
+
+print("=== MULTI_PROVIDER_API.PY: FILE EXECUTION TEST LINE ===")
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.getLogger(__name__).info("=== MULTI_PROVIDER_API.PY: FILE EXECUTION TEST LINE ===")
 
 from services.api_response_cache_service import (
     cache_api_response,
@@ -18,7 +24,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
-import aiomysql
+
+import asyncpg
 
 # Add the bot directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -300,7 +307,7 @@ class MultiProviderAPI:
         params: Dict = None,
         provider_override: str = None,
     ) -> Dict:
-        """Make a request to the appropriate API provider."""
+        """Make a request to the appropriate API provider. Always return a plain dict."""
         provider = (
             provider_override
             if provider_override
@@ -346,7 +353,15 @@ class MultiProviderAPI:
                     )
 
                 response.raise_for_status()
-                return await response.json()
+                result = await response.json()
+                # If result is not a dict, try to convert
+                if not isinstance(result, dict):
+                    try:
+                        import json as _json
+                        result = _json.loads(result)
+                    except Exception:
+                        pass
+                return result
 
         except aiohttp.ClientError as e:
             logger.error(f"API request failed for {sport}: {e}")
@@ -1325,101 +1340,95 @@ class MultiProviderAPI:
 
         try:
             async with self.db_pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    # Check if game already exists
-                    await cur.execute(
-                        "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
-                        (game_data["api_game_id"],),
+                # Check if game already exists
+                row = await conn.fetchrow(
+                    "SELECT api_game_id FROM api_games WHERE api_game_id = $1",
+                    game_data["api_game_id"],
+                )
+
+                # Prepare raw_json data and fetched_at timestamp
+                raw_json = json.dumps(game_data)
+                fetched_at = datetime.now()
+
+                # Parse datetime strings
+                start_time = parse_datetime(game_data.get("start_time"))
+                end_time = parse_datetime(game_data.get("end_time"))
+
+                logger.debug(f"Original start_time: {game_data.get('start_time')}")
+                logger.debug(f"Parsed start_time: {start_time}")
+                logger.debug(f"Original end_time: {game_data.get('end_time')}")
+                logger.debug(f"Parsed end_time: {end_time}")
+
+                if row:
+                    # Update existing game
+                    await conn.execute(
+                        """
+                        UPDATE api_games SET
+                            sport = $1, league_id = $2, league_name = $3,
+                            home_team_id = $4, away_team_id = $5,
+                            home_team_name = $6, away_team_name = $7,
+                            start_time = $8, end_time = $9, status = $10,
+                            score = $11, venue = $12, referee = $13, season = $14,
+                            raw_json = $15, fetched_at = $16
+                        WHERE api_game_id = $17
+                        """,
+                        game_data.get("sport"),
+                        game_data.get("league_id"),
+                        game_data.get("league_name"),
+                        game_data.get("home_team_id"),
+                        game_data.get("away_team_id"),
+                        game_data.get("home_team_name"),
+                        game_data.get("away_team_name"),
+                        start_time,
+                        end_time,
+                        game_data.get("status"),
+                        (
+                            json.dumps(game_data.get("score"))
+                            if game_data.get("score")
+                            else None
+                        ),
+                        game_data.get("venue"),
+                        game_data.get("referee"),
+                        game_data.get("season"),
+                        raw_json,
+                        fetched_at,
+                        game_data["api_game_id"],
+                    )
+                else:
+                    # Insert new game
+                    await conn.execute(
+                        """
+                        INSERT INTO api_games (
+                            api_game_id, sport, league_id, league_name, home_team_id,
+                            away_team_id, home_team_name, away_team_name, start_time,
+                            end_time, status, score, venue, referee, season,
+                            raw_json, fetched_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                        """,
+                        game_data["api_game_id"],
+                        game_data.get("sport"),
+                        game_data.get("league_id"),
+                        game_data.get("league_name"),
+                        game_data.get("home_team_id"),
+                        game_data.get("away_team_id"),
+                        game_data.get("home_team_name"),
+                        game_data.get("away_team_name"),
+                        start_time,
+                        end_time,
+                        game_data.get("status"),
+                        (
+                            json.dumps(game_data.get("score"))
+                            if game_data.get("score")
+                            else None
+                        ),
+                        game_data.get("venue"),
+                        game_data.get("referee"),
+                        game_data.get("season"),
+                        raw_json,
+                        fetched_at,
                     )
 
-                    # Prepare raw_json data and fetched_at timestamp
-                    raw_json = json.dumps(game_data)
-                    fetched_at = datetime.now()
-
-                    # Parse datetime strings
-                    start_time = parse_datetime(game_data.get("start_time"))
-                    end_time = parse_datetime(game_data.get("end_time"))
-
-                    logger.debug(f"Original start_time: {game_data.get('start_time')}")
-                    logger.debug(f"Parsed start_time: {start_time}")
-                    logger.debug(f"Original end_time: {game_data.get('end_time')}")
-                    logger.debug(f"Parsed end_time: {end_time}")
-
-                    if await cur.fetchone():
-                        # Update existing game
-                        await cur.execute(
-                            """
-                            UPDATE api_games SET
-                                sport = $1, league_id = $2, league_name = $3,
-                                home_team_id = $4, away_team_id = $5,
-                                home_team_name = $6, away_team_name = $7,
-                                start_time = $8, end_time = $9, status = $10,
-                                score = $11, venue = $12, referee = $13, season = $14,
-                                raw_json = $15, fetched_at = $16
-                            WHERE api_game_id = $17
-                        """,
-                            (
-                                game_data.get("sport"),
-                                game_data.get("league_id"),
-                                game_data.get("league_name"),
-                                game_data.get("home_team_id"),
-                                game_data.get("away_team_id"),
-                                game_data.get("home_team_name"),
-                                game_data.get("away_team_name"),
-                                start_time,
-                                end_time,
-                                game_data.get("status"),
-                                (
-                                    json.dumps(game_data.get("score"))
-                                    if game_data.get("score")
-                                    else None
-                                ),
-                                game_data.get("venue"),
-                                game_data.get("referee"),
-                                game_data.get("season"),
-                                raw_json,
-                                fetched_at,
-                                game_data["api_game_id"],
-                            ),
-                        )
-                    else:
-                        # Insert new game
-                        await cur.execute(
-                            """
-                            INSERT INTO api_games (
-                                api_game_id, sport, league_id, league_name, home_team_id,
-                                away_team_id, home_team_name, away_team_name, start_time,
-                                end_time, status, score, venue, referee, season,
-                                raw_json, fetched_at
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-                        """,
-                            (
-                                game_data["api_game_id"],
-                                game_data.get("sport"),
-                                game_data.get("league_id"),
-                                game_data.get("league_name"),
-                                game_data.get("home_team_id"),
-                                game_data.get("away_team_id"),
-                                game_data.get("home_team_name"),
-                                game_data.get("away_team_name"),
-                                start_time,
-                                end_time,
-                                game_data.get("status"),
-                                (
-                                    json.dumps(game_data.get("score"))
-                                    if game_data.get("score")
-                                    else None
-                                ),
-                                game_data.get("venue"),
-                                game_data.get("referee"),
-                                game_data.get("season"),
-                                raw_json,
-                                fetched_at,
-                            ),
-                        )
-
-                    await conn.commit()
-                    return True
+                return True
 
         except Exception as e:
             logger.error(f"Error saving game to database: {e}")

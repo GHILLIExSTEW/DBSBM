@@ -1,3 +1,15 @@
+import sys
+import os
+
+# --- Fix Windows console encoding for Unicode logging ---
+if os.name == "nt":
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 import asyncio
 import logging
 import os
@@ -347,6 +359,16 @@ async def run_one_time_player_data_download():
 
 # --- Bot Definition ---
 class BettingBot(commands.Bot):
+    async def setup_hook(self):
+        """discord.py lifecycle hook: runs before on_ready, after login, before extensions load."""
+        # Ensure the database pool is initialized before anything else
+        try:
+            await self.db_manager.connect()
+            logger.info("[OK] Database pool initialized in setup_hook.")
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to initialize database pool in setup_hook: {e}")
+            # Continue in degraded mode
+        # You can add other pre-extension setup here if needed
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
@@ -403,6 +425,9 @@ class BettingBot(commands.Bot):
         return self.bet_slip_generators[guild_id]
 
     async def load_extensions(self):
+        if hasattr(self, "_extensions_loaded") and self._extensions_loaded:
+            logger.info("Extensions already loaded, skipping duplicate load_extensions call.")
+            return
         commands_dir = os.path.join(BASE_DIR, "commands")
         cog_files = [
             "admin.py",  # Load admin.py first since it contains setup command
@@ -431,6 +456,9 @@ class BettingBot(commands.Bot):
             file_path = os.path.join(commands_dir, filename)
             if os.path.exists(file_path):
                 extension = f"bot.commands.{filename[:-3]}"
+                if extension in self.extensions:
+                    logger.info(f"Extension {extension} is already loaded, skipping.")
+                    continue
                 try:
                     await self.load_extension(extension)
                     loaded_commands.append(extension)
@@ -444,6 +472,7 @@ class BettingBot(commands.Bot):
         logger.info("Total loaded extensions: %s", loaded_commands)
         commands_list = [cmd.name for cmd in self.tree.get_commands()]
         logger.info("Available commands after loading: %s", commands_list)
+        self._extensions_loaded = True
 
     async def sync_commands_simple(self):
         """Simple global sync without complex guild-specific logic."""
@@ -757,57 +786,52 @@ class BettingBot(commands.Bot):
 
             await asyncio.sleep(5)  # Check every 5 seconds
 
-    async def setup_hook(self):
-        """Initialize the bot and load extensions."""
-        logger.info("Starting setup_hook...")
-
-        # Add timeout wrapper to prevent hanging
-        try:
-            await asyncio.wait_for(self._setup_hook_internal(), timeout=60.0)
-        except asyncio.TimeoutError:
-            logger.error("Bot setup_hook timed out after 60 seconds")
-            raise RuntimeError("Bot initialization timed out")
-        except Exception as e:
-            logger.error(f"Bot setup_hook failed: {e}")
-            raise
-
-    async def _setup_hook_internal(self):
-        """Internal setup_hook implementation with progressive startup."""
-        logger.info("Step 1: Starting minimal initialization...")
-
-        # Only do essential initialization here - connect to Discord first
-        logger.info("Step 1a: Connecting to database...")
-        try:
-            await self.db_manager.connect()
-            if not self.db_manager._pool:
-                logger.warning(
-                    "Database connection pool failed to initialize. Bot will continue without database."
-                )
+    async def load_extensions(self):
+        commands_dir = os.path.join(BASE_DIR, "commands")
+        cog_files = [
+            "admin.py",  # Load admin.py first since it contains setup command
+            "betting.py",
+            "enhanced_player_props.py",  # Enhanced player props command
+            "parlay_betting.py",  # Parlay betting command
+            "remove_user.py",
+            "setid.py",
+            "add_user.py",
+            "stats.py",
+            "load_logos.py",
+            "schedule.py",
+            "maintenance.py",
+            "odds.py",  # New odds command
+            "platinum_fixed.py",  # Platinum tier commands (fixed version)
+            "platinum_api.py",  # Platinum API commands
+            "sync_cog.py",  # Sync commands
+            # "community.py",  # Community engagement commands (DISABLED)
+            # "community_leaderboard.py",  # Community leaderboard commands (DISABLED)
+            "predictive.py",  # Predictive analytics commands
+            "real_ml_commands.py",  # Real ML commands (Platinum only)
+            "weather.py",  # Weather command for game venues
+        ]
+        loaded_commands = []
+        for filename in cog_files:
+            file_path = os.path.join(commands_dir, filename)
+            if os.path.exists(file_path):
+                extension = f"bot.commands.{filename[:-3]}"
+                try:
+                    await self.load_extension(extension)
+                    loaded_commands.append(extension)
+                    logger.info(f"Loaded extension: {extension}")
+                except Exception as e:
+                    logger.error(f"Failed to load extension {extension}: {e}", exc_info=True)
             else:
-                logger.info("Step 1a: Database connection successful")
-        except Exception as e:
-            logger.warning(
-                f"Database connection failed: {e}. Bot will continue without database."
-            )
-
-        # Initialize database schema
-        try:
-            logger.info("Step 1b: Initializing database schema...")
-            await self.db_manager.initialize_db()
-            logger.info("Database schema initialized successfully.")
-        except Exception as e:
-            logger.error(f"Database initialization error: {e}")
-            # Don't exit, just log the error and continue
-
-        # Only load extensions if we're not in scheduler mode and extensions haven't been loaded yet
-        if not os.getenv("SCHEDULER_MODE") and not hasattr(self, "_extensions_loaded"):
-            logger.info("Step 1c: Loading extensions...")
-            await self.load_extensions()
-            self._extensions_loaded = True
+                logger.warning("Command file not found: %s", file_path)
+        logger.info("Total loaded extensions: %s", loaded_commands)
+        commands_list = [cmd.name for cmd in self.tree.get_commands()]
+        logger.info("Available commands after loading: %s", commands_list)
+    
+        # Only log extension loading step here; actual loading is handled in on_ready
+        if not os.getenv("SCHEDULER_MODE"):
+            logger.info("Step 1c: Extensions loaded.")
             commands_list = [cmd.name for cmd in self.tree.get_commands()]
             logger.info("Registered commands: %s", commands_list)
-        elif hasattr(self, "_extensions_loaded"):
-            logger.info("Step 1c: Extensions already loaded, skipping...")
         else:
             logger.info("Step 1c: Skipping extension loading (scheduler mode)")
 
@@ -817,6 +841,10 @@ class BettingBot(commands.Bot):
 
     async def on_ready(self):
         """Called when the bot is ready - initialize heavy components here."""
+        # Ensure all extensions are loaded before syncing commands
+        await self.load_extensions()
+
+        logger.info("====== BOT IS ONLINE ======")
         logger.info("Logged in as %s (%s)", self.user.name, self.user.id)
         logger.info("discord.py API version: %s", discord.__version__)
         logger.info("Python version: %s", sys.version)
@@ -1008,7 +1036,8 @@ class BettingBot(commands.Bot):
 
             # Display health status
             try:
-                logger.info("Running health status check...")
+
+                logger.info("🩺 Running health status check...")
                 # Add a small delay to ensure all services are properly initialized
                 await asyncio.sleep(2)
                 from utils.health_checker import run_system_health_check
@@ -1019,37 +1048,37 @@ class BettingBot(commands.Bot):
                     )
 
                     if health_results:
-                        logger.info("HEALTH STATUS:")
+                        logger.info("🩺 HEALTH STATUS:")
                         # Debug: Log the structure of health_results
                         logger.debug(
-                            f"Health results structure: {list(health_results.keys())}"
+                            f"🧩 Health results structure: {list(health_results.keys())}"
                         )
                         # Extract services from the health report structure
                         services = health_results.get("services", {})
-                        logger.debug(f"Services found: {list(services.keys())}")
+                        logger.debug(f"🗂️ Services found: {list(services.keys())}")
                         for service, result in services.items():
                             if isinstance(result, dict):
                                 status = result.get("status", "unknown")
                                 response_time = result.get("response_time", 0)
                                 if status == "healthy":
                                     logger.info(
-                                        f"  [OK] {service}: Healthy ({response_time:.2f}s)"
+                                        f"  [✅ OK] {service}: Healthy ({response_time:.2f}s)"
                                     )
                                 elif status == "degraded":
                                     logger.warning(
-                                        f"  [WARN] {service}: Degraded ({response_time:.2f}s)"
+                                        f"  [⚠️ WARN] {service}: Degraded ({response_time:.2f}s)"
                                     )
                                 else:
                                     logger.error(
-                                        f"  [ERROR] {service}: Unhealthy ({response_time:.2f}s)"
+                                        f"  [❌ ERROR] {service}: {status.title()} ({response_time:.2f}s)"
                                     )
                     else:
-                        logger.warning("Health check returned no results")
+                        logger.warning("⚠️ Health check returned no results")
 
                 except asyncio.TimeoutError:
-                    logger.error("Health check timed out after 10 seconds")
+                    logger.error("⏰ Health check timed out after 10 seconds")
                 except Exception as health_check_error:
-                    logger.error(f"Health check execution failed: {health_check_error}")
+                    logger.error(f"❌ Health check execution failed: {health_check_error}")
                     # Don't let health check failures crash the bot
 
             except Exception as e:
@@ -1227,120 +1256,20 @@ class BettingBot(commands.Bot):
 
 
 # --- Manual Sync Command (as a Cog) ---
-class SyncCog(commands.Cog):
-    def __init__(self, bot: BettingBot):
-        self.bot = bot
-
-    @app_commands.command(
-        name="sync", description="Manually sync bot commands (admin only)"
-    )
-    @app_commands.checks.has_permissions(administrator=True)
-    async def sync_command(self, interaction: discord.Interaction):
-        logger.info(
-            "Manual sync initiated by %s in guild %s",
-            interaction.user,
-            interaction.guild_id,
-        )
-        try:
-            await interaction.response.defer(ephemeral=True)
-            commands_list = [cmd.name for cmd in self.bot.tree.get_commands()]
-            logger.debug("Commands to sync: %s", commands_list)
-            await self.bot.sync_commands_with_retry()
-            await interaction.followup.send(
-                "Global commands synced successfully!", ephemeral=True
-            )
-        except Exception as e:
-            logger.error("Failed to sync commands: %s", e, exc_info=True)
-            if not interaction.response.is_done():
-                await interaction.response.send_message(
-                    f"Failed to sync commands: {e}", ephemeral=True
-                )
-            else:
-                await interaction.followup.send(
-                    f"Failed to sync commands: {e}", ephemeral=True
-                )
-
-
-async def setup_sync_cog(bot: BettingBot):
-    await bot.add_cog(SyncCog(bot))
-    logger.info("SyncCog loaded")
-
-
-# Add a manual sync command to AdminService or a new AdminCog
-
-
-class ManualSyncCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    @commands.command()
-    @commands.is_owner()
-    async def synccommands(self, ctx):
-        """Manually sync commands to the test guild."""
-        test_guild_id = (
-            int(os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
-        )
-        if test_guild_id:
-            await ctx.bot.tree.sync(guild=discord.Object(id=test_guild_id))
-            await ctx.send(f"Commands synced to test guild {test_guild_id}!")
-        else:
-            await ctx.send("TEST_GUILD_ID not set. Cannot sync commands.")
-
-    # Register the manual sync cog in BettingBot.setup_hook
-    async def setup_hook(self):
-        logger.info("Starting setup_hook...")
-        await run_one_time_logo_download()
-        await run_one_time_player_data_download()
-        await self.db_manager.connect()
-        if not self.db_manager._pool:
-            logger.critical(
-                "Database connection pool failed to initialize. Bot cannot continue."
-            )
-            await self.close()
-            sys.exit("Database connection failed.")
-
-            # Note: Database schema initialization is handled by DatabaseManager.initialize_db()
-        # No need to create tables here as they already exist
-
-        if not os.getenv("SCHEDULER_MODE"):
-            await self.load_extensions()
-            commands_list = [cmd.name for cmd in self.tree.get_commands()]
-            logger.info("Registered commands: %s", commands_list)
-        logger.info("Starting services...")
-        service_starts = [
-            self.admin_service.start(),
-            self.analytics_service.start(),
-            self.bet_service.start(),
-            self.user_service.start(),
-            self.voice_service.start(),
-            self.game_service.start(),
-            self.data_sync_service.start(),
-            self.live_game_channel_service.start(),
-        ]
-        results = await asyncio.gather(*service_starts, return_exceptions=True)
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                service_name = (
-                    service_starts[i].__self__.__class__.__name__
-                    if hasattr(service_starts[i], "__self__")
-                    else f"Service {i}"
-                )
-                logger.error(
-                    "Error starting %s: %s", service_name, result, exc_info=True
-                )
-        logger.info("Services startup initiated, including LiveGameChannelService.")
-        # Register the manual sync cog
-        self.add_cog(ManualSyncCog(self))
-        if not os.getenv("SCHEDULER_MODE"):
-            self.start_fetcher()
-            logger.info(
-                "Bot setup_hook completed successfully - commands will be synced in on_ready"
-            )
-        else:
-            logger.info("Bot setup_hook completed successfully in scheduler mode")
 
 
 # --- Main Execution ---
+
+import traceback
+
+def handle_unhandled_exception(loop, context):
+    msg = context.get("exception", context["message"])
+    logger.critical(f"[UNHANDLED EXCEPTION] in event loop: {msg}")
+    if "exception" in context:
+        logger.critical("Exception details:", exc_info=context["exception"])
+    else:
+        logger.critical(f"Context: {context}")
+
 async def run_bot():
     """Run the bot with comprehensive error handling and retry logic."""
     retry_count = 0
@@ -1400,22 +1329,25 @@ async def run_bot():
         logger.warning(f"[WARN] Startup checks failed: {e}")
         logger.info("Continuing with bot startup...")
 
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(handle_unhandled_exception)
+
     while retry_count < max_retries:
         try:
-            logger.info("Attempting to start bot...")
+            logger.info("🟢 Attempting to start bot...")
             bot = BettingBot()
 
             # Progressive startup approach
-            logger.info("[STARTING] Starting progressive bot initialization...")
+            logger.info("[🚀 STARTING] Starting progressive bot initialization...")
 
             # Step 1: Initialize core components first (skip since setup_hook will handle this)
-            logger.info("Step 1: Core components will be initialized in setup_hook...")
+            logger.info("🛠️ Step 1: Core components will be initialized in setup_hook...")
             logger.info(
-                "[OK] Core components initialization skipped (will be handled by Discord)"
+                "[✅ OK] Core components initialization skipped (will be handled by Discord)"
             )
 
             # Step 2: Connect to Discord with extended timeout and retry logic
-            logger.info("Step 2: Connecting to Discord...")
+            logger.info("🌐 Step 2: Connecting to Discord...")
 
             # Validate Discord token first
             discord_token = os.getenv("DISCORD_TOKEN")
@@ -1427,13 +1359,11 @@ async def run_bot():
             )
 
             if not discord_token:
-                logger.critical("[ERROR] DISCORD_TOKEN environment variable is not set")
-                raise RuntimeError("DISCORD_TOKEN environment variable is not set")
+                logger.critical("[FATAL] DISCORD_TOKEN is not set. Exiting.")
+                raise RuntimeError("DISCORD_TOKEN is not set")
 
             if not discord_token.startswith("MT") or len(discord_token) < 50:
-                logger.critical(
-                    f"[ERROR] DISCORD_TOKEN format appears invalid (length: {len(discord_token)}, starts with MT: {discord_token.startswith('MT')})"
-                )
+                logger.critical("[FATAL] DISCORD_TOKEN format appears invalid. Exiting.")
                 raise RuntimeError("DISCORD_TOKEN format appears invalid")
 
             # Log bot configuration
@@ -1445,21 +1375,18 @@ async def run_bot():
             connection_success = False
             for attempt in range(3):
                 try:
-                    logger.info(f"[CONNECTING] Discord connection attempt {attempt + 1}/3...")
+                    logger.info(f"[🔌 CONNECTING] Discord connection attempt {attempt + 1}/3...")
                     logger.debug(
                         f"Starting Discord connection with token: {discord_token[:10]}...{discord_token[-5:]}"
                     )
 
-                    # Use a more conservative timeout for Discord connection
+                    # Start the bot and let it run indefinitely (no timeout)
                     start_time = datetime.now()
-                    await asyncio.wait_for(
-                        bot.start(discord_token),
-                        timeout=300.0,  # 5 minutes for Discord connection
-                    )
+                    await bot.start(discord_token)
                     end_time = datetime.now()
                     connection_time = (end_time - start_time).total_seconds()
                     logger.info(
-                        f"[SUCCESS] Bot started successfully in {connection_time:.2f} seconds"
+                        f"[✅ SUCCESS] Bot started successfully in {connection_time:.2f} seconds 🚀"
                     )
                     connection_success = True
                     break
@@ -1469,30 +1396,31 @@ async def run_bot():
                         f"⏰ Discord connection attempt {attempt + 1} timed out after 5 minutes"
                     )
                     if attempt < 2:  # Don't sleep after last attempt
-                        logger.debug("Waiting 10 seconds before next attempt...")
+                        logger.debug("⏳ Waiting 10 seconds before next attempt...")
                         await asyncio.sleep(10)
                 except discord.LoginFailure as e:
-                    logger.critical(f"[ERROR] Discord login failed - invalid token: {e}")
+                    logger.critical(f"[❌ ERROR] Discord login failed - invalid token: {e}", exc_info=True)
                     raise RuntimeError("Discord login failed - check your bot token")
                 except discord.PrivilegedIntentsRequired as e:
-                    logger.critical(f"[ERROR] Privileged intents required: {e}")
+                    logger.critical(f"[ERROR] Privileged intents required: {e}", exc_info=True)
                     raise RuntimeError(
                         "Enable required intents in Discord Developer Portal"
                     )
                 except discord.HTTPException as e:
-                    logger.error(f"[ERROR] Discord HTTP error on attempt {attempt + 1}: {e}")
+                    logger.error(f"[ERROR] Discord HTTP error on attempt {attempt + 1}: {e}", exc_info=True)
                     if attempt < 2:
                         await asyncio.sleep(10)
                 except aiohttp.ClientError as e:
-                    logger.error(f"[ERROR] Network error on attempt {attempt + 1}: {e}")
+                    logger.error(f"[ERROR] Network error on attempt {attempt + 1}: {e}", exc_info=True)
                     if attempt < 2:
                         await asyncio.sleep(10)
                 except Exception as e:
                     logger.error(
-                        f"[ERROR] Discord connection attempt {attempt + 1} failed: {e}"
+                        f"[ERROR] Discord connection attempt {attempt + 1} failed: {e}", exc_info=True
                     )
                     logger.debug(f"Exception type: {type(e).__name__}")
                     logger.debug(f"Exception details: {str(e)}")
+                    logger.debug(f"Exception traceback:\n{traceback.format_exc()}")
                     if attempt < 2:
                         await asyncio.sleep(10)
 
@@ -1505,7 +1433,7 @@ async def run_bot():
 
         except discord.LoginFailure:
             logger.critical(
-                "Login failed: Invalid Discord token provided in .env file."
+                "Login failed: Invalid Discord token provided in .env file.", exc_info=True
             )
             break
         except discord.PrivilegedIntentsRequired as e:
@@ -1513,6 +1441,7 @@ async def run_bot():
             logger.critical(
                 "Privileged Intents%s are required but not enabled in the Discord Developer Portal.",
                 shard_id_info,
+                exc_info=True
             )
             logger.critical(
                 "Enable 'Presence Intent', 'Server Members Intent', and 'Message Content Intent'."
@@ -1526,6 +1455,7 @@ async def run_bot():
                     retry_count,
                     max_retries,
                     e,
+                    exc_info=True
                 )
                 logger.info("Retrying in %d seconds...", retry_delay)
                 await asyncio.sleep(retry_delay)
@@ -1535,6 +1465,7 @@ async def run_bot():
                     "Failed to connect after %d attempts. Last error: %s",
                     max_retries,
                     e,
+                    exc_info=True
                 )
                 break
         except Exception as e:
@@ -1545,7 +1476,7 @@ async def run_bot():
             )
             logger.debug(f"Exception type: {type(e).__name__}")
             logger.debug(f"Exception args: {e.args}")
-            logger.debug(f"Exception traceback: {sys.exc_info()}")
+            logger.debug(f"Exception traceback:\n{traceback.format_exc()}")
             break
 
 

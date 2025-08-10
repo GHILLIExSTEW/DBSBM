@@ -313,42 +313,27 @@ class GuildSettingsView(discord.ui.View):
     """View for guild settings setup"""
 
     SETUP_STEPS = [
-        # Free Tier Features
+        # Dynamic channel selection steps (handled in process_next_selection)
         {
-            "name": "Embed Channel",
+            "name": "Embed Channels",
             "select": ChannelSelect,
-            "options": lambda guild: [
-                discord.SelectOption(label=ch.name, value=str(ch.id))
-                for ch in guild.text_channels
-            ],
-            "setting_key": "embed_channel_1",
-            "max_count": 1,  # Free tier gets 1 embed channel
-            "free_count": 1,
-            "description": "Channel for betting embeds (Free tier: 1 channel)",
+            "setting_key": "embed_channels",
+            "description": "Select channels for betting embeds",
+            "dynamic_channel_type": "embed",
         },
         {
-            "name": "Command Channel",
+            "name": "Command Channels",
             "select": ChannelSelect,
-            "options": lambda guild: [
-                discord.SelectOption(label=ch.name, value=str(ch.id))
-                for ch in guild.text_channels
-            ],
-            "setting_key": "command_channel_1",
-            "max_count": 1,  # Free tier gets 1 command channel
-            "free_count": 1,
-            "description": "Channel for bot commands (Free tier: 1 channel)",
+            "setting_key": "command_channels",
+            "description": "Select channels for bot commands",
+            "dynamic_channel_type": "command",
         },
         {
-            "name": "Admin Channel",
+            "name": "Admin Channels",
             "select": ChannelSelect,
-            "options": lambda guild: [
-                discord.SelectOption(label=ch.name, value=str(ch.id))
-                for ch in guild.text_channels
-            ],
-            "setting_key": "admin_channel_1",
-            "max_count": 1,
-            "free_count": 1,
-            "description": "Channel for admin commands",
+            "setting_key": "admin_channels",
+            "description": "Select channels for admin commands",
+            "dynamic_channel_type": "admin",
         },
         {
             "name": "Main Chat Channel",
@@ -779,6 +764,67 @@ class GuildSettingsView(discord.ui.View):
         step = self.filtered_steps[self.current_step]
         logger.info(f"Processing setup step {self.current_step}: {step}")
 
+        # Handle dynamic channel steps
+        if step.get("dynamic_channel_type"):
+            channel_type = step["dynamic_channel_type"]
+            # Determine max selectable channels by subscription level
+            if self.subscription_level == "platinum":
+                max_count = 5
+            elif self.subscription_level == "premium":
+                max_count = 2
+            else:
+                max_count = 1
+
+            # Get available channels
+            items = interaction.guild.text_channels
+            if not items:
+                try:
+                    await self.message.edit(
+                        content=f"No {step['name'].lower()} found. Please create one and try again.",
+                        view=None,
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to update message for empty items: {e}")
+                    if not interaction.response.is_done():
+                        await interaction.response.send_message(
+                            f"No {step['name'].lower()} found. Please create one and try again.",
+                            ephemeral=True,
+                        )
+                return
+
+            # Remove all items from the current view and add the new select and skip button
+            self.clear_items()
+            select = ChannelSelect(
+                placeholder=f"Select up to {max_count} {step['name'].lower()}",
+                setting_key=step["setting_key"],
+                channels=items,
+            )
+            select.max_values = max_count
+            select.min_values = 1
+            self.add_item(select)
+            skip_button = SkipButton()
+            self.add_item(skip_button)
+
+            try:
+                await self.message.edit(
+                    content=f"Please select up to {max_count} {step['name'].lower()}:", view=self
+                )
+            except Exception as e:
+                logger.error(f"Failed to update message with new view: {e}")
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        f"Please select up to {max_count} {step['name'].lower()}:",
+                        view=self,
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.followup.send(
+                        f"Please select up to {max_count} {step['name'].lower()}:",
+                        view=self,
+                        ephemeral=True,
+                    )
+            return
+
         # Handle boolean (yes/no) steps
         if step.get("is_boolean", False):
             view = discord.ui.View(timeout=60)
@@ -834,23 +880,19 @@ class GuildSettingsView(discord.ui.View):
                 try:
                     await interaction.response.send_modal(modal)
                 except discord.errors.InteractionResponded:
-                    # If interaction already responded, we can't send a modal via followup
-                    # Instead, send a message asking the user to try again
                     await interaction.followup.send(
                         f"Please enter the {step['name']} manually. The setup will continue automatically.",
                         ephemeral=True,
                     )
-                    # Skip this step for now and continue to the next one
                     self.current_step += 1
                     await self.process_next_selection(interaction)
                 return
             else:
-                # Skip this step if no setting_key
                 self.current_step += 1
                 await self.process_next_selection(interaction)
                 return
 
-        # Handle select menu steps
+        # Handle select menu steps (roles, etc.)
         if select_class == ChannelSelect:
             items = interaction.guild.text_channels
         else:
@@ -871,7 +913,6 @@ class GuildSettingsView(discord.ui.View):
                     )
             return
 
-        # Remove all items from the current view and add the new select and skip button
         self.clear_items()
         if select_class == ChannelSelect:
             select = select_class(
@@ -1263,7 +1304,7 @@ class AdminCog(commands.Cog):
             )
 
     @app_commands.command(
-        name="fix_commands", description="🔧 Fix and sync all bot commands (admin only)"
+        name="fix_commands", description="Fix and sync all bot commands (admin only)"
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def fix_commands(self, interaction: Interaction):
@@ -1272,7 +1313,7 @@ class AdminCog(commands.Cog):
             await interaction.response.defer(ephemeral=True)
 
             embed = discord.Embed(
-                title="🔧 EMERGENCY COMMAND FIX",
+                title="EMERGENCY COMMAND FIX",
                 description="Force syncing ALL commands to this guild...",
                 color=0xFF0000,
             )
@@ -1330,7 +1371,7 @@ class AdminCog(commands.Cog):
             logger.info(f"All available commands after reload: {all_commands}")
 
             embed.add_field(
-                name="📋 Available Commands",
+                name="Available Commands",
                 value="\n".join([f"• `/{cmd}`" for cmd in all_commands[:20]])
                 + (
                     f"\n... and {len(all_commands) - 20} more"
@@ -1358,7 +1399,7 @@ class AdminCog(commands.Cog):
             )
 
             embed.add_field(
-                name="📋 Synced Commands",
+                name="Synced Commands",
                 value="\n".join([f"• `/{cmd}`" for cmd in synced_names[:25]])
                 + (
                     f"\n... and {len(synced_names) - 25} more"
