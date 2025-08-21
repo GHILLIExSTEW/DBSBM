@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from utils.enhanced_cache_manager import (
+from bot.utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from utils.errors import InsufficientUnitsError, UserServiceError
+from bot.utils.errors import InsufficientUnitsError, UserServiceError
 
 USER_CACHE_TTL = 3600  # Default TTL (1 hour)
 
@@ -140,11 +140,12 @@ class UserService:
                     f"User {user_id} has {current_balance:.2f}, cannot subtract {-amount:.2f}"
                 )
 
+
             updated_rows = await self.db.execute(
                 """
                 UPDATE users
                 SET balance = $1
-                WHERE user_id = $1
+                WHERE user_id = $2
                 """,
                 new_balance,
                 user_id,
@@ -162,12 +163,15 @@ class UserService:
                 f"New balance: {new_balance:.2f}. Amount change: {amount:+.2f} ({transaction_type})"
             )
 
-            user["balance"] = new_balance
-            await enhanced_cache_set(
-                "user_data", str(user_id), user, ttl=USER_CACHE_TTL
-            )
-
-            return user
+            # Always fetch the updated user from the database after update
+            # Clear cache to ensure fresh fetch
+            await enhanced_cache_delete("user_data", str(user_id))
+            updated_user = await self.get_user(user_id)
+            if updated_user:
+                await enhanced_cache_set(
+                    "user_data", str(user_id), updated_user, ttl=USER_CACHE_TTL
+                )
+            return updated_user
 
         except InsufficientUnitsError as e:
             logger.warning(f"Balance update failed for user {user_id}: {e}")

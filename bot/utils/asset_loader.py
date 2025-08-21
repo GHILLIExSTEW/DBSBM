@@ -23,13 +23,83 @@ class AssetLoader:
         else:
             self.base_dir = base_dir
 
-        self.fonts_dir = os.path.join(self.base_dir, "assets", "fonts")
-        self.static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
-        self.logos_dir = os.path.join(self.static_dir, "logos")
+        # Default fonts dir inside the package (fallback)
+        self.package_fonts_dir = os.path.join(self.base_dir, "assets", "fonts")
+
+        # Attempt to locate the project-level StaticFiles directory. Prefer the DB SBM-specific path
+        self.static_dir = None
+        self.logos_dir = None
+        self.fonts_dir = None
+
+        # Walk up from base_dir to find a StaticFiles directory
+        search_root = self.base_dir
+        found = False
+        for _ in range(6):
+            candidate = os.path.join(search_root, "StaticFiles")
+            # Prefer StaticFiles/DBSBM/static
+            candidate_dbsbm_static = os.path.join(search_root, "StaticFiles", "DBSBM", "static")
+            candidate_static = os.path.join(search_root, "StaticFiles", "static")
+            if os.path.isdir(candidate_dbsbm_static):
+                self.static_dir = os.path.abspath(candidate_dbsbm_static)
+                found = True
+                break
+            if os.path.isdir(candidate_static):
+                self.static_dir = os.path.abspath(candidate_static)
+                found = True
+                break
+            # move up one directory
+            parent = os.path.dirname(search_root)
+            if parent == search_root:
+                break
+            search_root = parent
+
+        # If not found, fallback to previous relative behaviour (best effort)
+        if not found:
+            self.static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+
+        # Logos dir expected under the static directory
+        self.logos_dir = os.path.join(self.static_dir, "logos") if self.static_dir else os.path.join(self.base_dir, "static", "logos")
+
+        # Fonts: prefer StaticFiles/DBSBM/assets/fonts, else package fonts dir
+        candidate_fonts = None
+        # Check StaticFiles/DBSBM/assets/fonts
+        fonts_candidate1 = os.path.join(os.path.dirname(self.static_dir), "DBSBM", "assets", "fonts") if self.static_dir else None
+        fonts_candidate2 = os.path.join(os.path.dirname(self.static_dir), "assets", "fonts") if self.static_dir else None
+        if fonts_candidate1 and os.path.isdir(fonts_candidate1):
+            candidate_fonts = fonts_candidate1
+        elif fonts_candidate2 and os.path.isdir(fonts_candidate2):
+            candidate_fonts = fonts_candidate2
+        elif os.path.isdir(self.package_fonts_dir):
+            candidate_fonts = self.package_fonts_dir
+        else:
+            candidate_fonts = self.package_fonts_dir
+
+        self.fonts_dir = candidate_fonts
 
         # Cache for loaded assets
         self._font_cache = {}
         self._default_logo = None
+
+        # Log resolved paths for debugging
+        logger.info(f"AssetLoader initialized. static_dir={self.static_dir}, logos_dir={self.logos_dir}, fonts_dir={self.fonts_dir}")
+
+    def get_static_dir(self) -> str:
+        return self.static_dir
+
+    def get_logo_dir(self) -> str:
+        return self.logos_dir
+
+    def get_font_path(self, font_name: str) -> str:
+        """Return full path to a font file. Falls back to packaged fonts if not found in StaticFiles."""
+        candidate = os.path.join(self.fonts_dir, font_name) if self.fonts_dir else None
+        if candidate and os.path.exists(candidate):
+            return candidate
+        # Fallback to packaged fonts
+        packaged = os.path.join(self.package_fonts_dir, font_name)
+        if os.path.exists(packaged):
+            return packaged
+        # Last-resort: return packaged path even if missing (calling code handles errors)
+        return packaged
 
     def load_font(
         self, font_name: str, size: int, fallback_to_default: bool = True

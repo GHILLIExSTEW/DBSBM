@@ -11,14 +11,14 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import (
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import (
     enhanced_cache_get,
     enhanced_cache_set,
     enhanced_cache_delete,
     get_enhanced_cache_manager,
 )
-from utils.performance_monitor import time_operation
+from bot.utils.performance_monitor import time_operation
 
 logger = logging.getLogger(__name__)
 

@@ -10,6 +10,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from PIL import Image, ImageDraw, ImageFont
+from utils.asset_loader import asset_loader
 
 from data.league_schedules.nfl.teams.arizona_cardinals_schedule import (
     ARIZONA_CARDINALS_SCHEDULE,
@@ -347,15 +348,19 @@ class TeamSeasonSelect(View):
 
         # Add large faded league logo as background with enhanced styling (matching league schedule)
         try:
-            league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
-            if os.path.exists(league_logo_path):
-                league_logo = Image.open(league_logo_path)
-                # Resize to be large and centered
+            # Use asset_loader to locate league logo (more robust across environments)
+            try:
+                league_logo_img = asset_loader.load_league_logo(league)
+            except Exception:
+                league_logo_img = None
+            if league_logo_img:
+                league_logo = league_logo_img.copy()
                 league_logo = league_logo.resize((800, 800))
-                # Create a more faded version for better text readability
                 faded_logo = league_logo.copy()
-                faded_logo.putalpha(20)  # Very transparent (20/255)
-                # Center the logo
+                # If image has no alpha channel, convert then set alpha
+                if faded_logo.mode != "RGBA":
+                    faded_logo = faded_logo.convert("RGBA")
+                faded_logo.putalpha(20)
                 x_offset = (1200 - 800) // 2
                 y_offset = (1800 - 800) // 2
                 image.paste(faded_logo, (x_offset, y_offset), faded_logo)
@@ -364,24 +369,13 @@ class TeamSeasonSelect(View):
 
         # Load enhanced fonts with better sizing (matching league schedule)
         try:
-            title_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 48
-            )
-            subtitle_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 32
-            )
-            header_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
-            )
-            text_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
-            )
-            small_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 18
-            )
-            time_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 18
-            )
+            # Use asset_loader to load fonts with fallbacks
+            title_font = asset_loader.load_font("Roboto-Bold.ttf", 48) or ImageFont.load_default()
+            subtitle_font = asset_loader.load_font("Roboto-Bold.ttf", 32) or ImageFont.load_default()
+            header_font = asset_loader.load_font("Roboto-Bold.ttf", 36) or ImageFont.load_default()
+            text_font = asset_loader.load_font("Roboto-Regular.ttf", 24) or ImageFont.load_default()
+            small_font = asset_loader.load_font("Roboto-Regular.ttf", 18) or ImageFont.load_default()
+            time_font = asset_loader.load_font("Roboto-Bold.ttf", 18) or ImageFont.load_default()
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
@@ -396,16 +390,17 @@ class TeamSeasonSelect(View):
         # Add logos first (top row) - matching league schedule styling
         try:
             # --- Bot Logo ---
-            ptp_logo_path = "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
-            if os.path.exists(ptp_logo_path):
-                ptp_logo = Image.open(ptp_logo_path)
-                ptp_logo = ptp_logo.resize((70, 70))  # Slightly larger
+            # Bot default logo via asset_loader
+            try:
+                ptp_logo_img = asset_loader._load_fallback_logo()
+            except Exception:
+                ptp_logo_img = None
+            if ptp_logo_img:
+                ptp_logo = ptp_logo_img.resize((70, 70))
                 if ptp_logo.mode != "RGBA":
                     ptp_logo = ptp_logo.convert("RGBA")
-                # Position logo at top left
                 logo_x = 400 - 35
                 logo_y = header_y_start
-                # Add subtle glow effect
                 draw.ellipse(
                     [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
                     fill="#ffffff",
@@ -416,37 +411,33 @@ class TeamSeasonSelect(View):
 
             # --- Guild Logo ---
             if guild:
-                guild_logo_paths = [
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/default_image.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/background_image.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/logo.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/guild_logo.webp",
-                ]
                 guild_logo_loaded = False
-                for guild_logo_path in guild_logo_paths:
-                    if os.path.exists(guild_logo_path):
+                static_root = asset_loader.get_static_dir() or ""
+                possible_names = ["default_image.webp", "background_image.webp", "logo.webp", "guild_logo.webp"]
+                for name in possible_names:
+                    g_path = os.path.join(static_root, "guilds", str(guild.id), name)
+                    if os.path.exists(g_path):
                         try:
-                            guild_logo = Image.open(guild_logo_path)
-                            guild_logo = guild_logo.resize((70, 70))  # Slightly larger
-                            if guild_logo.mode != "RGBA":
-                                guild_logo = guild_logo.convert("RGBA")
-                            # Position logo at top right
-                            logo_x = 840 - 35
-                            logo_y = header_y_start
-                            # Add subtle glow effect
-                            draw.ellipse(
-                                [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                                fill="#ffffff",
-                                outline="#4a90e2",
-                                width=3,
-                            )
-                            image.paste(guild_logo, (logo_x, logo_y), guild_logo)
-                            guild_logo_loaded = True
-                            break
-                        except Exception as e:
+                            guild_logo = asset_loader.load_image(g_path)
+                            if guild_logo:
+                                guild_logo = guild_logo.resize((70, 70))
+                                if guild_logo.mode != "RGBA":
+                                    guild_logo = guild_logo.convert("RGBA")
+                                logo_x = 840 - 35
+                                logo_y = header_y_start
+                                draw.ellipse(
+                                    [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
+                                    fill="#ffffff",
+                                    outline="#4a90e2",
+                                    width=3,
+                                )
+                                image.paste(guild_logo, (logo_x, logo_y), guild_logo)
+                                guild_logo_loaded = True
+                                break
+                        except Exception:
                             continue
         except Exception as e:
-            logger.warning(f"Could not load logos: {e}")
+            logger.warning(f"Error drawing header logos: {e}")
 
         # Add text below logos with proper spacing (matching league schedule)
         text_y_start = header_y_start + 100  # 100px below logos
@@ -756,36 +747,48 @@ class WeekSelect(View):
     async def generate_placeholder_schedule_image(self, guild, week: str):
         """Generate placeholder schedule image for other leagues"""
         try:
-            # Create base image
-            image = self._create_schedule_base_image(guild, "NCAA", week)
+            # Create base image using cog reference
+            if self.cog:
+                image = self.cog._create_schedule_base_image(guild, "NCAA", week)
+            else:
+                # Fallback: create basic image
+                image = Image.new("RGB", (1200, 1600), color="#1a1a1a")
+                draw = ImageDraw.Draw(image)
+                draw.text(
+                    (600, 800),
+                    "Error: Could not access image creation method",
+                    fill="#ffffff",
+                    anchor="mm",
+                )
+
             draw = ImageDraw.Draw(image)
 
-            # Load fonts
+            # Add placeholder text
             try:
-                header_font = ImageFont.truetype(
-                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
-                )
-                text_font = ImageFont.truetype(
-                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
-                )
+                # Load fonts
+                header_font = asset_loader.load_font("Roboto-Bold.ttf", 36) or ImageFont.load_default()
+                text_font = asset_loader.load_font("Roboto-Regular.ttf", 24) or ImageFont.load_default()
             except:
                 header_font = ImageFont.load_default()
                 text_font = ImageFont.load_default()
 
-            # Add placeholder text
             draw.text(
                 (600, 800),
-                f"Schedule data for {week} coming soon!",
-                font=header_font,
+                f"NCAA Schedule for {week.replace('_', ' ').title()}",
+                font=text_font,
                 fill="#ffffff",
                 anchor="mm",
             )
+            draw.text(
+                (600, 850), "Coming Soon!", font=text_font, fill="#ffffff", anchor="mm"
+            )
 
-            # Save to temp file
+            # Save to temporary file
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".webp")
-            image.save(temp_file.name)
-            return temp_file.name
+            image.save(temp_file.name, "PNG")
+            temp_file.close()
 
+            return temp_file.name
         except Exception as e:
             logger.error(f"Error generating placeholder schedule image: {e}")
             raise
@@ -796,21 +799,12 @@ class WeekSelect(View):
 
         # Load fonts with smaller sizing to fit all games
         try:
-            header_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 36
-            )
-            title_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 24
-            )
-            text_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 18
-            )
-            small_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 16
-            )
-            time_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 16
-            )
+            # Load fonts
+            header_font = asset_loader.load_font("Roboto-Bold.ttf", 36) or ImageFont.load_default()
+            title_font = asset_loader.load_font("Roboto-Bold.ttf", 24) or ImageFont.load_default()
+            text_font = asset_loader.load_font("Roboto-Regular.ttf", 18) or ImageFont.load_default()
+            small_font = asset_loader.load_font("Roboto-Regular.ttf", 16) or ImageFont.load_default()
+            time_font = asset_loader.load_font("Roboto-Bold.ttf", 16) or ImageFont.load_default()
         except:
             header_font = ImageFont.load_default()
             title_font = ImageFont.load_default()
@@ -1001,9 +995,8 @@ class NCAAWeekSelect(View):
 
             # Add placeholder text
             try:
-                text_font = ImageFont.truetype(
-                    "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 32
-                )
+                # Load fonts
+                text_font = asset_loader.load_font("Roboto-Regular.ttf", 32) or ImageFont.load_default()
             except:
                 text_font = ImageFont.load_default()
 
@@ -1058,54 +1051,63 @@ class ScheduleCog(commands.Cog):
 
         # Load enhanced fonts with better sizing
         try:
-            title_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 48
-            )
-            subtitle_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Bold.ttf", 32
-            )
-            text_font = ImageFont.truetype(
-                "../../../StaticFiles/DBSBM/assets/fonts/Roboto-Regular.ttf", 24
-            )
+            title_font = asset_loader.load_font("Roboto-Bold.ttf", 48) or ImageFont.load_default()
+            subtitle_font = asset_loader.load_font("Roboto-Bold.ttf", 32) or ImageFont.load_default()
+            text_font = asset_loader.load_font("Roboto-Regular.ttf", 24) or ImageFont.load_default()
         except:
             title_font = ImageFont.load_default()
             subtitle_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
 
-        # Add large faded league logo as background with enhanced styling
+        # Add large faded league logo as background with enhanced styling (matching league schedule)
         try:
-            league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{league.upper()}/{league.lower()}.webp"
-            if os.path.exists(league_logo_path):
-                league_logo = Image.open(league_logo_path)
-                # Resize to be large and centered
-                league_logo = league_logo.resize((900, 900))
-                # Create a more faded version for better text readability
+            # Use asset_loader to locate league logo (more robust across environments)
+            try:
+                league_logo_img = asset_loader.load_league_logo(league)
+            except Exception:
+                league_logo_img = None
+            if league_logo_img:
+                league_logo = league_logo_img.copy()
+                league_logo = league_logo.resize((800, 800))
                 faded_logo = league_logo.copy()
-                faded_logo.putalpha(20)  # Very transparent (20/255)
-                # Center the logo
-                x_offset = (1200 - 900) // 2
-                y_offset = (1600 - 900) // 2
+                # If image has no alpha channel, convert then set alpha
+                if faded_logo.mode != "RGBA":
+                    faded_logo = faded_logo.convert("RGBA")
+                faded_logo.putalpha(20)
+                x_offset = (1200 - 800) // 2
+                y_offset = (1600 - 800) // 2
                 image.paste(faded_logo, (x_offset, y_offset), faded_logo)
-                logger.info(f"Added faded {league} logo background")
         except Exception as e:
             logger.warning(f"Could not load league logo background: {e}")
 
-        # Add header section with proper spacing
+        # Load enhanced fonts with better sizing (matching league schedule)
+        try:
+            # Use asset_loader to load fonts with fallbacks
+            title_font = asset_loader.load_font("Roboto-Bold.ttf", 48) or ImageFont.load_default()
+            subtitle_font = asset_loader.load_font("Roboto-Bold.ttf", 32) or ImageFont.load_default()
+            text_font = asset_loader.load_font("Roboto-Regular.ttf", 24) or ImageFont.load_default()
+        except:
+            title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
+            text_font = ImageFont.load_default()
+
+        # Add header section with proper spacing (matching league schedule)
         header_y_start = 50
 
-        # Add logos first (top row)
+        # Add logos first (top row) - matching league schedule styling
         try:
             # --- Bot Logo ---
-            ptp_logo_path = "../../../StaticFiles/DBSBM/static/logos/default_image.webp"
-            if os.path.exists(ptp_logo_path):
-                ptp_logo = Image.open(ptp_logo_path)
-                ptp_logo = ptp_logo.resize((70, 70))  # Slightly larger
+            # Bot default logo via asset_loader
+            try:
+                ptp_logo_img = asset_loader._load_fallback_logo()
+            except Exception:
+                ptp_logo_img = None
+            if ptp_logo_img:
+                ptp_logo = ptp_logo_img.resize((70, 70))
                 if ptp_logo.mode != "RGBA":
                     ptp_logo = ptp_logo.convert("RGBA")
-                # Position logo at top left
                 logo_x = 400 - 35
                 logo_y = header_y_start
-                # Add subtle glow effect
                 draw.ellipse(
                     [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
                     fill="#ffffff",
@@ -1113,92 +1115,38 @@ class ScheduleCog(commands.Cog):
                     width=3,
                 )
                 image.paste(ptp_logo, (logo_x, logo_y), ptp_logo)
-                logger.info(f"Added Bet Tracking Bot logo from {ptp_logo_path}")
-            else:
-                logger.warning(f"Bet Tracking Bot logo not found at {ptp_logo_path}")
-                logo_x = 400 - 35
-                logo_y = header_y_start
-                draw.ellipse(
-                    [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                    fill="#ff0000",
-                    outline="#ffffff",
-                    width=3,
-                )
 
             # --- Guild Logo ---
             if guild:
-                guild_logo_paths = [
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/default_image.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/background_image.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/logo.webp",
-                    f"../../../StaticFiles/DBSBM/static/guilds/{guild.id}/guild_logo.webp",
-                ]
                 guild_logo_loaded = False
-                for guild_logo_path in guild_logo_paths:
-                    if os.path.exists(guild_logo_path):
+                static_root = asset_loader.get_static_dir() or ""
+                possible_names = ["default_image.webp", "background_image.webp", "logo.webp", "guild_logo.webp"]
+                for name in possible_names:
+                    g_path = os.path.join(static_root, "guilds", str(guild.id), name)
+                    if os.path.exists(g_path):
                         try:
-                            guild_logo = Image.open(guild_logo_path)
-                            guild_logo = guild_logo.resize((70, 70))  # Slightly larger
-                            if guild_logo.mode != "RGBA":
-                                guild_logo = guild_logo.convert("RGBA")
-                            # Position logo at top right
-                            logo_x = 840 - 35
-                            logo_y = header_y_start
-                            # Add subtle glow effect
-                            draw.ellipse(
-                                [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                                fill="#ffffff",
-                                outline="#4a90e2",
-                                width=3,
-                            )
-                            image.paste(guild_logo, (logo_x, logo_y), guild_logo)
-                            logger.info(f"Added guild logo from {guild_logo_path}")
-                            guild_logo_loaded = True
-                            break
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to load guild logo from {guild_logo_path}: {e}"
-                            )
+                            guild_logo = asset_loader.load_image(g_path)
+                            if guild_logo:
+                                guild_logo = guild_logo.resize((70, 70))
+                                if guild_logo.mode != "RGBA":
+                                    guild_logo = guild_logo.convert("RGBA")
+                                logo_x = 840 - 35
+                                logo_y = header_y_start
+                                draw.ellipse(
+                                    [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
+                                    fill="#ffffff",
+                                    outline="#4a90e2",
+                                    width=3,
+                                )
+                                image.paste(guild_logo, (logo_x, logo_y), guild_logo)
+                                guild_logo_loaded = True
+                                break
+                        except Exception:
                             continue
-                if not guild_logo_loaded:
-                    logo_x = 840 - 35
-                    logo_y = header_y_start
-                    draw.ellipse(
-                        [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                        fill="#4a90e2",
-                        outline="#ffffff",
-                        width=3,
-                    )
-            else:
-                logo_x = 840 - 35
-                logo_y = header_y_start
-                draw.ellipse(
-                    [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                    fill="#666666",
-                    outline="#ffffff",
-                    width=3,
-                )
         except Exception as e:
-            logger.error(f"Could not load logos: {e}")
-            # Add fallback circles for debugging
-            logo_x = 400 - 35
-            logo_y = header_y_start
-            draw.ellipse(
-                [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                fill="#ff0000",
-                outline="#ffffff",
-                width=3,
-            )
-            logo_x = 840 - 35
-            logo_y = header_y_start
-            draw.ellipse(
-                [logo_x - 5, logo_y - 5, logo_x + 75, logo_y + 75],
-                fill="#00ff00",
-                outline="#ffffff",
-                width=3,
-            )
+            logger.warning(f"Error drawing header logos: {e}")
 
-        # Add text below logos with proper spacing
+        # Add text below logos with proper spacing (matching league schedule)
         text_y_start = header_y_start + 100  # 100px below logos
 
         # Add Bet Tracking Bot branding at 1/3 position (left side)
@@ -1223,7 +1171,7 @@ class ScheduleCog(commands.Cog):
             anchor="mm",
         )
 
-        # Add league and schedule type info centered below
+        # Add league and schedule type info centered below (matching league schedule)
         schedule_type = week.replace("_", " ").title()
         draw.text(
             (600, text_y_start + 50),

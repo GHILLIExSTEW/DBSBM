@@ -7,16 +7,18 @@ from typing import List, Optional
 
 import requests
 import thesportsdb
-from PIL     """Get the file pathdef get_league_logo_path(league_key: str) -> Optional[str]:
+from PIL import Image
+
+from config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
+
+
+def get_league_logo_path(league_key: str) -> Optional[str]:
     """Get the file path for a league's logo, downloading if necessary."""
     league = LEAGUE_IDS.get(league_key, {})
     league_id = league.get("id")
-    save_path = f"../../../StaticFiles/DBSBM/assets/leagues/{league_key}.webp"a team's logo, downloading if necessary."""
-    league = LEAGUE_IDS.get(league_key, {})
-    league_id = league.get("id")
-    save_path = f"../../../StaticFiles/DBSBM/assets/logos/{team_name.replace('/', '_')}.webp"rt Image
-
-from config.leagues import AFL_TEAMS, CFL_TEAMS, LEAGUE_IDS
+    from utils.asset_loader import asset_loader
+    save_path = os.path.join(asset_loader.get_static_dir() or "", "assets", "leagues", f"{league_key}.webp")
+    return save_path
 
 # NCAA teams list (661 Division I and II teams, abridged for brevity)
 NCAA_TEAMS = [

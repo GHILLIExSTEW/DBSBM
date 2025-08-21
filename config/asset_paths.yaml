@@ -1,5 +1,11 @@
-# Base directory structure
-base_dir: "${PROJECT_ROOT}/../../../StaticFiles/DBSBM"
+# Asset paths configuration
+# NOTE: This project now uses a runtime AssetLoader to locate the StaticFiles directory.
+# The AssetLoader will search upward from the package directory and prefer
+# StaticFiles/DBSBM/static when available. It's recommended to use the
+# AssetLoader APIs (utils.asset_loader.asset_loader) instead of relying on
+# hard-coded relative paths here. These keys are kept for backward compatibility.
+
+base_dir: ""  # DEPRECATED: use utils.asset_loader.asset_loader.get_static_dir()
 assets_dir: "${base_dir}/assets"
 font_dir: "${assets_dir}/fonts"
 # logo_dir: "${assets_dir}/logos"

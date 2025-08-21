@@ -658,6 +658,8 @@ class ComprehensiveFetcher:
             async with self.db_pool.acquire() as conn:
                 # Get current time in UTC
                 current_time = datetime.now(timezone.utc)
+                # Convert to ISO string for query
+                current_time_str = current_time.isoformat()
 
                 # Remove finished games and games that have started
                 result = await conn.execute(
@@ -669,7 +671,7 @@ class ComprehensiveFetcher:
                     )
                     OR start_time < $1
                     """,
-                    current_time,
+                    current_time_str,
                 )
 
                 # asyncpg's execute returns a string like 'DELETE X'

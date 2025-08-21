@@ -11,8 +11,8 @@ from zoneinfo import ZoneInfo
 import discord
 from aiomysql import IntegrityError
 
-from data.db_manager import DatabaseManager
-from utils.errors import BetServiceError
+from bot.data.db_manager import DatabaseManager
+from bot.utils.errors import BetServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class BetService:
                 logger.debug("No unconfirmed bets to clean up")
                 return
 
-            logger.info(f"Found {len(expired_bets)} unconfirmed bets to clean up")
+                logger.info(f"Found {len(expired_bets)} unconfirmed bets to clean up")
 
             deleted_count = 0
             for bet in expired_bets:
@@ -99,7 +99,7 @@ class BetService:
                     delete_query = (
                         "DELETE FROM bets WHERE bet_serial = $1 AND confirmed = 0"
                     )
-                    rowcount, _ = await self.db_manager.execute(
+                    rowcount = await self.db_manager.execute(
                         delete_query, (bet_serial_int,)
                     )
                     if rowcount is not None and rowcount > 0:
@@ -197,6 +197,10 @@ class BetService:
         logger.info(
             f"[BET INSERT] Starting bet creation with args: guild_id={guild_id}, user_id={user_id}, league={league}, bet_type={bet_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}, confirmed={confirmed}"
         )
+        logger.debug(f"[BET INSERT] Full argument dump: {{'guild_id': guild_id, 'user_id': user_id, 'league': league, 'bet_type': bet_type, 'units': units, 'odds': odds, 'team': team, 'opponent': opponent, 'line': line, 'api_game_id': api_game_id, 'channel_id': channel_id, 'confirmed': confirmed}}")
+        import time
+        start_time = time.time()
+        logger.info(f"[METRIC] create_straight_bet started at {start_time}")
         try:
             internal_game_id = None
             if api_game_id and api_game_id != "manual":
@@ -238,6 +242,7 @@ class BetService:
             bet_details_json = json.dumps(internal_bet_details_dict)
             logger.info(f"[BET INSERT] Prepared bet_details JSON: {bet_details_json}")
 
+            # Use auto-generated bet_serial (identity column)
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
@@ -249,7 +254,7 @@ class BetService:
                     $7, $8, $9, $10, $11,
                     $12, $13, $14,
                     $15, $16, $17, $18, $19
-                )
+                ) RETURNING bet_serial
             """
             args = (
                 guild_id,
@@ -273,24 +278,40 @@ class BetService:
                 bet_details_json,
             )
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
-            rowcount, last_id = await self.db_manager.execute(query, args)
-            logger.info(
-                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
-            )
+            logger.debug(f"[BET INSERT] Query string: {query}")
+            logger.debug(f"[BET INSERT] Query args: {args}")
+            try:
+                result = await self.db_manager.fetch_one(query, args)
+                logger.info(f"[BET INSERT] Insert result: {result}")
+                logger.info(f"[METRIC] Insert query completed in {time.time() - start_time:.4f} seconds")
+                bet_serial = result["bet_serial"] if result and "bet_serial" in result else None
+                if bet_serial:
+                    # Post-insert fetch to verify existence
+                    verify_query = "SELECT * FROM bets WHERE bet_serial = $1"
+                    verify_row = await self.db_manager.fetch_one(verify_query, (bet_serial,))
+                    if verify_row:
+                        logger.info(f"[METRIC] Verified bet_serial {bet_serial} exists in bets table after insert.")
+                    else:
+                        logger.error(f"[METRIC] bet_serial {bet_serial} NOT FOUND in bets table after insert!")
+                    # If db_manager exposes commit status, log it
+                    if hasattr(self.db_manager, 'get_last_commit_status'):
+                        commit_status = await self.db_manager.get_last_commit_status()
+                        logger.info(f"[METRIC] DB commit status after insert: {commit_status}")
+                else:
+                    logger.error(f"[METRIC] No bet_serial returned from insert result.")
+            except Exception as e:
+                logger.error(f"[BET INSERT] Exception during DB insert: {e}", exc_info=True)
+                logger.error(f"[BET INSERT] Query: {query}")
+                logger.error(f"[BET INSERT] Args: {args}")
+                raise
 
-            if (
-                rowcount is not None
-                and rowcount > 0
-                and last_id is not None
-                and last_id > 0
-            ):
-                logger.info(
-                    f"[BET INSERT] Straight bet created successfully with bet_serial: {last_id}"
-                )
-                # --- No longer insert into unit_records table here ---
-                return last_id
+            if result and "bet_serial" in result:
+                logger.info(f"[BET INSERT] Straight bet created successfully.")
+                return result["bet_serial"]
             else:
                 logger.error("[BET INSERT] Failed to create straight bet record.")
+                logger.error(f"[BET INSERT] Query: {query}")
+                logger.error(f"[BET INSERT] Args: {args}")
                 return None
         except IntegrityError as e:
             logger.error(
@@ -358,16 +379,17 @@ class BetService:
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
             num_legs = len(legs_data)
+            # Use auto-generated bet_serial (identity column)
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, units, odds,
                     legs, game_start, expiration_time,
                     channel_id, confirmed, status, bet_details
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6,
-                    $7, $8, $9,
-                    $10, $11, $12, $13
-                )
+                    $1, $2, $3, $4, $5, $6, $7,
+                    $8, $9, $10,
+                    $11, $12, $13, $14
+                ) RETURNING bet_serial
             """
             args = (
                 guild_id,
@@ -385,24 +407,13 @@ class BetService:
                 bet_details_json,
             )
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
-            rowcount, last_id = await self.db_manager.execute(query, args)
-            logger.info(
-                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
-            )
-            if (
-                rowcount is not None
-                and rowcount > 0
-                and last_id is not None
-                and last_id > 0
-            ):
-                logger.info(
-                    f"Parlay bet created successfully with bet_serial: {last_id} and {num_legs} legs."
-                )
-                return last_id
+            result = await self.db_manager.fetch_one(query, args)
+            logger.info(f"[BET INSERT] Insert result: {result}")
+            if result and "bet_serial" in result:
+                logger.info(f"Parlay bet created successfully with bet_serial: {result['bet_serial']} and {num_legs} legs.")
+                return result["bet_serial"]
             else:
-                logger.error(
-                    f"Failed to create parlay bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
-                )
+                logger.error(f"Failed to create parlay bet or retrieve valid ID. Args: {args}")
                 return None
         except Exception as e:
             logger.error(
@@ -481,6 +492,7 @@ class BetService:
             }
             bet_details_json = json.dumps(internal_bet_details_dict)
 
+            # Use auto-generated bet_serial (identity column)
             query = """
                 INSERT INTO bets (
                     guild_id, user_id, league, bet_type, player_prop, player_name,
@@ -488,8 +500,8 @@ class BetService:
                     player_prop_direction, odds, game_id, status, units, bet_details,
                     channel_id, confirmed
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-                )
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+                ) RETURNING bet_serial
             """
             args = (
                 guild_id,
@@ -512,24 +524,13 @@ class BetService:
                 confirmed,
             )
             logger.info(f"[BET INSERT] Executing query: {query} with args: {args}")
-            rowcount, last_id = await self.db_manager.execute(query, args)
-            logger.info(
-                f"[BET INSERT] Insert result: rowcount={rowcount}, last_id={last_id}"
-            )
-            if (
-                rowcount is not None
-                and rowcount > 0
-                and last_id is not None
-                and last_id > 0
-            ):
-                logger.info(
-                    f"Player prop bet created successfully with bet_serial: {last_id}"
-                )
-                return last_id
+            result = await self.db_manager.fetch_one(query, args)
+            logger.info(f"[BET INSERT] Insert result: {result}")
+            if result and "bet_serial" in result:
+                logger.info(f"Player prop bet created successfully with bet_serial: {result['bet_serial']}")
+                return result["bet_serial"]
             else:
-                logger.error(
-                    f"Failed to create player prop bet or retrieve valid ID. Rowcount: {rowcount}, Last ID: {last_id}, Args: {args}"
-                )
+                logger.error(f"Failed to create player prop bet or retrieve valid ID. Args: {args}")
                 return None
         except Exception as e:
             logger.error(
@@ -538,56 +539,461 @@ class BetService:
             )
             return None
 
-    def _calculate_parlay_odds(self, legs: List[Dict]) -> float:
-        """Calculate total American odds for a parlay bet from American odds legs."""
-        if not legs:
-            return 0.0
+    async def reserve_bet(self, guild_id: int, user_id: int, league: Optional[str] = None, bet_type: str = "straight", bet_details: Optional[Dict] = None) -> Optional[int]:
+        """Reserve a DB bet row for a preview flow and return the reserved bet_serial.
 
-        total_decimal_odds = 1.0
+        This inserts a minimal row with status='preview' so the frontend can name the preview
+        file using the returned DB serial. The frontend should pass this serial back on final
+        submit so the backend can update the reserved row instead of inserting a new one.
+        """
         try:
-            for leg in legs:
-                odds_val = leg.get("odds")
-                if odds_val is None:
-                    logger.warning(
-                        f"Skipping leg in parlay calculation due to missing 'odds': {leg}"
-                    )
-                    continue
-                try:
-                    current_odds = float(odds_val)
-                except (ValueError, TypeError):
-                    logger.error(
-                        f"Invalid odds format for leg in parlay calculation: {leg}. Odds: '{odds_val}'"
-                    )
-                    return 0.0
-
-                if current_odds == 0:
-                    continue
-
-                if current_odds > 0:
-                    decimal_leg = (current_odds / 100.0) + 1.0
-                else:
-                    decimal_leg = (100.0 / abs(current_odds)) + 1.0
-                total_decimal_odds *= decimal_leg
-
-            if total_decimal_odds <= 1.0:
-                logger.warning(
-                    f"Total decimal odds for parlay is <= 1.0 ({total_decimal_odds}). Legs: {legs}"
-                )
-                return 0.0
-
-            if total_decimal_odds >= 2.0:
-                american_odds = (total_decimal_odds - 1.0) * 100.0
-            else:
-                if total_decimal_odds == 1.0:
-                    logger.warning(
-                        f"Cannot convert parlay decimal odds of 1.0 back to American. Legs: {legs}"
-                    )
-                    return 100.0
-                american_odds = -100.0 / (total_decimal_odds - 1.0)
-            return round(american_odds)
+            bd_json = json.dumps(bet_details or {})
+            query = (
+                "INSERT INTO bets (guild_id, user_id, league, bet_type, status, confirmed, bet_details) "
+                "VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING bet_serial"
+            )
+            args = (guild_id, user_id, league, bet_type, "preview", 0, bd_json)
+            result = await self.db_manager.fetch_one(query, args)
+            if result and "bet_serial" in result:
+                logger.info(f"[RESERVE] Reserved bet_serial {result['bet_serial']} for user {user_id} guild {guild_id}")
+                return result["bet_serial"]
+            logger.error("[RESERVE] Failed to reserve bet row (no bet_serial returned)")
+            return None
         except Exception as e:
-            logger.error(f"Error calculating parlay odds: {e}", exc_info=True)
-            return 0.0
+            logger.error(f"[RESERVE] Exception while reserving bet row: {e}", exc_info=True)
+            return None
+
+    async def cancel_reserved_bet(self, bet_serial: int, guild_id: int, user_id: int) -> bool:
+        """Delete a reserved (unconfirmed) bet row created for preview when user cancels.
+
+        Only deletes rows that are unconfirmed to avoid removing legitimate bets.
+        """
+        try:
+            query = "DELETE FROM bets WHERE bet_serial = $1 AND guild_id = $2 AND user_id = $3 AND confirmed = 0"
+            rowcount, _ = await self.db_manager.execute(query, (bet_serial, guild_id, user_id))
+            if rowcount and rowcount > 0:
+                logger.info(f"[RESERVE] Deleted reserved bet_serial {bet_serial} for user {user_id} guild {guild_id}")
+                return True
+            logger.warning(f"[RESERVE] No reserved bet deleted for bet_serial {bet_serial} (rowcount={rowcount})")
+            return False
+        except Exception as e:
+            logger.error(f"[RESERVE] Exception while deleting reserved bet {bet_serial}: {e}", exc_info=True)
+            return False
+
+    async def submit_bet(self, bet_details: Dict) -> Dict:
+        """
+        Accept a bet_details dict from UI workflows and create the appropriate bet record.
+        Returns a dict: {"success": bool, "bet_serial": Optional[int], "error": Optional[str]}
+        """
+        logger.debug(f"[SUBMIT BET] Received bet_details: {bet_details}")
+        if not isinstance(bet_details, dict):
+            logger.error(f"[SUBMIT BET] bet_details is not a dict: {bet_details}")
+            return {"success": False, "error": "Invalid bet details provided"}
+
+        try:
+            logger.debug(f"[SUBMIT BET] Received bet_details: {bet_details}")
+            if not isinstance(bet_details, dict):
+                logger.error(f"[SUBMIT BET] bet_details is not a dict: {bet_details}")
+                return {"success": False, "error": "Invalid bet details provided"}
+            bet_type = bet_details.get("bet_type") or bet_details.get("type")
+            logger.debug(f"[SUBMIT BET] Initial bet_type: {bet_type}")
+            # Accept 'game_line' as alias for 'straight'
+            if bet_type == "game_line":
+                bet_type = "straight"
+            logger.debug(f"[SUBMIT BET] Normalized bet_type: {bet_type}")
+            guild_id = int(bet_details.get("guild_id")) if bet_details.get("guild_id") else None
+            user_id = int(bet_details.get("user_id")) if bet_details.get("user_id") else None
+            logger.debug(f"[SUBMIT BET] guild_id: {guild_id}, user_id: {user_id}")
+            if not guild_id or not user_id:
+                logger.error(f"[SUBMIT BET] Missing guild_id or user_id. guild_id: {guild_id}, user_id: {user_id}")
+                return {"success": False, "error": "Missing guild_id or user_id"}
+            # Straight bet
+            if bet_type == "straight":
+                league = bet_details.get("league")
+                bet_sub_type = bet_details.get("line_type") or bet_details.get("bet_sub_type") or ""
+                units = float(bet_details.get("units", 0))
+                odds = float(bet_details.get("odds", 0)) if bet_details.get("odds") is not None else 0.0
+                team = bet_details.get("team") or bet_details.get("selected_team")
+                opponent = bet_details.get("opponent") or bet_details.get("other_team")
+                line = bet_details.get("line")
+                api_game_id = bet_details.get("api_game_id") or bet_details.get("game_id")
+                channel_id = bet_details.get("post_channel_id") or bet_details.get("channel_id")
+                logger.debug(f"[SUBMIT BET] Straight bet args: league={league}, bet_sub_type={bet_sub_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}")
+
+                # If a reserved preview bet_serial was provided by the frontend, try to update that row
+                reserved_keys = ["reserved_bet_serial", "reserved_serial", "preview_bet_serial", "preview_serial"]
+                reserved_serial = None
+                for k in reserved_keys:
+                    if k in bet_details and bet_details.get(k):
+                        try:
+                            reserved_serial = int(bet_details.get(k))
+                        except Exception:
+                            reserved_serial = None
+                        break
+
+                bet_serial = None
+                # Prepare internal bet_details json for storage
+                internal_bet_details_dict = {
+                    "api_game_id": api_game_id,
+                    "provided_bet_type": bet_sub_type,
+                    "provided_line": line,
+                    "team_selected": team,
+                    "opponent_involved": opponent,
+                    "game_start_iso": bet_details.get("game_start"),
+                    "expiration_time_iso": bet_details.get("expiration_time"),
+                }
+                bet_details_json = json.dumps(internal_bet_details_dict)
+
+                if reserved_serial:
+                    try:
+                        # Normalize api_game_id to internal game_id (int) or None for manual
+                        internal_game_id = None
+                        try:
+                            if api_game_id and api_game_id != "manual":
+                                # If api_game_id is numeric string, use as int; otherwise try to resolve
+                                try:
+                                    internal_game_id = int(api_game_id)
+                                except Exception:
+                                    internal_game_id = await self.get_game_id_by_api_id(api_game_id)
+                        except Exception:
+                            internal_game_id = None
+
+                        update_query = """
+                            UPDATE bets
+                            SET league = $1, bet_type = $2, units = $3, odds = $4,
+                                team = $5, opponent = $6, line = $7, game_id = $8,
+                                channel_id = $9, confirmed = $10, status = $11, bet_details = $12, updated_at = NOW()
+                            WHERE bet_serial = $13 AND user_id = $14 AND guild_id = $15
+                        """
+                        update_args = (
+                            league, bet_sub_type, units, odds,
+                            team, opponent, line, internal_game_id,
+                            channel_id, 0, "pending", bet_details_json,
+                            reserved_serial, user_id, guild_id,
+                        )
+                        exec_result = await self.db_manager.execute(update_query, update_args)
+                        # db_manager.execute may return an int or a (rowcount, ...) tuple depending on implementation
+                        if isinstance(exec_result, (list, tuple)):
+                            rowcount = exec_result[0]
+                        else:
+                            rowcount = exec_result
+                        if rowcount and rowcount > 0:
+                            bet_serial = reserved_serial
+                            logger.info(f"[SUBMIT BET] Updated reserved bet_serial {bet_serial} with final data")
+                        else:
+                            logger.warning(f"[SUBMIT BET] Failed to update reserved bet {reserved_serial}; will insert new row")
+                    except Exception as e:
+                        logger.error(f"[SUBMIT BET] Exception while updating reserved bet {reserved_serial}: {e}", exc_info=True)
+
+                # If no reserved row updated, create a new bet normally
+                if not bet_serial:
+                    try:
+                        bet_serial = await self.create_straight_bet(
+                            guild_id,
+                            user_id,
+                            league,
+                            bet_sub_type,
+                            units,
+                            odds,
+                            team,
+                            opponent,
+                            line,
+                            api_game_id,
+                            channel_id,
+                        )
+                    except Exception as e:
+                        logger.error(f"[SUBMIT BET] Exception in create_straight_bet: {e}", exc_info=True)
+                        return {"success": False, "error": f"Exception in create_straight_bet: {e}"}
+
+                if bet_serial:
+                    # Always return integer bet_serial for DB, format for display elsewhere
+                    # --- Discord message sending metrics ---
+                    logger.info(f"[METRIC] Preparing to send Discord message for bet_serial {bet_serial} to channel {channel_id}")
+                    channel = self.bot.get_channel(channel_id)
+                    if channel is None:
+                        logger.error(f"[METRIC] Discord channel {channel_id} not found. Message will not be sent.")
+                    else:
+                        # 1. Fetch member_role from guild_settings
+                        member_role_id = None
+                        try:
+                            gs_row = await self.db_manager.fetch_one("SELECT member_role FROM guild_settings WHERE guild_id = $1", (guild_id,))
+                            member_role_id = gs_row["member_role"] if gs_row and "member_role" in gs_row else None
+                            logger.info(f"[METRIC] Fetched member_role_id: {member_role_id}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Failed to fetch member_role from guild_settings: {e}", exc_info=True)
+                        # 2. Fetch user image and display name from cappers
+                        user_avatar_url = None
+                        user_display_name = None
+                        try:
+                            # resilient fetch: schema may differ between environments
+                            capper_row = await self.db_manager.fetch_one(
+                                "SELECT * FROM cappers WHERE user_id = $1 AND guild_id = $2",
+                                (user_id, guild_id),
+                            )
+                            if capper_row:
+                                # Common avatar/display name column candidates
+                                avatar_keys = [
+                                    "avatar_url",
+                                    "avatar",
+                                    "avatar_uri",
+                                    "avatar_path",
+                                    "avatar_file",
+                                    "avatar_hash",
+                                ]
+                                display_keys = [
+                                    "display_name",
+                                    "displayname",
+                                    "display",
+                                    "name",
+                                    "username",
+                                ]
+                                for k in avatar_keys:
+                                    if k in capper_row and capper_row[k]:
+                                        user_avatar_url = capper_row[k]
+                                        break
+                                for k in display_keys:
+                                    if k in capper_row and capper_row[k]:
+                                        user_display_name = capper_row[k]
+                                        break
+                            logger.info(f"[METRIC] Fetched user_avatar_url: {user_avatar_url}, user_display_name: {user_display_name}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Failed to fetch avatar/display_name from cappers: {e}", exc_info=True)
+                        # 3. Resolve preview or generate image
+                        image_path = None
+                        try:
+                            image_path = await self._resolve_image_path(bet_details, bet_serial, guild_id, team, opponent, line, odds, units)
+                            logger.info(f"[METRIC] Resolved image_path: {image_path}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Exception while resolving/generating image: {e}", exc_info=True)
+                        # 4. Compose message content
+                        mention_str = f"<@&{member_role_id}> " if member_role_id else ""
+                        message_content = f"{mention_str}Bet #{bet_serial} submitted! {team} vs {opponent}, line: {line}, odds: {odds}, units: {units}"
+                        logger.info(f"[METRIC] Sending message: '{message_content}' to channel {channel_id}")
+                        # 5. Send message with image, avatar, and display name override
+                        try:
+                            webhook = None
+                            for wh in await channel.webhooks():
+                                if wh.name == "Bet Tracking Bot":
+                                    webhook = wh
+                                    break
+                            if webhook is None:
+                                webhook = await channel.create_webhook(name="Bet Tracking Bot")
+                            logger.info(f"[METRIC] Using webhook ID: {webhook.id}")
+
+                            # Require image produced by generate_bet_image. No fallback allowed.
+                            if not image_path:
+                                logger.error(f"[METRIC] No generated image available for bet_serial {bet_serial}; aborting webhook send.")
+                                return {"success": False, "error": "No generated image to send"}
+
+                            import os
+                            import shutil
+                            import discord
+
+                            # Ensure a stable location for confirmed bet images per guild
+                            static_root = os.path.join(os.getcwd(), "StaticFiles", "Confirmed_Bets", str(guild_id))
+                            try:
+                                os.makedirs(static_root, exist_ok=True)
+                            except Exception as e:
+                                logger.error(f"[METRIC] Failed to create static directory {static_root}: {e}", exc_info=True)
+                                return {"success": False, "error": "Failed to store generated image"}
+
+                            original_filename = os.path.basename(image_path)
+                            dest_filename = f"bet_{bet_serial}_{original_filename}"
+                            dest_path = os.path.join(static_root, dest_filename)
+
+                            try:
+                                shutil.copy2(image_path, dest_path)
+                                generated_image_db_path = dest_path
+                                # Persist path to DB
+                                try:
+                                    await self.db_manager.execute(
+                                        "UPDATE bets SET generated_image = $1 WHERE bet_serial = $2",
+                                        (generated_image_db_path, bet_serial),
+                                    )
+                                    logger.info(f"[METRIC] Updated bet {bet_serial} generated_image to {generated_image_db_path}")
+                                except Exception as e:
+                                    logger.error(f"[METRIC] Failed to update generated_image in DB for bet_serial {bet_serial}: {e}", exc_info=True)
+                            except Exception as e:
+                                logger.error(f"[METRIC] Failed to copy generated image to static directory: {e}", exc_info=True)
+                                return {"success": False, "error": "Failed to store generated image"}
+
+                            # Send the copied file from the static directory so the stored path matches what was posted
+                            filename = dest_filename
+                            file_to_send = discord.File(dest_path, filename=filename)
+                            embed = discord.Embed(title=f"Bet #{bet_serial} submitted!", description=message_content)
+                            embed.set_image(url=f"attachment://{filename}")
+
+                            sent_message = await webhook.send(
+                                content=None,
+                                username=user_display_name or "Bet Tracking Bot",
+                                avatar_url=user_avatar_url,
+                                file=file_to_send,
+                                embed=embed,
+                                wait=True,
+                            )
+                            logger.info(f"[METRIC] Discord webhook message sent successfully. Message ID: {getattr(sent_message, 'id', None)}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Exception while sending Discord webhook message for bet_serial {bet_serial}: {e}", exc_info=True)
+                    return {"success": True, "bet_serial": bet_serial}
+                logger.error(f"[SUBMIT BET] Failed to insert straight bet. Args: league={league}, bet_sub_type={bet_sub_type}, units={units}, odds={odds}, team={team}, opponent={opponent}, line={line}, api_game_id={api_game_id}, channel_id={channel_id}")
+                return {"success": False, "error": "Failed to insert straight bet"}
+            # Parlay bet
+            if bet_type == "parlay":
+                league = bet_details.get("league")
+                legs = bet_details.get("legs") or bet_details.get("legs_data") or []
+                units = float(bet_details.get("units", 0))
+                channel_id = bet_details.get("post_channel_id") or bet_details.get("channel_id")
+                game_start = bet_details.get("game_start")
+                expiration = bet_details.get("expiration_time")
+                bet_serial = await self.create_parlay_bet(
+                    guild_id, user_id, league, legs, units, channel_id, game_start, expiration
+                )
+                if bet_serial:
+                    return {"success": True, "bet_serial": bet_serial}
+                return {"success": False, "error": "Failed to insert parlay bet"}
+            # Player prop bet
+            if bet_type == "player_prop":
+                league = bet_details.get("league")
+                sport = bet_details.get("sport") or bet_details.get("sport_type")
+                player_name = bet_details.get("player_name")
+                team_name = bet_details.get("team_name")
+                prop_type = bet_details.get("prop_type")
+                line_value = bet_details.get("line_value") or bet_details.get("line")
+                bet_direction = bet_details.get("bet_direction") or bet_details.get("direction")
+                odds = bet_details.get("odds")
+                units = float(bet_details.get("units", 0))
+                api_game_id = bet_details.get("api_game_id")
+                channel_id = bet_details.get("post_channel_id") or bet_details.get("channel_id")
+                bet_serial = await self.create_player_prop_bet(
+                    guild_id,
+                    user_id,
+                    league,
+                    sport,
+                    player_name,
+                    team_name,
+                    prop_type,
+                    line_value,
+                    bet_direction,
+                    odds,
+                    units,
+                    api_game_id,
+                    channel_id,
+                )
+                if bet_serial:
+                    # --- Discord message sending metrics ---
+                    logger.info(f"[METRIC] Preparing to send Discord message for bet_serial {bet_serial} to channel {channel_id}")
+                    channel = self.bot.get_channel(channel_id)
+                    if channel is None:
+                        logger.error(f"[METRIC] Discord channel {channel_id} not found. Message will not be sent.")
+                    else:
+                        # 1. Fetch member_role from guild_settings
+                        member_role_id = None
+                        try:
+                            gs_row = await self.db_manager.fetch_one("SELECT member_role FROM guild_settings WHERE guild_id = $1", (guild_id,))
+                            member_role_id = gs_row["member_role"] if gs_row and "member_role" in gs_row else None
+                            logger.info(f"[METRIC] Fetched member_role_id: {member_role_id}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Failed to fetch member_role from guild_settings: {e}", exc_info=True)
+                        # 2. Fetch user image and display name from cappers
+                        user_avatar_url = None
+                        user_display_name = None
+                        try:
+                            capper_row = await self.db_manager.fetch_one(
+                                "SELECT * FROM cappers WHERE user_id = $1 AND guild_id = $2",
+                                (user_id, guild_id),
+                            )
+                            if capper_row:
+                                avatar_keys = ["avatar_url", "avatar", "avatar_uri", "avatar_path", "avatar_file", "avatar_hash"]
+                                display_keys = ["display_name", "displayname", "display", "name", "username"]
+                                for k in avatar_keys:
+                                    if k in capper_row and capper_row[k]:
+                                        user_avatar_url = capper_row[k]
+                                        break
+                                for k in display_keys:
+                                    if k in capper_row and capper_row[k]:
+                                        user_display_name = capper_row[k]
+                                        break
+                            logger.info(f"[METRIC] Fetched user_avatar_url: {user_avatar_url}, user_display_name: {user_display_name}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Failed to fetch avatar/display_name from cappers: {e}", exc_info=True)
+                        # 3. Resolve preview or generate image
+                        image_path = None
+                        try:
+                            image_path = await self._resolve_image_path(bet_details, bet_serial, guild_id, team_name, None, line_value, odds, units)
+                            logger.info(f"[METRIC] Resolved image_path: {image_path}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Exception while resolving/generating image: {e}", exc_info=True)
+                        # 4. Compose message content
+                        mention_str = f"<@&{member_role_id}> " if member_role_id else ""
+                        message_content = f"{mention_str}Bet #{bet_serial} submitted! {player_name} ({team_name}), prop: {prop_type} {line_value} {bet_direction}, odds: {odds}, units: {units}"
+                        logger.info(f"[METRIC] Sending message: '{message_content}' to channel {channel_id}")
+                        # 5. Send message with image, avatar, and display name override
+                        try:
+                            webhook = None
+                            for wh in await channel.webhooks():
+                                if wh.name == "Bet Tracking Bot":
+                                    webhook = wh
+                                    break
+                            if webhook is None:
+                                webhook = await channel.create_webhook(name="Bet Tracking Bot")
+                            logger.info(f"[METRIC] Using webhook ID: {webhook.id}")
+
+                            # Require image produced by generate_bet_image. No fallback allowed.
+                            if not image_path:
+                                logger.error(f"[METRIC] No generated image available for bet_serial {bet_serial}; aborting webhook send.")
+                                return {"success": False, "error": "No generated image to send"}
+
+                            import os
+                            import shutil
+                            import discord
+
+                            static_root = os.path.join(os.getcwd(), "StaticFiles", "Confirmed_Bets", str(guild_id))
+                            try:
+                                os.makedirs(static_root, exist_ok=True)
+                            except Exception as e:
+                                logger.error(f"[METRIC] Failed to create static directory {static_root}: {e}", exc_info=True)
+                                return {"success": False, "error": "Failed to store generated image"}
+
+                            original_filename = os.path.basename(image_path)
+                            dest_filename = f"bet_{bet_serial}_{original_filename}"
+                            dest_path = os.path.join(static_root, dest_filename)
+
+                            try:
+                                shutil.copy2(image_path, dest_path)
+                                generated_image_db_path = dest_path
+                                try:
+                                    await self.db_manager.execute(
+                                        "UPDATE bets SET generated_image = $1 WHERE bet_serial = $2",
+                                        (generated_image_db_path, bet_serial),
+                                    )
+                                    logger.info(f"[METRIC] Updated bet {bet_serial} generated_image to {generated_image_db_path}")
+                                except Exception as e:
+                                    logger.error(f"[METRIC] Failed to update generated_image in DB for bet_serial {bet_serial}: {e}", exc_info=True)
+                            except Exception as e:
+                                logger.error(f"[METRIC] Failed to copy generated image to static directory: {e}", exc_info=True)
+                                return {"success": False, "error": "Failed to store generated image"}
+
+                            filename = dest_filename
+                            file_to_send = discord.File(dest_path, filename=filename)
+                            embed = discord.Embed(title=f"Bet #{bet_serial} submitted!", description=message_content)
+                            embed.set_image(url=f"attachment://{filename}")
+
+                            sent_message = await webhook.send(
+                                content=None,
+                                username=user_display_name or "Bet Tracking Bot",
+                                avatar_url=user_avatar_url,
+                                file=file_to_send,
+                                embed=embed,
+                                wait=True,
+                            )
+                            logger.info(f"[METRIC] Discord webhook message sent successfully. Message ID: {getattr(sent_message, 'id', None)}")
+                        except Exception as e:
+                            logger.error(f"[METRIC] Exception while sending Discord webhook message for bet_serial {bet_serial}: {e}", exc_info=True)
+                    return {"success": True, "bet_serial": bet_serial}
+                return {"success": False, "error": "Failed to insert player prop bet"}
+        except Exception as e:
+            logger.error(f"[SUBMIT BET] Unexpected exception: {e}", exc_info=True)
+            return {"success": False, "error": f"Unexpected exception: {e}"}
 
     async def update_straight_bet_channel(
         self, bet_serial: int, channel_id: int, message_id: int
@@ -1041,3 +1447,193 @@ class BetService:
                 f"Failed to create game record for api_game_id {api_game_id}"
             )
         return last_id
+
+    def _get_static_root(self, guild_id: int) -> str:
+        """Return the absolute static root path for a guild's confirmed bets."""
+        import os
+
+        return os.path.join(os.getcwd(), "StaticFiles", "Confirmed_Bets", str(guild_id))
+
+    async def _save_raw_preview(self, preview_data, dest_dir: str, filename: str) -> Optional[str]:
+        """Save raw preview data (bytes or base64/data-uri string) to dest_dir/filename.
+
+        Returns the saved absolute path or None on failure.
+        """
+        import os
+        import base64
+
+        try:
+            os.makedirs(dest_dir, exist_ok=True)
+            dest_path = os.path.join(dest_dir, filename)
+            # bytes
+            if isinstance(preview_data, (bytes, bytearray)):
+                with open(dest_path, "wb") as fh:
+                    fh.write(preview_data)
+                return dest_path
+            # data URI or base64 string
+            if isinstance(preview_data, str):
+                # data URI: data:image/png;base64,AAA...
+                if preview_data.startswith("data:image/") and "," in preview_data:
+                    _, b64 = preview_data.split(",", 1)
+                else:
+                    b64 = preview_data
+                try:
+                    raw = base64.b64decode(b64)
+                except Exception:
+                    logger.warning("[METRIC] Provided preview string is not valid base64")
+                    return None
+                with open(dest_path, "wb") as fh:
+                    fh.write(raw)
+                return dest_path
+        except Exception as e:
+            logger.error(f"[METRIC] Failed to save raw preview image: {e}", exc_info=True)
+        return None
+
+    async def _is_base64_string(self, s: str) -> bool:
+        import base64
+        try:
+            # allow padding errors to raise
+            base64.b64decode(s)
+            return True
+        except Exception:
+            return False
+
+    async def _resolve_image_path(self, bet_details: Dict, bet_serial: int, guild_id: int, team: Optional[str] = None, opponent: Optional[str] = None, line: Optional[str] = None, odds: Optional[float] = None, units: Optional[float] = None) -> Optional[str]:
+        """Resolve an image path to use for the webhook. Behavior:
+        - Prefer preview image path fields from bet_details (normalize relative -> absolute).
+        - Accept data-uri/base64 or raw bytes keys and write them into StaticFiles/Confirmed_Bets/<guild>.
+        - If none, call self.bot.generate_bet_image(...) when available.
+        - As a last resort, search StaticFiles for any file with the bet_serial in its filename (useful when preview step saved the file).
+        Returns absolute filesystem path or None.
+        """
+        import os
+
+        static_root = self._get_static_root(guild_id)
+        try:
+            os.makedirs(static_root, exist_ok=True)
+        except Exception as e:
+            logger.error(f"[METRIC] Failed to create static root {static_root}: {e}", exc_info=True)
+            return None
+
+        # 1) Try common preview path keys
+        preview_candidates = [
+            "preview_image_path",
+            "preview_path",
+            "preview_image",
+            "preview",
+        ]
+        preview_value = None
+        for k in preview_candidates:
+            if k in bet_details and bet_details.get(k):
+                preview_value = bet_details.get(k)
+                break
+
+        # If preview_value is present, handle it
+        if preview_value:
+            # If it's bytes-like put it on disk
+            if isinstance(preview_value, (bytes, bytearray)):
+                filename = f"bet_{bet_serial}_preview"
+                # try to guess extension? default .png
+                filename = filename + ".png"
+                saved = await self._save_raw_preview(preview_value, static_root, filename)
+                if saved:
+                    return saved
+            # If it's a string it may be a path or a data-uri or base64
+            if isinstance(preview_value, str):
+                # data URI or raw base64
+                if preview_value.startswith("data:image/") or (len(preview_value) > 100 and await self._is_base64_string(preview_value)):
+                    fname = f"bet_{bet_serial}_preview.png"
+                    saved = await self._save_raw_preview(preview_value, static_root, fname)
+                    if saved:
+                        return saved
+                # Otherwise treat as path
+                abs_path = preview_value
+                if not os.path.isabs(abs_path):
+                    abs_path = os.path.abspath(abs_path)
+                if os.path.exists(abs_path):
+                    return abs_path
+                logger.warning(f"[METRIC] Provided preview path not found: {preview_value} -> {abs_path}")
+
+        # 2) Try specific payload keys carrying raw data
+        if "preview_image_b64" in bet_details and bet_details.get("preview_image_b64"):
+            fname = f"bet_{bet_serial}_preview.png"
+            saved = await self._save_raw_preview(bet_details.get("preview_image_b64"), static_root, fname)
+            if saved:
+                return saved
+        if "preview_image_bytes" in bet_details and bet_details.get("preview_image_bytes"):
+            fname = f"bet_{bet_serial}_preview.png"
+            saved = await self._save_raw_preview(bet_details.get("preview_image_bytes"), static_root, fname)
+            if saved:
+                return saved
+
+        # 3) Fall back to regenerate via bot if available
+        if hasattr(self.bot, "generate_bet_image"):
+            try:
+                # call generate_bet_image with best-effort args; function should return a path
+                generated = await self.bot.generate_bet_image(bet_serial, team, opponent, line, odds, units)
+                logger.info(f"[METRIC] generate_bet_image returned: {generated}")
+                if generated:
+                    # prefer absolute path
+                    if not os.path.isabs(generated):
+                        generated = os.path.abspath(generated)
+                    if os.path.exists(generated):
+                        return generated
+                    # if file doesn't exist, still return generated (some implementations return remote paths)
+                    return generated
+            except Exception as e:
+                logger.error(f"[METRIC] Exception while generating image fallback: {e}", exc_info=True)
+        else:
+            logger.debug("[METRIC] No generate_bet_image available on bot for fallback")
+
+        # 4) Last-resort: search StaticFiles for files matching bet_serial.
+        # Accept filenames where a date prefix may be prepended to the serial (e.g. 08202025 + 129 => 08202025129)
+        try:
+            import re
+            search_root = os.path.join(os.getcwd(), "StaticFiles")
+            if os.path.exists(search_root):
+                matches = []
+                serial_str = str(bet_serial)
+                for root, _, files in os.walk(search_root):
+                    for fn in files:
+                        full = os.path.join(root, fn)
+                        try:
+                            # Prefer to match numeric groups explicitly. This lets us omit
+                            # a leading date prefix (e.g. 08202025) before the serial.
+                            nums = re.findall(r"\d+", fn)
+                            matched = False
+                            if nums:
+                                for n in nums:
+                                    # exact numeric group match (best)
+                                    if n == serial_str:
+                                        mtime = os.path.getmtime(full)
+                                        matches.append((mtime, full))
+                                        matched = True
+                                        break
+                                    # numeric group that ends with the serial (date prefix + serial)
+                                    if n.endswith(serial_str) and len(n) > len(serial_str):
+                                        # accept common date-like prefix lengths (6-9 digits) but allow others
+                                        prefix_len = len(n) - len(serial_str)
+                                        if prefix_len in (6, 7, 8, 9) or prefix_len > 0:
+                                            mtime = os.path.getmtime(full)
+                                            matches.append((mtime, full))
+                                            matched = True
+                                            break
+                                if matched:
+                                    continue
+                            # Fallback: substring match anywhere in filename (least strict)
+                            if serial_str in fn:
+                                mtime = os.path.getmtime(full)
+                                matches.append((mtime, full))
+                                continue
+                        except Exception:
+                            # ignore individual file errors and continue
+                            continue
+                if matches:
+                    # choose the most recently modified match
+                    matches.sort(reverse=True)
+                    logger.info(f"[METRIC] Found preview candidates for bet_serial {bet_serial}: {[m[1] for m in matches]}")
+                    return matches[0][1]
+        except Exception as e:
+            logger.error(f"[METRIC] Error searching StaticFiles for preview: {e}", exc_info=True)
+
+        return None

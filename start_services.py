@@ -57,12 +57,14 @@ def cleanup_stale_processes():
 def start_fetcher():
     """Start the fetcher process."""
     print("🚀 Starting fetcher...")
-    
-    fetcher_script = "bot/utils/comprehensive_fetcher.py"
+
+    # Resolve paths relative to this script's directory so the script can be run from repo root
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    fetcher_script = os.path.join(script_dir, "bot", "utils", "comprehensive_fetcher.py")
     if not os.path.exists(fetcher_script):
         print(f"❌ Comprehensive fetcher script not found: {fetcher_script}")
         return None
-    
+
     try:
         process = subprocess.Popen(
             [sys.executable, fetcher_script],
@@ -79,17 +81,20 @@ def start_fetcher():
 def start_webapp():
     """Start the webapp process."""
     print("🌐 Starting webapp...")
-    
+
+    # Resolve paths relative to this script's directory so the script can be run from repo root
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    webapp_script = os.path.join(script_dir, "bot", "main.py")  # Assuming this is the webapp entry point
+
     # Check if port 25594 is available
     if not check_port_available(25594):
         print("⚠️  Port 25594 is already in use")
         return None
-    
-    webapp_script = "bot/main.py"  # Assuming this is the webapp entry point
+
     if not os.path.exists(webapp_script):
         print(f"❌ Webapp script not found: {webapp_script}")
         return None
-    
+
     try:
         process = subprocess.Popen(
             [sys.executable, webapp_script],
@@ -168,4 +173,4 @@ def main():
     monitor_processes(fetcher_process, webapp_process)
 
 if __name__ == "__main__":
-    main() 
+    main()

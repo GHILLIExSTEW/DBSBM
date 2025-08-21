@@ -33,8 +33,8 @@ import pickle
 import base64
 from pathlib import Path
 
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import EnhancedCacheManager
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
@@ -274,7 +274,7 @@ class AdvancedAIService:
         except Exception as e:
             logger.error(f"Failed to stop Advanced AI Service: {e}")
 
-    @time_operation
+    @time_operation("create_model")
     async def create_model(
         self,
         name: str,
@@ -326,7 +326,7 @@ class AdvancedAIService:
             logger.error(f"Failed to create AI model: {e}")
             raise
 
-    @time_operation
+    @time_operation("train_model")
     async def train_model(
         self, model_id: str, training_data: Dict[str, Any]
     ) -> ModelTrainingJob:
@@ -361,7 +361,7 @@ class AdvancedAIService:
             logger.error(f"Failed to start model training: {e}")
             raise
 
-    @time_operation
+    @time_operation("predict")
     async def predict(self, model_id: str, input_data: Dict[str, Any]) -> Prediction:
         """Make a prediction using an AI model."""
         try:
@@ -405,7 +405,7 @@ class AdvancedAIService:
             logger.error(f"Failed to make prediction: {e}")
             raise
 
-    @time_operation
+    @time_operation("process_nlp")
     async def process_nlp(self, text: str, language: str = "en") -> NLPResult:
         """Process natural language text."""
         try:
@@ -438,7 +438,7 @@ class AdvancedAIService:
             logger.error(f"Failed to process NLP: {e}")
             raise
 
-    @time_operation
+    @time_operation("process_computer_vision")
     async def process_computer_vision(self, image_path: str) -> ComputerVisionResult:
         """Process image using computer vision."""
         try:
@@ -470,7 +470,7 @@ class AdvancedAIService:
             logger.error(f"Failed to process computer vision: {e}")
             raise
 
-    @time_operation
+    @time_operation("reinforcement_learning_step")
     async def reinforcement_learning_step(
         self, state: Dict[str, Any], action: str, reward: float
     ) -> ReinforcementLearningState:

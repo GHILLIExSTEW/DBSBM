@@ -19,8 +19,8 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import EnhancedCacheManager
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.advanced_ai_service import AdvancedAIService
 from services.advanced_analytics_service import AdvancedAnalyticsService
 from services.system_integration_service import SystemIntegrationService

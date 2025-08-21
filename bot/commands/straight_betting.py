@@ -381,6 +381,24 @@ class CancelButton(Button):
         logger.info(
             f"User {interaction.user.id} cancelled the straight betting workflow"
         )
+        # If a reserved preview row exists, try to cancel it in the backend
+        try:
+            reserved_serial = self.parent_view.bet_details.get("reserved_bet_serial")
+            if reserved_serial:
+                bet_service = getattr(self.parent_view.bot, "bet_service", None)
+                if bet_service:
+                    try:
+                        await bet_service.cancel_reserved_bet(
+                            int(reserved_serial),
+                            self.parent_view.bet_details.get("guild_id", self.parent_view.original_interaction.guild_id),
+                            self.parent_view.bet_details.get("user_id", self.parent_view.original_interaction.user.id),
+                        )
+                        logger.info(f"Cancelled reserved bet {reserved_serial} after user cancel")
+                    except Exception as e:
+                        logger.warning(f"Failed to cancel reserved bet {reserved_serial}: {e}")
+        except Exception:
+            logger.exception("Error while attempting to cancel reserved bet on Cancel button")
+
         await interaction.response.send_message("❌ **Bet cancelled.**", ephemeral=True)
         self.parent_view.stop()
 
@@ -686,7 +704,7 @@ class StraightBetWorkflowView(View):
             )
         return self.bet_slip_generator
 
-    async def start_flow(self, interaction_that_triggered_workflow_start: Interaction):
+    async def start_flow(self, interaction_that_triggered_workflow_start: Interaction, skip_line_type: bool = False):
         logger.debug(
             f"Starting straight betting workflow for user {interaction_that_triggered_workflow_start.user.id} in guild {interaction_that_triggered_workflow_start.guild_id}"
         )
@@ -702,6 +720,15 @@ class StraightBetWorkflowView(View):
             "bet_type": "straight",
             "current_step": 1,
         }
+        # Honor optional skip instruction to avoid showing the line-type selector
+        if skip_line_type:
+            try:
+                self._skip_line_type = True
+                # preselect game line
+                self.bet_details["line_type"] = "game_line"
+                logger.debug("start_flow: skip_line_type requested; preselected line_type=game_line")
+            except Exception:
+                logger.exception("Failed to apply skip_line_type flag")
         logger.debug(f"Initialized bet details: {self.bet_details}")
 
         # Start with sport selection
@@ -840,11 +867,32 @@ class StraightBetWorkflowView(View):
 
     async def _handle_step_6_units_selection(self, interaction: Interaction):
         logger.debug(f"Handling step 6: Units selection for user {interaction.user.id}")
-
         self.clear_items()
         self.add_item(UnitsSelect(self))
         self.add_item(ConfirmUnitsButton(self))
         self.add_item(CancelButton(self))
+
+        # Attempt to reserve a DB row so the frontend can name preview files deterministically
+        try:
+            bet_service = getattr(self.bot, "bet_service", None)
+            reserved_serial = None
+            if bet_service:
+                try:
+                    reserved_serial = await bet_service.reserve_bet(
+                        guild_id=self.original_interaction.guild_id,
+                        user_id=self.original_interaction.user.id,
+                        league=self.bet_details.get("league"),
+                        bet_type="straight",
+                        bet_details=self.bet_details,
+                    )
+                    if reserved_serial:
+                        # Store the reserved int serial (used later on submit/cancel)
+                        self.bet_details["reserved_bet_serial"] = int(reserved_serial)
+                        logger.info(f"Reserved bet serial {reserved_serial} for preview flow")
+                except Exception as e:
+                    logger.warning(f"Could not reserve bet for preview: {e}")
+        except Exception:
+            logger.exception("Unexpected error attempting to reserve bet for preview")
 
         await self.edit_message(content=self.get_content(6), view=self)
         logger.debug("Step 6 UI updated with units selection")
@@ -854,21 +902,39 @@ class StraightBetWorkflowView(View):
             f"Handling step 7: Channel selection for user {interaction.user.id}"
         )
 
-        # Get available channels
+        # Restrict to embed_channel_1 and embed_channel_2 from guild_settings, fallback to all available channels if none found
         guild = interaction.guild
-        channels = [
-            channel
-            for channel in guild.text_channels
-            if channel.permissions_for(guild.me).send_messages
-        ]
-        logger.debug(f"Found {len(channels)} available channels")
+        db_manager = self.bot.db_manager
+        settings = await db_manager.fetch_one(
+            "SELECT embed_channel_1, embed_channel_2, embed_channel_3, embed_channel_4, embed_channel_5 FROM guild_settings WHERE guild_id = $1",
+            (guild.id,)
+        )
+        channel_ids = []
+        if settings:
+            for key in ["embed_channel_1", "embed_channel_2", "embed_channel_3", "embed_channel_4", "embed_channel_5"]:
+                if settings.get(key):
+                    channel_ids.append(int(settings[key]))
+        # Get channel objects and filter by send permissions
+        channels = []
+        for cid in channel_ids:
+            channel = guild.get_channel(cid)
+            if channel and channel.permissions_for(guild.me).send_messages:
+                channels.append(channel)
+        logger.debug(f"Found {len(channels)} embed channels from guild_settings")
+        # Fallback: If no valid embed channels found, use all text channels with send permission
+        if not channels:
+            channels = [
+                c for c in guild.text_channels
+                if c.permissions_for(guild.me).send_messages
+            ]
+            logger.debug(f"Fallback: Found {len(channels)} text channels with send permission.")
 
         self.clear_items()
         self.add_item(ChannelSelect(self, channels))
         self.add_item(CancelButton(self))
 
         await self.edit_message(content=self.get_content(7), view=self)
-        logger.debug("Step 7 UI updated with channel selection")
+        logger.debug("Step 7 UI updated with channel selection (guild_settings only)")
 
     async def _handle_step_8_final_confirmation(self, interaction: Interaction):
         logger.debug(
@@ -898,6 +964,12 @@ class StraightBetWorkflowView(View):
                 logger.debug("Handling step 2: League selection")
                 await self._handle_step_2_league_selection(interaction)
             elif self.current_step == 3:
+                # If the workflow was started with a preselected line_type (e.g., /gameline), skip this step
+                if self.bet_details.get("line_type") or getattr(self, "_skip_line_type", False):
+                    logger.debug("Skipping step 3: line_type already set or skip flag enabled")
+                    # Immediately advance to the next step
+                    await self.go_next(interaction)
+                    return
                 logger.debug("Handling step 3: Line type selection")
                 await self._handle_step_3_line_type_selection(interaction)
             elif self.current_step == 4:
@@ -934,6 +1006,13 @@ class StraightBetWorkflowView(View):
         """Generate bet slip image and return as Discord File."""
         try:
             gen = await self.get_bet_slip_generator()
+            # Format bet_serial as MMDDYYYY+serial for image, but avoid double-prepending
+            today_str = datetime.now().strftime("%m%d%Y")
+            bet_id_str = str(bet_id)
+            if bet_id_str.startswith(today_str):
+                formatted_serial = bet_id_str
+            else:
+                formatted_serial = f"{today_str}{bet_id_str}"
             bet_slip_image_bytes = gen.generate_bet_slip_image(
                 league=details.get("league", ""),
                 home_team=details.get("home_team_name", ""),
@@ -941,7 +1020,7 @@ class StraightBetWorkflowView(View):
                 line=details.get("line", ""),
                 odds=details.get("odds", 0.0),
                 units=details.get("units", 1.0),
-                bet_id=bet_id,
+                bet_id=formatted_serial,
                 timestamp=timestamp,
                 selected_team=details.get("team", details.get("home_team_name", "")),
                 output_path=None,
@@ -953,11 +1032,11 @@ class StraightBetWorkflowView(View):
                 self.preview_image_bytes = io.BytesIO(bet_slip_image_bytes)
                 self.preview_image_bytes.seek(0)
                 return File(
-                    self.preview_image_bytes, filename=f"bet_slip_{bet_id}.webp"
+                    self.preview_image_bytes, filename=f"bet_slip_{formatted_serial}.webp"
                 )
             else:
                 logger.warning(
-                    f"Straight bet {bet_id}: Failed to generate bet slip image."
+                    f"Straight bet {formatted_serial}: Failed to generate bet slip image."
                 )
                 return None
         except Exception as e:
@@ -1073,31 +1152,88 @@ class StraightBetWorkflowView(View):
                 )
                 return
 
-            # Prepare bet details
+            # Prepare bet details, ensure all required fields for manual bet
             bet_details = self.bet_details.copy()
+            # Fix bet_type for manual bets before logging
+            if bet_details.get("is_manual") and (not bet_details.get("bet_type") or bet_details["bet_type"] == "straight"):
+                bet_details["bet_type"] = bet_details.get("line_type", "game_line")
             logger.debug(f"Bet details for submission: {bet_details}")
+
+            # For manual bets, ensure all required columns are present and optional columns are set to None
+            if bet_details.get("is_manual"):
+                bet_details.setdefault("game_id", None)
+                bet_details.setdefault("game_start", None)
+                bet_details.setdefault("expiration_time", None)
+                bet_details.setdefault("player_prop", None)
+                bet_details.setdefault("player_id", None)
+                bet_details.setdefault("legs", 1)
+                bet_details.setdefault("status", "pending")
+                bet_details.setdefault("confirmed", 0)
+                # Remove any extra fields not needed by the bets table
+                for key in list(bet_details.keys()):
+                    if key not in [
+                        "guild_id", "user_id", "league", "bet_type", "units", "odds",
+                        "team", "opponent", "line", "player_prop", "player_id",
+                        "game_id", "game_start", "expiration_time", "legs", "channel_id",
+                        "confirmed", "status", "bet_details", "reserved_bet_serial", "bet_serial"
+                    ]:
+                        if key != "bet_details":
+                            bet_details.pop(key)
+
+            # Include preview bytes (if generated in the UI) so the service can persist the
+            # preview image to disk and attach it to the webhook message.
+            try:
+                if getattr(self, 'preview_image_bytes', None):
+                    # Persist the preview to a stable path under StaticFiles so the
+                    # backend can find it even if passing raw bytes through the payload fails.
+                    try:
+                        import os
+                        self.preview_image_bytes.seek(0)
+                        raw = self.preview_image_bytes.read()
+                        # Attach raw bytes for backend fallback
+                        try:
+                            bet_details['preview_image_bytes'] = raw
+                            logger.debug('Attached preview_image_bytes (raw) to bet_details')
+                        except Exception:
+                            logger.exception('Failed to attach preview_image_bytes to bet_details')
+
+                        guild_id = int(self.bet_details.get("guild_id") or self.original_interaction.guild_id)
+                        # Ensure static dir exists
+                        static_root = os.path.join(os.getcwd(), "StaticFiles", "Confirmed_Bets", str(guild_id))
+                        os.makedirs(static_root, exist_ok=True)
+                        # Prefer reserved serial for filename if available
+                        reserved = self.bet_details.get("reserved_bet_serial") or self.bet_details.get("preview_bet_serial")
+                        if reserved:
+                            serial_part = str(int(reserved))
+                        else:
+                            # fallback to bet_serial string (may be date-prefixed)
+                            serial_part = str(self.bet_details.get("bet_serial", "preview"))
+                        fname = f"bet_{serial_part}_preview.png"
+                        dest_path = os.path.join(static_root, fname)
+                        with open(dest_path, "wb") as fh:
+                            fh.write(raw)
+                        # Expose the path to the backend submit so it can short-circuit resolution
+                        bet_details['preview_image_path'] = dest_path
+                        logger.debug(f'Wrote preview image to {dest_path} and set preview_image_path on bet_details')
+                    except Exception as e:
+                        logger.exception(f'Failed to persist preview image to disk before submit: {e}')
+            except Exception:
+                logger.exception('Unexpected error while preparing preview bytes for submission')
 
             # Submit bet through service
             result = await bet_service.submit_bet(bet_details)
             if result.get("success"):
-                logger.info(
-                    f"Bet submitted successfully for user {interaction.user.id}"
-                )
-                await interaction.response.send_message(
-                    "✅ **Bet submitted successfully!**", ephemeral=True
-                )
+                logger.info("Bet submitted successfully.")
+                # Always use raw integer for bet_serial
+                bet_serial = result["bet_serial"]
+                timestamp = datetime.now()
+                await self._generate_bet_slip_image(self.bet_details, bet_serial, timestamp)
             else:
-                logger.error(
-                    f"Bet submission failed for user {interaction.user.id}: {result.get('error')}"
-                )
-                await interaction.response.send_message(
-                    f"❌ **Bet submission failed:** {result.get('error')}",
-                    ephemeral=True,
-                )
+                logger.warning("Bet submission failed.")
         except Exception as e:
             logger.exception(f"Error submitting bet: {e}")
             await interaction.response.send_message(
-                "❌ **Error submitting bet.** Please try again.", ephemeral=True
+                "❌ Error submitting bet. Please try again.", ephemeral=True
             )
 
     async def on_timeout(self):
@@ -1162,7 +1298,14 @@ class StraightBetWorkflowView(View):
             away_team = self.bet_details.get("away_team_name", "")
             line = self.bet_details.get("line", "")
             odds = float(self.bet_details.get("odds", 0.0))
-            bet_id = str(self.bet_details.get("bet_serial", ""))
+            bet_id_raw = str(self.bet_details.get("bet_serial", ""))
+            # Format bet_serial as MMDDYYYY+serial for image, but avoid double-prepending
+            today_str = datetime.now().strftime("%m%d%Y")
+            bet_id_str = str(bet_id_raw)
+            if bet_id_str.startswith(today_str):
+                formatted_serial = bet_id_str
+            else:
+                formatted_serial = f"{today_str}{bet_id_str}"
             timestamp = datetime.now(timezone.utc)
 
             bet_slip_image_bytes = gen.generate_bet_slip_image(
@@ -1172,7 +1315,7 @@ class StraightBetWorkflowView(View):
                 line=line,
                 odds=odds,
                 units=units,
-                bet_id=bet_id,
+                bet_id=formatted_serial,
                 timestamp=timestamp,
                 selected_team=self.bet_details.get("team", home_team),
                 output_path=None,
@@ -1281,6 +1424,35 @@ class StraightBetWorkflowView(View):
             # Store units in bet details
             self.bet_details["units"] = units
             logger.debug(f"Stored units in bet details: {units}")
+
+            # Prefer a reserved serial if available (set in _handle_step_6 when reserving)
+            reserved_serial = self.bet_details.get("reserved_bet_serial")
+            if reserved_serial:
+                # Use the reserved DB serial for preview naming
+                bet_id_raw = str(int(reserved_serial))
+                today_str = datetime.now().strftime("%m%d%Y")
+                # If the UI generator expects MMDDYYYY prefix, ensure it's present
+                formatted_serial = bet_id_raw if bet_id_raw.startswith(today_str) else f"{today_str}{bet_id_raw}"
+                self.bet_details["bet_serial"] = formatted_serial
+                logger.debug(f"Using reserved bet_serial for preview: {formatted_serial}")
+            else:
+                # Fetch next bet serial from database as a fallback
+                db_manager = self.bot.db_manager
+                next_serial = None
+                try:
+                    result = await db_manager.fetch_one(
+                        "SELECT COALESCE(MAX(bet_serial), 0) + 1 AS next_serial FROM bets WHERE guild_id = $1",
+                        (self.bet_details["guild_id"],),
+                    )
+                    next_serial = result["next_serial"] if result and "next_serial" in result else 1
+                except Exception as e:
+                    logger.error(f"Error fetching next bet serial: {e}")
+                    next_serial = 1
+                # Format bet_serial as MMDDYYYY + serial
+                today_str = datetime.now().strftime("%m%d%Y")
+                formatted_serial = f"{today_str}{next_serial}"
+                self.bet_details["bet_serial"] = formatted_serial
+                logger.debug(f"Using computed bet_serial for preview: {formatted_serial}")
 
             # Generate preview image
             preview_success = await self._generate_preview_image(units)

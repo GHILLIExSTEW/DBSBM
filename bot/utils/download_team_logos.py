@@ -21,6 +21,8 @@ from io import BytesIO
 import requests
 from PIL import Image, UnidentifiedImageError
 
+from utils.asset_loader import asset_loader
+
 try:
     from config.asset_paths import (
         DEFAULT_FALLBACK_CATEGORY,
@@ -53,10 +55,8 @@ logging.basicConfig(
 CSV_FILE_PATH = os.path.join(BASE_DIR, "data", "team_logos.csv")
 
 # STATIC_DIR for saving logos: StaticFiles/DBSBM/static/
-STATIC_DIR = os.path.join(BASE_DIR, "../../../StaticFiles/DBSBM/static")
-SAVE_BASE_PATH = os.path.join(
-    STATIC_DIR, "logos", "teams"
-)  # This will be StaticFiles/DBSBM/static/logos/teams/
+STATIC_DIR = asset_loader.get_static_dir() or os.path.abspath(os.path.join(BASE_DIR, '..', '..', '..', 'StaticFiles', 'static'))
+SAVE_BASE_PATH = os.path.join(STATIC_DIR, "logos", "teams")  # This will be StaticFiles/DBSBM/static/logos/teams/
 
 REQUEST_DELAY_SECONDS = 0.25
 DOWNLOAD_TIMEOUT_SECONDS = 15

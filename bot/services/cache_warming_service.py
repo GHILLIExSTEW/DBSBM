@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import EnhancedCacheManager
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)

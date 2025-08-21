@@ -261,7 +261,7 @@ class TestRateLimitDecorator:
             return "success"
 
         # Should allow the request and log a warning
-        with patch("bot.utils.rate_limiter.logger") as mock_logger:
+        with patch("utils.rate_limiter.logger") as mock_logger:
             result = await test_func()
 
             assert result == "success"
@@ -280,16 +280,16 @@ class TestGlobalRateLimiter:
 
     @pytest.mark.asyncio
     async def test_rate_limit_decorator(self):
-        """Test the rate_limit decorator."""
+        """Test the rate_limit decorator with a valid action name."""
         # Mock the global rate limiter
         mock_limiter = Mock()
         mock_limiter.is_allowed = AsyncMock(return_value=True)
 
         with patch(
-            "bot.utils.rate_limiter.get_rate_limiter", return_value=mock_limiter
+            "utils.rate_limiter.get_rate_limiter", return_value=mock_limiter
         ):
 
-            @rate_limit("test_action")
+            @rate_limit("bet_placement")
             async def test_func(interaction):
                 return "success"
 
@@ -301,7 +301,7 @@ class TestGlobalRateLimiter:
             result = await test_func(mock_interaction)
 
             assert result == "success"
-            mock_limiter.is_allowed.assert_called_once_with(123456789, "test_action")
+            mock_limiter.is_allowed.assert_called_once_with(123456789, "bet_placement")
 
 
 class TestRateLimitExceededError:

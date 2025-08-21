@@ -14,7 +14,7 @@ load_dotenv("bot/.env")
 
 # Fix import issues with fallback
 try:
-    from config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
+    from bot.config.leagues import LEAGUE_CONFIG, LEAGUE_IDS
 except ImportError:
     LEAGUE_CONFIG = {}
     LEAGUE_IDS = {}
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 # PostgreSQL config
 try:
-    from config.database import (
+    from bot.config.database import (
         PG_DATABASE,
         PG_HOST,
         PG_PASSWORD,

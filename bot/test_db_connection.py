@@ -3,6 +3,7 @@
 Simple PostgreSQL connection test
 """
 import asyncio
+import pytest
 import asyncpg
 import os
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+@pytest.mark.asyncio
 async def test_postgres_connection():
     """Test PostgreSQL connection with current .env settings"""
     print("🔄 Testing PostgreSQL connection...")

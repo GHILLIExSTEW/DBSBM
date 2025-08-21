@@ -628,15 +628,13 @@ class EnhancedPlayerPropModal(discord.ui.Modal, title="Player Prop Bet"):
             # Get available channels from guild settings
             allowed_channels = []
             guild_settings = await self.db_manager.fetch_one(
-                "SELECT embed_channel_1, embed_channel_2 FROM guild_settings WHERE guild_id = $1",
+                "SELECT embed_channel_1, embed_channel_2, embed_channel_3, embed_channel_4, embed_channel_5 FROM guild_settings WHERE guild_id = $1",
                 (str(interaction.guild_id),),
             )
 
             if guild_settings:
-                for channel_id in (
-                    guild_settings.get("embed_channel_1"),
-                    guild_settings.get("embed_channel_2"),
-                ):
+                for key in ["embed_channel_1", "embed_channel_2", "embed_channel_3", "embed_channel_4", "embed_channel_5"]:
+                    channel_id = guild_settings.get(key)
                     if channel_id:
                         try:
                             cid = int(channel_id)

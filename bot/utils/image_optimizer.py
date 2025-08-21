@@ -24,7 +24,12 @@ class ImageOptimizer:
         """
         self.quality = quality
         self.max_size = max_size
-        self.cache_dir = Path("../../../StaticFiles/DBSBM/static/cache/optimized")
+        from utils.asset_loader import asset_loader
+
+        static_dir = asset_loader.get_static_dir() or os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static')
+        )
+        self.cache_dir = Path(os.path.join(static_dir, "cache", "optimized"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def optimize_image(self, image_path: str, output_path: Optional[str] = None) -> str:

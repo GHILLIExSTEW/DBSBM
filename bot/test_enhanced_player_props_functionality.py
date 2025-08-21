@@ -1,3 +1,4 @@
+import pytest
 #!/usr/bin/env python3
 """
 Test script for Enhanced Player Props functionality
@@ -12,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 
+@pytest.mark.asyncio
 async def test_enhanced_player_props():
     """Test the enhanced player props functionality."""
     print("🧪 Testing Enhanced Player Props System...")

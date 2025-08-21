@@ -1,3 +1,5 @@
+
+import pytest
 import asyncio
 import asyncpg
 import os
@@ -7,6 +9,7 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(__file__), 'bot', '.env')
 load_dotenv(env_path)
 
+@pytest.mark.asyncio
 async def test_connection():
     try:
         print("Testing PostgreSQL connection...")

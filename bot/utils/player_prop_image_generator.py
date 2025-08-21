@@ -1,4 +1,3 @@
-
 import os
 import logging
 from PIL import Image, ImageFont
@@ -9,14 +8,27 @@ logger = logging.getLogger(__name__)
 
 class PlayerPropImageGenerator:
     def __init__(self, guild_id=None):
-        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
-        self.font_dir = os.path.join(static_dir, 'fonts')
+        # Use asset_loader for fonts and static paths
         self.guild_id = guild_id
-        self.font_regular = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 28)
-        self.font_bold = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Bold.ttf"), 36)
-        self.font_small = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 22)
-        self.font_mini = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Regular.ttf"), 18)
-        self.font_huge = ImageFont.truetype(os.path.join(self.font_dir, "Roboto-Bold.ttf"), 48)
+        try:
+            self.font_regular_path = asset_loader.get_font_path("Roboto-Regular.ttf")
+            self.font_bold_path = asset_loader.get_font_path("Roboto-Bold.ttf")
+            self.font_small_path = asset_loader.get_font_path("Roboto-Regular.ttf")
+            self.font_mini_path = asset_loader.get_font_path("Roboto-Regular.ttf")
+            self.font_huge_path = asset_loader.get_font_path("Roboto-Bold.ttf")
+
+            self.font_regular = ImageFont.truetype(self.font_regular_path, 28)
+            self.font_bold = ImageFont.truetype(self.font_bold_path, 36)
+            self.font_small = ImageFont.truetype(self.font_small_path, 22)
+            self.font_mini = ImageFont.truetype(self.font_mini_path, 18)
+            self.font_huge = ImageFont.truetype(self.font_huge_path, 48)
+        except Exception:
+            # Fallback to default fonts
+            self.font_regular = ImageFont.load_default()
+            self.font_bold = ImageFont.load_default()
+            self.font_small = ImageFont.load_default()
+            self.font_mini = ImageFont.load_default()
+            self.font_huge = ImageFont.load_default()
 
     def draw_player_prop_section(
         self,
@@ -37,13 +49,13 @@ class PlayerPropImageGenerator:
         logo_size = (120, 120)
         player_img_max_size = (90, 90)  # Dynamically constrain player image
         text_y_offset = logo_size[1] + 16  # Adjusted for better spacing
-        team_name_font = self.font_m_18
-        player_name_font = self.font_b_24
+        team_name_font = self.font_small
+        player_name_font = self.font_bold
         text_color = "white"
         center_x = image_width // 2
-        section_width = image_width // 2 - self.padding * 1.5
-        home_section_center_x = self.padding + section_width // 2
-        player_section_center_x = image_width - self.padding - section_width // 2
+        section_width = image_width // 2 - getattr(self, 'padding', 0) * 1.5
+        home_section_center_x = getattr(self, 'padding', 0) + section_width // 2
+        player_section_center_x = image_width - getattr(self, 'padding', 0) - section_width // 2
 
         # Determine left (player's team) and right (opponent) names for above images
         if player_team and home_team and away_team:
@@ -175,24 +187,28 @@ class PlayerPropImageGenerator:
         risk_font_size = 24
         footer_font_size = 18
 
-        font_dir = "../../../StaticFiles/DBSBM/assets/fonts"
-        fonts = {
-            "bold": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", header_font_size),
-            "bold_team": ImageFont.truetype(
-                f"{font_dir}/Roboto-Bold.ttf", team_font_size
-            ),
-            "bold_player": ImageFont.truetype(
-                f"{font_dir}/Roboto-Bold.ttf", player_font_size
-            ),
-            "line": ImageFont.truetype(
-                f"{font_dir}/Roboto-Regular.ttf", line_font_size
-            ),
-            "odds": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", odds_font_size),
-            "risk": ImageFont.truetype(f"{font_dir}/Roboto-Bold.ttf", risk_font_size),
-            "footer": ImageFont.truetype(
-                f"{font_dir}/Roboto-Regular.ttf", footer_font_size
-            ),
-        }
+        # Use asset_loader for font paths
+        font_dir = asset_loader.get_font_path("") if hasattr(asset_loader, 'get_font_path') else None
+        try:
+            fonts = {
+                "bold": ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), header_font_size),
+                "bold_team": ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), team_font_size),
+                "bold_player": ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), player_font_size),
+                "line": ImageFont.truetype(asset_loader.get_font_path("Roboto-Regular.ttf"), line_font_size),
+                "odds": ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), odds_font_size),
+                "risk": ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), risk_font_size),
+                "footer": ImageFont.truetype(asset_loader.get_font_path("Roboto-Regular.ttf"), footer_font_size),
+            }
+        except Exception:
+            fonts = {
+                "bold": ImageFont.load_default(),
+                "bold_team": ImageFont.load_default(),
+                "bold_player": ImageFont.load_default(),
+                "line": ImageFont.load_default(),
+                "odds": ImageFont.load_default(),
+                "risk": ImageFont.load_default(),
+                "footer": ImageFont.load_default(),
+            }
 
         return {
             "image_width": image_width,
@@ -212,14 +228,10 @@ class PlayerPropImageGenerator:
         league_lower = league.lower()
         sport_category = get_sport_category_for_path(league_upper)
 
-        league_logo_path = f"../../../StaticFiles/DBSBM/static/logos/leagues/{sport_category}/{league_upper}/{league_lower}.webp"
-
+        # Use asset_loader to get league logo
         try:
-            from PIL import Image
-
-            league_logo_original = Image.open(league_logo_path).convert("RGBA")
-            league_logo_original.thumbnail((45, 45), Image.Resampling.LANCZOS)
-            return league_logo_original
+            league_logo = asset_loader.load_league_logo(league_upper, sport_category)
+            return league_logo
         except Exception:
             return None
 

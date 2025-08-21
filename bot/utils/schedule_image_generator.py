@@ -18,21 +18,20 @@ logger = logging.getLogger(__name__)
 class ScheduleImageGenerator:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
-        self.assets_dir = static_dir
-        self.fonts_dir = os.path.join(static_dir, "fonts")
-        self.logos_dir = os.path.join(static_dir, "logos", "teams")
+        # Use asset_loader for static and fonts
+        self.assets_dir = asset_loader.get_static_dir() or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static'))
+        self.fonts_dir = asset_loader.fonts_dir if hasattr(asset_loader, 'fonts_dir') else os.path.join(self.assets_dir, "fonts")
+        self.logos_dir = asset_loader.get_logo_dir() if hasattr(asset_loader, 'get_logo_dir') else os.path.join(self.assets_dir, "logos", "teams")
 
-        # Load fonts
-        self.title_font = ImageFont.truetype(
-            os.path.join(self.fonts_dir, "Roboto-Bold.ttf"), 36
-        )
-        self.team_font = ImageFont.truetype(
-            os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 24
-        )
-        self.time_font = ImageFont.truetype(
-            os.path.join(self.fonts_dir, "Roboto-Regular.ttf"), 20
-        )
+        # Load fonts via asset_loader
+        try:
+            self.title_font = ImageFont.truetype(asset_loader.get_font_path("Roboto-Bold.ttf"), 36)
+            self.team_font = ImageFont.truetype(asset_loader.get_font_path("Roboto-Regular.ttf"), 24)
+            self.time_font = ImageFont.truetype(asset_loader.get_font_path("Roboto-Regular.ttf"), 20)
+        except Exception:
+            self.title_font = ImageFont.load_default()
+            self.team_font = ImageFont.load_default()
+            self.time_font = ImageFont.load_default()
 
         # Image settings
         self.image_width = 800
@@ -49,10 +48,12 @@ class ScheduleImageGenerator:
     def _get_default_logo(self) -> Image.Image:
         """Get or create the default logo."""
         if self.default_logo is None:
-            default_path = os.path.join(
-                self.base_dir, "static", "logos", "default_logo.webp"
-            )
-            self.default_logo = Image.open(default_path).convert("RGBA")
+            default_path = os.path.join(asset_loader.get_logo_dir(), "default_logo.webp")
+            if os.path.exists(default_path):
+                self.default_logo = Image.open(default_path).convert("RGBA")
+            else:
+                # Fallback to asset_loader fallback
+                self.default_logo = asset_loader._load_fallback_logo()
         return self.default_logo
 
     @staticmethod
@@ -229,26 +230,13 @@ class ScheduleImageGenerator:
                         league_code.lower() + ".webp",
                     ]
                     for dir_variant in dir_variants:
-                        dir_path = os.path.join(
-                            self.base_dir,
-                            "static",
-                            "logos",
-                            "leagues",
-                            sport,
-                            dir_variant,
-                        )
-                        if os.path.exists(dir_path):
-                            for file_variant in file_variants:
-                                candidate_path = os.path.join(dir_path, file_variant)
-                                if os.path.exists(candidate_path):
-                                    league_logo_img = (
-                                        Image.open(candidate_path)
-                                        .convert("RGBA")
-                                        .resize((60, 60))
-                                    )
-                                    break
-                            if league_logo_img:
-                                break
+                        # Use asset_loader to find league logo
+                        league_logo_img = asset_loader.load_league_logo(league_code, sport)
+                        if league_logo_img:
+                            break
+                        # previous fallback attempts omitted
+                    if league_logo_img is None:
+                        league_logo_img = asset_loader.load_league_logo(league_code, sport)
 
                 # Draw header
                 header_draw = ImageDraw.Draw(final_image)

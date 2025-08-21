@@ -529,25 +529,26 @@ def time_operation(operation_name: str):
     return decorator
 
 
-def monitor_performance(operation_name: str):
+
+def monitor_performance(operation_name: str, monitor_instance=None):
     """
     Decorator to monitor function performance.
 
     Args:
         operation_name: Name of the operation being monitored
+        monitor_instance: Optional PerformanceMonitor instance (for testing)
     """
-
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             start_time = time.time()
             try:
                 result = await func(*args, **kwargs)
-                get_performance_monitor().record_response_time(
+                (monitor_instance or get_performance_monitor()).record_response_time(
                     operation_name, time.time() - start_time
                 )
                 return result
             except Exception as e:
-                get_performance_monitor().record_response_time(
+                (monitor_instance or get_performance_monitor()).record_response_time(
                     operation_name, time.time() - start_time
                 )
                 raise
@@ -556,12 +557,12 @@ def monitor_performance(operation_name: str):
             start_time = time.time()
             try:
                 result = func(*args, **kwargs)
-                get_performance_monitor().record_response_time(
+                (monitor_instance or get_performance_monitor()).record_response_time(
                     operation_name, time.time() - start_time
                 )
                 return result
             except Exception as e:
-                get_performance_monitor().record_response_time(
+                (monitor_instance or get_performance_monitor()).record_response_time(
                     operation_name, time.time() - start_time
                 )
                 raise

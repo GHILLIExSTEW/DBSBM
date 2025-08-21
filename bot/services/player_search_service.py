@@ -412,7 +412,7 @@ class PlayerSearchService:
             players = []
 
             # Import team mappings
-            from utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
+            from bot.utils.league_dictionaries.team_mappings import LEAGUE_TEAM_MAPPINGS
 
             # Get league-specific player data
             if league:

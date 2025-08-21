@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+
+import pytest
 import asyncio
 import asyncpg
 import os
 from dotenv import load_dotenv
 
+@pytest.mark.asyncio
 async def test_db_connection():
     """Test database connection"""
     load_dotenv()

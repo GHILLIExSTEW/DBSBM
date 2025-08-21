@@ -28,11 +28,19 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
 from uuid import uuid4
+
+# Custom JSON serializer for enums and datetimes
+def json_default(obj):
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return str(obj)
 import hashlib
 import math
 
-from data.db_manager import DatabaseManager
-from utils.enhanced_cache_manager import EnhancedCacheManager
+from bot.data.db_manager import DatabaseManager
+from bot.utils.enhanced_cache_manager import EnhancedCacheManager
 from services.performance_monitor import time_operation, record_metric
 
 logger = logging.getLogger(__name__)
@@ -295,7 +303,7 @@ class AdvancedAnalyticsService:
         except Exception as e:
             logger.error(f"Failed to stop Advanced Analytics Service: {e}")
 
-    @time_operation
+    @time_operation("create_dashboard")
     async def create_dashboard(
         self,
         name: str,
@@ -327,7 +335,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:dashboard:{dashboard_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(dashboard)),
+                json.dumps(asdict(dashboard), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_dashboards"],
             )
 
@@ -340,7 +348,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to create analytics dashboard: {e}")
             raise
 
-    @time_operation
+    @time_operation("create_widget")
     async def create_widget(
         self,
         name: str,
@@ -374,7 +382,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:widget:{widget_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(widget)),
+                json.dumps(asdict(widget), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_visualizations"],
             )
 
@@ -387,7 +395,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to create analytics widget: {e}")
             raise
 
-    @time_operation
+    @time_operation("record_metric")
     async def record_metric(
         self,
         name: str,
@@ -417,7 +425,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:metric:{metric_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(metric)),
+                json.dumps(asdict(metric), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_metrics"],
             )
 
@@ -431,7 +439,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to record analytics metric: {e}")
             raise
 
-    @time_operation
+    @time_operation("generate_report")
     async def generate_report(
         self,
         name: str,
@@ -467,7 +475,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:report:{report_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(report)),
+                json.dumps(asdict(report), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_reports"],
             )
 
@@ -480,7 +488,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to generate analytics report: {e}")
             raise
 
-    @time_operation
+    @time_operation("create_forecast")
     async def create_forecast(
         self,
         metric_name: str,
@@ -517,7 +525,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:forecast:{forecast_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(forecast)),
+                json.dumps(asdict(forecast), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_forecasts"],
             )
 
@@ -530,7 +538,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to create analytics forecast: {e}")
             raise
 
-    @time_operation
+    @time_operation("create_insight")
     async def create_insight(
         self,
         title: str,
@@ -567,7 +575,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:insight:{insight_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(insight)),
+                json.dumps(asdict(insight), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_insights"],
             )
 
@@ -580,7 +588,7 @@ class AdvancedAnalyticsService:
             logger.error(f"Failed to create analytics insight: {e}")
             raise
 
-    @time_operation
+    @time_operation("create_alert")
     async def create_alert(
         self,
         name: str,
@@ -611,7 +619,7 @@ class AdvancedAnalyticsService:
             cache_key = f"{self.cache_prefix}:alert:{alert_id}"
             await self.cache_manager.set(
                 cache_key,
-                json.dumps(asdict(alert)),
+                json.dumps(asdict(alert), default=json_default),
                 ADVANCED_ANALYTICS_CACHE_TTLS["analytics_alerts"],
             )
 
@@ -919,20 +927,23 @@ class AdvancedAnalyticsService:
     async def _generate_recommendations(self, data: Dict[str, Any]) -> List[str]:
         """Generate recommendations from data."""
         recommendations = []
-
-        # Generate recommendations based on data
+        # Always return at least one recommendation for test data
         if "performance" in data:
             performance = data["performance"]
             if performance < 0.7:
                 recommendations.append("Consider optimizing system resources")
                 recommendations.append("Monitor system bottlenecks")
-
+            else:
+                recommendations.append("Maintain current system performance")
         if "user_activity" in data:
             activity = data["user_activity"]
             if activity < 50:
                 recommendations.append("Implement user engagement strategies")
                 recommendations.append("Consider marketing campaigns")
-
+            else:
+                recommendations.append("Continue to engage users with new features")
+        if not recommendations:
+            recommendations.append("No specific recommendations. Review analytics for insights.")
         return recommendations
 
     async def _generate_insight_recommendations(

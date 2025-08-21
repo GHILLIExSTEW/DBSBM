@@ -15,28 +15,19 @@ class ParlayBetImageGenerator:
     """
 
     def __init__(
-        self, font_dir="../../../StaticFiles/DBSBM/assets/fonts", guild_id=None
+        self, guild_id=None
     ):
-        self.font_dir = font_dir
+        # Use centralized asset_loader for fonts and guild context
         self.guild_id = guild_id
-        self.font_regular = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 28
-        )
-        self.font_bold = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Bold.ttf"), 36
-        )
-        self.font_small = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 22
-        )
-        self.font_mini = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 18
-        )
-        self.font_huge = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Bold.ttf"), 48
-        )
-        self.font_vs_small = ImageFont.truetype(
-            os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'StaticFiles', 'static', 'fonts')), "Roboto-Regular.ttf"), 21
-        )  # 3/4 of 28
+        # Load fonts via asset_loader with sensible fallbacks
+        from utils.asset_loader import asset_loader
+
+        self.font_regular = asset_loader.load_font("Roboto-Regular.ttf", 28)
+        self.font_bold = asset_loader.load_font("Roboto-Bold.ttf", 36)
+        self.font_small = asset_loader.load_font("Roboto-Regular.ttf", 22)
+        self.font_mini = asset_loader.load_font("Roboto-Regular.ttf", 18)
+        self.font_huge = asset_loader.load_font("Roboto-Bold.ttf", 48)
+        self.font_vs_small = asset_loader.load_font("Roboto-Regular.ttf", 21)  # 3/4 of 28
 
     def generate_parlay_preview(self, legs, total_odds=None, units=None):
         """
@@ -475,7 +466,7 @@ class ParlayBetImageGenerator:
 
         from PIL import Image
 
-        lock_icon_path = "../../../StaticFiles/DBSBM/static/lock_icon.webp"
+        lock_icon_path = os.path.join(asset_loader.get_logo_dir(), 'lock_icon.webp')
         lock_icon = None
         if os.path.exists(lock_icon_path):
             lock_icon = Image.open(lock_icon_path).convert("RGBA").resize((32, 32))

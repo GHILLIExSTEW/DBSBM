@@ -98,13 +98,11 @@ class TestPerformanceMonitor:
         # Check that metric was also added
         assert "test_operation_response_time" in monitor.metrics
 
-    def test_record_response_time_slow_operation(self, monitor):
+    def test_record_response_time_slow_operation(self, monitor, caplog):
         """Test recording slow response time."""
-        with patch("bot.utils.performance_monitor.logger") as mock_logger:
+        with caplog.at_level("WARNING"):
             monitor.record_response_time("slow_operation", 6.0)
-
-            mock_logger.warning.assert_called_once()
-            assert "slow_operation" in mock_logger.warning.call_args[0][0]
+        assert any("slow_operation" in message and "Slow operation detected" in message for message in caplog.text.splitlines())
 
     def test_record_request_success(self, monitor):
         """Test recording successful request."""
@@ -133,21 +131,17 @@ class TestPerformanceMonitor:
         assert check.status == "healthy"
         assert check.message == "Test message"
 
-    def test_add_health_check_critical(self, monitor):
+    def test_add_health_check_critical(self, monitor, caplog):
         """Test adding critical health check."""
-        with patch("bot.utils.performance_monitor.logger") as mock_logger:
+        with caplog.at_level("ERROR"):
             monitor.add_health_check("critical_check", "critical", "Critical message")
+        assert any("critical_check" in message and "Critical health check" in message for message in caplog.text.splitlines())
 
-            mock_logger.error.assert_called_once()
-            assert "critical_check" in mock_logger.error.call_args[0][0]
-
-    def test_add_health_check_warning(self, monitor):
+    def test_add_health_check_warning(self, monitor, caplog):
         """Test adding warning health check."""
-        with patch("bot.utils.performance_monitor.logger") as mock_logger:
+        with caplog.at_level("WARNING"):
             monitor.add_health_check("warning_check", "warning", "Warning message")
-
-            mock_logger.warning.assert_called_once()
-            assert "warning_check" in mock_logger.warning.call_args[0][0]
+        assert any("warning_check" in message and "Warning health check" in message for message in caplog.text.splitlines())
 
     def test_health_check_limit(self, monitor):
         """Test that health checks respect the limit."""
@@ -393,74 +387,48 @@ class TestMonitorPerformanceDecorator:
     async def test_monitor_performance_async(self, monitor):
         """Test monitoring async function performance."""
 
-        # Define the function first
         async def test_func():
             await asyncio.sleep(0.1)
             return "success"
 
-        # Patch the get_performance_monitor function to return our monitor
-        with patch(
-            "bot.utils.performance_monitor.get_performance_monitor",
-            return_value=monitor,
-        ):
-            # Apply the decorator
-            decorated_func = monitor_performance("test_operation")(test_func)
-
-            result = await decorated_func()
-
-            assert result == "success"
-
-            # Check that performance was recorded
-            assert "test_operation" in monitor.response_times
-            assert len(monitor.response_times["test_operation"]) == 1
+        # Pass the monitor instance directly to the decorator
+        decorated_func = monitor_performance("test_operation", monitor_instance=monitor)(test_func)
+        result = await decorated_func()
+        assert result == "success"
+        assert "test_operation" in monitor.response_times
+        assert len(monitor.response_times["test_operation"]) == 1
 
     def test_monitor_performance_sync(self, monitor):
         """Test monitoring sync function performance."""
 
-        # Define the function first
         def test_func():
             time.sleep(0.1)
             return "success"
 
-        # Patch the get_performance_monitor function to return our monitor
-        with patch(
-            "bot.utils.performance_monitor.get_performance_monitor",
-            return_value=monitor,
-        ):
-            # Apply the decorator
-            decorated_func = monitor_performance("test_operation")(test_func)
-
-            result = decorated_func()
-
-            assert result == "success"
-
-            # Check that performance was recorded
-            assert "test_operation" in monitor.response_times
-            assert len(monitor.response_times["test_operation"]) == 1
+        # Pass the monitor instance directly to the decorator
+        decorated_func = monitor_performance("test_operation", monitor_instance=monitor)(test_func)
+        result = decorated_func()
+        assert result == "success"
+        assert "test_operation" in monitor.response_times
+        assert len(monitor.response_times["test_operation"]) == 1
 
     @pytest.mark.asyncio
     async def test_monitor_performance_exception(self, monitor):
         """Test monitoring function that raises exception."""
 
-        # Define the function first
         async def test_func():
             await asyncio.sleep(0.1)
             raise ValueError("Test error")
 
-        # Patch the get_performance_monitor function to return our monitor
-        with patch(
-            "bot.utils.performance_monitor.get_performance_monitor",
-            return_value=monitor,
-        ):
-            # Apply the decorator
-            decorated_func = monitor_performance("test_operation")(test_func)
+        # Pass the monitor instance directly to the decorator
+        decorated_func = monitor_performance("test_operation", monitor_instance=monitor)(test_func)
 
-            with pytest.raises(ValueError):
-                await decorated_func()
+        with pytest.raises(ValueError):
+            await decorated_func()
 
-            # Check that performance was still recorded
-            assert "test_operation" in monitor.response_times
-            assert len(monitor.response_times["test_operation"]) == 1
+        # Check that performance was still recorded
+        assert "test_operation" in monitor.response_times
+        assert len(monitor.response_times["test_operation"]) == 1
 
 
 if __name__ == "__main__":
